@@ -1,6 +1,7 @@
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../stack_board_item.dart';
 
@@ -74,30 +75,25 @@ class StackTextCase extends StatelessWidget {
   /// * 构建文本
   /// * Text
   Widget _buildNormal(BuildContext context) {
-    return FittedBox(
-      child: Text(
-        content?.data ?? '',
-
-        style: content?.style,
-        // style: GoogleFonts.getFont(
-        //   item.content?.googleFont ?? "",
-        //   fontSize: item.content?.style?.fontSize,
-        // ),
-        strutStyle: content?.strutStyle?.style,
-        textAlign: content?.textAlign,
-        textDirection: content?.textDirection,
-        locale: content?.locale,
-        softWrap: content?.softWrap,
-        overflow: content?.overflow,
-        textScaler: content?.textScaleFactor != null
-            ? TextScaler.linear(content!.textScaleFactor!)
-            : TextScaler.noScaling,
-        maxLines: content?.maxLines,
-        semanticsLabel: content?.semanticsLabel,
-        textWidthBasis: content?.textWidthBasis,
-        textHeightBehavior: content?.textHeightBehavior,
-        selectionColor: content?.selectionColor,
+    return Text(
+      content?.data ?? '',
+      style: content?.style?.copyWith(
+        fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
       ),
+      strutStyle: content?.strutStyle?.style,
+      textAlign: content?.textAlign ?? TextAlign.start,
+      textDirection: content?.textDirection,
+      locale: content?.locale,
+      softWrap: true, // force wrap
+      overflow: TextOverflow.visible,
+      textScaler: content?.textScaleFactor != null
+          ? TextScaler.linear(content!.textScaleFactor!)
+          : TextScaler.noScaling,
+      maxLines: content?.maxLines, // unlimited
+      semanticsLabel: content?.semanticsLabel,
+      textWidthBasis: content?.textWidthBasis,
+      textHeightBehavior: content?.textHeightBehavior,
+      selectionColor: content?.selectionColor,
     );
   }
 

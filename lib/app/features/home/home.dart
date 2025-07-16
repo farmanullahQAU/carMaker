@@ -1,12 +1,9 @@
+import 'dart:ui';
+
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
-import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-// --- Modern UI Theme & Constants ---
 
 // --- Main Home Page Widget ---
 class HomePage extends GetView<HomeController> {
@@ -17,15 +14,19 @@ class HomePage extends GetView<HomeController> {
     Get.put(HomeController());
 
     return Scaffold(
+      backgroundColor: Get.theme.colorScheme.surface,
       body: PageView(
         controller: controller.pageController,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: controller.onPageChanged,
         children: const [
           HomeTab(),
           EditorPage(),
-          PlaceholderPage(title: "My Designs"),
-          PlaceholderPage(title: "Premium"),
+          PlaceholderPage(title: "My Designs", icon: Icons.palette_outlined),
+          PlaceholderPage(
+            title: "Premium",
+            icon: Icons.workspace_premium_outlined,
+          ),
         ],
       ),
       bottomNavigationBar: Obx(() => _buildModernBottomNav()),
@@ -34,12 +35,13 @@ class HomePage extends GetView<HomeController> {
 
   Widget _buildModernBottomNav() {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 24,
-            offset: Offset(0, -4),
+            color: Get.theme.colorScheme.shadow.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -47,26 +49,30 @@ class HomePage extends GetView<HomeController> {
         child: NavigationBar(
           selectedIndex: controller.selectedIndex.value,
           onDestinationSelected: controller.onBottomNavTap,
-          height: 70,
+          height: 68,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          indicatorColor: Get.theme.colorScheme.primaryContainer,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined, size: 22),
-              selectedIcon: Icon(Icons.home_rounded, size: 22),
+            _ModernNavDestination(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
               label: 'Home',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.grid_view_outlined, size: 22),
-              selectedIcon: Icon(Icons.grid_view_rounded, size: 22),
+            _ModernNavDestination(
+              icon: Icons.grid_view_outlined,
+              selectedIcon: Icons.grid_view_rounded,
               label: 'Templates',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.palette_outlined, size: 22),
-              selectedIcon: Icon(Icons.palette_rounded, size: 22),
+            _ModernNavDestination(
+              icon: Icons.palette_outlined,
+              selectedIcon: Icons.palette,
               label: 'My Designs',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.workspace_premium_outlined, size: 22),
-              selectedIcon: Icon(Icons.workspace_premium_rounded, size: 22),
+            _ModernNavDestination(
+              icon: Icons.workspace_premium_outlined,
+              selectedIcon: Icons.workspace_premium,
               label: 'Premium',
             ),
           ],
@@ -74,6 +80,21 @@ class HomePage extends GetView<HomeController> {
       ),
     );
   }
+}
+
+class _ModernNavDestination extends NavigationDestination {
+  _ModernNavDestination({
+    required IconData icon,
+    required IconData selectedIcon,
+    required super.label,
+  }) : super(
+         icon: Icon(icon, size: 22, color: Get.theme.colorScheme.outline),
+         selectedIcon: Icon(
+           selectedIcon,
+           size: 22,
+           color: Get.theme.colorScheme.primary,
+         ),
+       );
 }
 
 // --- The Main Scrollable Home Tab ---
@@ -85,28 +106,31 @@ class HomeTab extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         _buildModernAppBar(),
-        SliverList(
-          delegate: SliverChildListDelegate([
-            const SizedBox(height: 8),
-            const ModernSearchBar(),
-            const SizedBox(height: 32),
-            const ModernCarousel(),
-            const SizedBox(height: 32),
-            const SectionTitle(title: 'Quick Actions'),
-            const SizedBox(height: 16),
-            const QuickActionsGrid(),
-            const SizedBox(height: 32),
-            const AIBanner(),
-            const SizedBox(height: 32),
-            const SectionTitle(title: 'Browse Categories'),
-            const SizedBox(height: 16),
-            const CategoriesList(),
-            const SizedBox(height: 32),
-            const SectionTitle(title: 'Minimalist Collection'),
-            const SizedBox(height: 16),
-            const HorizontalCardList(),
-            const SizedBox(height: 32),
-          ]),
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // const SizedBox(height: 8),
+              // const ModernSearchBar(),
+              const SizedBox(height: 16),
+              const ModernCarousel(),
+              const SizedBox(height: 20),
+              const SectionTitle(title: 'Quick Actions'),
+              const SizedBox(height: 12),
+              const QuickActionsGrid(),
+              const SizedBox(height: 20),
+              const AIBanner(),
+              const SizedBox(height: 20),
+              const SectionTitle(title: 'Browse Categories', showSeeAll: true),
+              const SizedBox(height: 12),
+              const CategoriesList(),
+              const SizedBox(height: 20),
+              const SectionTitle(title: 'Featured Templates', showSeeAll: true),
+              const SizedBox(height: 12),
+              const HorizontalCardList(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ],
     );
@@ -114,128 +138,140 @@ class HomeTab extends StatelessWidget {
 
   SliverAppBar _buildModernAppBar() {
     return SliverAppBar(
-      // surfaceTintColor: Colors.transparent,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Obx(
+          //   () => Text(
+          //     Get.find<HomeController>().getGreeting(),
+          //     style: Get.textTheme.bodyMedium?.copyWith(
+          //       color: Get.theme.colorScheme.onSurfaceVariant,
+          //     ),
+          //   ),
+          // ),
+          // const SizedBox(height: 2),
           Text(
-            'Good morning',
-            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            'Create Something Amazing',
-            style: GoogleFonts.inter(
-              fontSize: 24,
+            'Greetings, User!',
+            style: Get.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              height: 1.2,
+              color: Get.theme.colorScheme.onSurface,
             ),
           ),
         ],
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
           child: IconButton(
             onPressed: () {},
-            icon: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(shape: BoxShape.circle),
-              child: const Icon(Icons.notifications_outlined, size: 20),
+            icon: Badge(
+              backgroundColor: Get.theme.colorScheme.primary,
+              child: Icon(
+                Icons.notifications_none_rounded,
+                color: Get.theme.colorScheme.onSurface,
+                size: 24,
+              ),
             ),
           ),
         ),
       ],
       pinned: false,
       floating: true,
-      toolbarHeight: 80,
+      toolbarHeight: 84,
+      backgroundColor: Get.theme.colorScheme.surface,
+      elevation: 0,
     );
   }
 }
 
 // --- Modern UI Components ---
-
 class SectionTitle extends StatelessWidget {
   final String title;
-  final String? subtitle;
-  const SectionTitle({super.key, required this.title, this.subtitle});
+  final bool showSeeAll;
+
+  const SectionTitle({super.key, required this.title, this.showSeeAll = false});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+            style: Get.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Get.theme.colorScheme.onSurface,
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+          if (showSeeAll)
+            TextButton(
+              onPressed: () {},
+              child: Text(
+                'See All',
+                style: Get.textTheme.bodyMedium?.copyWith(
+                  color: Get.theme.colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ],
         ],
       ),
     );
   }
 }
 
-class ModernSearchBar extends StatefulWidget {
+class ModernSearchBar extends StatelessWidget {
   const ModernSearchBar({super.key});
-
-  @override
-  State<ModernSearchBar> createState() => _ModernSearchBarState();
-}
-
-class _ModernSearchBarState extends State<ModernSearchBar> {
-  bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        child: Focus(
-          onFocusChange: (focused) => setState(() => _isFocused = focused),
-          child: TextField(
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500),
-            decoration: InputDecoration(
-              hintText: 'Search templates, styles, or ideas...',
-              hintStyle: GoogleFonts.inter(fontWeight: FontWeight.w500),
-              prefixIcon: Container(
-                padding: const EdgeInsets.all(12),
-                child: Icon(
-                  Icons.search_rounded,
-                  // color: _isFocused ? AppTheme.accent : AppTheme.tertiary,
-                  size: 20,
-                ),
-              ),
-              filled: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(width: 2),
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: TextField(
+        onChanged: Get.find<HomeController>().onSearchChanged,
+        style: Get.textTheme.bodyMedium,
+        decoration: InputDecoration(
+          hintText: 'Search templates, categories, or tags...',
+          hintStyle: Get.textTheme.bodyMedium?.copyWith(
+            color: Get.theme.colorScheme.onSurfaceVariant,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: Get.theme.colorScheme.onSurfaceVariant,
+            size: 20,
+          ),
+          suffixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              color: Get.theme.colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+          ),
+          filled: true,
+          fillColor: Get.theme.colorScheme.surfaceContainerHighest.withOpacity(
+            0.5,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Get.theme.colorScheme.primary,
+              width: 1.5,
             ),
           ),
         ),
@@ -250,28 +286,18 @@ class ModernCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final HomeController controller = Get.find();
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return SizedBox(
-      height: 220,
-      // child: ListView.builder(
-      //   shrinkWrap: true,
-      //   scrollDirection: Axis.horizontal,
-      //   itemCount: controller.trendingNow.length,
-      //   itemBuilder: (context, index) {
-      //     return ModernCarouselCard(
-      //       category: controller.trendingNow.elementAt(index),
-      //     );
-      //   },
-      // ),
-      child: ListView(
+      height: screenWidth * 0.48,
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 8),
-
-        itemExtent: MediaQuery.of(context).size.width * 0.6,
-
-        children: controller.trendingNow.map((category) {
-          return ModernCarouselCard(category: category);
-        }).toList(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemExtent: screenWidth * 0.72,
+        itemCount: controller.trendingNow.length,
+        itemBuilder: (context, index) {
+          return ModernCarouselCard(category: controller.trendingNow[index]);
+        },
       ),
     );
   }
@@ -283,77 +309,90 @@ class ModernCarouselCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      // margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(0),
-        child: Stack(
-          children: [
-            // Background image
-            Container(
-              margin: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(0),
-                image: DecorationImage(
-                  image: AssetImage(category.imagePath ?? ""),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            // // Gradient overlay
-            // Container(
-            //   decoration: BoxDecoration(
-            //     gradient: LinearGradient(
-            //       begin: Alignment.topCenter,
-            //       end: Alignment.bottomCenter,
-            //       colors: [
-            //         Colors.transparent,
-            //         Colors.black.withOpacity(0.3),
-            //         Colors.black.withOpacity(0.7),
-            //       ],
-            //       stops: const [0.0, 0.6, 1.0],
-            //     ),
-            //   ),
-            // ),
-            // Content overlay
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Trending',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    category.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+    return GestureDetector(
+      onTap: () => Get.find<HomeController>().onCategoryTap(category),
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Get.theme.colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                category.imagePath ?? "assets/placeholder.png",
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: Get.theme.colorScheme.primaryContainer),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.7),
+                    ],
+                    stops: const [0.4, 0.6, 1.0],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Trending',
+                            style: Get.textTheme.bodySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      category.name,
+                      style: Get.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -366,138 +405,46 @@ class QuickActionsGrid extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: controller.quickActions.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 0.7,
-        ),
-        itemBuilder: (context, index) {
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: List.generate(controller.quickActions.length, (index) {
           final action = controller.quickActions[index];
           return GestureDetector(
-            onTap: () {
-              final template = {
-                "id": "wedding_invite_20250712",
-                "name": "Wedding Invitation",
-                "thumbnailPath": null,
-                "backgroundImage": "assets/card1.png",
-                "items": [
-                  {
-                    "type": "StackTextItem",
-                    "id": "center",
-                    "status": 0,
-                    "size": {"width": 200.0, "height": 33.0},
-                    "content": {
-                      "data": "Weeding Invitation",
-                      "googleFont": "Great Vibes",
-                      "style": {"fontSize": 18.0},
-                    },
-                    "isCentered": false,
-                    "originalRelativeOffset": {"dx": 0.5, "dy": 0.5},
-                  },
-                  {
-                    "type": "StackTextItem",
-                    "id": "text2_topRight",
-                    "status": 0,
-                    "size": {"width": 100.0, "height": 33.0},
-                    "content": {
-                      "data": "John & Jane",
-                      "googleFont": "Great Vibes",
-                      "style": {"fontSize": 11.0},
-                    },
-                    "isCentered": false,
-                    "originalRelativeOffset": {"dx": 0.5, "dy": 0.5 + 0.05},
-                  },
-                  {
-                    "type": "StackTextItem",
-                    "id": "text3_bottomLeft",
-                    "status": 0,
-                    "size": {"width": 100.0, "height": 33.0},
-                    "content": {
-                      "data": "Saturday, July 12",
-                      "googleFont": "Great Vibes",
-                      "style": {"fontSize": 11.0},
-                    },
-                    "isCentered": false,
-                    "originalRelativeOffset": {"dx": 0.5, "dy": 0.5 + 0.1},
-                  },
-                  {
-                    "type": "StackTextItem",
-                    "id": "text4_bottomRight",
-                    "status": 0,
-                    "size": {"width": 150.0, "height": 40.0},
-                    "content": {
-                      "data": "Save the Date",
-                      "googleFont": "Great Vibes",
-                      "style": {"fontSize": 11.0},
-                    },
-                    "isCentered": false,
-                    "originalRelativeOffset": {"dx": 0.879, "dy": 0.977},
-                  },
-                  {
-                    "type": "StackImageItem",
-                    "id": "image_topLeft",
-                    "status": 0,
-                    "size": {"width": 200.0, "height": 200.0},
-                    "content": {"assetName": "assets/Farman.png"},
-                    "isCentered": false,
-                    "originalRelativeOffset": {"dx": 0.1, "dy": 0.1},
-                  },
-                ],
-                "createdAt": "2025-07-12T06:32:00Z",
-                "updatedAt": null,
-                "category": "wedding",
-                "categoryId": "wedding",
-                "compatibleDesigns": [],
-                "width": 1240,
-                "height": 1748,
-                "isPremium": false,
-                "tags": ["wedding", "invitation", "elegant"],
-                "assetName": "assets/card1.png",
-              };
-              Get.toNamed(
-                Routes.editor,
-                arguments: CardTemplate.fromJson(template),
-              );
-            },
-
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: action.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
+            onTap: () => controller.onQuickActionTap(action),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: action.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: action.color.withOpacity(0.2),
+                      width: 1,
                     ),
-                    child: Icon(action.icon, color: action.color, size: 24),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    action.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Icon(action.icon, color: action.color, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  action.title,
+                  style: Get.textTheme.labelSmall?.copyWith(
+                    color: Get.theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           );
-        },
+        }),
       ),
     );
   }
@@ -509,20 +456,23 @@ class AIBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20.0),
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+        gradient: LinearGradient(
+          colors: [
+            Get.theme.colorScheme.primary,
+            Get.theme.colorScheme.primary.withOpacity(0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF667EEA).withOpacity(0.3),
+            color: Get.theme.colorScheme.primary.withOpacity(0.3),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -532,71 +482,55 @@ class AIBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                Text(
+                  'AI Design Studio',
+                  style: Get.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'NEW',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Transform your ideas into stunning designs with AI.',
+                  style: Get.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'AI Design Studio',
-                  style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                FilledButton.tonal(
+                  onPressed: () => Get.find<HomeController>().onQuickActionTap(
+                    QuickAction(
+                      title: 'AI Generate',
+                      icon: Icons.auto_awesome_outlined,
+                      color: const Color(0xFF8B5CF6),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Transform your ideas into stunning designs with AI',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Get.theme.colorScheme.primary,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    elevation: 0,
                   ),
                   child: Text(
                     'Try Now',
-                    style: GoogleFonts.inter(
+                    style: Get.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.auto_awesome_rounded, size: 40),
+          const SizedBox(width: 16),
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 42,
+            color: Colors.white.withOpacity(0.8),
           ),
         ],
       ),
@@ -610,7 +544,7 @@ class CategoriesList extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: controller.categories.length,
@@ -618,17 +552,20 @@ class CategoriesList extends GetView<HomeController> {
         itemBuilder: (context, index) {
           final category = controller.categories[index];
           return Container(
-            margin: const EdgeInsets.only(right: 12),
+            margin: const EdgeInsets.only(right: 8),
             child: GestureDetector(
-              onTap: () {},
+              onTap: () => controller.onCategoryTap(category),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Get.theme.colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                    color: Get.theme.colorScheme.outline.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -644,9 +581,9 @@ class CategoriesList extends GetView<HomeController> {
                     const SizedBox(width: 8),
                     Text(
                       category.name,
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      style: Get.textTheme.bodyMedium?.copyWith(
+                        color: Get.theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -665,57 +602,121 @@ class HorizontalCardList extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 240,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: controller.minimalistCollection.length,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemBuilder: (context, index) {
-          final template = controller.minimalistCollection[index];
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.only(right: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        template.backgroundImage,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
+    // Define the target height for the entire list.
+    const double listHeight = 230;
+    // Define the height for the image part of the card. The rest is for text.
+    const double targetImageHeight = 150.0;
+
+    return Obx(
+      () => SizedBox(
+        height: listHeight,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: controller.featuredTemplates.length,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          // REMOVED: itemExtent, as we now have dynamic widths.
+          itemBuilder: (context, index) {
+            final template = controller.featuredTemplates[index];
+
+            // 1. Calculate the aspect ratio safely.
+            final double aspectRatio = (template.height > 0)
+                ? template.width / template.height
+                : 1.0; // Default to 1:1 if height is 0
+
+            // 2. Calculate the required width for the card based on the target image height.
+            final double cardWidth = targetImageHeight * aspectRatio;
+
+            return GestureDetector(
+              onTap: () => controller.onTemplateTap(template),
+              child: Container(
+                // 3. Apply the dynamic width to the card container.
+                width: cardWidth,
+                margin: const EdgeInsets.only(right: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // This container now has a fixed height for the image.
+                    Container(
+                      height: targetImageHeight,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Get.theme.colorScheme.shadow.withOpacity(
+                              0.1,
+                            ),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          template.backgroundImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Get.theme.colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.image_outlined,
+                              color: Get.theme.colorScheme.onPrimaryContainer,
+                              size: 32,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    // Text and tags remain the same
+                    // Text(
+                    //   template.name,
+                    //   style: Get.textTheme.bodyMedium?.copyWith(
+                    //     fontWeight: FontWeight.w500,
+                    //     color: Get.theme.colorScheme.onSurface,
+                    //   ),
+                    //   maxLines: 1,
+                    //   overflow: TextOverflow.ellipsis,
+                    // ),
+                    const SizedBox(height: 2),
+                    Text(
+                      template.category,
+                      style: Get.textTheme.bodySmall?.copyWith(
+                        color: Get.theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                    ),
+                    // if (template.tags.isNotEmpty) ...[
+                    //   const SizedBox(height: 4),
+                    //   Wrap(
+                    //     spacing: 4,
+                    //     runSpacing: 4,
+                    //     children: template.tags.take(2).map((tag) {
+                    //       return Container(
+                    //         padding: const EdgeInsets.symmetric(
+                    //           horizontal: 6,
+                    //           vertical: 2,
+                    //         ),
+                    //         decoration: BoxDecoration(
+                    //           color:
+                    //               Get.theme.colorScheme.surfaceContainerHighest,
+                    //           borderRadius: BorderRadius.circular(8),
+                    //         ),
+                    //         child: Text(
+                    //           tag,
+                    //           style: Get.textTheme.labelSmall?.copyWith(
+                    //             color: Get.theme.colorScheme.onSurfaceVariant,
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }).toList(),
+                    //   ),
+                    // ],
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  template.name,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Minimalist',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -723,39 +724,45 @@ class HorizontalCardList extends GetView<HomeController> {
 
 class PlaceholderPage extends StatelessWidget {
   final String title;
-  const PlaceholderPage({super.key, required this.title});
+  final IconData icon;
+  const PlaceholderPage({super.key, required this.title, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(shape: BoxShape.circle),
-              child: Icon(Icons.construction_outlined, size: 40),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Get.theme.colorScheme.primaryContainer,
             ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Icon(
+              icon,
+              size: 40,
+              color: Get.theme.colorScheme.onPrimaryContainer,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Coming soon...',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            style: Get.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Get.theme.colorScheme.onSurface,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This page is under construction.\nCheck back soon!',
+            style: Get.textTheme.bodyMedium?.copyWith(
+              color: Get.theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

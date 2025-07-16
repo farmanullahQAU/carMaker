@@ -31,7 +31,7 @@ extension ExTextStyle on TextStyle {
 
 TextStyle? jsonToTextStyle(Map<String, dynamic> data) {
   return TextStyle(
-    color: data['color'] == null ? null : Color(asT<int>(data['color'])),
+    color: ColorDeserialization.from(data['color']),
     decoration: data['decoration'] == null
         ? null
         : stringToTextDecoration(asT<String>(data['decoration'])),

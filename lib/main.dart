@@ -18,7 +18,7 @@ class CardMakerApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Card Maker',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.dark,
       initialRoute: Routes.home,
       theme: CardMakerTheme.lightTheme(),
       darkTheme: CardMakerTheme.darkTheme(),

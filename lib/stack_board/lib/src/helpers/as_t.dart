@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 /// 转换为 Map<String, dynamic>
 /// Convert to Map<String, dynamic>
@@ -57,6 +58,31 @@ T asT<T>(dynamic value, [T? def]) {
     return (def ?? <dynamic, dynamic>{}) as T;
   }
   return def as T ?? (null as T); // Handle nullable types
+}
+
+extension ColorDeserialization on Color {
+  static Color? from(dynamic value) {
+    if (value == null) return null;
+
+    if (value is int) return Color(value);
+
+    if (value is String) {
+      final hex = value.replaceFirst('#', '');
+      final parsed = int.tryParse(hex, radix: 16);
+      if (parsed != null) {
+        // Add alpha if missing (assume FF)
+        if (hex.length == 6) {
+          return Color(0xFF000000 | parsed);
+        } else if (hex.length == 8) {
+          return Color(parsed);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  int toARGB32() => value;
 }
 
 /// 自动转换为可空类型
