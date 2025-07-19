@@ -188,7 +188,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
     const double maxWidth = 300.0;
     painter.layout(maxWidth: maxWidth);
 
-    final width = painter.size.width.clamp(200.0, maxWidth); // min 200, max 300
+    final width = painter.size.width.clamp(100.0, maxWidth); // min 200, max 300
     final height = painter.size.height;
 
     controller.boardController.updateItem(updatedItem);

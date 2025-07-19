@@ -129,6 +129,8 @@ abstract class StackItem<T extends StackItemContent> {
   StackItem({
     String? id,
     required this.size,
+
+    bool isCentered = false,
     Offset? offset,
     double? angle = 0,
     StackItemStatus? status = StackItemStatus.selected,
@@ -138,6 +140,8 @@ abstract class StackItem<T extends StackItemContent> {
        offset = offset ?? Offset.zero,
        angle = angle ?? 0,
        lockZOrder = lockZOrder ?? false,
+       isCentered = isCentered = false,
+
        status = status ?? StackItemStatus.selected;
 
   const StackItem.empty({
@@ -147,6 +151,7 @@ abstract class StackItem<T extends StackItemContent> {
     required this.status,
     required this.content,
     required this.lockZOrder,
+    required this.isCentered,
   }) : id = '';
 
   /// id
@@ -163,6 +168,7 @@ abstract class StackItem<T extends StackItemContent> {
 
   /// Status
   final StackItemStatus status;
+  final bool isCentered;
 
   final bool lockZOrder;
 
@@ -190,6 +196,7 @@ abstract class StackItem<T extends StackItemContent> {
           .toJson(), // This is the absolute offset for runtime, will be ignored for persistence in StackTextItem, StackImageItem, ColorStackItem1
       'status': status.index,
       'lockZOrder': lockZOrder,
+      'isCentered': isCentered,
       if (content != null) 'content': content?.toJson(),
     };
   }

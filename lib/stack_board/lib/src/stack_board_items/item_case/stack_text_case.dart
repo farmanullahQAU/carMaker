@@ -81,7 +81,7 @@ class StackTextCase extends StatelessWidget {
         fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
       ),
       strutStyle: content?.strutStyle?.style,
-      textAlign: content?.textAlign ?? TextAlign.start,
+      textAlign: content?.textAlign ?? TextAlign.center,
       textDirection: content?.textDirection,
       locale: content?.locale,
       softWrap: true, // force wrap

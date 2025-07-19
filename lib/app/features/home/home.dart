@@ -1,9 +1,62 @@
-import 'dart:ui';
-
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
+import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// --- ENHANCED DATA MODELS ---
+class CategoryModel {
+  final String id;
+  final String name;
+  final Color color;
+  final IconData icon;
+  final String? imagePath;
+
+  CategoryModel({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.icon,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'color': color.value,
+    'icon': icon.codePoint,
+    'imagePath': imagePath,
+  };
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
+    id: json['id'],
+    name: json['name'],
+    color: Color(json['color']),
+    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+    imagePath: json['imagePath'],
+  );
+}
+
+class QuickAction {
+  final String title;
+  final IconData icon;
+  final Color color;
+
+  QuickAction({required this.title, required this.icon, required this.color});
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'icon': icon.codePoint,
+    'color': color.value,
+  };
+
+  factory QuickAction.fromJson(Map<String, dynamic> json) => QuickAction(
+    title: json['title'],
+    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+    color: Color(json['color']),
+  );
+}
 
 // --- Main Home Page Widget ---
 class HomePage extends GetView<HomeController> {
@@ -108,15 +161,10 @@ class HomeTab extends StatelessWidget {
         _buildModernAppBar(),
         SliverToBoxAdapter(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // const SizedBox(height: 8),
-              // const ModernSearchBar(),
-              const SizedBox(height: 16),
-              const ModernCarousel(),
-              const SizedBox(height: 20),
-              const SectionTitle(title: 'Quick Actions'),
-              const SizedBox(height: 12),
+              Container(width: 100, height: 200, color: Colors.red),
+
               const QuickActionsGrid(),
               const SizedBox(height: 20),
               const AIBanner(),
@@ -141,15 +189,6 @@ class HomeTab extends StatelessWidget {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Obx(
-          //   () => Text(
-          //     Get.find<HomeController>().getGreeting(),
-          //     style: Get.textTheme.bodyMedium?.copyWith(
-          //       color: Get.theme.colorScheme.onSurfaceVariant,
-          //     ),
-          //   ),
-          // ),
-          // const SizedBox(height: 2),
           Text(
             'Greetings, User!',
             style: Get.textTheme.headlineSmall?.copyWith(
@@ -223,194 +262,19 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-class ModernSearchBar extends StatelessWidget {
-  const ModernSearchBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: TextField(
-        onChanged: Get.find<HomeController>().onSearchChanged,
-        style: Get.textTheme.bodyMedium,
-        decoration: InputDecoration(
-          hintText: 'Search templates, categories, or tags...',
-          hintStyle: Get.textTheme.bodyMedium?.copyWith(
-            color: Get.theme.colorScheme.onSurfaceVariant,
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: Get.theme.colorScheme.onSurfaceVariant,
-            size: 20,
-          ),
-          suffixIcon: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.tune_rounded,
-              color: Get.theme.colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
-          ),
-          filled: true,
-          fillColor: Get.theme.colorScheme.surfaceContainerHighest.withOpacity(
-            0.5,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-              color: Get.theme.colorScheme.primary,
-              width: 1.5,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ModernCarousel extends StatelessWidget {
-  const ModernCarousel({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final HomeController controller = Get.find();
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return SizedBox(
-      height: screenWidth * 0.48,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemExtent: screenWidth * 0.72,
-        itemCount: controller.trendingNow.length,
-        itemBuilder: (context, index) {
-          return ModernCarouselCard(category: controller.trendingNow[index]);
-        },
-      ),
-    );
-  }
-}
-
-class ModernCarouselCard extends StatelessWidget {
-  final CategoryModel category;
-  const ModernCarouselCard({super.key, required this.category});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.find<HomeController>().onCategoryTap(category),
-      child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Get.theme.colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(
-                category.imagePath ?? "assets/placeholder.png",
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: Get.theme.colorScheme.primaryContainer),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.7),
-                    ],
-                    stops: const [0.4, 0.6, 1.0],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Trending',
-                            style: Get.textTheme.bodySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      category.name,
-                      style: Get.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class QuickActionsGrid extends GetView<HomeController> {
   const QuickActionsGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 12,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: List.generate(controller.quickActions.length, (index) {
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemCount: controller.quickActions.length,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (context, index) {
           final action = controller.quickActions[index];
           return GestureDetector(
             onTap: () => controller.onQuickActionTap(action),
@@ -418,8 +282,8 @@ class QuickActionsGrid extends GetView<HomeController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 66,
+                  height: 66,
                   decoration: BoxDecoration(
                     color: action.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -428,7 +292,7 @@ class QuickActionsGrid extends GetView<HomeController> {
                       width: 1,
                     ),
                   ),
-                  child: Icon(action.icon, color: action.color, size: 24),
+                  child: Icon(action.icon, color: action.color, size: 30),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -444,7 +308,7 @@ class QuickActionsGrid extends GetView<HomeController> {
               ],
             ),
           );
-        }),
+        },
       ),
     );
   }
@@ -538,187 +402,296 @@ class AIBanner extends StatelessWidget {
   }
 }
 
-class CategoriesList extends GetView<HomeController> {
-  const CategoriesList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: controller.categories.length,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemBuilder: (context, index) {
-          final category = controller.categories[index];
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => controller.onCategoryTap(category),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Get.theme.colorScheme.surfaceContainerHighest,
-                  border: Border.all(
-                    color: Get.theme.colorScheme.outline.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: category.color,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      category.name,
-                      style: Get.textTheme.bodyMedium?.copyWith(
-                        color: Get.theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
 class HorizontalCardList extends GetView<HomeController> {
   const HorizontalCardList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Define the target height for the entire list.
-    const double listHeight = 230;
-    // Define the height for the image part of the card. The rest is for text.
-    const double targetImageHeight = 150.0;
+    return SizedBox(
+      height: 1748, // Reduced height for better visibility, adjust as needed
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double maxWidth = constraints.maxWidth; // Account for padding
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: controller.featuredTemplates.length,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemBuilder: (context, index) {
+              final template = controller.featuredTemplates[index];
 
-    return Obx(
-      () => SizedBox(
-        height: listHeight,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: controller.featuredTemplates.length,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          // REMOVED: itemExtent, as we now have dynamic widths.
-          itemBuilder: (context, index) {
-            final template = controller.featuredTemplates[index];
+              // Calculate aspect ratio and card dimensions
+              final double aspectRatio = template.width / template.height;
+              final double targetWidth = (maxWidth * 0.35);
+              final double targetHeight = targetWidth / aspectRatio;
 
-            // 1. Calculate the aspect ratio safely.
-            final double aspectRatio = (template.height > 0)
-                ? template.width / template.height
-                : 1.0; // Default to 1:1 if height is 0
-
-            // 2. Calculate the required width for the card based on the target image height.
-            final double cardWidth = targetImageHeight * aspectRatio;
-
-            return GestureDetector(
-              onTap: () => controller.onTemplateTap(template),
-              child: Container(
-                // 3. Apply the dynamic width to the card container.
-                width: cardWidth,
-                margin: const EdgeInsets.only(right: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // This container now has a fixed height for the image.
-                    Container(
-                      height: targetImageHeight,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Get.theme.colorScheme.shadow.withOpacity(
-                              0.1,
+              return GestureDetector(
+                onTap: () => controller.onTemplateTap(template),
+                child: Container(
+                  width: targetWidth,
+                  height: targetHeight,
+                  margin: const EdgeInsets.only(right: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: targetHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Get.theme.colorScheme.shadow.withOpacity(
+                                0.1,
+                              ),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
                             ),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          template.backgroundImage,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Get.theme.colorScheme.primaryContainer,
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: Get.theme.colorScheme.onPrimaryContainer,
-                              size: 32,
-                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.asset(
+                                template.backgroundImage,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: Get.theme.colorScheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    color: Get
+                                        .theme
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    size: 32,
+                                  ),
+                                ),
+                              ),
+                              ..._buildTemplateItems(
+                                template,
+                                targetHeight,
+                                targetWidth,
+                                context,
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Text and tags remain the same
-                    // Text(
-                    //   template.name,
-                    //   style: Get.textTheme.bodyMedium?.copyWith(
-                    //     fontWeight: FontWeight.w500,
-                    //     color: Get.theme.colorScheme.onSurface,
-                    //   ),
-                    //   maxLines: 1,
-                    //   overflow: TextOverflow.ellipsis,
-                    // ),
-                    const SizedBox(height: 2),
-                    Text(
-                      template.category,
-                      style: Get.textTheme.bodySmall?.copyWith(
-                        color: Get.theme.colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: targetWidth,
+                        child: Text(
+                          template.name,
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Get.theme.colorScheme.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      maxLines: 1,
-                    ),
-                    // if (template.tags.isNotEmpty) ...[
-                    //   const SizedBox(height: 4),
-                    //   Wrap(
-                    //     spacing: 4,
-                    //     runSpacing: 4,
-                    //     children: template.tags.take(2).map((tag) {
-                    //       return Container(
-                    //         padding: const EdgeInsets.symmetric(
-                    //           horizontal: 6,
-                    //           vertical: 2,
-                    //         ),
-                    //         decoration: BoxDecoration(
-                    //           color:
-                    //               Get.theme.colorScheme.surfaceContainerHighest,
-                    //           borderRadius: BorderRadius.circular(8),
-                    //         ),
-                    //         child: Text(
-                    //           tag,
-                    //           style: Get.textTheme.labelSmall?.copyWith(
-                    //             color: Get.theme.colorScheme.onSurfaceVariant,
-                    //           ),
-                    //         ),
-                    //       );
-                    //     }).toList(),
-                    //   ),
-                    // ],
-                  ],
+                      const SizedBox(height: 2),
+                      SizedBox(
+                        width: targetWidth,
+                        child: Text(
+                          template.category,
+                          style: Get.textTheme.bodySmall?.copyWith(
+                            color: Get.theme.colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          );
+        },
       ),
     );
+  }
+
+  List<Widget> _buildTemplateItems(
+    CardTemplate template,
+    double targetHeight,
+    double targetWidth,
+    BuildContext context,
+  ) {
+    final List<Widget> items = [];
+
+    for (final itemJson in template.items) {
+      try {
+        final Map<String, dynamic> item = itemJson;
+        final String type = item['type'] as String;
+        final Map<String, dynamic> relativeOffset =
+            item['originalRelativeOffset'] as Map<String, dynamic>;
+        final double relativeX = (relativeOffset['dx'] as num).toDouble();
+        final double relativeY = (relativeOffset['dy'] as num).toDouble();
+        final Map<String, dynamic> size = item['size'] as Map<String, dynamic>;
+        final double width = (size['width'] as num).toDouble();
+        final double height = (size['height'] as num).toDouble();
+        final Map<String, dynamic>? content =
+            item['content'] as Map<String, dynamic>?;
+        final String? textAlignStr = item['textAlign'] as String?;
+        bool isCentered = item['isCentered'];
+        // Scale positions and sizes based on relative offsets
+        final double scaledWidth = (width / template.width) * targetWidth;
+        final double scaledHeight = (height / template.height) * targetHeight;
+        final normalizedX = relativeX * targetWidth;
+        final double normalizedY = relativeY * targetHeight;
+
+        // Clamp to prevent overflow
+        final double clampedWidth = scaledWidth.clamp(10.0, targetWidth);
+        final double clampedHeight = scaledHeight.clamp(10.0, targetHeight);
+        final double clampedX = normalizedX.clamp(
+          0.0,
+          targetWidth - clampedWidth,
+        );
+        final double clampedY = normalizedY.clamp(
+          0.0,
+          targetHeight - clampedHeight,
+        );
+
+        final double adjustedX = isCentered
+            ? normalizedX -
+                  (clampedWidth /
+                      2) // Center by offsetting left by half the width
+            : clampedX;
+
+        debugPrint(
+          'Rendering item: type=$type, relativeX=$relativeX, relativeY=$relativeY, '
+          'adjustedX=$adjustedX, clampedY=$clampedY, clampedWidth=$clampedWidth, clampedHeight=$clampedHeight, '
+          'isCentered=$isCentered',
+        );
+
+        if (type == 'StackTextItem' && content != null) {
+          final String? data = content['data'] as String?;
+          final Map<String, dynamic>? style =
+              content['style'] as Map<String, dynamic>?;
+          final String? googleFont = content['googleFont'] as String?;
+
+          final double baseFontSize = (style?['fontSize'] as num? ?? 12.0)
+              .toDouble();
+          final double minFontSize = (style?['minFontSize'] as num? ?? 8.0)
+              .toDouble();
+          final double maxFontSize = (style?['maxFontSize'] as num? ?? 12.0)
+              .toDouble();
+          final double scaledFontSize = MediaQuery.textScalerOf(
+            context,
+          ).scale(baseFontSize).clamp(minFontSize, maxFontSize);
+          final txtStyle = TextStyle(
+            fontSize: scaledFontSize,
+            fontFamily: googleFont != null
+                ? GoogleFonts.getFont(googleFont).fontFamily
+                : null,
+            color: style?['color'] != null
+                ? Color(int.parse(style!['color'].replaceAll('#', '0xFF')))
+                : null,
+            fontWeight: style?['fontWeight'] != null
+                ? _parseFontWeight(style!['fontWeight'])
+                : null,
+          );
+
+          items.add(
+            Positioned(
+              left: adjustedX,
+              top: clampedY,
+              right: isCentered ? adjustedX : null,
+              child: Container(
+                color: Colors.blueAccent.withOpacity(0.2),
+                width: getTextWidth(text: data ?? "", style: txtStyle) + 10,
+                child: Text(
+                  data ?? "",
+                  style: txtStyle,
+                  textAlign: _parseTextAlign(textAlignStr),
+                  maxLines: 5,
+                  softWrap: true,
+                ),
+              ),
+            ),
+          );
+        } else if (type == 'StackImageItem' && content != null) {
+          final String? assetName = content['assetName'] as String?;
+          final String? fitStr = item['fit'] as String?;
+
+          items.add(
+            Positioned(
+              left: adjustedX,
+              top: clampedY,
+              child: Image.asset(
+                assetName ?? "",
+                width: clampedWidth,
+                height: clampedHeight,
+                fit: _parseFit(fitStr),
+                errorBuilder: (_, __, ___) => Container(
+                  color: Get.theme.colorScheme.primaryContainer,
+                  width: clampedWidth,
+                  height: clampedHeight,
+                ),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint("Error rendering item: $e, JSON: $itemJson");
+      }
+    }
+    return items;
+  }
+
+  FontWeight? _parseFontWeight(dynamic weight) {
+    if (weight is String) {
+      switch (weight) {
+        case 'FontWeight.w100':
+          return FontWeight.w100;
+        case 'FontWeight.w200':
+          return FontWeight.w200;
+        case 'FontWeight.w300':
+          return FontWeight.w300;
+        case 'FontWeight.w400':
+          return FontWeight.w400;
+        case 'FontWeight.w500':
+          return FontWeight.w500;
+        case 'FontWeight.w600':
+          return FontWeight.w600;
+        case 'FontWeight.w700':
+          return FontWeight.w700;
+        case 'FontWeight.w800':
+          return FontWeight.w800;
+        case 'FontWeight.w900':
+          return FontWeight.w900;
+        default:
+          return null;
+      }
+    }
+    return null;
+  }
+
+  TextAlign _parseTextAlign(String? align) {
+    switch (align?.toLowerCase()) {
+      case 'center':
+        return TextAlign.center;
+      case 'right':
+        return TextAlign.right;
+      case 'justify':
+        return TextAlign.justify;
+      default:
+        return TextAlign.start;
+    }
+  }
+
+  BoxFit _parseFit(String? fit) {
+    switch (fit?.toLowerCase()) {
+      case 'cover':
+        return BoxFit.cover;
+      case 'contain':
+        return BoxFit.contain;
+      case 'fill':
+        return BoxFit.fill;
+      default:
+        return BoxFit.cover;
+    }
   }
 }
 
@@ -766,4 +739,89 @@ class PlaceholderPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class CategoriesList extends GetView<HomeController> {
+  const CategoriesList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: controller.categories.length,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemBuilder: (context, index) {
+          final category = controller.categories[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () => controller.onCategoryTap(category),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      category.color.withOpacity(0.2),
+                      category.color.withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: category.color.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: category.color,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      category.name,
+                      style: Get.textTheme.bodyMedium?.copyWith(
+                        color: Get.theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+double getTextWidth({required String text, required TextStyle style}) {
+  final TextPainter textPainter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+  )..layout();
+
+  return textPainter.size.width;
 }

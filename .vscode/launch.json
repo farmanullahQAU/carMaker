@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "Flutter (lib/app/features/editor/editor_canvas.dart)",
+            "type": "dart",
+            "request": "launch",
+            "program": "lib/app/features/editor/editor_canvas.dart"
+        }
+    ]
+}
