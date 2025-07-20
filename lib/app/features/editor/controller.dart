@@ -1822,15 +1822,22 @@ class EditorController extends GetxController {
             getTextWidth(
                   text: item.content!.data!,
                   style: item.content!.style!,
-                ) +
+                ).width +
                 20,
-            50,
+            getTextWidth(
+                  text: item.content!.data!,
+                  style: item.content!.style!,
+                ).height +
+                20,
           );
 
           final it = item.copyWith(
             offset: item.isCentered
                 ? Offset((targetWidth / 2), normalizedY)
-                : Offset(normalizedX + (itemSize.width / 2), normalizedY),
+                : Offset(
+                    normalizedX + (itemSize.width / 2),
+                    normalizedY + (itemSize.height / 2),
+                  ),
             size: itemSize,
           );
 

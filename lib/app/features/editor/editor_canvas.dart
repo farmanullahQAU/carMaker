@@ -749,310 +749,243 @@ class EditorPage extends GetView<EditorController> {
       body: Column(
         children: [
           Expanded(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraints) {
-                      if (controller.initialTemplate == null) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+            child: SizedBox(
+              height: controller.initialTemplate?.height,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    LayoutBuilder(
+                      builder: (BuildContext context, BoxConstraints constraints) {
+                        if (controller.initialTemplate == null) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        final double maxWidth =
+                            constraints.maxWidth; // Account for padding
 
-                      final double templateAspectRatio =
-                          controller.initialTemplate!.width /
-                          controller.initialTemplate!.height;
-                      final double availableWidthForCanvas =
-                          constraints.maxWidth;
-                      final double availableHeightForCanvas =
-                          constraints.maxHeight;
-                      final double targetWidth = availableWidthForCanvas;
-                      final double targetHeight =
-                          targetWidth / templateAspectRatio;
-
-                      // Ensure canvas fits within available height
-                      final double finalHeight = targetHeight.clamp(
-                        0.0,
-                        availableHeightForCanvas,
-                      );
-                      final double finalWidth =
-                          finalHeight * templateAspectRatio;
-
-                      debugPrint(
-                        'EditorPage: templateAspectRatio=$templateAspectRatio, '
-                        'availableWidth=$availableWidthForCanvas, availableHeight=$availableHeightForCanvas, '
-                        'targetWidth=$finalWidth, targetHeight=$finalHeight',
-                      );
-
-                      return Column(
-                        children: [
-                          // Text(targetWidth.toString()),
-                          // Text(Get.width.toString()),
-                          // Text(finalWidth.toString()),
-                          Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: finalWidth,
-                                maxHeight: finalHeight,
-                                minWidth: 0,
-                                minHeight: 0,
-                              ),
-                              child: AspectRatio(
-                                aspectRatio: templateAspectRatio,
-                                child: Container(
-                                  key: stackBoardKey,
-                                  color: Colors.red[200],
-                                  child: Obx(
-                                    () => Stack(
-                                      children: [
-                                        Column(
-                                          children: [
-                                            Expanded(
-                                              child: StackBoard(
-                                                controller:
-                                                    controller.boardController,
-                                                background: InkWell(
-                                                  onTap: () {
-                                                    controller.boardController
-                                                        .setAllItemStatuses(
-                                                          StackItemStatus.idle,
-                                                        );
-                                                    controller
-                                                        .removeTextEditorOverlay();
-                                                  },
-                                                  child:
-                                                      controller
-                                                          .selectedBackground
-                                                          .value
-                                                          .isNotEmpty
-                                                      ? ColorFiltered(
-                                                          colorFilter:
-                                                              ColorFilter.matrix(
-                                                                _hueMatrix(
-                                                                  controller
-                                                                      .backgroundHue
-                                                                      .value,
-                                                                ),
-                                                              ),
-                                                          child: Image.asset(
-                                                            controller
-                                                                .selectedBackground
-                                                                .value,
-                                                            fit: BoxFit.cover,
-                                                            errorBuilder:
-                                                                (
-                                                                  context,
-                                                                  error,
-                                                                  stackTrace,
-                                                                ) => ColoredBox(
-                                                                  color: Colors
-                                                                      .grey[200]!,
-                                                                  child: const Center(
-                                                                    child: Text(
-                                                                      'Background not found',
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                          ),
-                                                        )
-                                                      : ColoredBox(
-                                                          color:
-                                                              Colors.grey[200]!,
-                                                        ),
-                                                ),
-                                                customBuilder:
-                                                    (
-                                                      StackItem<
-                                                        StackItemContent
-                                                      >
-                                                      item,
-                                                    ) {
-                                                      return InkWell(
-                                                        onTap: () {
+                        // Calculate aspect ratio and card dimensions
+                        final double aspectRatio =
+                            controller.initialTemplate!.width /
+                            controller.initialTemplate!.height;
+                        final double targetWidth = (maxWidth);
+                        final double targetHeight = targetWidth / aspectRatio;
+                        return Container(
+                          width: targetWidth,
+                          height: targetHeight,
+                          key: stackBoardKey,
+                          color: Colors.red[200],
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          child: Obx(
+                            () => Stack(
+                              children: [
+                                Column(
+                                  children: [
+                                    Expanded(
+                                      child: StackBoard(
+                                        controller: controller.boardController,
+                                        background: InkWell(
+                                          onTap: () {
+                                            controller.boardController
+                                                .setAllItemStatuses(
+                                                  StackItemStatus.idle,
+                                                );
+                                            controller
+                                                .removeTextEditorOverlay();
+                                          },
+                                          child:
+                                              controller
+                                                  .selectedBackground
+                                                  .value
+                                                  .isNotEmpty
+                                              ? ColorFiltered(
+                                                  colorFilter:
+                                                      ColorFilter.matrix(
+                                                        _hueMatrix(
                                                           controller
-                                                              .boardController
-                                                              .setAllItemStatuses(
-                                                                StackItemStatus
-                                                                    .idle,
-                                                              );
-                                                          controller
-                                                              .boardController
-                                                              .updateBasic(
-                                                                item.id,
-                                                                status:
-                                                                    StackItemStatus
-                                                                        .selected,
-                                                              );
-                                                          if (item
-                                                              is StackTextItem) {
-                                                            controller
-                                                                .removeTextEditorOverlay();
-                                                            showTextEditorOverlay(
-                                                              context,
-                                                              item,
-                                                            );
-                                                          }
-                                                        },
-                                                        child: Container(
-                                                          color: Colors
-                                                              .blueAccent
-                                                              .withOpacity(0.2),
-                                                          child:
-                                                              (item
-                                                                      is StackTextItem &&
-                                                                  item.content !=
-                                                                      null)
-                                                              ? StackTextCase(
-                                                                  item: item,
-                                                                )
-                                                              : (item
-                                                                        is StackImageItem &&
-                                                                    item.content !=
-                                                                        null)
-                                                              ? StackImageCase(
-                                                                  item: item,
-                                                                )
-                                                              : (item
-                                                                        is ColorStackItem1 &&
-                                                                    item.content !=
-                                                                        null)
-                                                              ? Container(
-                                                                  width: item
-                                                                      .size
-                                                                      .width,
-                                                                  height: item
-                                                                      .size
-                                                                      .height,
-                                                                  color: item
-                                                                      .content!
-                                                                      .color,
-                                                                )
-                                                              : SizedBox.shrink(),
-                                                        ),
-                                                      );
-                                                    },
-
-                                                borderBuilder: (status, item) {
-                                                  final CaseStyle style =
-                                                      CaseStyle();
-                                                  final double leftRight =
-                                                      status ==
-                                                          StackItemStatus.idle
-                                                      ? 0
-                                                      : -(style.buttonSize) / 2;
-                                                  final double topBottom =
-                                                      status ==
-                                                          StackItemStatus.idle
-                                                      ? 0
-                                                      : -(style.buttonSize) *
-                                                            1.5;
-                                                  return AnimatedContainer(
-                                                    duration: Duration(
-                                                      milliseconds: 500,
-                                                    ),
-                                                    child: Positioned(
-                                                      left: -leftRight,
-                                                      top: -topBottom,
-                                                      right: -leftRight,
-                                                      bottom: -topBottom,
-                                                      child: IgnorePointer(
-                                                        ignoring: true,
-                                                        child: CustomPaint(
-                                                          painter: _BorderPainter(
-                                                            dotted:
-                                                                status ==
-                                                                StackItemStatus
-                                                                    .idle,
-                                                          ),
+                                                              .backgroundHue
+                                                              .value,
                                                         ),
                                                       ),
-                                                    ),
-                                                  );
-                                                },
-                                                onDel: controller.deleteItem,
-                                                onOffsetChanged:
-                                                    (item, offset) {
-                                                      controller
-                                                          .onItemOffsetChanged(
-                                                            item,
-                                                            offset,
-                                                          );
-                                                      return true;
-                                                    },
-                                                onSizeChanged: (item, size) {
-                                                  controller.onItemSizeChanged(
-                                                    item,
-                                                    size,
-                                                  );
-                                                  return true;
-                                                },
-                                                onStatusChanged:
-                                                    (item, status) {
-                                                      controller
-                                                          .onItemStatusChanged(
-                                                            item,
-                                                            status,
-                                                          );
-                                                      return true;
-                                                    },
-                                              ),
-                                            ),
-                                          ],
+                                                  child: Image.asset(
+                                                    controller
+                                                        .selectedBackground
+                                                        .value,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder:
+                                                        (
+                                                          context,
+                                                          error,
+                                                          stackTrace,
+                                                        ) => ColoredBox(
+                                                          color:
+                                                              Colors.grey[200]!,
+                                                          child: const Center(
+                                                            child: Text(
+                                                              'Background not found',
+                                                            ),
+                                                          ),
+                                                        ),
+                                                  ),
+                                                )
+                                              : ColoredBox(
+                                                  color: Colors.grey[200]!,
+                                                ),
                                         ),
-                                        Obx(() {
-                                          final isDragging =
-                                              controller.draggedItem.value !=
-                                              null;
-                                          return AnimatedOpacity(
-                                            opacity: isDragging ? 1.0 : 0.0,
-                                            duration: const Duration(
-                                              milliseconds: 200,
+                                        customBuilder:
+                                            (StackItem<StackItemContent> item) {
+                                              return InkWell(
+                                                onTap: () {
+                                                  controller.boardController
+                                                      .setAllItemStatuses(
+                                                        StackItemStatus.idle,
+                                                      );
+                                                  controller.boardController
+                                                      .updateBasic(
+                                                        item.id,
+                                                        status: StackItemStatus
+                                                            .selected,
+                                                      );
+                                                  if (item is StackTextItem) {
+                                                    controller
+                                                        .removeTextEditorOverlay();
+                                                    showTextEditorOverlay(
+                                                      context,
+                                                      item,
+                                                    );
+                                                  }
+                                                },
+                                                child: Container(
+                                                  color: Colors.blueAccent
+                                                      .withOpacity(0.2),
+                                                  child:
+                                                      (item is StackTextItem &&
+                                                          item.content != null)
+                                                      ? StackTextCase(
+                                                          item: item,
+                                                        )
+                                                      : (item is StackImageItem &&
+                                                            item.content != null)
+                                                      ? StackImageCase(
+                                                          item: item,
+                                                        )
+                                                      : (item is ColorStackItem1 &&
+                                                            item.content != null)
+                                                      ? Container(
+                                                          width:
+                                                              item.size.width,
+                                                          height:
+                                                              item.size.height,
+                                                          color: item
+                                                              .content!
+                                                              .color,
+                                                        )
+                                                      : SizedBox.shrink(),
+                                                ),
+                                              );
+                                            },
+
+                                        borderBuilder: (status, item) {
+                                          final CaseStyle style = CaseStyle();
+                                          final double leftRight =
+                                              status == StackItemStatus.idle
+                                              ? 0
+                                              : -(style.buttonSize) / 2;
+                                          final double topBottom =
+                                              status == StackItemStatus.idle
+                                              ? 0
+                                              : -(style.buttonSize) * 1.5;
+                                          return AnimatedContainer(
+                                            duration: Duration(
+                                              milliseconds: 500,
                                             ),
-                                            child: CustomPaint(
-                                              painter: AlignmentGuidePainter(
-                                                draggedItem: controller
-                                                    .draggedItem
-                                                    .value,
-                                                alignmentPoints: controller
-                                                    .alignmentPoints
-                                                    .value,
-                                                stackBoardSize: controller
-                                                    .actualStackBoardRenderSize
-                                                    .value,
-                                                showGrid:
-                                                    controller.showGrid.value &&
-                                                    isDragging,
-                                                gridSize:
-                                                    controller.gridSize.value,
-                                                guideColor: Colors.blueAccent
-                                                    .withOpacity(0.6),
-                                                criticalGuideColor:
-                                                    Colors.greenAccent,
-                                                centerGuideColor: Colors.purple,
+                                            child: Positioned(
+                                              left: -leftRight,
+                                              top: -topBottom,
+                                              right: -leftRight,
+                                              bottom: -topBottom,
+                                              child: IgnorePointer(
+                                                ignoring: true,
+                                                child: CustomPaint(
+                                                  painter: _BorderPainter(
+                                                    dotted:
+                                                        status ==
+                                                        StackItemStatus.idle,
+                                                  ),
+                                                ),
                                               ),
-                                              size: controller
-                                                  .actualStackBoardRenderSize
-                                                  .value,
                                             ),
                                           );
-                                        }),
-                                      ],
+                                        },
+                                        onDel: controller.deleteItem,
+                                        onOffsetChanged: (item, offset) {
+                                          controller.onItemOffsetChanged(
+                                            item,
+                                            offset,
+                                          );
+                                          return true;
+                                        },
+                                        onSizeChanged: (item, size) {
+                                          controller.onItemSizeChanged(
+                                            item,
+                                            size,
+                                          );
+                                          return true;
+                                        },
+                                        onStatusChanged: (item, status) {
+                                          controller.onItemStatusChanged(
+                                            item,
+                                            status,
+                                          );
+                                          return true;
+                                        },
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ),
+                                Obx(() {
+                                  final isDragging =
+                                      controller.draggedItem.value != null;
+                                  return AnimatedOpacity(
+                                    opacity: isDragging ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: CustomPaint(
+                                      painter: AlignmentGuidePainter(
+                                        draggedItem:
+                                            controller.draggedItem.value,
+                                        alignmentPoints:
+                                            controller.alignmentPoints.value,
+                                        stackBoardSize: controller
+                                            .actualStackBoardRenderSize
+                                            .value,
+                                        showGrid:
+                                            controller.showGrid.value &&
+                                            isDragging,
+                                        gridSize: controller.gridSize.value,
+                                        guideColor: Colors.blueAccent
+                                            .withOpacity(0.6),
+                                        criticalGuideColor: Colors.greenAccent,
+                                        centerGuideColor: Colors.purple,
+                                      ),
+                                      size: controller
+                                          .actualStackBoardRenderSize
+                                          .value,
+                                    ),
+                                  );
+                                }),
+                              ],
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

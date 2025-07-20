@@ -421,7 +421,7 @@ class HorizontalCardList extends GetView<HomeController> {
 
               // Calculate aspect ratio and card dimensions
               final double aspectRatio = template.width / template.height;
-              final double targetWidth = (maxWidth * 0.35);
+              final double targetWidth = (maxWidth * 0.4);
               final double targetHeight = targetWidth / aspectRatio;
 
               return GestureDetector(
@@ -448,7 +448,7 @@ class HorizontalCardList extends GetView<HomeController> {
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(8),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -600,7 +600,11 @@ class HorizontalCardList extends GetView<HomeController> {
               right: isCentered ? adjustedX : null,
               child: Container(
                 color: Colors.blueAccent.withOpacity(0.2),
-                width: getTextWidth(text: data ?? "", style: txtStyle) + 10,
+                width:
+                    getTextWidth(text: data ?? "", style: txtStyle).width + 10,
+                height:
+                    getTextWidth(text: data ?? "", style: txtStyle).height + 10,
+
                 child: Text(
                   data ?? "",
                   style: txtStyle,
@@ -816,12 +820,11 @@ class CategoriesList extends GetView<HomeController> {
   }
 }
 
-double getTextWidth({required String text, required TextStyle style}) {
+Size getTextWidth({required String text, required TextStyle style}) {
   final TextPainter textPainter = TextPainter(
     text: TextSpan(text: text, style: style),
-    maxLines: 1,
     textDirection: TextDirection.ltr,
   )..layout();
 
-  return textPainter.size.width;
+  return textPainter.size;
 }
