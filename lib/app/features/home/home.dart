@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
@@ -402,304 +402,6 @@ class AIBanner extends StatelessWidget {
   }
 }
 
-/*class HorizontalCardList extends GetView<HomeController> {
-  const HorizontalCardList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 1748, // Reduced height for better visibility, adjust as needed
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double maxWidth = constraints.maxWidth; // Account for padding
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: controller.featuredTemplates.length,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemBuilder: (context, index) {
-              final template = controller.featuredTemplates[index];
-
-              // Calculate aspect ratio and card dimensions
-              final double aspectRatio = template.width / template.height;
-              final double targetWidth = (maxWidth * 0.4);
-              final double targetHeight = targetWidth / aspectRatio;
-
-              return GestureDetector(
-                onTap: () => controller.onTemplateTap(template),
-                child: Container(
-                  width: targetWidth,
-                  height: targetHeight,
-                  margin: const EdgeInsets.only(right: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: targetHeight,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Get.theme.colorScheme.shadow.withOpacity(
-                                0.1,
-                              ),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.asset(
-                                template.backgroundImage,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Get.theme.colorScheme.primaryContainer,
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    color: Get
-                                        .theme
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    size: 32,
-                                  ),
-                                ),
-                              ),
-                              ..._buildTemplateItems(
-                                template,
-                                targetHeight,
-                                targetWidth,
-                                context,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: targetWidth,
-                        child: Text(
-                          template.name,
-                          style: Get.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: Get.theme.colorScheme.onSurface,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      SizedBox(
-                        width: targetWidth,
-                        child: Text(
-                          template.category,
-                          style: Get.textTheme.bodySmall?.copyWith(
-                            color: Get.theme.colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  List<Widget> _buildTemplateItems(
-    CardTemplate template,
-    double targetHeight,
-    double targetWidth,
-    BuildContext context,
-  ) {
-    final List<Widget> items = [];
-
-    for (final itemJson in template.items) {
-      try {
-        final Map<String, dynamic> item = itemJson;
-        final String type = item['type'] as String;
-        final Map<String, dynamic> relativeOffset =
-            item['originalRelativeOffset'] as Map<String, dynamic>;
-        final double relativeX = (relativeOffset['dx'] as num).toDouble();
-        final double relativeY = (relativeOffset['dy'] as num).toDouble();
-        final Map<String, dynamic> size = item['size'] as Map<String, dynamic>;
-        final double width = (size['width'] as num).toDouble();
-        final double height = (size['height'] as num).toDouble();
-        final Map<String, dynamic>? content =
-            item['content'] as Map<String, dynamic>?;
-        final String? textAlignStr = item['textAlign'] as String?;
-        bool isCentered = item['isCentered'];
-        // Scale positions and sizes based on relative offsets
-        final double scaledWidth = (width / template.width) * targetWidth;
-        final double scaledHeight = (height / template.height) * targetHeight;
-        final normalizedX = relativeX * targetWidth;
-        final double normalizedY = relativeY * targetHeight;
-
-        // Clamp to prevent overflow
-        final double clampedWidth = scaledWidth.clamp(10.0, targetWidth);
-        final double clampedHeight = scaledHeight.clamp(10.0, targetHeight);
-        final double clampedX = normalizedX.clamp(
-          0.0,
-          targetWidth - clampedWidth,
-        );
-        final double clampedY = normalizedY.clamp(
-          0.0,
-          targetHeight - clampedHeight,
-        );
-
-        final double adjustedX = isCentered
-            ? normalizedX -
-                  (clampedWidth /
-                      2) // Center by offsetting left by half the width
-            : clampedX;
-
-        debugPrint(
-          'Rendering item: type=$type, relativeX=$relativeX, relativeY=$relativeY, '
-          'adjustedX=$adjustedX, clampedY=$clampedY, clampedWidth=$clampedWidth, clampedHeight=$clampedHeight, '
-          'isCentered=$isCentered',
-        );
-
-        if (type == 'StackTextItem' && content != null) {
-          final String? data = content['data'] as String?;
-          final Map<String, dynamic>? style =
-              content['style'] as Map<String, dynamic>?;
-          final String? googleFont = content['googleFont'] as String?;
-
-          final double baseFontSize = (style?['fontSize'] as num? ?? 12.0)
-              .toDouble();
-          final double minFontSize = (style?['minFontSize'] as num? ?? 8.0)
-              .toDouble();
-          final double maxFontSize = (style?['maxFontSize'] as num? ?? 12.0)
-              .toDouble();
-          final double scaledFontSize = MediaQuery.textScalerOf(
-            context,
-          ).scale(baseFontSize).clamp(minFontSize, maxFontSize);
-          final txtStyle = TextStyle(
-            fontSize: scaledFontSize,
-            fontFamily: googleFont != null
-                ? GoogleFonts.getFont(googleFont).fontFamily
-                : null,
-            color: style?['color'] != null
-                ? Color(int.parse(style!['color'].replaceAll('#', '0xFF')))
-                : null,
-            fontWeight: style?['fontWeight'] != null
-                ? _parseFontWeight(style!['fontWeight'])
-                : null,
-          );
-
-          items.add(
-            Positioned(
-              left: adjustedX,
-              top: clampedY,
-              right: isCentered ? adjustedX : null,
-              child: Container(
-                color: Colors.blueAccent.withOpacity(0.2),
-                width:
-                    getTextWidth(text: data ?? "", style: txtStyle).width + 10,
-                height:
-                    getTextWidth(text: data ?? "", style: txtStyle).height + 10,
-
-                child: Text(
-                  data ?? "",
-                  style: txtStyle,
-                  textAlign: _parseTextAlign(textAlignStr),
-                  maxLines: 5,
-                  softWrap: true,
-                ),
-              ),
-            ),
-          );
-        } else if (type == 'StackImageItem' && content != null) {
-          final String? assetName = content['assetName'] as String?;
-          final String? fitStr = item['fit'] as String?;
-
-          items.add(
-            Positioned(
-              left: adjustedX,
-              top: clampedY,
-              child: Image.asset(
-                assetName ?? "",
-                width: clampedWidth,
-                height: clampedHeight,
-                fit: _parseFit(fitStr),
-                errorBuilder: (_, __, ___) => Container(
-                  color: Get.theme.colorScheme.primaryContainer,
-                  width: clampedWidth,
-                  height: clampedHeight,
-                ),
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint("Error rendering item: $e, JSON: $itemJson");
-      }
-    }
-    return items;
-  }
-
-  FontWeight? _parseFontWeight(dynamic weight) {
-    if (weight is String) {
-      switch (weight) {
-        case 'FontWeight.w100':
-          return FontWeight.w100;
-        case 'FontWeight.w200':
-          return FontWeight.w200;
-        case 'FontWeight.w300':
-          return FontWeight.w300;
-        case 'FontWeight.w400':
-          return FontWeight.w400;
-        case 'FontWeight.w500':
-          return FontWeight.w500;
-        case 'FontWeight.w600':
-          return FontWeight.w600;
-        case 'FontWeight.w700':
-          return FontWeight.w700;
-        case 'FontWeight.w800':
-          return FontWeight.w800;
-        case 'FontWeight.w900':
-          return FontWeight.w900;
-        default:
-          return null;
-      }
-    }
-    return null;
-  }
-
-  TextAlign _parseTextAlign(String? align) {
-    switch (align?.toLowerCase()) {
-      case 'center':
-        return TextAlign.center;
-      case 'right':
-        return TextAlign.right;
-      case 'justify':
-        return TextAlign.justify;
-      default:
-        return TextAlign.start;
-    }
-  }
-
-  BoxFit _parseFit(String? fit) {
-    switch (fit?.toLowerCase()) {
-      case 'cover':
-        return BoxFit.cover;
-      case 'contain':
-        return BoxFit.contain;
-      case 'fill':
-        return BoxFit.fill;
-      default:
-        return BoxFit.cover;
-    }
-  }
-}
-*/
-
 class HorizontalCardList extends GetView<HomeController> {
   const HorizontalCardList({super.key});
 
@@ -724,10 +426,10 @@ class HorizontalCardList extends GetView<HomeController> {
                   onTap: () => controller.onTemplateTap(template),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // Responsive width: min of 60% screen width or 400px
+                      // Responsive width: min of 40% screen width or 400px
                       final maxWidth = constraints.maxWidth * 0.4;
                       // Calculate scale to fit template within constraints
-                      final scale = min(
+                      final scale = math.min(
                         maxWidth / template.width,
                         constraints.maxHeight / template.height,
                       );
@@ -759,7 +461,7 @@ class HorizontalCardList extends GetView<HomeController> {
                                 // Template items
                                 ...template.items.map((item) {
                                   final type = item['type'];
-                                  final originalX = (item['originalX'])
+                                  final originalX = (item['originalX'] as num)
                                       .toDouble();
                                   final originalY = (item['originalY'] as num)
                                       .toDouble();
@@ -768,24 +470,14 @@ class HorizontalCardList extends GetView<HomeController> {
 
                                   scaledY += cumulativeYOffset;
 
-                                  // // Skip items outside canvas
-                                  // if (left >= canvasWidth ||
-                                  //     top >= canvasHeight) {
-                                  //   return const SizedBox.shrink();
-                                  // }
-
                                   if (type == 'StackTextItem') {
                                     final textItem = StackTextItem.fromJson(
                                       item,
                                     );
-
-                                    // final originalFontSize =
-                                    //     (style['fontSize'] ?? 16.0).toDouble();
                                     double scaledFontSize =
                                         (textItem.content!.style!.fontSize! *
                                                 scale)
                                             .clamp(8.0, 15.0);
-
                                     double scaledLetterSpacing =
                                         ((textItem
                                                 .content!
@@ -803,17 +495,10 @@ class HorizontalCardList extends GetView<HomeController> {
                                         );
 
                                     // Constrain text to canvas bounds
-                                    final maxTextHeight = (getTextWidth(
+                                    final maxTextHeight = getTextWidth(
                                       text: textItem.content?.data ?? "",
                                       style: scaledTextStyle!,
-                                    ).height);
-
-                                    // final maxTextWidth = (getTextWidth(
-                                    //   text: text,
-                                    //   style: textItem.content!.style!.copyWith(
-                                    //     fontSize: scaledFontSize.clamp(8, 15),
-                                    //   ),
-                                    // ).width);
+                                    ).height;
                                     cumulativeYOffset += maxTextHeight;
 
                                     return Positioned(
@@ -824,13 +509,20 @@ class HorizontalCardList extends GetView<HomeController> {
                                         item: textItem.copyWith(
                                           content: textItem.content?.copyWith(
                                             style: scaledTextStyle,
+                                            textAlign: _getTextAlign(
+                                              textItem
+                                                      .content
+                                                      ?.textAlign
+                                                      ?.name ??
+                                                  "center",
+                                            ),
                                           ),
                                         ),
                                       ),
                                     );
                                   } else if (type == 'StackImageItem') {
                                     final path =
-                                        item["content"]['assetName'] ?? '';
+                                        item['content']['assetName'] ?? '';
                                     final originalWidth =
                                         (item['size']['width'] ?? 100)
                                             .toDouble();
@@ -856,14 +548,9 @@ class HorizontalCardList extends GetView<HomeController> {
                                         ),
                                       ),
                                     );
-                                  } else if (type == 'StackShapeItem') {
-                                    final shape = item['shape'] ?? 'rectangle';
-                                    final colorHex =
-                                        item['color'] ?? '#FF000000';
-                                    final color = Color(
-                                      int.parse(
-                                        colorHex.replaceFirst('#', '0xFF'),
-                                      ),
+                                  } else if (type == 'ShapeStackItem') {
+                                    final shapeItem = ShapeStackItem.fromJson(
+                                      item,
                                     );
                                     final originalWidth =
                                         (item['size']['width'] ?? 100)
@@ -875,29 +562,27 @@ class HorizontalCardList extends GetView<HomeController> {
                                     final scaledHeight = originalHeight * scale;
 
                                     // Constrain shape to canvas bounds
-                                    final maxShapeWidth = min(
-                                      scaledWidth,
-                                      canvasWidth - scaledX,
-                                    );
-                                    final maxShapeHeight = min(
-                                      scaledHeight,
-                                      canvasHeight - scaledY,
-                                    );
-                                    final itemHeight =
-                                        maxShapeHeight; // Item height for shape
-                                    cumulativeYOffset += itemHeight;
+                                    // final maxShapeWidth = math.min(
+                                    //   scaledWidth,
+                                    //   canvasWidth - scaledX,
+                                    // );
+                                    // final maxShapeHeight = math.min(
+                                    //   scaledHeight,
+                                    //   canvasHeight - scaledY,
+                                    // );
+                                    cumulativeYOffset += scaledHeight;
+
                                     return Positioned(
-                                      left: scaledX,
+                                      left: scaledX - (scaledWidth / 2),
                                       top: scaledY,
                                       child: SizedBox(
-                                        width: maxShapeWidth,
-                                        height: maxShapeHeight,
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: color,
-                                            shape: shape == 'circle'
-                                                ? BoxShape.circle
-                                                : BoxShape.rectangle,
+                                        width: scaledWidth,
+                                        height: scaledHeight,
+                                        child: Center(
+                                          child: _buildShapeWidget(
+                                            shapeItem,
+                                            scaledWidth,
+                                            scaledHeight,
                                           ),
                                         ),
                                       ),
@@ -921,6 +606,60 @@ class HorizontalCardList extends GetView<HomeController> {
     );
   }
 
+  // Widget-based shape rendering
+  Widget _buildShapeWidget(ShapeStackItem item, double width, double height) {
+    final content = item.content!;
+    switch (content.shapeType) {
+      case ShapeType.horizontalLine:
+        return Container(
+          width: width,
+          height: content.strokeWidth, // Use strokeWidth for line thickness
+          color: content.color,
+        );
+      case ShapeType.verticalLine:
+        return Container(
+          width: content.strokeWidth, // Use strokeWidth for line thickness
+          height: height,
+          color: content.color,
+        );
+      case ShapeType.rectangle:
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: content.color,
+              width: content.strokeWidth,
+            ),
+          ),
+        );
+      case ShapeType.circle:
+        return ClipOval(
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: content.color,
+                width: content.strokeWidth,
+              ),
+            ),
+          ),
+        );
+    }
+  }
+
+  // Utility method to calculate text dimensions
+  Size getTextWidth({required String text, required TextStyle style}) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: null,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    return textPainter.size;
+  }
+
+  // Utility method to parse text alignment
   TextAlign _getTextAlign(String alignment) {
     switch (alignment.toLowerCase()) {
       case 'center':
