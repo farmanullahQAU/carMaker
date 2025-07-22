@@ -258,9 +258,10 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
       final StackItem<StackItemContent> item = data[i];
       if (item.status != StackItemStatus.locked) {
         data[i] = item.copyWith(
-          status: item.status == StackItemStatus.editing
-              ? StackItemStatus.selected
-              : StackItemStatus.idle,
+          // status: item.status == StackItemStatus.editing
+          //     ? StackItemStatus.selected
+          //     : StackItemStatus.idle,
+          status: StackItemStatus.idle,
         );
       }
     }

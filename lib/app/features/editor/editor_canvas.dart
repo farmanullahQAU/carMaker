@@ -703,26 +703,46 @@ class EditorPage extends GetView<EditorController> {
     final RxBool showStickerPanel = true.obs;
     final RxInt selectedToolIndex =
         0.obs; // 0: none, 1: sticker, 2: color, 3: text
+    final RxBool isTemplateLoaded = false.obs; // Track template loading state
+    final RxDouble canvasScale = 1.0.obs; // Store canvas scale
+    final RxDouble scaledCanvasWidth = 0.0.obs; // Store scaled width
+    final RxDouble scaledCanvasHeight = 0.0.obs; // Store scaled height
 
-    // Update StackBoard size after rendering
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (stackBoardKey.currentContext != null &&
-          controller.activeItem.value == null) {
-        final RenderBox? renderBox =
-            stackBoardKey.currentContext!.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final Size size = renderBox.size;
-          if (controller.actualStackBoardRenderSize.value != size) {
-            controller.updateStackBoardRenderSize(size);
-            debugPrint('Updated StackBoard size: $size');
-            // Reload template to apply correct sizing
-            if (controller.initialTemplate != null) {
-              controller.loadTemplate(controller.initialTemplate!);
-            }
-          }
-        }
-      }
-    });
+    // Update StackBoard size and load template with computed scale
+    void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
+      if (controller.initialTemplate == null || isTemplateLoaded.value) return;
+
+      final double availableWidth = constraints.maxWidth * 0.9;
+      final double availableHeight = 2 * (constraints.maxWidth);
+
+      canvasScale.value = math.min(
+        availableWidth / controller.initialTemplate!.width,
+        availableHeight / controller.initialTemplate!.height,
+      );
+
+      scaledCanvasWidth.value =
+          controller.initialTemplate!.width * canvasScale.value;
+      scaledCanvasHeight.value =
+          controller.initialTemplate!.height * canvasScale.value;
+
+      // Update controller with canvas size
+      controller.updateStackBoardRenderSize(
+        Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+      );
+      debugPrint(
+        'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}',
+      );
+
+      // Load template with computed scale and dimensions
+      controller.loadTemplate(
+        controller.initialTemplate!,
+        canvasScale.value,
+        scaledCanvasWidth.value,
+        scaledCanvasHeight.value,
+        context,
+      );
+      isTemplateLoaded.value = true; // Mark template as loaded
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -748,251 +768,164 @@ class EditorPage extends GetView<EditorController> {
       ),
       body: Column(
         children: [
+          // Obx(() => Text(scaledCanvasWidth.value.toString())),
+          // Obx(() => Text(scaledCanvasHeight.value.toString())),
           Expanded(
-            child: SizedBox(
-              height: controller.initialTemplate?.height,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    LayoutBuilder(
-                      builder: (BuildContext context, BoxConstraints constraints) {
-                        if (controller.initialTemplate == null) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        final double maxWidth =
-                            constraints.maxWidth; // Account for padding
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                if (controller.initialTemplate == null) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                        // Calculate aspect ratio and card dimensions
-                        final double aspectRatio =
-                            controller.initialTemplate!.width /
-                            controller.initialTemplate!.height;
-                        final double targetWidth = (maxWidth);
-                        final double targetHeight = targetWidth / aspectRatio;
-                        return Container(
-                          width: targetWidth,
-                          height: targetHeight,
-                          key: stackBoardKey,
-                          color: Colors.red[200],
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                          child: Obx(
-                            () => Stack(
-                              children: [
-                                Column(
-                                  children: [
-                                    Expanded(
-                                      child: StackBoard(
-                                        controller: controller.boardController,
-                                        background: InkWell(
-                                          onTap: () {
-                                            controller.boardController
-                                                .setAllItemStatuses(
-                                                  StackItemStatus.idle,
-                                                );
-                                            controller
-                                                .removeTextEditorOverlay();
-                                          },
-                                          child:
-                                              controller
-                                                  .selectedBackground
-                                                  .value
-                                                  .isNotEmpty
-                                              ? ColorFiltered(
-                                                  colorFilter:
-                                                      ColorFilter.matrix(
-                                                        _hueMatrix(
-                                                          controller
-                                                              .backgroundHue
-                                                              .value,
-                                                        ),
-                                                      ),
-                                                  child: Image.asset(
-                                                    controller
-                                                        .selectedBackground
-                                                        .value,
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder:
-                                                        (
-                                                          context,
-                                                          error,
-                                                          stackTrace,
-                                                        ) => ColoredBox(
-                                                          color:
-                                                              Colors.grey[200]!,
-                                                          child: const Center(
-                                                            child: Text(
-                                                              'Background not found',
-                                                            ),
-                                                          ),
-                                                        ),
-                                                  ),
-                                                )
-                                              : ColoredBox(
-                                                  color: Colors.grey[200]!,
-                                                ),
-                                        ),
-                                        customBuilder:
-                                            (StackItem<StackItemContent> item) {
-                                              return InkWell(
-                                                onTap: () {
-                                                  controller.boardController
-                                                      .setAllItemStatuses(
-                                                        StackItemStatus.idle,
-                                                      );
-                                                  controller.boardController
-                                                      .updateBasic(
-                                                        item.id,
-                                                        status: StackItemStatus
-                                                            .selected,
-                                                      );
-                                                  if (item is StackTextItem) {
-                                                    controller
-                                                        .removeTextEditorOverlay();
-                                                    showTextEditorOverlay(
-                                                      context,
-                                                      item,
-                                                    );
-                                                  }
-                                                },
-                                                child: Container(
-                                                  color: Colors.blueAccent
-                                                      .withOpacity(0.2),
-                                                  child:
-                                                      (item is StackTextItem &&
-                                                          item.content != null)
-                                                      ? StackTextCase(
-                                                          item: item,
-                                                        )
-                                                      : (item is StackImageItem &&
-                                                            item.content != null)
-                                                      ? StackImageCase(
-                                                          item: item,
-                                                        )
-                                                      : (item is ColorStackItem1 &&
-                                                            item.content != null)
-                                                      ? Container(
-                                                          width:
-                                                              item.size.width,
-                                                          height:
-                                                              item.size.height,
-                                                          color: item
-                                                              .content!
-                                                              .color,
-                                                        )
-                                                      : SizedBox.shrink(),
-                                                ),
-                                              );
-                                            },
+                // Schedule template loading after first layout
+                SchedulerBinding.instance.addPostFrameCallback((_) {
+                  updateCanvasAndLoadTemplate(constraints);
+                });
 
-                                        borderBuilder: (status, item) {
-                                          final CaseStyle style = CaseStyle();
-                                          final double leftRight =
-                                              status == StackItemStatus.idle
-                                              ? 0
-                                              : -(style.buttonSize) / 2;
-                                          final double topBottom =
-                                              status == StackItemStatus.idle
-                                              ? 0
-                                              : -(style.buttonSize) * 1.5;
-                                          return AnimatedContainer(
-                                            duration: Duration(
-                                              milliseconds: 500,
-                                            ),
-                                            child: Positioned(
-                                              left: -leftRight,
-                                              top: -topBottom,
-                                              right: -leftRight,
-                                              bottom: -topBottom,
-                                              child: IgnorePointer(
-                                                ignoring: true,
-                                                child: CustomPaint(
-                                                  painter: _BorderPainter(
-                                                    dotted:
-                                                        status ==
-                                                        StackItemStatus.idle,
-                                                  ),
+                return Center(
+                  child: Obx(
+                    () => Container(
+                      width: scaledCanvasWidth.value,
+                      height: scaledCanvasHeight.value,
+                      key: stackBoardKey,
+                      color: Colors.red,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                      child: StackBoard(
+                        controller: controller.boardController,
+                        background: InkWell(
+                          onTap: () {
+                            controller.boardController.setAllItemStatuses(
+                              StackItemStatus.idle,
+                            );
+                            controller.removeTextEditorOverlay();
+                          },
+                          child: controller.selectedBackground.value.isNotEmpty
+                              ? ColorFiltered(
+                                  colorFilter: ColorFilter.matrix(
+                                    _hueMatrix(controller.backgroundHue.value),
+                                  ),
+                                  child: Image.asset(
+                                    controller.selectedBackground.value,
+                                    fit: BoxFit.contain,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            ColoredBox(
+                                              color: Colors.grey[200]!,
+                                              child: const Center(
+                                                child: Text(
+                                                  'Background not found',
                                                 ),
                                               ),
                                             ),
-                                          );
-                                        },
-                                        onDel: controller.deleteItem,
-                                        onOffsetChanged: (item, offset) {
-                                          controller.onItemOffsetChanged(
-                                            item,
-                                            offset,
-                                          );
-                                          return true;
-                                        },
-                                        onSizeChanged: (item, size) {
-                                          controller.onItemSizeChanged(
-                                            item,
-                                            size,
-                                          );
-                                          return true;
-                                        },
-                                        onStatusChanged: (item, status) {
-                                          controller.onItemStatusChanged(
-                                            item,
-                                            status,
-                                          );
-                                          return true;
-                                        },
-                                      ),
-                                    ),
-                                  ],
+                                  ),
+                                )
+                              : ColoredBox(color: Colors.grey[200]!),
+                        ),
+                        customBuilder: (StackItem<StackItemContent> item) {
+                          return InkWell(
+                            onTap: () {
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.updateBasic(
+                                item.id,
+                                status: StackItemStatus
+                                    .selected, // Allow dragging on tap
+                              );
+                              if (item is StackTextItem) {
+                                controller.removeTextEditorOverlay();
+                                showTextEditorOverlay(
+                                  context,
+                                  item.copyWith(
+                                    status: StackItemStatus.selected,
+                                  ),
+                                );
+                              }
+                            },
+                            child:
+                                (item is StackTextItem && item.content != null)
+                                ? StackTextCase(item: item)
+                                : (item is StackImageItem &&
+                                      item.content != null)
+                                ? StackImageCase(item: item)
+                                : (item is ColorStackItem1 &&
+                                      item.content != null)
+                                ? Container(
+                                    width: item.size.width,
+                                    height: item.size.height,
+                                    color: item.content!.color,
+                                  )
+                                : SizedBox.shrink(),
+                          );
+                        },
+                        borderBuilder: (status, item) {
+                          final CaseStyle style = CaseStyle();
+                          final double leftRight =
+                              status == StackItemStatus.idle
+                              ? 0
+                              : -(style.buttonSize) / 2;
+                          final double topBottom =
+                              status == StackItemStatus.idle
+                              ? 0
+                              : -(style.buttonSize) * 1.5;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 500),
+                            child: Positioned(
+                              left: -leftRight,
+                              top: -topBottom,
+                              right: -leftRight,
+                              bottom: -topBottom,
+                              child: IgnorePointer(
+                                ignoring: true,
+                                child: CustomPaint(
+                                  painter: _BorderPainter(
+                                    dotted: status == StackItemStatus.idle,
+                                  ),
                                 ),
-                                Obx(() {
-                                  final isDragging =
-                                      controller.draggedItem.value != null;
-                                  return AnimatedOpacity(
-                                    opacity: isDragging ? 1.0 : 0.0,
-                                    duration: const Duration(milliseconds: 200),
-                                    child: CustomPaint(
-                                      painter: AlignmentGuidePainter(
-                                        draggedItem:
-                                            controller.draggedItem.value,
-                                        alignmentPoints:
-                                            controller.alignmentPoints.value,
-                                        stackBoardSize: controller
-                                            .actualStackBoardRenderSize
-                                            .value,
-                                        showGrid:
-                                            controller.showGrid.value &&
-                                            isDragging,
-                                        gridSize: controller.gridSize.value,
-                                        guideColor: Colors.blueAccent
-                                            .withOpacity(0.6),
-                                        criticalGuideColor: Colors.greenAccent,
-                                        centerGuideColor: Colors.purple,
-                                      ),
-                                      size: controller
-                                          .actualStackBoardRenderSize
-                                          .value,
-                                    ),
-                                  );
-                                }),
-                              ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                        onDel: controller.deleteItem,
+                        onOffsetChanged: (item, offset) {
+                          controller.onItemOffsetChanged(
+                            item,
+                            Offset(
+                              offset.dx / canvasScale.value,
+                              offset.dy / canvasScale.value,
+                            ),
+                          );
+                          debugPrint('Dragging item ${item.id} to $offset');
+                          return true;
+                        },
+                        // onSizeChanged: (item, size) {
+                        //   controller.onItemSizeChanged(
+                        //     item,
+                        //     Size(
+                        //       size.width / canvasScale.value,
+                        //       size.height / canvasScale.value,
+                        //     ),
+                        //   );
+                        //   return true;
+                        // },
+                        onStatusChanged: (item, status) {
+                          controller.onItemStatusChanged(item, status);
+                          return true;
+                        },
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
           SafeArea(
             bottom: true,
             child: Container(
-              padding: EdgeInsets.all(4),
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: Theme.of(
                   context,
@@ -1087,11 +1020,16 @@ class EditorPage extends GetView<EditorController> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          child: TextStylingEditor(
-            textItem: item,
-            onClose: () {
-              Get.find<EditorController>().removeTextEditorOverlay();
-            },
+          child: Column(
+            children: [
+              Text(item.content?.style?.fontSize.toString() ?? ".."),
+              TextStylingEditor(
+                textItem: item,
+                onClose: () {
+                  Get.find<EditorController>().removeTextEditorOverlay();
+                },
+              ),
+            ],
           ),
         ),
       ),

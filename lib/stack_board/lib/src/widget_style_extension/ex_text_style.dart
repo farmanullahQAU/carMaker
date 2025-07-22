@@ -70,6 +70,7 @@ TextStyle? jsonToTextStyle(Map<String, dynamic> data) {
       TextBaseline.values,
       asT<String>(data['textBaseline']),
     ),
+
     height: data['height'] == null ? null : asT<double>(data['height']),
     locale: data['locale'] == null ? null : jsonToLocale(asMap(data['locale'])),
   );

@@ -167,6 +167,7 @@ class StackTextItem extends StackItem<TextItemContent> {
     this.originalRelativeOffset,
   });
 
+  @override
   final bool isCentered;
   final Offset? originalRelativeOffset; // Property to store relative position
 

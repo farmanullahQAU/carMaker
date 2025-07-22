@@ -181,7 +181,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       text: span,
       textDirection: TextDirection.ltr,
       textAlign: updatedContent.textAlign ?? TextAlign.center,
-      maxLines: 2, // allow wrapping
+      maxLines: 10, // allow wrapping
     );
 
     // Provide a max width (you can customize this as needed)

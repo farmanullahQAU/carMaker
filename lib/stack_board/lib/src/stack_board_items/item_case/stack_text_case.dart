@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../stack_board_item.dart';
-
 class StackTextCase extends StatelessWidget {
   const StackTextCase({
     super.key,
@@ -67,9 +65,11 @@ class StackTextCase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return item.status == StackItemStatus.editing
-        ? _buildEditing(context)
-        : _buildNormal(context);
+    // return item.status == StackItemStatus.editing
+    //     ? _buildEditing(context)
+    //     : _buildNormal(context);
+
+    return _buildNormal(context);
   }
 
   /// * 构建文本
@@ -79,7 +79,9 @@ class StackTextCase extends StatelessWidget {
       content?.data ?? '',
       style: content?.style?.copyWith(
         fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
+        height: content?.style?.height,
       ),
+
       strutStyle: content?.strutStyle?.style,
       textAlign: content?.textAlign ?? TextAlign.center,
       textDirection: content?.textDirection,
@@ -89,8 +91,9 @@ class StackTextCase extends StatelessWidget {
       textScaler: content?.textScaleFactor != null
           ? TextScaler.linear(content!.textScaleFactor!)
           : TextScaler.noScaling,
-      maxLines: content?.maxLines, // unlimited
+      maxLines: content?.maxLines ?? 5, // unlimited
       semanticsLabel: content?.semanticsLabel,
+
       textWidthBasis: content?.textWidthBasis,
       textHeightBehavior: content?.textHeightBehavior,
       selectionColor: content?.selectionColor,

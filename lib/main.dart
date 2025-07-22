@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'app/routes/app_pages.dart'; // You need to create this file
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const CardMakerApp());
 }
 

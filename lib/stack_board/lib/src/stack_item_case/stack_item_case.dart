@@ -347,6 +347,7 @@ class _StackItemCaseState extends State<StackItemCase> {
           key: ValueKey<String>(item.id),
           top: item.offset.dy,
           left: item.offset.dx,
+
           child: Transform.translate(
             offset: Offset(
               -item.size.width / 2 -
@@ -358,7 +359,10 @@ class _StackItemCaseState extends State<StackItemCase> {
                       ? _caseStyle(context).buttonSize * 1.5
                       : 0),
             ),
-            child: Transform.rotate(angle: item.angle, child: c),
+            child: Transform.rotate(
+              angle: item.angle,
+              child: item.isCentered ? Center(child: c) : c,
+            ),
           ),
         );
       },

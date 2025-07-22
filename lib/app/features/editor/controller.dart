@@ -1639,8 +1639,6 @@ class EditorController extends GetxController {
       templateOriginalHeight.value = initialTemplate!.height.toDouble();
       canvasWidth.value = initialTemplate!.width.toDouble();
       canvasHeight.value = initialTemplate!.height.toDouble();
-
-      loadTemplate(initialTemplate!);
     }
   }
 
@@ -1747,104 +1745,115 @@ class EditorController extends GetxController {
     }
   }
 
-  void loadTemplate(CardTemplate template) async {
-    selectedBackground.value = template.backgroundImage;
-    templateName.value = template.name;
-    category.value = template.category;
-    categoryId.value = template.categoryId;
-    tags.value = template.tags;
-    isPremium.value = template.isPremium;
-    backgroundHue.value = 0.0;
-    templateOriginalWidth.value = template.width.toDouble();
-    templateOriginalHeight.value = template.height.toDouble();
-    canvasWidth.value = template.width.toDouble();
-    canvasHeight.value = template.height.toDouble();
-    boardController.clear();
+  void loadTemplate(
+    CardTemplate template,
+    double canvasScale,
+    double scaledCanvasWidth,
+    double scaledCanvasHeight,
+    BuildContext context,
+  ) async {
+    final controller = Get.find<EditorController>();
+    controller.selectedBackground.value = template.backgroundImage;
+    controller.templateName.value = template.name;
+    controller.category.value = template.category;
+    controller.categoryId.value = template.categoryId;
+    controller.tags.value = template.tags;
+    controller.isPremium.value = template.isPremium;
+    controller.backgroundHue.value = 0.0;
+    controller.templateOriginalWidth.value = template.width.toDouble();
+    controller.templateOriginalHeight.value = template.height.toDouble();
+    controller.canvasWidth.value = scaledCanvasWidth;
+    controller.canvasHeight.value = scaledCanvasHeight;
+    controller.boardController.clear();
     const double previewFactor = 0.1; // Adjust for home screen preview
-
-    debugPrint(
-      'Loading template: ${template.name}, size: ${template.width}x${template.height}',
-    );
-
-    final double aspectRatio = template.width / template.height;
-    final double targetWidth = (Get.width - 32);
-    final double targetHeight = targetWidth / aspectRatio;
-    final double scaleFactor = (targetHeight / template.height).clamp(0.1, 1.0);
+    double cumulativeYOffset = 0.0;
 
     for (final itemJson in template.items) {
       try {
         final item = _deserializeItem(itemJson);
 
-        final double originalX = (itemJson['originalRelativeOffset']['dx']);
-        final double originalY = (itemJson['originalRelativeOffset']['dy']);
+        final double originalX = (itemJson['originalX'] ?? 0.0) as double;
+        final double originalY = (itemJson['originalY'] ?? 0.0) as double;
+        final bool isCentered = itemJson['isCentered'] ?? false;
 
-        // final double originalWidth = (itemJson['originalWidth'] as num? ?? 0)
-        //     .toDouble();
-        // final double originalHeight = (itemJson['originalHeight'] as num? ?? 0)
-        //     .toDouble();
+        // Scale the item's position based on the provided canvas scale
+        double scaledX = originalX * canvasScale;
+        double scaledY = originalY * canvasScale;
+        Size itemSize;
+        StackItem updatedItem;
+        scaledY += cumulativeYOffset;
 
-        // Normalize and scale positions and sizes
-        final double normalizedX = (originalX) * targetWidth;
-        final double normalizedY = (originalY) * targetHeight;
-
-        print(
-          "targetted bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbttt   $originalX ",
-        );
-        print(
-          "cccccccccccccccccccccccccccccccccccccccccccccccccccc x $normalizedX ",
-        );
-        // final double scaledWidth =
-        //     (originalWidth / template.width) * targetWidth;
-        // final double scaledHeight =
-        //     (originalHeight / template.height) * targetHeight;
-
-        // Clamp to prevent overflow
-        // final double clampedX = normalizedX.clamp(
-        //   0.0,
-        //   targetWidth - scaledWidth,
-        // );
-        // final double clampedY = normalizedY.clamp(
-        //   0.0,
-        //   targetHeight - scaledHeight,
-        // );
-        // final double clampedWidth = scaledWidth.clamp(10.0, targetWidth);
-        // final double clampedHeight = scaledHeight.clamp(10.0, targetHeight);
         if (item is StackTextItem) {
-          final double scaledFontSize = MediaQuery.textScalerOf(
-            Get.context!,
-          ).scale(item.content!.style!.fontSize!).clamp(12, 40);
-          item.content?.style?.copyWith(fontSize: scaledFontSize);
+          // Scale the font size, clamping it to ensure readability
+          // final double scaledFontSize = MediaQuery.textScalerOf(context)
+          //     .scale(item.content!.style!.fontSize! * canvasScale)
+          //     .clamp(8.0, 200.0);
 
-          // itemsToLoad.add(
-          //   item.copyWith(offset: Offset(normalizedX, normalizedY)),
-          // );
-          final itemSize = Size(
-            getTextWidth(
-                  text: item.content!.data!,
-                  style: item.content!.style!,
-                ).width +
-                20,
-            getTextWidth(
-                  text: item.content!.data!,
-                  style: item.content!.style!,
-                ).height +
-                20,
+          // Update the item's style with the scaled font size
+          final updatedStyle = item.content!.style!.copyWith(
+            fontSize: item.content!.style!.fontSize,
           );
 
-          final it = item.copyWith(
-            offset: item.isCentered
-                ? Offset((targetWidth / 2), normalizedY)
-                : Offset(
-                    normalizedX + (itemSize.width / 2),
-                    normalizedY + (itemSize.height / 2),
-                  ),
+          // Calculate the item's size based on the scaled text
+          itemSize = Size(
+            getTextWidth(text: item.content!.data!, style: updatedStyle).width +
+                20,
+            getTextWidth(text: item.content!.data!, style: updatedStyle).height,
+          );
+
+          // Adjust y-position for button size if centered
+          final double buttonSize = 18 * canvasScale;
+          if (isCentered) {
+            scaledY += (itemSize.height / 2) + buttonSize;
+          }
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
             size: itemSize,
+            status: StackItemStatus.idle, // Ensure item is movable
+            content: item.content!.copyWith(style: updatedStyle),
+            isCentered: isCentered,
+          );
+          // Add spacing after text
+          cumulativeYOffset += itemSize.height;
+        } else if (item is StackImageItem) {
+          // Assume itemJson contains width and height for the image
+          final double originalWidth =
+              (itemJson['size']?['width'] ?? 100.0) as double;
+          final double originalHeight =
+              (itemJson['size']?['height'] ?? 100.0) as double;
+
+          // Scale the image size
+          itemSize = Size(
+            originalWidth * canvasScale,
+            originalHeight * canvasScale,
           );
 
-          print("PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP $normalizedX");
-          boardController.addItem(it);
-          _undoStack.add(_ItemState(item: item, action: _ItemAction.add));
+          // Adjust y-position for button size if centered
+          final double buttonSize = 36 * canvasScale;
+          if (isCentered) {
+            scaledY += (itemSize.height / 2);
+          }
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle, // Ensure item is movable
+            // isCentered: isCentered,
+          );
+          cumulativeYOffset += 5;
+        } else {
+          throw Exception('Unsupported item type: ${item.runtimeType}');
         }
+
+        debugPrint(
+          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
+        );
+
+        controller.boardController.addItem(updatedItem);
+        controller._undoStack.add(
+          _ItemState(item: updatedItem, action: _ItemAction.add),
+        );
       } catch (e) {
         debugPrint("Error loading item: $e");
         Get.snackbar(
@@ -1854,25 +1863,6 @@ class EditorController extends GetxController {
         );
       }
     }
-
-    // draggedItem.value = null;
-    // boardController.setAllItemStatuses(StackItemStatus.idle);
-
-    // SchedulerBinding.instance.addPostFrameCallback((_) async {
-    //   debugPrint('Adding ${itemsToLoad.length} items to StackBoard');
-    //   for (final item in itemsToLoad) {
-    //     boardController.addItem(item);
-    //     _undoStack.add(_ItemState(item: item, action: _ItemAction.add));
-    //     debugPrint(
-    //       'Added item to board: ${item.id}, type: ${item.runtimeType}',
-    //     );
-    //   }
-    //   // _updateSpatialIndex();
-    //   draggedItem.value = itemsToLoad.isNotEmpty ? itemsToLoad.last : null;
-    //   await Future.delayed(const Duration(milliseconds: 1000));
-    //   draggedItem.value = null;
-    //   boardController.setAllItemStatuses(StackItemStatus.idle);
-    // });
   }
 
   Future<void> deleteItem(StackItem<StackItemContent> item) async {
