@@ -1841,7 +1841,7 @@ class EditorController extends GetxController {
             status: StackItemStatus.idle, // Ensure item is movable
             // isCentered: isCentered,
           );
-          cumulativeYOffset += 5;
+          // cumulativeYOffset += itemSize.height / 2;
         } else {
           throw Exception('Unsupported item type: ${item.runtimeType}');
         }

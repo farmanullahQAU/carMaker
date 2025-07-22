@@ -359,13 +359,13 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'originalX': 620.0,
-          'originalY': 590.0,
+          'originalY': 620.0,
           'size': {'width': 1000.0, 'height': 30.0},
           'originalRelativeOffset': {'dx': 0.5, 'dy': 0.4},
           'isCentered': true,
           'content': {
-            'data': 'Join us for cake, games, and fun!',
-            'googleFont': 'Poppins',
+            'data': 'Join us for cake, games, \n and fun!',
+            'googleFont': stylishGoogleFonts[7],
             'style': {'fontSize': 20.0, 'color': '#F57C00'},
           },
           'textAlign': 'center',
@@ -373,8 +373,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 120.0,
-          'originalY': 595.0,
+          'originalX': 620.0,
+          'originalY': 640.0,
           'size': {'width': 1000.0, 'height': 60.0},
           'originalRelativeOffset': {'dx': 0.5, 'dy': 0.45},
           'isCentered': true,
@@ -427,7 +427,6 @@ class HomeController extends GetxController {
       tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
       imagePath: 'assets/birthday_1.png',
     ),
-    stunningBirthdayTemplate,
 
     CardTemplate(
       id: 'wedding_invite_20250718',

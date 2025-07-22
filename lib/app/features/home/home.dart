@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
+import 'package:cardmaker/stack_board/lib/src/stack_board_items/item_case/stack_text_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -715,6 +716,8 @@ class HorizontalCardList extends GetView<HomeController> {
             itemCount: controller.featuredTemplates.length,
             itemBuilder: (context, index) {
               final template = controller.featuredTemplates[index];
+              double cumulativeYOffset = 0.0; // Reset for each card
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: GestureDetector(
@@ -756,79 +759,72 @@ class HorizontalCardList extends GetView<HomeController> {
                                 // Template items
                                 ...template.items.map((item) {
                                   final type = item['type'];
-                                  final originalX = (item['originalX'] as num)
+                                  final originalX = (item['originalX'])
                                       .toDouble();
                                   final originalY = (item['originalY'] as num)
                                       .toDouble();
-                                  final left = originalX * scale;
-                                  final top = originalY * scale;
+                                  double scaledX = originalX * scale;
+                                  double scaledY = originalY * scale;
 
-                                  // Skip items outside canvas
-                                  if (left >= canvasWidth ||
-                                      top >= canvasHeight) {
-                                    return const SizedBox.shrink();
-                                  }
+                                  scaledY += cumulativeYOffset;
+
+                                  // // Skip items outside canvas
+                                  // if (left >= canvasWidth ||
+                                  //     top >= canvasHeight) {
+                                  //   return const SizedBox.shrink();
+                                  // }
 
                                   if (type == 'StackTextItem') {
                                     final textItem = StackTextItem.fromJson(
                                       item,
                                     );
-                                    final content = item['content'] ?? {};
-                                    final style = content['style'] ?? {};
-                                    final colorHex =
-                                        style['color'] ?? '#FFFFFFFF';
-                                    final textAlign =
-                                        item['textAlign'] ?? 'left';
-                                    final color = Color(
-                                      int.parse(
-                                        colorHex.replaceFirst('#', '0xFF'),
-                                      ),
-                                    );
-                                    final originalFontSize =
-                                        (style['fontSize'] ?? 16.0).toDouble();
+
+                                    // final originalFontSize =
+                                    //     (style['fontSize'] ?? 16.0).toDouble();
                                     double scaledFontSize =
-                                        (originalFontSize * scale);
-                                    final fontFamily =
-                                        content['googleFont'] ?? 'Roboto';
-                                    String text = content['data'] ?? '';
+                                        (textItem.content!.style!.fontSize! *
+                                                scale)
+                                            .clamp(8.0, 15.0);
+
+                                    double scaledLetterSpacing =
+                                        ((textItem
+                                                .content!
+                                                .style
+                                                ?.letterSpacing ??
+                                            1) *
+                                        scale);
+
+                                    TextStyle? scaledTextStyle = textItem
+                                        .content
+                                        ?.style
+                                        ?.copyWith(
+                                          fontSize: scaledFontSize,
+                                          letterSpacing: scaledLetterSpacing,
+                                        );
 
                                     // Constrain text to canvas bounds
-                                    // final maxTextWidth = min(
-                                    //   scaledTextWidth,
-                                    //   canvasWidth,
-                                    // );
-                                    final maxTextHeight = canvasHeight - top;
+                                    final maxTextHeight = (getTextWidth(
+                                      text: textItem.content?.data ?? "",
+                                      style: scaledTextStyle!,
+                                    ).height);
+
+                                    // final maxTextWidth = (getTextWidth(
+                                    //   text: text,
+                                    //   style: textItem.content!.style!.copyWith(
+                                    //     fontSize: scaledFontSize.clamp(8, 15),
+                                    //   ),
+                                    // ).width);
+                                    cumulativeYOffset += maxTextHeight;
 
                                     return Positioned(
-                                      // left: left - maxTextWidth / 2,
-                                      left: textItem.isCentered ? 0 : left,
+                                      left: textItem.isCentered ? 0 : scaledX,
                                       right: textItem.isCentered ? 0 : null,
-                                      top: top,
-
-                                      child: SizedBox(
-                                        width:
-                                            getTextWidth(
-                                              text: text,
-                                              style: textItem.content!.style!,
-                                            ).width +
-                                            10,
-                                        height: maxTextHeight,
-                                        child: Text(
-                                          text,
-                                          textAlign: _getTextAlign(textAlign),
-                                          style: textItem.content!.style
-                                              ?.copyWith(
-                                                fontSize: scaledFontSize.clamp(
-                                                  8,
-                                                  15,
-                                                ),
-                                              ),
-                                          softWrap: true,
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines:
-                                              (maxTextHeight / scaledFontSize)
-                                                  .floor()
-                                                  .clamp(1, 3),
+                                      top: scaledY,
+                                      child: StackTextCase(
+                                        item: textItem.copyWith(
+                                          content: textItem.content?.copyWith(
+                                            style: scaledTextStyle,
+                                          ),
                                         ),
                                       ),
                                     );
@@ -838,32 +834,19 @@ class HorizontalCardList extends GetView<HomeController> {
                                     final originalWidth =
                                         (item['size']['width'] ?? 100)
                                             .toDouble();
-
                                     final originalHeight =
                                         (item['size']['height'] ?? 100)
                                             .toDouble();
                                     final scaledWidth = originalWidth * scale;
                                     final scaledHeight = originalHeight * scale;
 
-                                    // Constrain image to canvas bounds
-                                    // final maxImageWidth = min(
-                                    //   scaledWidth,
-                                    //   canvasWidth,
-                                    // );
-                                    // final maxImageHeight = min(
-                                    //   scaledHeight,
-                                    //   canvasHeight - top,
-                                    // );
-
                                     return Positioned(
                                       left: item['isCentered']
                                           ? (canvasWidth / 2) -
                                                 (scaledWidth / 2)
-                                          : left,
-                                      top: top,
-
-                                      child: Container(
-                                        color: Colors.blueAccent,
+                                          : scaledX,
+                                      top: scaledY,
+                                      child: SizedBox(
                                         width: scaledWidth,
                                         height: scaledHeight,
                                         child: Image.asset(
@@ -894,16 +877,18 @@ class HorizontalCardList extends GetView<HomeController> {
                                     // Constrain shape to canvas bounds
                                     final maxShapeWidth = min(
                                       scaledWidth,
-                                      canvasWidth - left,
+                                      canvasWidth - scaledX,
                                     );
                                     final maxShapeHeight = min(
                                       scaledHeight,
-                                      canvasHeight - top,
+                                      canvasHeight - scaledY,
                                     );
-
+                                    final itemHeight =
+                                        maxShapeHeight; // Item height for shape
+                                    cumulativeYOffset += itemHeight;
                                     return Positioned(
-                                      left: left,
-                                      top: top,
+                                      left: scaledX,
+                                      top: scaledY,
                                       child: SizedBox(
                                         width: maxShapeWidth,
                                         height: maxShapeHeight,
