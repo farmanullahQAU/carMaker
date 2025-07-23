@@ -9,173 +9,6 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeController extends GetxController {
-  static CardTemplate get stunningBirthdayTemplate => CardTemplate(
-    id: 'birthday_card_20250721',
-    name: 'Liam\'s Birthday Bash',
-    thumbnailPath: null,
-    backgroundImage: 'assets/card1.png', // Updated to a gradient background
-    items: [
-      // Main Image (Centered with slight offset)
-      {
-        'type': 'StackImageItem',
-        'originalX': 620.0,
-        'originalY': 524.0,
-        'id': 'balloons_left',
-        'status': 0,
-        'size': {'width': 620.0, 'height': 620.0},
-        'content': {'assetName': 'assets/Farman.png'},
-        'isCentered': true,
-        'originalRelativeOffset': {'dx': 0.08, 'dy': 0.11},
-      },
-
-      // Decorative Confetti (Right)
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 400.0,
-        'size': {'width': 500.0, 'height': 100.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.03},
-        'isCentered': true,
-        'content': {
-          'data': 'YOU\'RE INVITED TO',
-          'googleFont': 'Poppins', // Playful, handwritten font
-          'style': {
-            'fontSize': 18.0,
-            'color': '#FF6F00', // Vibrant orange
-            'fontWeight': FontWeight.bold,
-            'shadows': [
-              {
-                'blurRadius': 4.0,
-                'color': '#00000033', // Subtle shadow
-                'offset': {'dx': 2.0, 'dy': 2.0},
-              },
-            ],
-          },
-        },
-        'textAlign': 'center',
-      },
-      // Main Heading: "LIAM'S 8TH BIRTHDAY!"
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 600.0,
-        'size': {'width': 1000.0, 'height': 120.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.09},
-        'isCentered': true,
-        'content': {
-          'data': 'Liam\'s 8th \n Birthday!',
-          'googleFont':
-              'Dancing Script', // Bold, modern sans-serif 'Dancing Script'
-          'style': {
-            'fontSize': 32.0,
-            'color': '#D81B60', // Vibrant magenta
-            'fontWeight': FontWeight.w800,
-
-            'shadows': [
-              {
-                'blurRadius': 6.0,
-                'color': '#0000004D', // Stronger shadow
-                'offset': {'dx': 3.0, 'dy': 3.0},
-              },
-            ],
-          },
-        },
-        'textAlign': 'center',
-      },
-      // Description: "Join us for cake, games, and fun!"
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 600.0,
-        'size': {'width': 1000.0, 'height': 80.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.34},
-        'isCentered': true,
-        'content': {
-          'data': 'Join us for cake, games, and fun!',
-          'googleFont': 'Montserrat', // Elegant sans-serif
-          'style': {
-            'fontSize': 22.0,
-            'color': '#00897B', // Teal for contrast
-            'fontWeight': FontWeight.w400,
-          },
-        },
-        'textAlign': 'center',
-      },
-      // Date and Time
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 700.0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.40},
-        'isCentered': true,
-        'content': {
-          'data': 'Saturday • August 31 • 2:00 PM',
-          'googleFont': 'Poppins', // Clean and modern
-          'style': {
-            'fontSize': 20.0,
-            'color': '#FBC02D', // Bright yellow
-          },
-        },
-        'textAlign': 'center',
-      },
-      // Location
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 780.0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.45},
-        'isCentered': true,
-        'content': {
-          'data': '123 Party Lane, Funville',
-          'googleFont': 'Poppins',
-          'style': {
-            'fontSize': 18.0,
-            'color': '#37474F', // Neutral dark gray
-            'fontWeight': FontWeight.bold,
-          },
-        },
-        'textAlign': 'center',
-      },
-      // RSVP
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'originalX': 620.0,
-        'originalY': 860.0,
-        'size': {'width': 1000.0, 'height': 50.0},
-        'originalRelativeOffset': {'dx': 0.5, 'dy': 0.49},
-        'isCentered': true,
-        'content': {
-          'data': 'RSVP to Sarah by Aug 25',
-          'googleFont': 'Raleway',
-          'style': {
-            'fontSize': 16.0,
-            'color': '#455A64', // Soft slate
-            'fontStyle': FontStyle.italic,
-          },
-        },
-        'textAlign': 'center',
-      },
-    ],
-    createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
-    updatedAt: null,
-    category: 'birthday',
-    categoryId: 'birthday',
-    compatibleDesigns: [],
-    width: 1240,
-    height: 1748,
-    isPremium: false,
-    tags: ['birthday', 'kids', 'party', 'celebration', 'invite', 'festive'],
-    imagePath: 'assets/card1.png',
-  );
-
   // --- STATE ---
   final selectedIndex = 0.obs;
   final pageController = PageController();
@@ -308,50 +141,56 @@ class HomeController extends GetxController {
       items: [
         {
           'type': 'StackImageItem',
-          'originalX': 620.0,
-          'originalY': 180.0,
           'id': 'birthday_image',
           'status': 0,
           'size': {'width': 400.0, 'height': 400.0},
           'content': {'assetName': 'assets/Farman.png'},
           'isCentered': true,
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.25},
+          'offset': {'dx': 620.0, 'dy': 180.0},
         },
         {
-          "type": "RowStackItem",
-          "id": "row_item_1",
-          "originalX": 329.0,
-          "originalY": 660.0,
-          "size": {"width": 1000.0, "height": 30.0},
-          "isCentered": true,
-          "content": {
-            "items": [
+          'type': 'RowStackItem',
+          'id': 'row_item_1',
+          'size': {'width': 1000.0, 'height': 30.0},
+          'isCentered': true,
+          'offset': {'dx': 100.0, 'dy': 660.0},
+          'content': {
+            'items': [
               {
-                "type": "StackTextItem",
-                "originalX": 620.0,
-                "originalY": 660.0,
-                "id": "text_1",
-                "size": {"width": 500.0, "height": 30.0},
-                "content": {
-                  "data": "Party Time",
-                  "googleFont": "Dancing Script",
-                  "style": {"fontSize": 20.0, "color": "#F57C00"},
+                'type': 'StackTextItem',
+                'id': 'text_1',
+                'size': {'width': 500.0, 'height': 30.0},
+                'offset': {'dx': 0.0, 'dy': 660.0},
+                'content': {
+                  'data': 'Party Time',
+                  'googleFont': 'Dancing Script',
+                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
                 },
-                "textAlign": "center",
+                'textAlign': 'center',
               },
-
               {
-                "type": "StackTextItem",
-                "originalX": 620.0,
-                "originalY": 660.0,
-                "id": "text_2",
-                "size": {"width": 500.0, "height": 30.0},
-                "content": {
-                  "data": "5:30 PM",
-                  "googleFont": "Dancing Script",
-                  "style": {"fontSize": 20.0, "color": "#F57C00"},
+                'type': 'StackTextItem',
+                'id': 'text_2',
+                'size': {'width': 500.0, 'height': 30.0},
+                'offset': {'dx': 0.0, 'dy': 660.0},
+                'content': {
+                  'data': '5:30 PM',
+                  'googleFont': 'Dancing Script',
+                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
                 },
-                "textAlign": "center",
+                'textAlign': 'center',
+              },
+              {
+                'type': 'StackTextItem',
+                'id': 'text_3',
+                'size': {'width': 500.0, 'height': 30.0},
+                'offset': {'dx': 0.0, 'dy': 660.0},
+                'content': {
+                  'data': '5:30 PM',
+                  'googleFont': 'Dancing Script',
+                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
+                },
+                'textAlign': 'center',
               },
             ],
           },
@@ -359,10 +198,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 580.0,
           'size': {'width': 1040.0, 'height': 300.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.05},
+          'offset': {'dx': 620.0, 'dy': 580.0},
           'isCentered': true,
           'content': {
             'data': 'You\'re Invited to',
@@ -374,10 +211,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 585.0,
           'size': {'width': 1040.0, 'height': 100.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.12},
+          'offset': {'dx': 620.0, 'dy': 585.0},
           'isCentered': true,
           'content': {
             'data': 'Liam\'s 8th \n Birthday!',
@@ -394,10 +229,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 620.0,
           'size': {'width': 1000.0, 'height': 30.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.4},
+          'offset': {'dx': 620.0, 'dy': 620.0},
           'isCentered': true,
           'content': {
             'data': 'Join us for cake, games, \n and fun!',
@@ -406,28 +239,24 @@ class HomeController extends GetxController {
           },
           'textAlign': 'center',
         },
-        {
-          'type': 'ShapeStackItem',
-          'status': 0,
-          'originalX': 620.0,
-          'originalY': 660.0,
-          'id': 'divider_line_1',
-          'size': {'width': 800.0, 'height': 10.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.42},
-          'isCentered': true,
-          'content': {
-            'shapeType': 0, // ShapeType.horizontalLine
-            'color': '#D32F2F', // Black
-            'strokeWidth': 2.0,
-          },
-        },
+        // {
+        //   'type': 'ShapeStackItem',
+        //   'status': 0,
+        //   'id': 'divider_line_1',
+        //   'size': {'width': 800.0, 'height': 10.0},
+        //   'offset': {'dx': 620.0, 'dy': 660.0},
+        //   'isCentered': true,
+        //   'content': {
+        //     'shapeType': 0, // ShapeType.horizontalLine
+        //     'color': '#D32F2F', // Black
+        //     'strokeWidth': 2.0,
+        //   },
+        // },
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 680.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.45},
+          'offset': {'dx': 620.0, 'dy': 680.0},
           'isCentered': true,
           'content': {
             'data': 'Saturday • August 31 • 2:00 PM',
@@ -456,27 +285,22 @@ class HomeController extends GetxController {
       items: [
         {
           'type': 'StackImageItem',
-          'originalX': 620.0,
-          'originalY': 180.0,
           'id': 'birthday_image',
           'status': 0,
           'size': {'width': 400.0, 'height': 400.0},
           'content': {'assetName': 'assets/Farman.png'},
           'isCentered': true,
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.25},
+          'offset': {'dx': 620.0, 'dy': 180.0},
         },
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 580.0,
           'size': {'width': 1040.0, 'height': 300.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.05},
+          'offset': {'dx': 620.0, 'dy': 580.0},
           'isCentered': true,
           'content': {
             'data': 'You\'re Invited to',
             'googleFont': 'Dancing Script',
-
             'style': {'fontSize': 18.0, 'color': '#F57C00'},
           },
           'textAlign': 'center',
@@ -484,32 +308,26 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 585.0,
           'size': {'width': 1040.0, 'height': 100.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.12},
+          'offset': {'dx': 620.0, 'dy': 585.0},
           'isCentered': true,
           'content': {
             'data': 'Liam\'s 8th \n Birthday!',
-            'googleFont':
-                'Dancing Script', // Bold, modern sans-serif 'Dancing Script'
+            'googleFont': 'Dancing Script',
             'style': {
               'fontSize': 30.0,
               'color': '#D32F2F',
-
               'letterSpacing': 7.8,
               'height': 1.0,
             },
           },
-          'textAlign': TextAlign.center.name,
+          'textAlign': 'center',
         },
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 620.0,
           'size': {'width': 1000.0, 'height': 30.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.4},
+          'offset': {'dx': 620.0, 'dy': 620.0},
           'isCentered': true,
           'content': {
             'data': 'Join us for cake, games, \n and fun!',
@@ -521,10 +339,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 640.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.45},
+          'offset': {'dx': 620.0, 'dy': 640.0},
           'isCentered': true,
           'content': {
             'data': 'Saturday August 31',
@@ -536,10 +352,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 640.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.45},
+          'offset': {'dx': 620.0, 'dy': 640.0},
           'isCentered': true,
           'content': {
             'data': '┃',
@@ -560,7 +374,6 @@ class HomeController extends GetxController {
       tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
       imagePath: 'assets/birthday_1.png',
     ),
-
     CardTemplate(
       id: 'wedding_invite_20250718',
       name: 'Elegant Wedding Invite',
@@ -570,10 +383,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 150.0,
           'size': {'width': 1000.0, 'height': 120.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.1},
+          'offset': {'dx': 620.0, 'dy': 150.0},
           'isCentered': true,
           'content': {
             'data': 'Wedding Invitation',
@@ -585,10 +396,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 300.0,
           'size': {'width': 1000.0, 'height': 100.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.2},
+          'offset': {'dx': 620.0, 'dy': 300.0},
           'isCentered': true,
           'content': {
             'data': 'Ali & Zara',
@@ -600,10 +409,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 430.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.3},
+          'offset': {'dx': 620.0, 'dy': 430.0},
           'isCentered': true,
           'content': {
             'data': 'are getting married',
@@ -615,10 +422,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 550.0,
           'size': {'width': 1000.0, 'height': 80.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.4},
+          'offset': {'dx': 620.0, 'dy': 550.0},
           'isCentered': true,
           'content': {
             'data': 'Saturday, August 24, 2025',
@@ -630,10 +435,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 650.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.5},
+          'offset': {'dx': 620.0, 'dy': 650.0},
           'isCentered': true,
           'content': {
             'data': 'Lahore Royal Gardens, Phase 5',
@@ -645,10 +448,8 @@ class HomeController extends GetxController {
         {
           'type': 'StackTextItem',
           'status': 0,
-          'originalX': 620.0,
-          'originalY': 850.0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'originalRelativeOffset': {'dx': 0.5, 'dy': 0.65},
+          'offset': {'dx': 620.0, 'dy': 850.0},
           'isCentered': true,
           'content': {
             'data': 'RSVP by August 10',
@@ -670,7 +471,6 @@ class HomeController extends GetxController {
       imagePath: 'assets/card1.png',
     ),
   ]);
-
   // --- LIFECYCLE ---
   @override
   void onInit() {

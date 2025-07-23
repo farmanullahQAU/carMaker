@@ -7,6 +7,7 @@ import 'package:cardmaker/stack_board/lib/helpers.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/stack_board/lib/widget_style_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -1225,7 +1226,7 @@ class ShapeStackItem extends StackItem<ShapeContent> {
     return ShapeStackItem(
       id: json['id'],
       size: Size(json['size']['width'], json['size']['height']),
-      offset: Offset(json['originalX'], json['originalY']),
+      offset: jsonToOffset(asMap(json['offset'])),
       angle: json['angle'],
       status: json['status'] != null
           ? StackItemStatus.values[json['status']]
@@ -1308,7 +1309,7 @@ class RowStackItem extends StackItem<RowStackContent> {
     return RowStackItem(
       id: json['id'],
       size: Size(json['size']['width'], json['size']['height']),
-      offset: Offset(json['originalX'], json['originalY']),
+      offset: jsonToOffset(json['offset']),
       angle: json['angle'],
       status: json['status'] != null
           ? StackItemStatus.values[json['status']]

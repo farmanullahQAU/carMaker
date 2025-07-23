@@ -461,10 +461,10 @@ class HorizontalCardList extends GetView<HomeController> {
                                 // Template items
                                 ...template.items.map((item) {
                                   final type = item['type'];
-                                  final originalX = (item['originalX'] as num)
-                                      .toDouble();
-                                  final originalY = (item['originalY'] as num)
-                                      .toDouble();
+                                  final originalX =
+                                      (item['offset']['dx'] as num).toDouble();
+                                  final originalY =
+                                      (item['offset']['dy'] as num).toDouble();
                                   double scaledX = originalX * scale;
                                   double scaledY = originalY * scale;
 
