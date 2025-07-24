@@ -149,18 +149,21 @@ class HomeController extends GetxController {
           'offset': {'dx': 620.0, 'dy': 180.0},
         },
         {
-          'type': 'RowStackItem',
+          'type':
+              'RowStackItem', //if we need the RowStackItem any item aligned horizentally we keep dy for that zero so that the RowStackItem dy will be used .
+          'status': 0,
           'id': 'row_item_1',
-          'size': {'width': 1000.0, 'height': 30.0},
+          'size': {'width': 0.0, 'height': 30.0},
           'isCentered': true,
-          'offset': {'dx': 100.0, 'dy': 660.0},
+          'offset': {'dx': 413.0, 'dy': 660.0},
           'content': {
             'items': [
               {
                 'type': 'StackTextItem',
+
                 'id': 'text_1',
-                'size': {'width': 500.0, 'height': 30.0},
-                'offset': {'dx': 0.0, 'dy': 660.0},
+                'size': {'width': 0.0, 'height': 30.0},
+                'offset': {'dx': 0.0, 'dy': 0.0},
                 'content': {
                   'data': 'Party Time',
                   'googleFont': 'Dancing Script',
@@ -171,8 +174,8 @@ class HomeController extends GetxController {
               {
                 'type': 'StackTextItem',
                 'id': 'text_2',
-                'size': {'width': 500.0, 'height': 30.0},
-                'offset': {'dx': 0.0, 'dy': 660.0},
+                'size': {'width': 0.0, 'height': 30.0},
+                'offset': {'dx': 0.0, 'dy': 0.0},
                 'content': {
                   'data': '5:30 PM',
                   'googleFont': 'Dancing Script',
@@ -183,10 +186,10 @@ class HomeController extends GetxController {
               {
                 'type': 'StackTextItem',
                 'id': 'text_3',
-                'size': {'width': 500.0, 'height': 30.0},
+                'size': {'width': 0.0, 'height': 30.0},
                 'offset': {'dx': 0.0, 'dy': 660.0},
                 'content': {
-                  'data': '5:30 PM',
+                  'data': 'Islamabad',
                   'googleFont': 'Dancing Script',
                   'style': {'fontSize': 20.0, 'color': '#F57C00'},
                 },
@@ -199,7 +202,7 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1040.0, 'height': 300.0},
-          'offset': {'dx': 620.0, 'dy': 580.0},
+          'offset': {'dx': 620.0, 'dy': 675.0},
           'isCentered': true,
           'content': {
             'data': 'You\'re Invited to',
@@ -212,7 +215,7 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1040.0, 'height': 100.0},
-          'offset': {'dx': 620.0, 'dy': 585.0},
+          'offset': {'dx': 620.0, 'dy': 675.0},
           'isCentered': true,
           'content': {
             'data': 'Liam\'s 8th \n Birthday!',
@@ -230,7 +233,10 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 30.0},
-          'offset': {'dx': 620.0, 'dy': 620.0},
+          'offset': {
+            'dx': 620.0,
+            'dy': 690.0,
+          }, //dy is sam becase we calculate we add as this dy pluse the previous item height
           'isCentered': true,
           'content': {
             'data': 'Join us for cake, games, \n and fun!',
@@ -256,7 +262,7 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 680.0},
+          'offset': {'dx': 620.0, 'dy': 690.0},
           'isCentered': true,
           'content': {
             'data': 'Saturday • August 31 • 2:00 PM',
@@ -327,7 +333,7 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 30.0},
-          'offset': {'dx': 620.0, 'dy': 620.0},
+          'offset': {'dx': 620.0, 'dy': 585.0},
           'isCentered': true,
           'content': {
             'data': 'Join us for cake, games, \n and fun!',
@@ -471,6 +477,7 @@ class HomeController extends GetxController {
       imagePath: 'assets/card1.png',
     ),
   ]);
+
   // --- LIFECYCLE ---
   @override
   void onInit() {
