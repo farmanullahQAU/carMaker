@@ -708,41 +708,6 @@ class HorizontalCardList extends GetView<HomeController> {
                                         ),
                                       ),
                                     ];
-                                  } else if (type == 'ShapeStackItem') {
-                                    final shapeItem = ShapeStackItem.fromJson(
-                                      item,
-                                    );
-                                    final originalWidth =
-                                        (item['size']['width'] ?? 100)
-                                            .toDouble();
-                                    final originalHeight =
-                                        (item['size']['height'] ?? 100)
-                                            .toDouble();
-                                    final scaledWidth = originalWidth * scale;
-                                    final scaledHeight = originalHeight * scale;
-
-                                    cumulativeYOffset += scaledHeight;
-
-                                    return [
-                                      Positioned(
-                                        left: item['isCentered']
-                                            ? (canvasWidth / 2) -
-                                                  (scaledWidth / 2)
-                                            : scaledX,
-                                        top: scaledY,
-                                        child: SizedBox(
-                                          width: scaledWidth,
-                                          height: scaledHeight,
-                                          child: Center(
-                                            child: _buildShapeWidget(
-                                              shapeItem,
-                                              scaledWidth,
-                                              scaledHeight,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ];
                                   }
                                   return [const SizedBox.shrink()];
                                 }),
@@ -760,49 +725,6 @@ class HorizontalCardList extends GetView<HomeController> {
         ),
       ],
     );
-  }
-
-  // Widget-based shape rendering
-  Widget _buildShapeWidget(ShapeStackItem item, double width, double height) {
-    final content = item.content!;
-    switch (content.shapeType) {
-      case ShapeType.horizontalLine:
-        return Container(
-          width: width,
-          height: content.strokeWidth, // Use strokeWidth for line thickness
-          color: content.color,
-        );
-      case ShapeType.verticalLine:
-        return Container(
-          width: content.strokeWidth, // Use strokeWidth for line thickness
-          height: height,
-          color: content.color,
-        );
-      case ShapeType.rectangle:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: content.color,
-              width: content.strokeWidth,
-            ),
-          ),
-        );
-      case ShapeType.circle:
-        return ClipOval(
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: content.color,
-                width: content.strokeWidth,
-              ),
-            ),
-          ),
-        );
-    }
   }
 
   // Utility method to calculate text dimensions

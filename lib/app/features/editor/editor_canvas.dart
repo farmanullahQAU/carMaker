@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
-import 'package:cardmaker/stack_board/lib/helpers.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
@@ -172,13 +171,6 @@ class EditorPage extends GetView<EditorController> {
                                     height: item.size.height,
                                     color: item.content!.color,
                                   )
-                                : (item is ShapeStackItem &&
-                                      item.content != null)
-                                ? _buildShapeWidget(
-                                    item,
-                                    item.size.width,
-                                    item.size.height,
-                                  )
                                 : (item is RowStackItem && item.content != null)
                                 ? Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -188,13 +180,6 @@ class EditorPage extends GetView<EditorController> {
                                       if (subItem is StackTextItem &&
                                           subItem.content != null) {
                                         return StackTextCase(item: subItem);
-                                      } else if (subItem is ShapeStackItem &&
-                                          subItem.content != null) {
-                                        return _buildShapeWidget(
-                                          subItem,
-                                          subItem.size.width,
-                                          subItem.size.height,
-                                        );
                                       } else {
                                         return const SizedBox.shrink();
                                       }
@@ -204,49 +189,6 @@ class EditorPage extends GetView<EditorController> {
                           );
                         },
 
-                        // customBuilder: (StackItem<StackItemContent> item) {
-                        //   return InkWell(
-                        //     onTap: () {
-                        //       controller.boardController.setAllItemStatuses(
-                        //         StackItemStatus.idle,
-                        //       );
-                        //       controller.boardController.updateBasic(
-                        //         item.id,
-                        //         status: StackItemStatus.selected,
-                        //       );
-                        //       if (item is StackTextItem) {
-                        //         controller.removeTextEditorOverlay();
-                        //         showTextEditorOverlay(
-                        //           context,
-                        //           item.copyWith(
-                        //             status: StackItemStatus.selected,
-                        //           ),
-                        //         );
-                        //       }
-                        //     },
-                        //     child:
-                        //         (item is StackTextItem && item.content != null)
-                        //         ? StackTextCase(item: item)
-                        //         : (item is StackImageItem &&
-                        //               item.content != null)
-                        //         ? StackImageCase(item: item)
-                        //         : (item is ColorStackItem1 &&
-                        //               item.content != null)
-                        //         ? Container(
-                        //             width: item.size.width,
-                        //             height: item.size.height,
-                        //             color: item.content!.color,
-                        //           )
-                        //         : (item is ShapeStackItem &&
-                        //               item.content != null)
-                        //         ? _buildShapeWidget(
-                        //             item,
-                        //             item.size.width,
-                        //             item.size.height,
-                        //           )
-                        //         : const SizedBox.shrink(),
-                        //   );
-                        // },
                         borderBuilder: (status, item) {
                           final CaseStyle style = CaseStyle();
                           final double leftRight =
@@ -389,11 +331,6 @@ class EditorPage extends GetView<EditorController> {
                         ? _HueAdjustmentPanel(controller: controller)
                         : const SizedBox.shrink(),
                   ),
-                  Obx(
-                    () => showShapePanel.value
-                        ? _ShapePanel(controller: controller)
-                        : const SizedBox.shrink(),
-                  ),
                 ],
               ),
             ),
@@ -404,47 +341,6 @@ class EditorPage extends GetView<EditorController> {
   }
 
   // Widget-based shape rendering
-  Widget _buildShapeWidget(ShapeStackItem item, double width, double height) {
-    final content = item.content!;
-    switch (content.shapeType) {
-      case ShapeType.horizontalLine:
-        return Container(
-          width: width,
-          height: content.strokeWidth, // Use strokeWidth for line thickness
-          color: content.color,
-        );
-      case ShapeType.verticalLine:
-        return Container(
-          width: content.strokeWidth, // Use strokeWidth for line thickness
-          height: height,
-          color: content.color,
-        );
-      case ShapeType.rectangle:
-        return Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: content.color,
-              width: content.strokeWidth,
-            ),
-          ),
-        );
-      case ShapeType.circle:
-        return ClipOval(
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: content.color,
-                width: content.strokeWidth,
-              ),
-            ),
-          ),
-        );
-    }
-  }
 
   void showTextEditorOverlay(BuildContext context, StackTextItem item) {
     final overlay = Overlay.of(context);
@@ -513,65 +409,6 @@ class EditorPage extends GetView<EditorController> {
       1,
       0,
     ];
-  }
-}
-
-// ShapePanel widget for selecting shapes
-class _ShapePanel extends StatelessWidget {
-  final EditorController controller;
-
-  const _ShapePanel({required this.controller});
-
-  void _addShape(ShapeType shapeType, BuildContext context) {
-    final size = shapeType == ShapeType.horizontalLine
-        ? Size(100, 10)
-        : shapeType == ShapeType.verticalLine
-        ? Size(10, 100)
-        : Size(100, 100);
-    controller.boardController.addItem(
-      ShapeStackItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        size: size,
-        offset: Offset(50, 50),
-        content: ShapeContent(
-          shapeType: shapeType,
-          color: Colors.black,
-          strokeWidth: 2.0,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.horizontal_rule),
-            onPressed: () => _addShape(ShapeType.horizontalLine, context),
-            tooltip: 'Horizontal Line',
-          ),
-          IconButton(
-            icon: const Icon(Icons.vertical_align_center),
-            onPressed: () => _addShape(ShapeType.verticalLine, context),
-            tooltip: 'Vertical Line',
-          ),
-          IconButton(
-            icon: const Icon(Icons.crop_square),
-            onPressed: () => _addShape(ShapeType.rectangle, context),
-            tooltip: 'Rectangle',
-          ),
-          IconButton(
-            icon: const Icon(Icons.circle_outlined),
-            onPressed: () => _addShape(ShapeType.circle, context),
-            tooltip: 'Circle',
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1205,90 +1042,6 @@ class ColorContent extends StackItemContent {
 }
 
 // ShapeType enum
-enum ShapeType { horizontalLine, verticalLine, rectangle, circle }
-
-// ShapeStackItem class
-class ShapeStackItem extends StackItem<ShapeContent> {
-  ShapeStackItem({
-    required super.size,
-    super.id,
-    super.offset,
-    super.angle = null,
-    super.status = null,
-    super.content,
-    this.isCentered = false,
-  }) : super(lockZOrder: false);
-
-  @override
-  final bool isCentered;
-
-  factory ShapeStackItem.fromJson(Map<String, dynamic> json) {
-    return ShapeStackItem(
-      id: json['id'],
-      size: Size(json['size']['width'], json['size']['height']),
-      offset: jsonToOffset(asMap(json['offset'])),
-      angle: json['angle'],
-      status: json['status'] != null
-          ? StackItemStatus.values[json['status']]
-          : null,
-      content: json['content'] != null
-          ? ShapeContent.fromJson(json['content'])
-          : null,
-      isCentered: json['isCentered'] ?? false,
-    );
-  }
-
-  @override
-  ShapeStackItem copyWith({
-    Size? size,
-    Offset? offset,
-    double? angle,
-    StackItemStatus? status,
-    bool? lockZOrder,
-    ShapeContent? content,
-    bool? isCentered,
-  }) {
-    return ShapeStackItem(
-      id: id,
-      size: size ?? this.size,
-      offset: offset ?? this.offset,
-      angle: angle ?? this.angle,
-      status: status ?? this.status,
-      content: content ?? this.content,
-      isCentered: isCentered ?? this.isCentered,
-    );
-  }
-}
-
-// ShapeContent class
-class ShapeContent extends StackItemContent {
-  ShapeContent({
-    required this.shapeType,
-    required this.color,
-    this.strokeWidth = 2.0,
-  });
-
-  final ShapeType shapeType;
-  final Color color;
-  final double strokeWidth;
-
-  factory ShapeContent.fromJson(Map<String, dynamic> json) {
-    return ShapeContent(
-      shapeType: ShapeType.values[json['shapeType']],
-      color: ColorDeserialization.from(json['color']) ?? Colors.white,
-      strokeWidth: json['strokeWidth'] ?? 2.0,
-    );
-  }
-
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'shapeType': shapeType.index,
-      'color': color.value,
-      'strokeWidth': strokeWidth,
-    };
-  }
-}
 
 // New RowStackItem class to handle two items in a row
 class RowStackItem extends StackItem<RowStackContent> {
@@ -1373,17 +1126,6 @@ class RowStackContent extends StackItemContent {
             'isCentered': item.isCentered,
             'textAlign': item.content?.textAlign,
           };
-        } else if (item is ShapeStackItem) {
-          return {
-            'type': 'ShapeStackItem',
-            'id': item.id,
-            'size': {'width': item.size.width, 'height': item.size.height},
-            'offset': {'dx': item.offset.dx, 'dy': item.offset.dy},
-            'angle': item.angle,
-            'status': item.status.index,
-            'content': item.content?.toJson(),
-            'isCentered': item.isCentered,
-          };
         } else {
           throw Exception(
             'Unsupported item type in RowStackContent: ${item.runtimeType}',
@@ -1399,8 +1141,6 @@ class RowStackContent extends StackItemContent {
       return StackTextItem.fromJson(itemJson);
     } else if (type == 'StackImageItem') {
       return StackImageItem.fromJson(itemJson);
-    } else if (type == 'ShapeStackItem') {
-      return ShapeStackItem.fromJson(itemJson);
     } else if (type == 'RowStackItem') {
       return RowStackItem.fromJson(itemJson);
     } else {

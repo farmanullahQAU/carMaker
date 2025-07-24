@@ -156,8 +156,6 @@ class EditorController extends GetxController {
       return StackTextItem.fromJson(itemJson);
     } else if (type == 'StackImageItem') {
       return StackImageItem.fromJson(itemJson);
-    } else if (type == 'ShapeStackItem') {
-      return ShapeStackItem.fromJson(itemJson);
     } else if (type == 'RowStackItem') {
       return RowStackItem.fromJson(itemJson);
     } else {
@@ -377,31 +375,6 @@ class EditorController extends GetxController {
               // isCentered: isCentered,
             );
             // cumulativeYOffset += itemSize.height / 2;
-          } else if (item is ShapeStackItem) {
-            final double originalWidth =
-                (itemJson['size']?['width'] ?? 100.0) as double;
-            final double originalHeight =
-                (itemJson['size']?['height'] ?? 100.0) as double;
-            double scaledX = item.offset.dx * canvasScale;
-            double scaledY = item.offset.dy * canvasScale;
-            // Scale the shape size
-            itemSize = Size(
-              originalWidth * canvasScale,
-              originalHeight * canvasScale,
-            );
-
-            // Adjust x-position for centering if needed
-            if (isCentered) {
-              scaledX = (scaledCanvasWidth - itemSize.width) / 2;
-            }
-
-            updatedItem = item.copyWith(
-              offset: Offset(scaledX, scaledY),
-              size: itemSize,
-              status: StackItemStatus.idle,
-              isCentered: isCentered,
-            );
-            cumulativeYOffset += itemSize.height;
           } else {
             throw Exception('Unsupported item type: ${item.runtimeType}');
           }
