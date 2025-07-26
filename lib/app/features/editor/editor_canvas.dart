@@ -18,8 +18,9 @@ class EditorPage extends GetView<EditorController> {
   Widget build(BuildContext context) {
     final GlobalKey stackBoardKey = GlobalKey();
     final RxBool showHueSlider = false.obs;
-    final RxBool showStickerPanel = true.obs;
+    final RxBool showStickerPanel = false.obs;
     final RxBool showShapePanel = false.obs;
+    final RxBool showTextPanel = false.obs;
     final RxInt selectedToolIndex =
         0.obs; // 0: none, 1: sticker, 2: color, 3: text, 4: shape
     final RxBool isTemplateLoaded = false.obs;
@@ -61,6 +62,24 @@ class EditorPage extends GetView<EditorController> {
     }
 
     return Scaffold(
+      bottomSheet: BottomSheet(
+        onClosing: () {},
+        builder: (_) => Obx(
+          () => showStickerPanel.value
+              ? _StickerPanel(controller: controller)
+              : showHueSlider.value
+              ? _HueAdjustmentPanel(controller: controller)
+              : controller.activeItem.value != null &&
+                    controller.activeItem.value is StackTextItem
+              ? showHueSlider.value
+                    ? _HueAdjustmentPanel(controller: controller)
+                    : _TextEditorPanel(
+                        controller: controller,
+                        textItem: controller.activeItem.value as StackTextItem,
+                      )
+              : const SizedBox.shrink(),
+        ),
+      ),
       appBar: AppBar(
         title: Obx(
           () => Text(
@@ -83,6 +102,7 @@ class EditorPage extends GetView<EditorController> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: LayoutBuilder(
@@ -113,49 +133,92 @@ class EditorPage extends GetView<EditorController> {
                             controller.boardController.setAllItemStatuses(
                               StackItemStatus.idle,
                             );
-                            controller.removeTextEditorOverlay();
+                            controller.activeItem.value = null;
+                            selectedToolIndex.value = 3;
+                            showTextPanel.value = true;
+                            showStickerPanel.value = false;
+                            showHueSlider.value = false;
+                            showShapePanel.value = false;
                           },
-                          child: controller.selectedBackground.value.isNotEmpty
-                              ? ColorFiltered(
-                                  colorFilter: ColorFilter.matrix(
-                                    _hueMatrix(controller.backgroundHue.value),
-                                  ),
-                                  child: Image.asset(
-                                    controller.selectedBackground.value,
-                                    fit: BoxFit.contain,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            ColoredBox(
-                                              color: Colors.grey[200]!,
-                                              child: const Center(
-                                                child: Text(
-                                                  'Background not found',
-                                                ),
-                                              ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  controller.selectedBackground.value.isNotEmpty
+                                      ? ColorFiltered(
+                                          colorFilter: ColorFilter.matrix(
+                                            _hueMatrix(
+                                              controller.backgroundHue.value,
                                             ),
+                                          ),
+                                          child: Image.asset(
+                                            controller.selectedBackground.value,
+                                            fit: BoxFit.contain,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => ColoredBox(
+                                                  color: Colors.grey[200]!,
+                                                  child: const Center(
+                                                    child: Text(
+                                                      'Background not found',
+                                                    ),
+                                                  ),
+                                                ),
+                                          ),
+                                        )
+                                      : ColoredBox(color: Colors.grey[200]!),
+                                  CustomPaint(
+                                    size: Size(
+                                      scaledCanvasWidth.value,
+                                      scaledCanvasHeight.value,
+                                    ),
+                                    painter: AlignmentGuidePainter(
+                                      draggedItem: controller.draggedItem.value,
+                                      alignmentPoints:
+                                          controller.alignmentPoints,
+                                      stackBoardSize: Size(
+                                        scaledCanvasWidth.value,
+                                        scaledCanvasHeight.value,
+                                      ),
+                                      showGrid:
+                                          controller.draggedItem.value !=
+                                          null, // Enable grid by default
+                                      gridSize: 50.0, // Adjustable grid size
+                                      guideColor: Colors.blue.withOpacity(0.5),
+                                      criticalGuideColor: Colors.red,
+                                      centerGuideColor: Colors.green,
+                                    ),
                                   ),
-                                )
-                              : ColoredBox(color: Colors.grey[200]!),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-
                         customBuilder: (StackItem<StackItemContent> item) {
                           return InkWell(
                             onTap: () {
                               controller.boardController.setAllItemStatuses(
                                 StackItemStatus.idle,
                               );
-                              controller.boardController.updateBasic(
-                                item.id,
+                              controller.activeItem.value = item;
+
+                              final updatedItem = item.copyWith(
                                 status: StackItemStatus.selected,
                               );
+                              controller.boardController.updateItem(
+                                updatedItem,
+                              );
                               if (item is StackTextItem) {
-                                controller.removeTextEditorOverlay();
-                                showTextEditorOverlay(
-                                  context,
-                                  item.copyWith(
-                                    status: StackItemStatus.selected,
-                                  ),
-                                );
+                                selectedToolIndex.value = 3;
+                                showTextPanel.value = true;
+                                showStickerPanel.value = false;
+                                showHueSlider.value = false;
+                                showShapePanel.value = false;
                               }
                             },
                             child:
@@ -218,18 +281,17 @@ class EditorPage extends GetView<EditorController> {
                           );
                         },
                         onDel: controller.deleteItem,
-                        onOffsetChanged: (item, offset) {
-                          controller.onItemOffsetChanged(
-                            item,
-                            Offset(
-                              offset.dx / canvasScale.value,
-                              offset.dy / canvasScale.value,
-                            ),
-                          );
-                          debugPrint('Dragging item ${item.id} to $offset');
-                          return true;
-                        },
+                        // onOffsetChanged: (item, offset) {
+                        //   debugPrint(
+                        //     'StackBoard onOffsetChanged: item=${item.id}, offset=$offset',
+                        //   );
+                        //   controller.onItemOffsetChanged(item, offset);
+                        //   return true;
+                        // },
                         onStatusChanged: (item, status) {
+                          debugPrint(
+                            'StackBoard onStatusChanged: item=${item.id}, status=$status',
+                          );
                           controller.onItemStatusChanged(item, status);
                           return true;
                         },
@@ -250,86 +312,83 @@ class EditorPage extends GetView<EditorController> {
                 ).colorScheme.surfaceContainer.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Obx(
-                        () => _ToolbarButton(
-                          icon: Icons.emoji_emotions_outlined,
-                          label: 'Stickers',
-                          onPressed: () {
-                            selectedToolIndex.value =
-                                selectedToolIndex.value == 1 ? 0 : 1;
-                            showStickerPanel.value =
-                                selectedToolIndex.value == 1;
-                            showHueSlider.value = false;
-                            showShapePanel.value = false;
-                          },
-                          isActive: selectedToolIndex.value == 1,
-                        ),
-                      ),
-                      Obx(
-                        () => _ToolbarButton(
-                          icon: Icons.palette_outlined,
-                          label: 'Color',
-                          onPressed: () {
-                            selectedToolIndex.value =
-                                selectedToolIndex.value == 2 ? 0 : 2;
-                            showHueSlider.value = selectedToolIndex.value == 2;
-                            showStickerPanel.value = false;
-                            showShapePanel.value = false;
-                          },
-                          isActive: selectedToolIndex.value == 2,
-                        ),
-                      ),
-                      Obx(
-                        () => _ToolbarButton(
-                          icon: Icons.text_fields,
-                          label: 'Text',
-                          onPressed: () {
-                            selectedToolIndex.value =
-                                selectedToolIndex.value == 3 ? 0 : 3;
-                            controller.removeTextEditorOverlay();
-                            if (controller.activeItem.value is StackTextItem) {
-                              showTextEditorOverlay(
-                                context,
-                                controller.activeItem.value as StackTextItem,
-                              );
-                            }
-                            showStickerPanel.value = false;
-                            showHueSlider.value = false;
-                            showShapePanel.value = false;
-                          },
-                          isActive: selectedToolIndex.value == 3,
-                        ),
-                      ),
-                      Obx(
-                        () => _ToolbarButton(
-                          icon: Icons.shape_line_outlined,
-                          label: 'Shapes',
-                          onPressed: () {
-                            selectedToolIndex.value =
-                                selectedToolIndex.value == 4 ? 0 : 4;
-                            showShapePanel.value = selectedToolIndex.value == 4;
-                            showStickerPanel.value = false;
-                            showHueSlider.value = false;
-                          },
-                          isActive: selectedToolIndex.value == 4,
-                        ),
-                      ),
-                    ],
+                  Obx(
+                    () => _ToolbarButton(
+                      icon: Icons.emoji_emotions_outlined,
+                      label: 'Stickers',
+                      onPressed: () {
+                        selectedToolIndex.value = selectedToolIndex.value == 1
+                            ? 0
+                            : 1;
+                        showStickerPanel.value = selectedToolIndex.value == 1;
+                        showHueSlider.value = false;
+                        showShapePanel.value = false;
+                        showTextPanel.value = false;
+                      },
+                      isActive: selectedToolIndex.value == 1,
+                    ),
                   ),
                   Obx(
-                    () => showStickerPanel.value
-                        ? _StickerPanel(controller: controller)
-                        : const SizedBox.shrink(),
+                    () => _ToolbarButton(
+                      icon: Icons.palette_outlined,
+                      label: 'Color',
+                      onPressed: () {
+                        selectedToolIndex.value = selectedToolIndex.value == 2
+                            ? 0
+                            : 2;
+                        showHueSlider.value = selectedToolIndex.value == 2;
+                        showStickerPanel.value = false;
+                        showShapePanel.value = false;
+                        showTextPanel.value = false;
+                      },
+                      isActive: selectedToolIndex.value == 2,
+                    ),
                   ),
                   Obx(
-                    () => showHueSlider.value
-                        ? _HueAdjustmentPanel(controller: controller)
-                        : const SizedBox.shrink(),
+                    () => _ToolbarButton(
+                      icon: Icons.text_fields,
+                      label: 'Text',
+                      onPressed: () {
+                        selectedToolIndex.value = selectedToolIndex.value == 3
+                            ? 0
+                            : 3;
+                        showTextPanel.value = selectedToolIndex.value == 3;
+                        showStickerPanel.value = false;
+                        showHueSlider.value = false;
+                        showShapePanel.value = false;
+                        // Add new text item if none is selected
+                        if (controller.activeItem.value == null ||
+                            controller.activeItem.value is! StackTextItem) {
+                          controller.addText(
+                            "New Text",
+                            size: const Size(100, 50),
+                          );
+                          // controller.activeItem.value =
+                          //     controller.boardController.getAllData()
+                          //         .last;
+                        }
+                      },
+                      isActive: selectedToolIndex.value == 3,
+                    ),
+                  ),
+                  Obx(
+                    () => _ToolbarButton(
+                      icon: Icons.shape_line_outlined,
+                      label: 'Shapes',
+                      onPressed: () {
+                        selectedToolIndex.value = selectedToolIndex.value == 4
+                            ? 0
+                            : 4;
+                        showShapePanel.value = selectedToolIndex.value == 4;
+                        showStickerPanel.value = false;
+                        showHueSlider.value = false;
+                        showTextPanel.value = false;
+                      },
+                      isActive: selectedToolIndex.value == 4,
+                    ),
                   ),
                 ],
               ),
@@ -338,44 +397,6 @@ class EditorPage extends GetView<EditorController> {
         ],
       ),
     );
-  }
-
-  // Widget-based shape rendering
-
-  void showTextEditorOverlay(BuildContext context, StackTextItem item) {
-    final overlay = Overlay.of(context);
-    late final OverlayEntry entry;
-
-    entry = OverlayEntry(
-      builder: (_) => Positioned(
-        bottom: 0,
-        left: 0,
-        right: 0,
-        child: Material(
-          elevation: 6,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Text(item.content?.style?.fontSize.toString() ?? ".."),
-              TextStylingEditor(
-                textItem: item,
-                onClose: () {
-                  Get.find<EditorController>().removeTextEditorOverlay();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    final controller = Get.find<EditorController>();
-    controller.removeTextEditorOverlay();
-    controller.activeTextEditorOverlay.value = entry;
-    overlay.insert(entry);
   }
 
   List<double> _hueMatrix(double degrees) {
@@ -431,17 +452,10 @@ class _ToolbarButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          // decoration: BoxDecoration(
-          //   color: isActive
-          //       ? Theme.of(context).primaryColor.withOpacity(0.1)
-          //       : Colors.transparent,
-          //   borderRadius: BorderRadius.circular(8),
-          // ),
           child: IconButton(
             style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-
             icon: Icon(icon),
             color: isActive ? Theme.of(context).primaryColor : Colors.grey[800],
             onPressed: onPressed,
@@ -586,7 +600,6 @@ class _StickerPanel extends StatelessWidget {
         '🆈',
         '🆉',
       ],
-
       'Celebration': [
         '🎉',
         '🎊',
@@ -673,13 +686,20 @@ class _StickerPanel extends StatelessWidget {
     return Container(
       height: 150,
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
       ),
       child: DefaultTabController(
         length: categories.length,
         child: Column(
           children: [
+            TabBar(
+              isScrollable: true,
+              // indicatorPadding: EdgeInsets.zero,
+              tabAlignment: TabAlignment.start,
+              tabs: categories.keys.map((category) {
+                return Tab(text: category);
+              }).toList(),
+            ),
             Expanded(
               child: TabBarView(
                 children: categories.values.map((stickers) {
@@ -689,36 +709,28 @@ class _StickerPanel extends StatelessWidget {
                     mainAxisSpacing: 4,
                     crossAxisSpacing: 4,
                     children: stickers.map((sticker) {
-                      return GestureDetector(
-                        onTap: () {
-                          controller.addText(sticker, size: Size(100, 100));
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Center(
-                            child: Text(
-                              sticker,
-                              style: TextStyle(fontSize: 24),
+                      return SafeArea(
+                        bottom: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            controller.addText(sticker, size: Size(100, 100));
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.white,
+                            ),
+                            child: Center(
+                              child: Text(
+                                sticker,
+                                style: TextStyle(fontSize: 24),
+                              ),
                             ),
                           ),
                         ),
                       );
                     }).toList(),
                   );
-                }).toList(),
-              ),
-            ),
-
-            SafeArea(
-              child: TabBar(
-                isScrollable: true,
-
-                tabAlignment: TabAlignment.start,
-                tabs: categories.keys.map((category) {
-                  return Tab(text: category);
                 }).toList(),
               ),
             ),
@@ -739,59 +751,68 @@ class _HueAdjustmentPanel extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
         border: Border(top: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'ADJUST BACKGROUND COLOR',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.color_lens, size: 20, color: Colors.grey[600]),
-              SizedBox(width: 8),
-              Expanded(
-                child: Slider(
-                  value: controller.backgroundHue.value,
-                  min: 0.0,
-                  max: 360.0,
-                  divisions: 360,
-                  label: '${controller.backgroundHue.value.round()}°',
-                  onChanged: (value) {
-                    controller.updateBackgroundHue(value);
-                  },
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.red,
-                      Colors.yellow,
-                      Colors.green,
-                      Colors.blue,
-                      Colors.purple,
-                      Colors.red,
-                    ],
+          Obx(
+            () => Row(
+              children: [
+                Icon(Icons.color_lens, size: 20, color: Colors.grey[600]),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Slider(
+                    value: controller.backgroundHue.value,
+                    min: 0.0,
+                    max: 360.0,
+                    // divisions: 360,
+                    label: '${controller.backgroundHue.value.round()}°',
+                    onChanged: (value) {
+                      controller.updateBackgroundHue(value);
+                    },
                   ),
-                  borderRadius: BorderRadius.circular(4),
                 ),
-              ),
-            ],
+                SizedBox(width: 8),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.red,
+                        Colors.yellow,
+                        Colors.green,
+                        Colors.blue,
+                        Colors.purple,
+                        Colors.red,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TextEditorPanel extends StatelessWidget {
+  final EditorController controller;
+  final StackTextItem textItem;
+
+  const _TextEditorPanel({required this.controller, required this.textItem});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextStylingEditor(
+      textItem: textItem,
+      onClose: () {
+        controller.activeItem.value = null;
+      },
     );
   }
 }
@@ -821,7 +842,6 @@ class _BorderPainter extends CustomPainter {
     }
     if (Get.find<EditorController>().draggedItem.value != null) {
       final Path path = Path()..addRect(rect);
-
       final Path dashedPath = Path();
       for (final pm in path.computeMetrics()) {
         double d = 0;
@@ -883,8 +903,6 @@ class AlignmentGuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (draggedItem == null) return;
-
     final Paint gridPaint = Paint()
       ..color = guideColor.withOpacity(0.3)
       ..style = PaintingStyle.stroke
@@ -909,6 +927,21 @@ class AlignmentGuidePainter extends CustomPainter {
       ..color = centerGuideColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
+
+    if (draggedItem != null) {
+      _drawDashedLine(
+        canvas,
+        Offset(stackBoardSize.width / 2, 0),
+        Offset(stackBoardSize.width / 2, stackBoardSize.height),
+        centerPaint,
+      );
+      _drawDashedLine(
+        canvas,
+        Offset(0, stackBoardSize.height / 2),
+        Offset(stackBoardSize.width, stackBoardSize.height / 2),
+        centerPaint,
+      );
+    }
 
     if (showGrid) {
       for (double x = 0; x <= stackBoardSize.width; x += gridSize) {
@@ -1041,9 +1074,6 @@ class ColorContent extends StackItemContent {
   }
 }
 
-// ShapeType enum
-
-// New RowStackItem class to handle two items in a row
 class RowStackItem extends StackItem<RowStackContent> {
   RowStackItem({
     required super.size,
@@ -1096,7 +1126,6 @@ class RowStackItem extends StackItem<RowStackContent> {
   }
 }
 
-// Content class for RowStackItem
 class RowStackContent extends StackItemContent {
   final List<StackItem> items;
 

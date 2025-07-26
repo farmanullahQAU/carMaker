@@ -7,7 +7,6 @@ import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class EditorController extends GetxController {
@@ -43,6 +42,8 @@ class EditorController extends GetxController {
 
   final RxList<_ItemState> _undoStack = <_ItemState>[].obs;
   final RxList<_ItemState> _redoStack = <_ItemState>[].obs;
+  Rx<Offset> midYOffset = Rx<Offset>(Offset(0, 0));
+  Rx<Size> midSize = Rx<Size>(Size(0, 0));
 
   Offset? _dragStart;
   Offset? _lastOffset;
@@ -50,6 +51,8 @@ class EditorController extends GetxController {
   final RxBool showHueSlider = false.obs;
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
+
+  // bool get showVerticalLine =>
 
   @override
   void onInit() {
@@ -97,38 +100,6 @@ class EditorController extends GetxController {
       }
     }
     gridSize.value = newGridSize;
-  }
-
-  Offset _getAbsoluteOffsetFromRelative(Offset relativeOffset, Size itemSize) {
-    if (actualStackBoardRenderSize.value == Size.zero ||
-        templateOriginalWidth.value == 0 ||
-        templateOriginalHeight.value == 0) {
-      debugPrint("Warning: Invalid dimensions for offset calculation.");
-      return Offset.zero;
-    }
-    final double scaleX =
-        actualStackBoardRenderSize.value.width / templateOriginalWidth.value;
-    final double scaleY =
-        actualStackBoardRenderSize.value.height / templateOriginalHeight.value;
-    final double x = relativeOffset.dx * scaleX;
-    final double y = relativeOffset.dy * scaleY;
-    return Offset(
-      x.clamp(0.0, actualStackBoardRenderSize.value.width - itemSize.width),
-      y.clamp(0.0, actualStackBoardRenderSize.value.height - itemSize.height),
-    );
-  }
-
-  Offset getRelativeOffsetFromAbsolute(Offset absoluteOffset) {
-    if (templateOriginalWidth.value == 0 || templateOriginalHeight.value == 0) {
-      debugPrint("Warning: templateOriginalSize is zero.");
-      return Offset.zero;
-    }
-    return Offset(
-      (absoluteOffset.dx / actualStackBoardRenderSize.value.width) *
-          templateOriginalWidth.value,
-      (absoluteOffset.dy / actualStackBoardRenderSize.value.height) *
-          templateOriginalHeight.value,
-    );
   }
 
   Offset getCenteredOffset(Size itemSize, {double? existingDy}) {
@@ -568,7 +539,6 @@ class EditorController extends GetxController {
       _dragStart = offset;
       _lastOffset = offset;
       draggedItem.value = item.copyWith(offset: offset);
-      _debounceCalculateAlignmentPoints(item, offset);
       return;
     }
     final double distance = (offset - _dragStart!).distance;
@@ -578,7 +548,6 @@ class EditorController extends GetxController {
     }
     _lastOffset = offset;
     draggedItem.value = item.copyWith(offset: offset);
-    _debounceCalculateAlignmentPoints(item, offset);
   }
 
   void onItemSizeChanged(StackItem item, Size newSize) {
@@ -614,37 +583,20 @@ class EditorController extends GetxController {
   void onItemStatusChanged(StackItem item, StackItemStatus status) {
     if (status == StackItemStatus.moving) {
       draggedItem.value = item;
-      activeItem.value = item;
+
+      activeItem.value = null;
+
       _dragStart = null;
       _lastOffset = null;
-      _debounceCalculateAlignmentPoints(item, item.offset);
     } else if (status == StackItemStatus.selected) {
-      activeItem.value = item;
+      print("ssssssssssssssssssssssssssssss");
+      activeItem.value = null;
       draggedItem.value = null;
       _dragStart = null;
       _lastOffset = null;
       alignmentPoints.value = [];
     } else if (status == StackItemStatus.idle) {
       if (draggedItem.value?.id == item.id) {
-        final snapResult = _findClosestSnapPoints(item, item.offset);
-        if (snapResult.snappedOffset != item.offset) {
-          _undoStack.add(_ItemState(item: item, action: _ItemAction.update));
-          _redoStack.clear();
-          boardController.updateItem(
-            item.copyWith(offset: snapResult.snappedOffset),
-          );
-          final isCriticalSnap = snapResult.points.any((p) => p.isCriticalSnap);
-          if (isCriticalSnap) {
-            HapticFeedback.heavyImpact();
-          } else if (snapResult.points.any((p) => p.isSnapped)) {
-            HapticFeedback.lightImpact();
-          }
-          activeItem.value = item.copyWith(offset: snapResult.snappedOffset);
-        }
-        draggedItem.value = null;
-        _dragStart = null;
-        _lastOffset = null;
-        alignmentPoints.value = [];
       } else if (activeItem.value?.id == item.id) {
         activeItem.value = null;
         alignmentPoints.value = [];
@@ -675,217 +627,6 @@ class EditorController extends GetxController {
       activeItem.value = updatedItem;
       _updateSpatialIndex();
     }
-  }
-
-  void _debounceCalculateAlignmentPoints(StackItem item, Offset offset) {
-    Future.delayed(const Duration(milliseconds: 16), () {
-      if (draggedItem.value?.id == item.id) {
-        final snapResult = _findClosestSnapPoints(item, offset);
-        alignmentPoints.value = snapResult.points;
-      } else {
-        alignmentPoints.value = [];
-      }
-    });
-  }
-
-  _SnapResult _findClosestSnapPoints(StackItem item, Offset offset) {
-    const double snapThreshold = 5.0;
-    const double criticalSnapThreshold = 2.0;
-    final List<AlignmentPoint> points = [];
-    double? closestX, closestY;
-    double minXDistance = double.infinity;
-    double minYDistance = double.infinity;
-    bool isCriticalXSnap = false;
-    bool isCriticalYSnap = false;
-
-    final draggedRect = Rect.fromLTWH(
-      offset.dx,
-      offset.dy,
-      item.size.width,
-      item.size.height,
-    );
-    final double itemMidX = draggedRect.center.dx;
-    final double itemMidY = draggedRect.center.dy;
-    final Map<double, SnapType> verticalPoints = {};
-    final Map<double, SnapType> horizontalPoints = {};
-
-    final double centerX = actualStackBoardRenderSize.value.width / 2;
-    final double centerY = actualStackBoardRenderSize.value.height / 2;
-    final List<double> canvasVerticals = [
-      0,
-      centerX,
-      actualStackBoardRenderSize.value.width,
-    ];
-    final List<double> canvasHorizontals = [
-      0,
-      centerY,
-      actualStackBoardRenderSize.value.height,
-    ];
-
-    for (final x in canvasVerticals) {
-      final leftDistance = (draggedRect.left - x).abs();
-      final rightDistance = (draggedRect.right - x).abs();
-      final centerDistance = (itemMidX - x).abs();
-      if (centerDistance < criticalSnapThreshold &&
-          centerDistance < minXDistance) {
-        verticalPoints[x] = SnapType.centerCritical;
-        closestX = x - item.size.width / 2;
-        minXDistance = centerDistance;
-        isCriticalXSnap = true;
-      } else if (leftDistance < criticalSnapThreshold &&
-          leftDistance < minXDistance) {
-        verticalPoints[x] = SnapType.edgeCritical;
-        closestX = x;
-        minXDistance = leftDistance;
-        isCriticalXSnap = true;
-      } else if (rightDistance < criticalSnapThreshold &&
-          rightDistance < minXDistance) {
-        verticalPoints[x] = SnapType.edgeCritical;
-        closestX = x - item.size.width;
-        minXDistance = rightDistance;
-        isCriticalXSnap = true;
-      } else {
-        verticalPoints[x] = SnapType.inactive;
-      }
-    }
-
-    for (final y in canvasHorizontals) {
-      final topDistance = (draggedRect.top - y).abs();
-      final bottomDistance = (draggedRect.bottom - y).abs();
-      final centerDistance = (itemMidY - y).abs();
-      if (centerDistance < criticalSnapThreshold &&
-          centerDistance < minYDistance) {
-        horizontalPoints[y] = SnapType.centerCritical;
-        closestY = y - item.size.height / 2;
-        minYDistance = centerDistance;
-        isCriticalYSnap = true;
-      } else if (topDistance < criticalSnapThreshold &&
-          topDistance < minYDistance) {
-        horizontalPoints[y] = SnapType.edgeCritical;
-        closestY = y;
-        minYDistance = topDistance;
-        isCriticalYSnap = true;
-      } else if (bottomDistance < criticalSnapThreshold &&
-          bottomDistance < minYDistance) {
-        horizontalPoints[y] = SnapType.edgeCritical;
-        closestY = y - item.size.height;
-        minYDistance = bottomDistance;
-        isCriticalYSnap = true;
-      } else {
-        horizontalPoints[y] = SnapType.inactive;
-      }
-    }
-
-    final spatialIndex = _spatialIndex;
-    final nearbyItems = spatialIndex.getNearbyItems(draggedRect.center);
-    for (final otherItem in nearbyItems) {
-      final itemRect = Rect.fromLTWH(
-        otherItem.offset.dx,
-        otherItem.offset.dy,
-        otherItem.size.width,
-        otherItem.size.height,
-      );
-      final verticalEdges = [itemRect.left, itemRect.center.dx, itemRect.right];
-      final horizontalEdges = [
-        itemRect.top,
-        itemRect.center.dy,
-        itemRect.bottom,
-      ];
-      for (final x in verticalEdges) {
-        final leftDistance = (draggedRect.left - x).abs();
-        final rightDistance = (draggedRect.right - x).abs();
-        final centerDistance = (itemMidX - x).abs();
-        if (centerDistance < snapThreshold &&
-            centerDistance < minXDistance &&
-            !isCriticalXSnap) {
-          verticalPoints[x] = SnapType.center;
-          closestX = x - item.size.width / 2;
-          minXDistance = centerDistance;
-        } else if (leftDistance < snapThreshold &&
-            leftDistance < minXDistance &&
-            !isCriticalXSnap) {
-          verticalPoints[x] = SnapType.edge;
-          closestX = x;
-          minXDistance = leftDistance;
-        } else if (rightDistance < snapThreshold &&
-            rightDistance < minXDistance &&
-            !isCriticalXSnap) {
-          verticalPoints[x] = SnapType.edge;
-          closestX = x - item.size.width;
-          minXDistance = rightDistance;
-        } else {
-          verticalPoints.putIfAbsent(x, () => SnapType.inactive);
-        }
-      }
-      for (final y in horizontalEdges) {
-        final topDistance = (draggedRect.top - y).abs();
-        final bottomDistance = (draggedRect.bottom - y).abs();
-        final centerDistance = (itemMidY - y).abs();
-        if (centerDistance < snapThreshold &&
-            centerDistance < minYDistance &&
-            !isCriticalYSnap) {
-          horizontalPoints[y] = SnapType.center;
-          closestY = y - item.size.height / 2;
-          minYDistance = centerDistance;
-        } else if (topDistance < snapThreshold &&
-            topDistance < minYDistance &&
-            !isCriticalYSnap) {
-          horizontalPoints[y] = SnapType.edge;
-          closestY = y;
-          minYDistance = topDistance;
-        } else if (bottomDistance < snapThreshold &&
-            bottomDistance < minYDistance &&
-            !isCriticalYSnap) {
-          horizontalPoints[y] = SnapType.edge;
-          closestY = y - item.size.height;
-          minYDistance = bottomDistance;
-        } else {
-          horizontalPoints.putIfAbsent(y, () => SnapType.inactive);
-        }
-      }
-    }
-
-    final sortedVertical = verticalPoints.entries
-        .toList()
-        .sorted((a, b) => a.key.compareTo(b.key))
-        .where((e) => e.value != SnapType.inactive)
-        .take(3)
-        .map(
-          (e) => AlignmentPoint(
-            value: (e.key * 100).roundToDouble() / 100,
-            isVertical: true,
-            snapType: e.value,
-          ),
-        )
-        .toList();
-    final sortedHorizontal = horizontalPoints.entries
-        .toList()
-        .sorted((a, b) => a.key.compareTo(b.key))
-        .where((e) => e.value != SnapType.inactive)
-        .take(3)
-        .map(
-          (e) => AlignmentPoint(
-            value: (e.key * 100).roundToDouble() / 100,
-            isVertical: false,
-            snapType: e.value,
-          ),
-        )
-        .toList();
-    points.addAll(sortedVertical);
-    points.addAll(sortedHorizontal);
-
-    final snappedOffset = Offset(
-      (closestX ?? offset.dx).clamp(
-        0.0,
-        actualStackBoardRenderSize.value.width - item.size.width,
-      ),
-      (closestY ?? offset.dy).clamp(
-        0.0,
-        actualStackBoardRenderSize.value.height - item.size.height,
-      ),
-    );
-
-    return _SnapResult(points: points, snappedOffset: snappedOffset);
   }
 
   _SpatialIndex _spatialIndex = _SpatialIndex();

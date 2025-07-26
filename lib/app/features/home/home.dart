@@ -2,8 +2,6 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
-import 'package:cardmaker/core/values/app_constants.dart';
-import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/stack_board/lib/src/stack_board_items/item_case/stack_text_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
@@ -414,327 +412,377 @@ class HorizontalCardList extends GetView<HomeController> {
       children: [
         SizedBox(
           height: 200, // Fixed height for scroll area
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: controller.featuredTemplates.length,
-            itemBuilder: (context, index) {
-              final template = controller.featuredTemplates[index];
-              double cumulativeYOffset = 0.0; // Reset for each card
+          child: Obx(
+            () => ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: controller.featuredTemplates.length,
+              itemBuilder: (context, index) {
+                final template = controller.featuredTemplates[index];
+                double cumulativeYOffset = 0.0; // Reset for each card
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: GestureDetector(
-                  onTap: () => controller.onTemplateTap(template),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Responsive width: min of 40% screen width or 400px
-                      final maxWidth = constraints.maxWidth * 0.4;
-                      // Calculate scale to fit template within constraints
-                      final scale = math.min(
-                        maxWidth / template.width,
-                        constraints.maxHeight / template.height,
-                      );
-                      // Canvas dimensions
-                      final canvasWidth = template.width * scale;
-                      final canvasHeight = template.height * scale;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: GestureDetector(
+                    onTap: () => controller.onTemplateTap(template),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Responsive width: min of 40% screen width or 400px
+                        final maxWidth = math.min(
+                          constraints.maxWidth * 0.4,
+                          400.0,
+                        );
+                        // Calculate scale to fit template within constraints
+                        final scale = math.min(
+                          maxWidth / template.width,
+                          constraints.maxHeight / template.height,
+                        );
+                        // Canvas dimensions
+                        final canvasWidth = template.width * scale;
+                        final canvasHeight = template.height * scale;
 
-                      return Container(
-                        color: Colors.blueAccent,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints.tightFor(
-                            width: canvasWidth,
-                            height: canvasHeight,
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
                           ),
-                          child: ClipRect(
-                            clipBehavior: Clip.hardEdge,
-                            child: Stack(
-                              clipBehavior:
-                                  Clip.none, // Stack clips via ClipRect
-                              children: [
-                                // Background image
-                                Positioned.fill(
-                                  child: Image.asset(
-                                    template.backgroundImage,
-                                    fit: BoxFit.contain,
-                                    alignment: Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints.tightFor(
+                              width: canvasWidth,
+                              height: canvasHeight,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              clipBehavior: Clip.hardEdge,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Background image
+                                  Positioned.fill(
+                                    child: Image.asset(
+                                      template.backgroundImage,
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.center,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                color: Colors.grey[300],
+                                              ),
+                                    ),
                                   ),
-                                ),
-                                // Template items
-                                ...template.items.expand((item) {
-                                  final type = item['type'];
-                                  final originalX =
-                                      (item['offset']['dx'] as num).toDouble();
-                                  final originalY =
-                                      (item['offset']['dy'] as num).toDouble();
-                                  double scaledX = originalX * scale;
-                                  double scaledY = originalY * scale;
-                                  scaledY += cumulativeYOffset;
+                                  // Template items
+                                  ...template.items.expand((item) {
+                                    final type = item['type'];
+                                    final originalX =
+                                        (item['offset']['dx'] as num)
+                                            .toDouble();
+                                    final originalY =
+                                        (item['offset']['dy'] as num)
+                                            .toDouble();
+                                    double scaledX = originalX * scale;
+                                    double scaledY = originalY * scale;
+                                    scaledY += cumulativeYOffset;
 
-                                  if (type == 'RowStackItem') {
-                                    final rowItems =
-                                        (item['content']['items'] as List)
-                                            .map(
-                                              (subItem) =>
-                                                  subItem
-                                                      as Map<String, dynamic>,
-                                            )
-                                            .toList();
-                                    double totalWidth = 0.0;
-                                    final List<Widget> rowWidgets = [];
+                                    if (type == 'RowStackItem') {
+                                      final rowItems =
+                                          (item['content']['items'] as List)
+                                              .map(
+                                                (subItem) =>
+                                                    subItem
+                                                        as Map<String, dynamic>,
+                                              )
+                                              .toList();
+                                      double totalWidth = 0.0;
+                                      final List<Widget> rowWidgets = [];
 
-                                    // Calculate total width for centering
-                                    for (final subItem in rowItems) {
-                                      if (subItem['type'] == 'StackTextItem') {
-                                        final textItem = StackTextItem.fromJson(
-                                          subItem,
-                                        );
-                                        final scaledFontSize =
-                                            (textItem
-                                                        .content!
-                                                        .style!
-                                                        .fontSize! *
-                                                    scale)
-                                                .clamp(8.0, 15.0);
-                                        final scaledLetterSpacing =
-                                            ((textItem
-                                                    .content!
-                                                    .style
-                                                    ?.letterSpacing ??
-                                                1) *
-                                            scale);
-                                        final scaledTextStyle = textItem
-                                            .content!
-                                            .style!
-                                            .copyWith(
-                                              fontSize: scaledFontSize,
-                                              letterSpacing:
-                                                  scaledLetterSpacing,
-                                            );
-
-                                        final textWidth = getTextWidth(
-                                          text: textItem.content!.data ?? "",
-                                          style: scaledTextStyle,
-                                        ).width;
-                                        totalWidth += textWidth;
-                                      }
-                                    }
-
-                                    // Starting x-position for centering
-                                    double startX = item['isCentered']
-                                        ? (canvasWidth - totalWidth) / 2
-                                        : scaledX;
-
-                                    // Build widgets for row items
-                                    for (final subItem in rowItems) {
-                                      if (subItem['type'] == 'StackTextItem') {
-                                        final textItem = StackTextItem.fromJson(
-                                          subItem,
-                                        );
-                                        final scaledFontSize =
-                                            (textItem
-                                                        .content!
-                                                        .style!
-                                                        .fontSize! *
-                                                    scale)
-                                                .clamp(8.0, 15.0);
-                                        final scaledLetterSpacing =
-                                            ((textItem
-                                                    .content!
-                                                    .style
-                                                    ?.letterSpacing ??
-                                                1) *
-                                            scale);
-                                        final scaledTextStyle = textItem
-                                            .content!
-                                            .style!
-                                            .copyWith(
-                                              fontSize: scaledFontSize,
-                                              letterSpacing:
-                                                  scaledLetterSpacing,
-                                            );
-
-                                        final textSize = getTextWidth(
-                                          text: textItem.content!.data ?? "",
-                                          style: scaledTextStyle,
-                                        );
-                                        final maxTextHeight = textSize.height;
-                                        if (rowItems.length == 1) {
-                                          cumulativeYOffset += maxTextHeight;
-                                        }
-
-                                        rowWidgets.add(
-                                          Positioned(
-                                            left: textItem.isCentered
-                                                ? 0
-                                                : startX,
-                                            right: textItem.isCentered
-                                                ? 0
-                                                : null,
-                                            top: scaledY,
-                                            child: StackTextCase(
-                                              item: textItem.copyWith(
-                                                content: textItem.content!
-                                                    .copyWith(
-                                                      style: scaledTextStyle,
-                                                      textAlign: _getTextAlign(
-                                                        textItem
-                                                                .content!
-                                                                .textAlign
-                                                                ?.name ??
-                                                            "center",
-                                                      ),
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                        startX += textSize.width;
-                                      }
-                                    }
-
-                                    if (rowItems.length > 1) {
-                                      cumulativeYOffset += rowItems
-                                          .map((subItem) {
-                                            if (subItem['type'] ==
-                                                'StackTextItem') {
-                                              final textItem =
-                                                  StackTextItem.fromJson(
-                                                    subItem,
-                                                  );
-                                              final scaledFontSize =
-                                                  (textItem
-                                                              .content!
-                                                              .style!
-                                                              .fontSize! *
-                                                          scale)
-                                                      .clamp(8.0, 15.0);
-                                              final scaledTextStyle = textItem
-                                                  .content!
-                                                  .style!
-                                                  .copyWith(
-                                                    fontSize: scaledFontSize,
-                                                  );
-                                              return getTextWidth(
-                                                text:
-                                                    textItem.content!.data ??
-                                                    "",
-                                                style: scaledTextStyle,
-                                              ).height;
-                                            }
-                                            return 0.0;
-                                          })
-                                          .reduce(math.max);
-                                    }
-
-                                    return rowWidgets;
-                                  } else if (type == 'StackTextItem') {
-                                    final textItem = StackTextItem.fromJson(
-                                      item,
-                                    );
-                                    final scaledFontSize =
-                                        (textItem.content!.style!.fontSize! *
-                                                scale)
-                                            .clamp(8.0, 15.0);
-                                    final scaledLetterSpacing =
-                                        ((textItem
-                                                .content!
-                                                .style
-                                                ?.letterSpacing ??
-                                            1) *
-                                        scale);
-                                    final scaledTextStyle = textItem
-                                        .content!
-                                        .style!
-                                        .copyWith(
-                                          fontSize: scaledFontSize,
-                                          letterSpacing: scaledLetterSpacing,
-                                        );
-
-                                    final maxTextHeight = getTextWidth(
-                                      text: textItem.content!.data ?? "",
-                                      style: scaledTextStyle,
-                                    ).height;
-                                    cumulativeYOffset += maxTextHeight;
-
-                                    return [
-                                      Positioned(
-                                        left: textItem.isCentered ? 0 : scaledX,
-                                        right: textItem.isCentered ? 0 : null,
-                                        top: scaledY,
-                                        child: StackTextCase(
-                                          item: textItem.copyWith(
-                                            content: textItem.content!.copyWith(
-                                              style: scaledTextStyle,
-                                              textAlign: _getTextAlign(
+                                      // Calculate total width for centering
+                                      for (final subItem in rowItems) {
+                                        if (subItem['type'] ==
+                                            'StackTextItem') {
+                                          final textItem =
+                                              StackTextItem.fromJson(subItem);
+                                          final scaledTextStyle =
+                                              _getScaledTextStyle(
+                                                textItem,
+                                                scale,
+                                              );
+                                          final textWidth = _getTextWidth(
+                                            text: textItem.content!.data ?? "",
+                                            style: scaledTextStyle,
+                                            hasShadow:
                                                 textItem
-                                                        .content!
-                                                        .textAlign
-                                                        ?.name ??
-                                                    "center",
+                                                    .content!
+                                                    .style!
+                                                    .shadows
+                                                    ?.isNotEmpty ??
+                                                false,
+                                          ).width;
+                                          totalWidth += textWidth;
+                                        }
+                                      }
+
+                                      // Starting x-position for centering
+                                      double startX = item['isCentered']
+                                          ? (canvasWidth - totalWidth) / 2
+                                          : scaledX;
+
+                                      // Build widgets for row items
+                                      for (final subItem in rowItems) {
+                                        if (subItem['type'] ==
+                                            'StackTextItem') {
+                                          final textItem =
+                                              StackTextItem.fromJson(subItem);
+                                          final scaledTextStyle =
+                                              _getScaledTextStyle(
+                                                textItem,
+                                                scale,
+                                              );
+                                          final textSize = _getTextWidth(
+                                            text: textItem.content!.data ?? "",
+                                            style: scaledTextStyle,
+                                            hasShadow:
+                                                textItem
+                                                    .content!
+                                                    .style!
+                                                    .shadows
+                                                    ?.isNotEmpty ??
+                                                false,
+                                          );
+                                          final maxTextHeight = textSize.height;
+                                          if (rowItems.length == 1) {
+                                            cumulativeYOffset += maxTextHeight;
+                                          }
+
+                                          rowWidgets.add(
+                                            Positioned(
+                                              left: textItem.isCentered
+                                                  ? 0
+                                                  : startX,
+                                              right: textItem.isCentered
+                                                  ? 0
+                                                  : null,
+                                              top: scaledY,
+                                              child: StackTextCase(
+                                                isFitted: false,
+                                                item: textItem.copyWith(
+                                                  content: textItem.content!
+                                                      .copyWith(
+                                                        style: scaledTextStyle,
+                                                        textAlign:
+                                                            _getTextAlign(
+                                                              textItem
+                                                                      .content!
+                                                                      .textAlign
+                                                                      ?.name ??
+                                                                  "center",
+                                                            ),
+                                                      ),
+                                                ),
                                               ),
+                                            ),
+                                          );
+                                          startX += textSize.width;
+                                        }
+                                      }
+
+                                      if (rowItems.length > 1) {
+                                        cumulativeYOffset += rowItems
+                                            .map((subItem) {
+                                              if (subItem['type'] ==
+                                                  'StackTextItem') {
+                                                final textItem =
+                                                    StackTextItem.fromJson(
+                                                      subItem,
+                                                    );
+                                                final scaledTextStyle =
+                                                    _getScaledTextStyle(
+                                                      textItem,
+                                                      scale,
+                                                    );
+                                                return _getTextWidth(
+                                                  text:
+                                                      textItem.content!.data ??
+                                                      "",
+                                                  style: scaledTextStyle,
+                                                  hasShadow:
+                                                      textItem
+                                                          .content!
+                                                          .style!
+                                                          .shadows
+                                                          ?.isNotEmpty ??
+                                                      false,
+                                                ).height;
+                                              }
+                                              return 0.0;
+                                            })
+                                            .reduce(math.max);
+                                      }
+
+                                      return rowWidgets;
+                                    } else if (type == 'StackTextItem') {
+                                      final textItem = StackTextItem.fromJson(
+                                        item,
+                                      );
+                                      final scaledTextStyle =
+                                          _getScaledTextStyle(textItem, scale);
+                                      final textSize = _getTextWidth(
+                                        text: textItem.content!.data ?? "",
+                                        style: scaledTextStyle,
+                                        hasShadow:
+                                            textItem
+                                                .content!
+                                                .style!
+                                                .shadows
+                                                ?.isNotEmpty ??
+                                            false,
+                                      );
+                                      final maxTextHeight = textSize.height;
+                                      cumulativeYOffset += maxTextHeight;
+
+                                      return [
+                                        Positioned(
+                                          left: textItem.isCentered
+                                              ? 0
+                                              : scaledX,
+                                          right: textItem.isCentered ? 0 : null,
+                                          top: scaledY,
+                                          child: StackTextCase(
+                                            isFitted: false,
+
+                                            item: textItem.copyWith(
+                                              content: textItem.content!
+                                                  .copyWith(
+                                                    style: scaledTextStyle,
+                                                    textAlign: _getTextAlign(
+                                                      textItem
+                                                              .content!
+                                                              .textAlign
+                                                              ?.name ??
+                                                          "center",
+                                                    ),
+                                                  ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ];
-                                  } else if (type == 'StackImageItem') {
-                                    final path =
-                                        item['content']['assetName'] ?? '';
-                                    final originalWidth =
-                                        (item['size']['width'] ?? 100)
-                                            .toDouble();
-                                    final originalHeight =
-                                        (item['size']['height'] ?? 100)
-                                            .toDouble();
-                                    final scaledWidth = originalWidth * scale;
-                                    final scaledHeight = originalHeight * scale;
+                                      ];
+                                    } else if (type == 'StackImageItem') {
+                                      final path =
+                                          item['content']['assetName'] ?? '';
+                                      final originalWidth =
+                                          (item['size']['width'] ?? 100)
+                                              .toDouble();
+                                      final originalHeight =
+                                          (item['size']['height'] ?? 100)
+                                              .toDouble();
+                                      final scaledWidth = originalWidth * scale;
+                                      final scaledHeight =
+                                          originalHeight * scale;
 
-                                    return [
-                                      Positioned(
-                                        left: item['isCentered']
-                                            ? (canvasWidth / 2) -
-                                                  (scaledWidth / 2)
-                                            : scaledX,
-                                        top: scaledY,
-                                        child: SizedBox(
-                                          width: scaledWidth,
-                                          height: scaledHeight,
-                                          child: Image.asset(
-                                            path,
-                                            fit: BoxFit.contain,
-                                            alignment: Alignment.center,
+                                      return [
+                                        Positioned(
+                                          left: item['isCentered']
+                                              ? (canvasWidth - scaledWidth) / 2
+                                              : scaledX,
+                                          top: scaledY,
+                                          child: SizedBox(
+                                            width: scaledWidth,
+                                            height: scaledHeight,
+                                            child: Image.asset(
+                                              path,
+                                              fit: BoxFit.contain,
+                                              alignment: Alignment.center,
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => Container(
+                                                    color: Colors.grey[300],
+                                                  ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ];
-                                  }
-                                  return [const SizedBox.shrink()];
-                                }),
-                              ],
+                                      ];
+                                    }
+                                    return [const SizedBox.shrink()];
+                                  }),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
     );
   }
 
+  // Utility method to calculate scaled text style
+  TextStyle _getScaledTextStyle(StackTextItem textItem, double scale) {
+    final originalStyle = textItem.content!.style!;
+    final scaledFontSize = (originalStyle.fontSize! * scale).clamp(8.0, 15.0);
+    final scaledLetterSpacing = ((originalStyle.letterSpacing ?? 0.0) * scale)
+        .clamp(-2.0, 8.0);
+    final scaledShadows = originalStyle.shadows?.map((shadow) {
+      return Shadow(
+        offset: Offset(shadow.offset.dx * scale, shadow.offset.dy * scale),
+        blurRadius: (shadow.blurRadius * scale).clamp(0.0, 10.0),
+        color: shadow.color,
+      );
+    }).toList();
+
+    return originalStyle.copyWith(
+      fontSize: scaledFontSize,
+      letterSpacing: scaledLetterSpacing,
+      shadows: scaledShadows,
+    );
+  }
+
   // Utility method to calculate text dimensions
-  Size getTextWidth({required String text, required TextStyle style}) {
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: style),
+  Size _getTextWidth({
+    required String text,
+    required TextStyle style,
+    required bool hasShadow,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: text.isEmpty ? " " : text, style: style),
       maxLines: null,
       textDirection: TextDirection.ltr,
-    )..layout();
-    return textPainter.size;
+    )..layout(maxWidth: 300.0);
+
+    // Account for shadow bounds if present
+    double shadowWidth = 0.0;
+    double shadowHeight = 0.0;
+    if (hasShadow && style.shadows != null) {
+      for (final shadow in style.shadows!) {
+        shadowWidth = math.max(
+          shadowWidth,
+          shadow.offset.dx.abs() + shadow.blurRadius,
+        );
+        shadowHeight = math.max(
+          shadowHeight,
+          shadow.offset.dy.abs() + shadow.blurRadius,
+        );
+      }
+    }
+
+    return Size(
+      (textPainter.width + shadowWidth * 2).clamp(10.0, 300.0),
+      (textPainter.height + shadowHeight * 2).clamp(10.0, 100.0),
+    );
   }
 
   // Utility method to parse text alignment
@@ -744,340 +792,14 @@ class HorizontalCardList extends GetView<HomeController> {
         return TextAlign.center;
       case 'right':
         return TextAlign.right;
+      case 'justify':
+        return TextAlign.justify;
       default:
         return TextAlign.left;
     }
   }
 }
-
-final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
-  CardTemplate(
-    id: 'birthday_card_20250721',
-    name: 'Liam\'s Birthday Bash',
-    thumbnailPath: null,
-    backgroundImage: 'assets/birthday_1.png',
-    items: [
-      {
-        'type': 'StackImageItem',
-        'id': 'birthday_image',
-        'status': 0,
-        'size': {'width': 400.0, 'height': 400.0},
-        'content': {'assetName': 'assets/Farman.png'},
-        'isCentered': true,
-        'offset': {'dx': 620.0, 'dy': 180.0},
-      },
-      {
-        'type': 'RowStackItem',
-        'status': 0,
-        'id': 'row_item_1',
-        'size': {'width': 0.0, 'height': 30.0},
-        'isCentered': true,
-        'offset': {'dx': 413.0, 'dy': 660.0},
-        'content': {
-          'items': [
-            {
-              'type': 'StackTextItem',
-              'id': 'text_1',
-              'size': {'width': 0.0, 'height': 30.0},
-              'offset': {'dx': 0.0, 'dy': 0.0},
-              'content': {
-                'data': 'Party Time',
-                'googleFont': 'Dancing Script',
-                'style': {'fontSize': 20.0, 'color': '#F57C00'},
-              },
-              'textAlign': 'center',
-            },
-            {
-              'type': 'StackTextItem',
-              'id': 'text_2',
-              'size': {'width': 0.0, 'height': 30.0},
-              'offset': {'dx': 0.0, 'dy': 0.0},
-              'content': {
-                'data': '5:30 PM',
-                'googleFont': 'Dancing Script',
-                'style': {'fontSize': 20.0, 'color': '#F57C00'},
-              },
-              'textAlign': 'center',
-            },
-            {
-              'type': 'StackTextItem',
-              'id': 'text_3',
-              'size': {'width': 0.0, 'height': 30.0},
-              'offset': {'dx': 0.0, 'dy': 0.0},
-              'content': {
-                'data': 'Islamabad',
-                'googleFont': 'Dancing Script',
-                'style': {'fontSize': 20.0, 'color': '#F57C00'},
-              },
-              'textAlign': 'center',
-            },
-          ],
-        },
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1040.0, 'height': 300.0},
-        'offset': {'dx': 620.0, 'dy': 675.0},
-        'isCentered': true,
-        'content': {
-          'data': 'You\'re Invited to',
-          'googleFont': 'Dancing Script',
-          'style': {'fontSize': 18.0, 'color': '#F57C00'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1040.0, 'height': 100.0},
-        'offset': {'dx': 620.0, 'dy': 675.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Liam\'s 8th \n Birthday!',
-          'googleFont': 'Dancing Script',
-          'style': {
-            'fontSize': 30.0,
-            'color': '#D32F2F',
-            'letterSpacing': 7.8,
-            'height': 1.0,
-          },
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 30.0},
-        'offset': {'dx': 620.0, 'dy': 690.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Join us for cake, games, \n and fun!',
-          'googleFont': stylishGoogleFonts[7],
-          'style': {'fontSize': 20.0, 'color': '#F57C00'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 690.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Saturday • August 31 • 2:00 PM',
-          'googleFont': stylishGoogleFonts[4],
-          'style': {'fontSize': 18.0, 'color': '#1E88E5'},
-        },
-        'textAlign': 'center',
-      },
-    ],
-    createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
-    updatedAt: null,
-    category: 'birthday',
-    categoryId: 'birthday',
-    compatibleDesigns: [],
-    width: 1240,
-    height: 1748,
-    isPremium: false,
-    tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
-    imagePath: 'assets/birthday_1.png',
-  ),
-  CardTemplate(
-    id: 'birthday_card_20250721',
-    name: 'Liam\'s Birthday Bash',
-    thumbnailPath: null,
-    backgroundImage: 'assets/birthday_1.png',
-    items: [
-      {
-        'type': 'StackImageItem',
-        'id': 'birthday_image',
-        'status': 0,
-        'size': {'width': 400.0, 'height': 400.0},
-        'content': {'assetName': 'assets/Farman.png'},
-        'isCentered': true,
-        'offset': {'dx': 620.0, 'dy': 180.0},
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1040.0, 'height': 300.0},
-        'offset': {'dx': 620.0, 'dy': 580.0},
-        'isCentered': true,
-        'content': {
-          'data': 'You\'re Invited to',
-          'googleFont': 'Dancing Script',
-          'style': {'fontSize': 18.0, 'color': '#F57C00'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1040.0, 'height': 100.0},
-        'offset': {'dx': 620.0, 'dy': 585.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Liam\'s 8th \n Birthday!',
-          'googleFont': 'Dancing Script',
-          'style': {
-            'fontSize': 30.0,
-            'color': '#D32F2F',
-            'letterSpacing': 7.8,
-            'height': 1.0,
-          },
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 30.0},
-        'offset': {'dx': 620.0, 'dy': 585.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Join us for cake, games, \n and fun!',
-          'googleFont': stylishGoogleFonts[7],
-          'style': {'fontSize': 20.0, 'color': '#F57C00'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 640.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Saturday August 31',
-          'googleFont': stylishGoogleFonts[4],
-          'style': {'fontSize': 18.0, 'color': '#1E88E5'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 640.0},
-        'isCentered': true,
-        'content': {
-          'data': '┃',
-          'googleFont': stylishGoogleFonts[4],
-          'style': {'fontSize': 20.0, 'color': '#1E88E5'},
-        },
-        'textAlign': 'center',
-      },
-    ],
-    createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
-    updatedAt: null,
-    category: 'birthday',
-    categoryId: 'birthday',
-    compatibleDesigns: [],
-    width: 1240,
-    height: 1748,
-    isPremium: false,
-    tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
-    imagePath: 'assets/birthday_1.png',
-  ),
-  CardTemplate(
-    id: 'wedding_invite_20250718',
-    name: 'Elegant Wedding Invite',
-    thumbnailPath: null,
-    backgroundImage: 'assets/card1.png',
-    items: [
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 120.0},
-        'offset': {'dx': 620.0, 'dy': 150.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Wedding Invitation',
-          'googleFont': 'Great Vibes',
-          'style': {'fontSize': 32.0, 'color': '#C2185B'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 100.0},
-        'offset': {'dx': 620.0, 'dy': 300.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Ali & Zara',
-          'googleFont': 'Dancing Script',
-          'style': {'fontSize': 40.0, 'color': '#880E4F'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 430.0},
-        'isCentered': true,
-        'content': {
-          'data': 'are getting married',
-          'googleFont': 'Open Sans',
-          'style': {'fontSize': 20.0, 'color': '#6A1B9A'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 80.0},
-        'offset': {'dx': 620.0, 'dy': 550.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Saturday, August 24, 2025',
-          'googleFont': 'Montserrat',
-          'style': {'fontSize': 22.0, 'color': '#4A148C'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 650.0},
-        'isCentered': true,
-        'content': {
-          'data': 'Lahore Royal Gardens, Phase 5',
-          'googleFont': 'Roboto',
-          'style': {'fontSize': 18.0, 'color': '#311B92'},
-        },
-        'textAlign': 'center',
-      },
-      {
-        'type': 'StackTextItem',
-        'status': 0,
-        'size': {'width': 1000.0, 'height': 60.0},
-        'offset': {'dx': 620.0, 'dy': 850.0},
-        'isCentered': true,
-        'content': {
-          'data': 'RSVP by August 10',
-          'googleFont': 'Roboto',
-          'style': {'fontSize': 18.0, 'color': '#1A237E'},
-        },
-        'textAlign': 'center',
-      },
-    ],
-    createdAt: DateTime.parse('2025-07-18T00:00:00Z'),
-    updatedAt: null,
-    category: 'wedding',
-    categoryId: 'wedding',
-    compatibleDesigns: [],
-    width: 1240,
-    height: 1748,
-    isPremium: true,
-    tags: ['wedding', 'love', 'romance', 'marriage'],
-    imagePath: 'assets/card1.png',
-  ),
-]);
-
+//befor maks
 // class HorizontalCardList extends GetView<HomeController> {
 //   const HorizontalCardList({super.key});
 
@@ -1135,7 +857,7 @@ final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
 //                                   ),
 //                                 ),
 //                                 // Template items
-//                                 ...template.items.map((item) {
+//                                 ...template.items.expand((item) {
 //                                   final type = item['type'];
 //                                   final originalX =
 //                                       (item['offset']['dx'] as num).toDouble();
@@ -1143,59 +865,215 @@ final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
 //                                       (item['offset']['dy'] as num).toDouble();
 //                                   double scaledX = originalX * scale;
 //                                   double scaledY = originalY * scale;
-
 //                                   scaledY += cumulativeYOffset;
 
-//                                   if (type == 'StackTextItem') {
+//                                   if (type == 'RowStackItem') {
+//                                     final rowItems =
+//                                         (item['content']['items'] as List)
+//                                             .map(
+//                                               (subItem) =>
+//                                                   subItem
+//                                                       as Map<String, dynamic>,
+//                                             )
+//                                             .toList();
+//                                     double totalWidth = 0.0;
+//                                     final List<Widget> rowWidgets = [];
+
+//                                     // Calculate total width for centering
+//                                     for (final subItem in rowItems) {
+//                                       if (subItem['type'] == 'StackTextItem') {
+//                                         final textItem = StackTextItem.fromJson(
+//                                           subItem,
+//                                         );
+//                                         final scaledFontSize =
+//                                             (textItem
+//                                                         .content!
+//                                                         .style!
+//                                                         .fontSize! *
+//                                                     scale)
+//                                                 .clamp(8.0, 15.0);
+//                                         final scaledLetterSpacing =
+//                                             ((textItem
+//                                                     .content!
+//                                                     .style
+//                                                     ?.letterSpacing ??
+//                                                 1) *
+//                                             scale);
+//                                         final scaledTextStyle = textItem
+//                                             .content!
+//                                             .style!
+//                                             .copyWith(
+//                                               fontSize: scaledFontSize,
+//                                               letterSpacing:
+//                                                   scaledLetterSpacing,
+//                                             );
+
+//                                         final textWidth = getTextWidth(
+//                                           text: textItem.content!.data ?? "",
+//                                           style: scaledTextStyle,
+//                                         ).width;
+//                                         totalWidth += textWidth;
+//                                       }
+//                                     }
+
+//                                     // Starting x-position for centering
+//                                     double startX = item['isCentered']
+//                                         ? (canvasWidth - totalWidth) / 2
+//                                         : scaledX;
+
+//                                     // Build widgets for row items
+//                                     for (final subItem in rowItems) {
+//                                       if (subItem['type'] == 'StackTextItem') {
+//                                         final textItem = StackTextItem.fromJson(
+//                                           subItem,
+//                                         );
+//                                         final scaledFontSize =
+//                                             (textItem
+//                                                         .content!
+//                                                         .style!
+//                                                         .fontSize! *
+//                                                     scale)
+//                                                 .clamp(8.0, 15.0);
+//                                         final scaledLetterSpacing =
+//                                             ((textItem
+//                                                     .content!
+//                                                     .style
+//                                                     ?.letterSpacing ??
+//                                                 1) *
+//                                             scale);
+//                                         final scaledTextStyle = textItem
+//                                             .content!
+//                                             .style!
+//                                             .copyWith(
+//                                               fontSize: scaledFontSize,
+//                                               letterSpacing:
+//                                                   scaledLetterSpacing,
+//                                             );
+
+//                                         final textSize = getTextWidth(
+//                                           text: textItem.content!.data ?? "",
+//                                           style: scaledTextStyle,
+//                                         );
+//                                         final maxTextHeight = textSize.height;
+//                                         if (rowItems.length == 1) {
+//                                           cumulativeYOffset += maxTextHeight;
+//                                         }
+
+//                                         rowWidgets.add(
+//                                           Positioned(
+//                                             left: textItem.isCentered
+//                                                 ? 0
+//                                                 : startX,
+//                                             right: textItem.isCentered
+//                                                 ? 0
+//                                                 : null,
+//                                             top: scaledY,
+//                                             child: StackTextCase(
+//                                               item: textItem.copyWith(
+//                                                 content: textItem.content!
+//                                                     .copyWith(
+//                                                       style: scaledTextStyle,
+//                                                       textAlign: _getTextAlign(
+//                                                         textItem
+//                                                                 .content!
+//                                                                 .textAlign
+//                                                                 ?.name ??
+//                                                             "center",
+//                                                       ),
+//                                                     ),
+//                                               ),
+//                                             ),
+//                                           ),
+//                                         );
+//                                         startX += textSize.width;
+//                                       }
+//                                     }
+
+//                                     if (rowItems.length > 1) {
+//                                       cumulativeYOffset += rowItems
+//                                           .map((subItem) {
+//                                             if (subItem['type'] ==
+//                                                 'StackTextItem') {
+//                                               final textItem =
+//                                                   StackTextItem.fromJson(
+//                                                     subItem,
+//                                                   );
+//                                               final scaledFontSize =
+//                                                   (textItem
+//                                                               .content!
+//                                                               .style!
+//                                                               .fontSize! *
+//                                                           scale)
+//                                                       .clamp(8.0, 15.0);
+//                                               final scaledTextStyle = textItem
+//                                                   .content!
+//                                                   .style!
+//                                                   .copyWith(
+//                                                     fontSize: scaledFontSize,
+//                                                   );
+//                                               return getTextWidth(
+//                                                 text:
+//                                                     textItem.content!.data ??
+//                                                     "",
+//                                                 style: scaledTextStyle,
+//                                               ).height;
+//                                             }
+//                                             return 0.0;
+//                                           })
+//                                           .reduce(math.max);
+//                                     }
+
+//                                     return rowWidgets;
+//                                   } else if (type == 'StackTextItem') {
 //                                     final textItem = StackTextItem.fromJson(
 //                                       item,
 //                                     );
-//                                     double scaledFontSize =
+//                                     final scaledFontSize =
 //                                         (textItem.content!.style!.fontSize! *
 //                                                 scale)
 //                                             .clamp(8.0, 15.0);
-//                                     double scaledLetterSpacing =
+//                                     final scaledLetterSpacing =
 //                                         ((textItem
 //                                                 .content!
 //                                                 .style
 //                                                 ?.letterSpacing ??
 //                                             1) *
 //                                         scale);
-
-//                                     TextStyle? scaledTextStyle = textItem
-//                                         .content
-//                                         ?.style
-//                                         ?.copyWith(
+//                                     final scaledTextStyle = textItem
+//                                         .content!
+//                                         .style!
+//                                         .copyWith(
 //                                           fontSize: scaledFontSize,
 //                                           letterSpacing: scaledLetterSpacing,
 //                                         );
 
-//                                     // Constrain text to canvas bounds
 //                                     final maxTextHeight = getTextWidth(
-//                                       text: textItem.content?.data ?? "",
-//                                       style: scaledTextStyle!,
+//                                       text: textItem.content!.data ?? "",
+//                                       style: scaledTextStyle,
 //                                     ).height;
 //                                     cumulativeYOffset += maxTextHeight;
 
-//                                     return Positioned(
-//                                       left: textItem.isCentered ? 0 : scaledX,
-//                                       right: textItem.isCentered ? 0 : null,
-//                                       top: scaledY,
-//                                       child: StackTextCase(
-//                                         item: textItem.copyWith(
-//                                           content: textItem.content?.copyWith(
-//                                             style: scaledTextStyle,
-//                                             textAlign: _getTextAlign(
-//                                               textItem
-//                                                       .content
-//                                                       ?.textAlign
-//                                                       ?.name ??
-//                                                   "center",
+//                                     return [
+//                                       Positioned(
+//                                         left: textItem.isCentered ? 0 : scaledX,
+//                                         right: textItem.isCentered ? 0 : null,
+//                                         top: scaledY,
+//                                         child: StackTextCase(
+//                                           item: textItem.copyWith(
+//                                             content: textItem.content!.copyWith(
+//                                               style: scaledTextStyle,
+//                                               textAlign: _getTextAlign(
+//                                                 textItem
+//                                                         .content!
+//                                                         .textAlign
+//                                                         ?.name ??
+//                                                     "center",
+//                                               ),
 //                                             ),
 //                                           ),
 //                                         ),
 //                                       ),
-//                                     );
+//                                     ];
 //                                   } else if (type == 'StackImageItem') {
 //                                     final path =
 //                                         item['content']['assetName'] ?? '';
@@ -1208,63 +1086,26 @@ final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
 //                                     final scaledWidth = originalWidth * scale;
 //                                     final scaledHeight = originalHeight * scale;
 
-//                                     return Positioned(
-//                                       left: item['isCentered']
-//                                           ? (canvasWidth / 2) -
-//                                                 (scaledWidth / 2)
-//                                           : scaledX,
-//                                       top: scaledY,
-//                                       child: SizedBox(
-//                                         width: scaledWidth,
-//                                         height: scaledHeight,
-//                                         child: Image.asset(
-//                                           path,
-//                                           fit: BoxFit.contain,
-//                                           alignment: Alignment.center,
-//                                         ),
-//                                       ),
-//                                     );
-//                                   } else if (type == 'ShapeStackItem') {
-//                                     final shapeItem = ShapeStackItem.fromJson(
-//                                       item,
-//                                     );
-//                                     final originalWidth =
-//                                         (item['size']['width'] ?? 100)
-//                                             .toDouble();
-//                                     final originalHeight =
-//                                         (item['size']['height'] ?? 100)
-//                                             .toDouble();
-//                                     final scaledWidth = originalWidth * scale;
-//                                     final scaledHeight = originalHeight * scale;
-
-//                                     // Constrain shape to canvas bounds
-//                                     // final maxShapeWidth = math.min(
-//                                     //   scaledWidth,
-//                                     //   canvasWidth - scaledX,
-//                                     // );
-//                                     // final maxShapeHeight = math.min(
-//                                     //   scaledHeight,
-//                                     //   canvasHeight - scaledY,
-//                                     // );
-//                                     cumulativeYOffset += scaledHeight;
-
-//                                     return Positioned(
-//                                       left: scaledX - (scaledWidth / 2),
-//                                       top: scaledY,
-//                                       child: SizedBox(
-//                                         width: scaledWidth,
-//                                         height: scaledHeight,
-//                                         child: Center(
-//                                           child: _buildShapeWidget(
-//                                             shapeItem,
-//                                             scaledWidth,
-//                                             scaledHeight,
+//                                     return [
+//                                       Positioned(
+//                                         left: item['isCentered']
+//                                             ? (canvasWidth / 2) -
+//                                                   (scaledWidth / 2)
+//                                             : scaledX,
+//                                         top: scaledY,
+//                                         child: SizedBox(
+//                                           width: scaledWidth,
+//                                           height: scaledHeight,
+//                                           child: Image.asset(
+//                                             path,
+//                                             fit: BoxFit.contain,
+//                                             alignment: Alignment.center,
 //                                           ),
 //                                         ),
 //                                       ),
-//                                     );
+//                                     ];
 //                                   }
-//                                   return const SizedBox.shrink();
+//                                   return [const SizedBox.shrink()];
 //                                 }),
 //                               ],
 //                             ),
@@ -1280,49 +1121,6 @@ final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
 //         ),
 //       ],
 //     );
-//   }
-
-//   // Widget-based shape rendering
-//   Widget _buildShapeWidget(ShapeStackItem item, double width, double height) {
-//     final content = item.content!;
-//     switch (content.shapeType) {
-//       case ShapeType.horizontalLine:
-//         return Container(
-//           width: width,
-//           height: content.strokeWidth, // Use strokeWidth for line thickness
-//           color: content.color,
-//         );
-//       case ShapeType.verticalLine:
-//         return Container(
-//           width: content.strokeWidth, // Use strokeWidth for line thickness
-//           height: height,
-//           color: content.color,
-//         );
-//       case ShapeType.rectangle:
-//         return Container(
-//           width: width,
-//           height: height,
-//           decoration: BoxDecoration(
-//             border: Border.all(
-//               color: content.color,
-//               width: content.strokeWidth,
-//             ),
-//           ),
-//         );
-//       case ShapeType.circle:
-//         return ClipOval(
-//           child: Container(
-//             width: width,
-//             height: height,
-//             decoration: BoxDecoration(
-//               border: Border.all(
-//                 color: content.color,
-//                 width: content.strokeWidth,
-//               ),
-//             ),
-//           ),
-//         );
-//     }
 //   }
 
 //   // Utility method to calculate text dimensions

@@ -167,7 +167,7 @@ class HomeController extends GetxController {
                 'content': {
                   'data': 'Party Time',
                   'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
+                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
                 },
                 'textAlign': 'center',
               },
@@ -179,7 +179,7 @@ class HomeController extends GetxController {
                 'content': {
                   'data': '5:30 PM',
                   'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
+                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
                 },
                 'textAlign': 'center',
               },
@@ -191,7 +191,7 @@ class HomeController extends GetxController {
                 'content': {
                   'data': 'Islamabad',
                   'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 20.0, 'color': '#F57C00'},
+                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
                 },
                 'textAlign': 'center',
               },
@@ -208,6 +208,31 @@ class HomeController extends GetxController {
             'data': 'You\'re Invited to',
             'googleFont': 'Dancing Script',
             'style': {'fontSize': 18.0, 'color': '#F57C00'},
+          },
+          'textAlign': 'center',
+        },
+
+        {
+          'type': 'StackTextItem',
+          'status': 0,
+          'size': {'width': 1040.0, 'height': 300.0},
+          'offset': {'dx': 620.0, 'dy': 675.0},
+          'isCentered': true,
+          'content': {
+            'data': 'Masked Text',
+            'googleFont': 'Dancing Script',
+            'style': {
+              'fontSize': 30.0,
+              // 'color': '#00000000', // Transparent for mask
+              'shadows': [
+                {
+                  'offset': {'dx': 2.0, 'dy': 2.0},
+                  'blurRadius': 4.0,
+                  // 'color': '#80000000', // Black with 50% opacity
+                },
+              ],
+            },
+            'maskImage': 'assets/card1.png',
           },
           'textAlign': 'center',
         },
