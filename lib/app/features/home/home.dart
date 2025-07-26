@@ -74,11 +74,14 @@ class HomePage extends GetView<HomeController> {
         controller: controller.pageController,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: controller.onPageChanged,
-        children: const [
-          HomeTab(),
+        children: [
+          const HomeTab(),
           EditorPage(),
-          PlaceholderPage(title: "My Designs", icon: Icons.palette_outlined),
-          PlaceholderPage(
+          const PlaceholderPage(
+            title: "My Designs",
+            icon: Icons.palette_outlined,
+          ),
+          const PlaceholderPage(
             title: "Premium",
             icon: Icons.workspace_premium_outlined,
           ),

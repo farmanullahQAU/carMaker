@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/controller.dart';
@@ -10,9 +11,16 @@ import 'package:cardmaker/stack_board/lib/widget_style_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:screenshot/screenshot.dart';
 
 class EditorPage extends GetView<EditorController> {
-  const EditorPage({super.key});
+  EditorPage({super.key});
+
+  final ScreenshotController screenshotController = ScreenshotController();
 
   @override
   Widget build(BuildContext context) {
@@ -32,23 +40,28 @@ class EditorPage extends GetView<EditorController> {
       if (controller.initialTemplate == null || isTemplateLoaded.value) return;
 
       final double availableWidth = constraints.maxWidth * 0.9;
-      final double availableHeight = 2 * (constraints.maxWidth);
+      final double availableHeight = constraints.maxHeight * 0.9;
 
-      canvasScale.value = math.min(
-        availableWidth / controller.initialTemplate!.width,
-        availableHeight / controller.initialTemplate!.height,
-      );
+      final double aspectRatio =
+          controller.initialTemplate!.width /
+          controller.initialTemplate!.height;
 
-      scaledCanvasWidth.value =
-          controller.initialTemplate!.width * canvasScale.value;
-      scaledCanvasHeight.value =
-          controller.initialTemplate!.height * canvasScale.value;
+      if (availableWidth / aspectRatio <= availableHeight) {
+        scaledCanvasWidth.value = availableWidth;
+        scaledCanvasHeight.value = availableWidth / aspectRatio;
+      } else {
+        scaledCanvasHeight.value = availableHeight;
+        scaledCanvasWidth.value = availableHeight * aspectRatio;
+      }
+
+      canvasScale.value =
+          scaledCanvasWidth.value / controller.initialTemplate!.width;
 
       controller.updateStackBoardRenderSize(
         Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
       );
       debugPrint(
-        'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}',
+        'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Aspect Ratio: $aspectRatio',
       );
 
       controller.loadTemplate(
@@ -59,6 +72,269 @@ class EditorPage extends GetView<EditorController> {
         context,
       );
       isTemplateLoaded.value = true;
+    }
+
+    StackItem deserializeItem(Map<String, dynamic> itemJson) {
+      final type = itemJson['type'];
+      if (type == 'StackTextItem') {
+        return StackTextItem.fromJson(itemJson);
+      } else if (type == 'StackImageItem') {
+        return StackImageItem.fromJson(itemJson);
+      } else if (type == 'RowStackItem') {
+        return RowStackItem.fromJson(itemJson);
+      } else {
+        throw Exception('Unsupported item type: $type');
+      }
+    }
+
+    Future<void> exportAsPDF() async {
+      try {
+        final exportKey = GlobalKey();
+        final image = await screenshotController.captureFromWidget(
+          Transform.scale(
+            scale: 0.9,
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: scaledCanvasWidth.value,
+              height: scaledCanvasHeight.value,
+              key: exportKey,
+              child: StackBoard(
+                controller: controller.boardController,
+                background: Container(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  color: controller.selectedBackground.value.isNotEmpty
+                      ? null
+                      : Colors.grey[200],
+                  child: controller.selectedBackground.value.isNotEmpty
+                      ? ColorFiltered(
+                          colorFilter: ColorFilter.matrix(
+                            _hueMatrix(controller.backgroundHue.value),
+                          ),
+                          child: Image.asset(
+                            controller.selectedBackground.value,
+                            width: scaledCanvasWidth.value,
+                            height: scaledCanvasHeight.value,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
+                        )
+                      : null,
+                ),
+                customBuilder: (item) {
+                  return (item is StackTextItem && item.content != null)
+                      ? StackTextCase(item: item.copyWith(status: item.status))
+                      : (item is StackImageItem && item.content != null)
+                      ? StackImageCase(item: item.copyWith(status: item.status))
+                      : (item is ColorStackItem1 && item.content != null)
+                      ? Container(
+                          width: item.size.width,
+                          height: item.size.height,
+                          color: item.content!.color,
+                        )
+                      : (item is RowStackItem && item.content != null)
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: item.content!.items
+                              .map(
+                                (subItem) => subItem is StackTextItem
+                                    ? StackTextCase(
+                                        item: subItem.copyWith(
+                                          status: subItem.status,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              )
+                              .toList(),
+                        )
+                      : const SizedBox.shrink();
+                },
+                borderBuilder: (status, item) {
+                  final CaseStyle style = CaseStyle();
+                  final double leftRight = status == StackItemStatus.idle
+                      ? 0
+                      : -(style.buttonSize) / 2;
+                  final double topBottom = status == StackItemStatus.idle
+                      ? 0
+                      : -(style.buttonSize) * 1.5;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    child: Positioned(
+                      left: -leftRight,
+                      top: -topBottom,
+                      right: -leftRight,
+                      bottom: -topBottom,
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: CustomPaint(
+                          painter: _BorderPainter(
+                            dotted: status == StackItemStatus.idle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                onDel: (_) {},
+                onStatusChanged: (_, __) => true,
+              ),
+            ),
+          ),
+          targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+          pixelRatio: 2,
+        );
+
+        final tempDir = await getTemporaryDirectory();
+        final imagePath = '${tempDir.path}/temp_invitation_card.png';
+        final imageFile = File(imagePath);
+        await imageFile.writeAsBytes(image);
+
+        final pdf = pw.Document();
+        final imageProvider = pw.MemoryImage(image);
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat(
+              scaledCanvasWidth.value,
+              scaledCanvasHeight.value,
+            ),
+            build: (pw.Context context) {
+              return pw.Center(child: pw.Image(imageProvider));
+            },
+          ),
+        );
+
+        final pdfPath = '${tempDir.path}/invitation_card.pdf';
+        final pdfFile = File(pdfPath);
+        await pdfFile.writeAsBytes(await pdf.save());
+
+        if (await pdfFile.exists()) {
+          Get.to(
+            () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
+          );
+        } else {
+          Get.snackbar(
+            'Error',
+            'Failed to create PDF file',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      } catch (e, s) {
+        debugPrint('Export PDF failed: $e\n$s');
+        Get.snackbar(
+          'Error',
+          'Failed to export PDF due to widget issue',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    }
+
+    Future<void> exportAsImage() async {
+      try {
+        final exportKey = GlobalKey();
+        final image = await screenshotController.captureFromWidget(
+          SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: StackBoard(
+              controller: controller.boardController,
+              background: Container(
+                width: scaledCanvasWidth.value,
+                height: scaledCanvasHeight.value,
+                color: controller.selectedBackground.value.isNotEmpty
+                    ? null
+                    : Colors.grey[200],
+                child: controller.selectedBackground.value.isNotEmpty
+                    ? ColorFiltered(
+                        colorFilter: ColorFilter.matrix(
+                          _hueMatrix(controller.backgroundHue.value),
+                        ),
+                        child: Image.asset(
+                          controller.selectedBackground.value,
+                          width: scaledCanvasWidth.value,
+                          height: scaledCanvasHeight.value,
+                          fit: BoxFit.contain,
+                        ),
+                      )
+                    : null,
+              ),
+              customBuilder: (StackItem<StackItemContent> item) {
+                return (item is StackTextItem && item.content != null)
+                    ? StackTextCase(item: item.copyWith(status: item.status))
+                    : (item is StackImageItem && item.content != null)
+                    ? StackImageCase(item: item.copyWith(status: item.status))
+                    : (item is ColorStackItem1 && item.content != null)
+                    ? Container(
+                        width: item.size.width,
+                        height: item.size.height,
+                        color: item.content!.color,
+                      )
+                    : (item is RowStackItem && item.content != null)
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: item.content!.items
+                            .map(
+                              (subItem) => subItem is StackTextItem
+                                  ? StackTextCase(
+                                      item: subItem.copyWith(
+                                        status: subItem.status,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            )
+                            .toList(),
+                      )
+                    : const SizedBox.shrink();
+              },
+              borderBuilder: (status, item) {
+                final CaseStyle style = CaseStyle();
+                final double leftRight = status == StackItemStatus.idle
+                    ? 0
+                    : -(style.buttonSize) / 2;
+                final double topBottom = status == StackItemStatus.idle
+                    ? 0
+                    : -(style.buttonSize) * 1.5;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  child: Positioned(
+                    left: -leftRight,
+                    top: -topBottom,
+                    right: -leftRight,
+                    bottom: -topBottom,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: CustomPaint(
+                        painter: _BorderPainter(
+                          dotted: status == StackItemStatus.idle,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+              onDel: (_) {},
+              onStatusChanged: (_, __) => true,
+            ),
+          ),
+        );
+
+        final output = await getTemporaryDirectory();
+        final file = File("${output.path}/invitation_card.png");
+        await file.writeAsBytes(image);
+        Get.snackbar(
+          'Success',
+          'Image exported to ${file.path}',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+      } catch (e, s) {
+        debugPrint('Export Image failed: $e\n$s');
+        Get.snackbar(
+          'Error',
+          'Failed to export image due to widget issue',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     }
 
     return Scaffold(
@@ -99,6 +375,16 @@ class EditorPage extends GetView<EditorController> {
             onPressed: controller.redo,
             tooltip: 'Redo',
           ),
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: () => exportAsPDF(),
+            tooltip: 'Export as PDF',
+          ),
+          IconButton(
+            icon: const Icon(Icons.image),
+            onPressed: () => exportAsImage(),
+            tooltip: 'Export as Image',
+          ),
         ],
       ),
       body: Column(
@@ -117,16 +403,11 @@ class EditorPage extends GetView<EditorController> {
 
                 return Center(
                   child: Obx(
-                    () => Container(
+                    () => SizedBox(
                       width: scaledCanvasWidth.value,
                       height: scaledCanvasHeight.value,
-                      key: stackBoardKey,
-                      color: Colors.red,
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 0,
-                      ),
                       child: StackBoard(
+                        key: stackBoardKey,
                         controller: controller.boardController,
                         background: InkWell(
                           onTap: () {
@@ -146,32 +427,38 @@ class EditorPage extends GetView<EditorController> {
                               Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  controller.selectedBackground.value.isNotEmpty
-                                      ? ColorFiltered(
-                                          colorFilter: ColorFilter.matrix(
-                                            _hueMatrix(
-                                              controller.backgroundHue.value,
+                                  Container(
+                                    width: scaledCanvasWidth.value,
+                                    height: scaledCanvasHeight.value,
+                                    color:
+                                        controller
+                                            .selectedBackground
+                                            .value
+                                            .isNotEmpty
+                                        ? null
+                                        : Colors.grey[200],
+                                    child:
+                                        controller
+                                            .selectedBackground
+                                            .value
+                                            .isNotEmpty
+                                        ? ColorFiltered(
+                                            colorFilter: ColorFilter.matrix(
+                                              _hueMatrix(
+                                                controller.backgroundHue.value,
+                                              ),
                                             ),
-                                          ),
-                                          child: Image.asset(
-                                            controller.selectedBackground.value,
-                                            fit: BoxFit.contain,
-                                            errorBuilder:
-                                                (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) => ColoredBox(
-                                                  color: Colors.grey[200]!,
-                                                  child: const Center(
-                                                    child: Text(
-                                                      'Background not found',
-                                                    ),
-                                                  ),
-                                                ),
-                                          ),
-                                        )
-                                      : ColoredBox(color: Colors.grey[200]!),
+                                            child: Image.asset(
+                                              controller
+                                                  .selectedBackground
+                                                  .value,
+                                              width: scaledCanvasWidth.value,
+                                              height: scaledCanvasHeight.value,
+                                              fit: BoxFit.contain,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
                                   CustomPaint(
                                     size: Size(
                                       scaledCanvasWidth.value,
@@ -186,9 +473,8 @@ class EditorPage extends GetView<EditorController> {
                                         scaledCanvasHeight.value,
                                       ),
                                       showGrid:
-                                          controller.draggedItem.value !=
-                                          null, // Enable grid by default
-                                      gridSize: 50.0, // Adjustable grid size
+                                          controller.draggedItem.value != null,
+                                      gridSize: 50.0,
                                       guideColor: Colors.blue.withOpacity(0.5),
                                       criticalGuideColor: Colors.red,
                                       centerGuideColor: Colors.green,
@@ -237,21 +523,17 @@ class EditorPage extends GetView<EditorController> {
                                 : (item is RowStackItem && item.content != null)
                                 ? Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: item.content!.items.map((
-                                      subItem,
-                                    ) {
-                                      if (subItem is StackTextItem &&
-                                          subItem.content != null) {
-                                        return StackTextCase(item: subItem);
-                                      } else {
-                                        return const SizedBox.shrink();
-                                      }
-                                    }).toList(),
+                                    children: item.content!.items
+                                        .map(
+                                          (subItem) => subItem is StackTextItem
+                                              ? StackTextCase(item: subItem)
+                                              : const SizedBox.shrink(),
+                                        )
+                                        .toList(),
                                   )
                                 : const SizedBox.shrink(),
                           );
                         },
-
                         borderBuilder: (status, item) {
                           final CaseStyle style = CaseStyle();
                           final double leftRight =
@@ -281,17 +563,7 @@ class EditorPage extends GetView<EditorController> {
                           );
                         },
                         onDel: controller.deleteItem,
-                        // onOffsetChanged: (item, offset) {
-                        //   debugPrint(
-                        //     'StackBoard onOffsetChanged: item=${item.id}, offset=$offset',
-                        //   );
-                        //   controller.onItemOffsetChanged(item, offset);
-                        //   return true;
-                        // },
                         onStatusChanged: (item, status) {
-                          debugPrint(
-                            'StackBoard onStatusChanged: item=${item.id}, status=$status',
-                          );
                           controller.onItemStatusChanged(item, status);
                           return true;
                         },
@@ -359,16 +631,12 @@ class EditorPage extends GetView<EditorController> {
                         showStickerPanel.value = false;
                         showHueSlider.value = false;
                         showShapePanel.value = false;
-                        // Add new text item if none is selected
                         if (controller.activeItem.value == null ||
                             controller.activeItem.value is! StackTextItem) {
                           controller.addText(
                             "New Text",
                             size: const Size(100, 50),
                           );
-                          // controller.activeItem.value =
-                          //     controller.boardController.getAllData()
-                          //         .last;
                         }
                       },
                       isActive: selectedToolIndex.value == 3,
@@ -1175,5 +1443,73 @@ class RowStackContent extends StackItemContent {
     } else {
       throw Exception('Unsupported item type: $type');
     }
+  }
+}
+
+class ExportPreviewPage extends StatelessWidget {
+  final String imagePath;
+  final String pdfPath;
+
+  const ExportPreviewPage({
+    super.key,
+    required this.imagePath,
+    required this.pdfPath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Export Preview'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              'Generated Image',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Image.file(
+              File(imagePath),
+              width: 300,
+              height: 400,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Generated PDF',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                final result = await OpenFile.open(pdfPath);
+                if (result.type != ResultType.done) {
+                  Get.snackbar(
+                    'Error',
+                    'Failed to open PDF: ${result.message}',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
+                }
+              },
+              child: const Text('Open PDF'),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Location: $pdfPath',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

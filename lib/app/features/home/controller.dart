@@ -438,6 +438,15 @@ class HomeController extends GetxController {
           'textAlign': 'center',
         },
         {
+          'type': 'StackImageItem',
+          'id': 'line_1',
+          'status': 0,
+          'size': {'width': 400.0, 'height': 300.0},
+          'content': {'assetName': 'assets/line1.png'},
+          'isCentered': true,
+          'offset': {'dx': 620.0, 'dy': 180.0},
+        },
+        {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 60.0},
