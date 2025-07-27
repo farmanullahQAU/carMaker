@@ -35,12 +35,93 @@ class EditorPage extends GetView<EditorController> {
     final RxDouble canvasScale = 1.0.obs;
     final RxDouble scaledCanvasWidth = 0.0.obs;
     final RxDouble scaledCanvasHeight = 0.0.obs;
+    void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
+      print("ccccccccccccccccccccc");
+      if (controller.initialTemplate == null || isTemplateLoaded.value) return;
 
+      // Determine if the template is exported
+      final isExportedTemplate =
+          controller.initialTemplate!.id.contains('exported_') ||
+          controller.initialTemplate!.name.contains('Exported');
+
+      if (isExportedTemplate) {
+        print("dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx $isExportedTemplate");
+
+        final double availableWidth = constraints.maxWidth * 0.9;
+        final double availableHeight = constraints.maxHeight * 0.95;
+
+        final double aspectRatio =
+            controller.initialTemplate!.width /
+            controller.initialTemplate!.height;
+
+        if (availableWidth / aspectRatio <= availableHeight) {
+          scaledCanvasWidth.value = availableWidth;
+          scaledCanvasHeight.value = availableWidth / aspectRatio;
+        } else {
+          scaledCanvasHeight.value = availableHeight;
+          scaledCanvasWidth.value = availableHeight * aspectRatio;
+        }
+
+        canvasScale.value =
+            scaledCanvasWidth.value / controller.initialTemplate!.width;
+
+        controller.updateStackBoardRenderSize(
+          Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        );
+        debugPrint(
+          'Updated StackBoard size for non-exported template: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
+        );
+
+        controller.loadExportedTemplate(
+          controller.initialTemplate!,
+          context,
+          scaledCanvasWidth.value,
+          scaledCanvasHeight.value,
+        );
+      } else {
+        // Use the original working logic for non-exported templates
+        final double availableWidth = constraints.maxWidth * 0.9;
+        final double availableHeight = constraints.maxHeight * 0.95;
+
+        final double aspectRatio =
+            controller.initialTemplate!.width /
+            controller.initialTemplate!.height;
+
+        if (availableWidth / aspectRatio <= availableHeight) {
+          scaledCanvasWidth.value = availableWidth;
+          scaledCanvasHeight.value = availableWidth / aspectRatio;
+        } else {
+          scaledCanvasHeight.value = availableHeight;
+          scaledCanvasWidth.value = availableHeight * aspectRatio;
+        }
+
+        canvasScale.value =
+            scaledCanvasWidth.value / controller.initialTemplate!.width;
+
+        controller.updateStackBoardRenderSize(
+          Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        );
+        debugPrint(
+          'Updated StackBoard size for non-exported template: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
+        );
+
+        controller.loadTemplate(
+          controller.initialTemplate!,
+          canvasScale.value,
+          scaledCanvasWidth.value,
+          scaledCanvasHeight.value,
+          context,
+        );
+      }
+      isTemplateLoaded.value = true;
+    }
+
+    /*
     void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
       if (controller.initialTemplate == null || isTemplateLoaded.value) return;
 
       final double availableWidth = constraints.maxWidth * 0.9;
-      final double availableHeight = constraints.maxHeight * 0.9;
+      final double availableHeight = constraints.maxHeight * 0.95;
 
       final double aspectRatio =
           controller.initialTemplate!.width /
@@ -73,7 +154,7 @@ class EditorPage extends GetView<EditorController> {
       );
       isTemplateLoaded.value = true;
     }
-
+*/
     StackItem deserializeItem(Map<String, dynamic> itemJson) {
       final type = itemJson['type'];
       if (type == 'StackTextItem') {
@@ -208,9 +289,9 @@ class EditorPage extends GetView<EditorController> {
         await pdfFile.writeAsBytes(await pdf.save());
 
         if (await pdfFile.exists()) {
-          Get.to(
-            () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
-          );
+          // Get.to(
+          //   () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
+          // );
         } else {
           Get.snackbar(
             'Error',
@@ -377,7 +458,9 @@ class EditorPage extends GetView<EditorController> {
           ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () => exportAsPDF(),
+            onPressed: () {
+              controller.exportDesign();
+            },
             tooltip: 'Export as PDF',
           ),
           IconButton(
@@ -512,7 +595,11 @@ class EditorPage extends GetView<EditorController> {
                                 ? StackTextCase(item: item)
                                 : (item is StackImageItem &&
                                       item.content != null)
-                                ? StackImageCase(item: item)
+                                ? Container(
+                                    color: Colors.blue.withOpacity(0.1),
+
+                                    child: StackImageCase(item: item),
+                                  )
                                 : (item is ColorStackItem1 &&
                                       item.content != null)
                                 ? Container(

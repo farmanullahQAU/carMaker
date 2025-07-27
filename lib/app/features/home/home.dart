@@ -489,8 +489,8 @@ class HorizontalCardList extends GetView<HomeController> {
                                     final originalY =
                                         (item['offset']['dy'] as num)
                                             .toDouble();
-                                    double scaledX = originalX * scale;
-                                    double scaledY = originalY * scale;
+                                    double scaledX = originalX;
+                                    double scaledY = originalY;
                                     scaledY += cumulativeYOffset;
 
                                     if (type == 'RowStackItem') {
@@ -655,7 +655,7 @@ class HorizontalCardList extends GetView<HomeController> {
                                               ? 0
                                               : scaledX,
                                           right: textItem.isCentered ? 0 : null,
-                                          top: scaledY,
+                                          top: scaledY + (18 * scale),
                                           child: StackTextCase(
                                             isFitted: false,
 
@@ -676,16 +676,18 @@ class HorizontalCardList extends GetView<HomeController> {
                                         ),
                                       ];
                                     } else if (type == 'StackImageItem') {
+                                      double scaledY = originalY * scale;
                                       final path =
                                           item['content']['assetName'] ?? '';
-                                      final originalWidth =
+                                      double originalWidth =
                                           (item['size']['width'] ?? 100)
                                               .toDouble();
-                                      final originalHeight =
+                                      double originalHeight =
                                           (item['size']['height'] ?? 100)
                                               .toDouble();
-                                      final scaledWidth = originalWidth * scale;
-                                      final scaledHeight =
+                                      double scaledWidth =
+                                          (originalWidth * scale);
+                                      double scaledHeight =
                                           originalHeight * scale;
 
                                       return [
@@ -693,13 +695,17 @@ class HorizontalCardList extends GetView<HomeController> {
                                           left: item['isCentered']
                                               ? (canvasWidth - scaledWidth) / 2
                                               : scaledX,
-                                          top: scaledY,
-                                          child: SizedBox(
+
+                                          top:
+                                              scaledY +
+                                              (18 *
+                                                  scale), //18 is button size of border we show in editor so to shwo conistentcy he add here also
+                                          child: Container(
+                                            color: Colors.blue.withOpacity(0.2),
                                             width: scaledWidth,
                                             height: scaledHeight,
                                             child: Image.asset(
                                               path,
-                                              fit: BoxFit.contain,
                                               alignment: Alignment.center,
                                               errorBuilder:
                                                   (
@@ -714,6 +720,7 @@ class HorizontalCardList extends GetView<HomeController> {
                                         ),
                                       ];
                                     }
+
                                     return [const SizedBox.shrink()];
                                   }),
                                 ],

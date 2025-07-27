@@ -27,6 +27,7 @@ class StackImageCase extends StatelessWidget {
       width: content.width,
       height: content.height,
       fit: content.fit,
+
       color: content.color,
       colorBlendMode: content.colorBlendMode,
       repeat: content.repeat,

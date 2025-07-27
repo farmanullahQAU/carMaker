@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -133,342 +132,338 @@ class HomeController extends GetxController {
 
   // --- FEATURED TEMPLATES ---
   final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([
+    // CardTemplate(
+    //   id: 'birthday_card_20250721',
+    //   name: 'Liam\'s Birthday Bash',
+    //   thumbnailPath: null,
+    //   backgroundImage: 'assets/card1.png',
+    //   items: [
+    //     {
+    //       'type': 'StackImageItem',
+    //       'id': 'birthday_image',
+    //       'status': 0,
+    //       'size': {'width': 400.0, 'height': 400.0},
+    //       'content': {'assetName': 'assets/Farman.png'},
+    //       'isCentered': true,
+    //       'offset': {'dx': 620.0, 'dy': 180.0},
+    //     },
+    //     {
+    //       'type':
+    //           'RowStackItem', //if we need the RowStackItem any item aligned horizentally we keep dy for that zero so that the RowStackItem dy will be used .
+    //       'status': 0,
+    //       'id': 'row_item_1',
+    //       'size': {'width': 0.0, 'height': 30.0},
+    //       'isCentered': true,
+    //       'offset': {'dx': 413.0, 'dy': 660.0},
+    //       'content': {
+    //         'items': [
+    //           {
+    //             'type': 'StackTextItem',
+
+    //             'id': 'text_1',
+    //             'size': {'width': 0.0, 'height': 30.0},
+    //             'offset': {'dx': 0.0, 'dy': 0.0},
+    //             'content': {
+    //               'data': 'Party Time',
+    //               'googleFont': 'Dancing Script',
+    //               'style': {'fontSize': 18.0, 'color': '#F57C00'},
+    //             },
+    //             'textAlign': 'center',
+    //           },
+    //           {
+    //             'type': 'StackTextItem',
+    //             'id': 'text_2',
+    //             'size': {'width': 0.0, 'height': 30.0},
+    //             'offset': {'dx': 0.0, 'dy': 0.0},
+    //             'content': {
+    //               'data': '5:30 PM',
+    //               'googleFont': 'Dancing Script',
+    //               'style': {'fontSize': 18.0, 'color': '#F57C00'},
+    //             },
+    //             'textAlign': 'center',
+    //           },
+    //           {
+    //             'type': 'StackTextItem',
+    //             'id': 'text_3',
+    //             'size': {'width': 0.0, 'height': 30.0},
+    //             'offset': {'dx': 0.0, 'dy': 660.0},
+    //             'content': {
+    //               'data': 'Islamabad',
+    //               'googleFont': 'Dancing Script',
+    //               'style': {'fontSize': 18.0, 'color': '#F57C00'},
+    //             },
+    //             'textAlign': 'center',
+    //           },
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       'type': 'StackTextItem',
+    //       'status': 0,
+    //       'size': {'width': 1040.0, 'height': 300.0},
+    //       'offset': {'dx': 620.0, 'dy': 675.0},
+    //       'isCentered': true,
+    //       'content': {
+    //         'data': 'You\'re Invited to',
+    //         'googleFont': 'Dancing Script',
+    //         'style': {'fontSize': 18.0, 'color': '#F57C00'},
+    //       },
+    //       'textAlign': 'center',
+    //     },
+
+    //     {
+    //       'type': 'StackTextItem',
+    //       'status': 0,
+    //       'size': {'width': 1040.0, 'height': 300.0},
+    //       'offset': {'dx': 620.0, 'dy': 675.0},
+    //       'isCentered': true,
+    //       'content': {
+    //         'data': 'Masked Text',
+    //         'googleFont': 'Dancing Script',
+    //         'style': {
+    //           'fontSize': 30.0,
+    //           // 'color': '#00000000', // Transparent for mask
+    //           'shadows': [
+    //             {
+    //               'offset': {'dx': 2.0, 'dy': 2.0},
+    //               'blurRadius': 4.0,
+    //               // 'color': '#80000000', // Black with 50% opacity
+    //             },
+    //           ],
+    //         },
+    //         'maskImage': 'assets/card1.png',
+    //       },
+    //       'textAlign': 'center',
+    //     },
+
+    //     {
+    //       'type': 'StackTextItem',
+    //       'status': 0,
+    //       'size': {'width': 1040.0, 'height': 100.0},
+    //       'offset': {'dx': 620.0, 'dy': 675.0},
+    //       'isCentered': true,
+    //       'content': {
+    //         'data': 'Liam\'s 8th \n Birthday!',
+    //         'googleFont': 'Dancing Script',
+    //         'style': {
+    //           'fontSize': 30.0,
+    //           'color': '#D32F2F',
+    //           'letterSpacing': 7.8,
+    //           'height': 1.0,
+    //         },
+    //       },
+    //       'textAlign': 'center',
+    //     },
+
+    //     {
+    //       'type': 'StackTextItem',
+    //       'status': 0,
+    //       'size': {'width': 1000.0, 'height': 30.0},
+    //       'offset': {
+    //         'dx': 620.0,
+    //         'dy': 700.0,
+    //       }, //dy is sam becase we calculate we add as this dy pluse the previous item height
+    //       'isCentered': true,
+    //       'content': {
+    //         'data': 'Join us for cake, games, \n and fun!',
+    //         'googleFont': stylishGoogleFonts[7],
+    //         'style': {'fontSize': 20.0, 'color': '#F57C00'},
+    //       },
+    //       'textAlign': 'center',
+    //     },
+    //     {
+    //       'type': 'StackImageItem',
+    //       'id': 'line_1',
+    //       'status': 0,
+    //       'size': {'width': 400.0, 'height': 200.0},
+    //       'content': {'assetName': 'assets/line1.png'},
+    //       'isCentered': true,
+    //       'offset': {'dx': 620.0, 'dy': 780.0},
+    //     },
+    //     {
+    //       'type': 'StackTextItem',
+    //       'status': 0,
+    //       'size': {'width': 1000.0, 'height': 60.0},
+    //       'offset': {'dx': 620.0, 'dy': 1000.0},
+    //       'isCentered': true,
+    //       'content': {
+    //         'data': 'Saturday • August 31 • 2:00 PM',
+    //         'googleFont': stylishGoogleFonts[4],
+    //         'style': {'fontSize': 18.0, 'color': '#1E88E5'},
+    //       },
+    //       'textAlign': 'center',
+    //     },
+    //   ],
+    //   createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
+    //   updatedAt: null,
+    //   category: 'birthday',
+    //   categoryId: 'birthday',
+    //   compatibleDesigns: [],
+    //   width: 1240,
+    //   height: 1748,
+    //   isPremium: false,
+    //   tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
+    //   imagePath: 'assets/birthday_1.png',
+    // ),
     CardTemplate(
       id: 'birthday_card_20250721',
       name: 'Liam\'s Birthday Bash',
-      thumbnailPath: null,
-      backgroundImage: 'assets/birthday_1.png',
-      items: [
-        {
-          'type': 'StackImageItem',
-          'id': 'birthday_image',
-          'status': 0,
-          'size': {'width': 400.0, 'height': 400.0},
-          'content': {'assetName': 'assets/Farman.png'},
-          'isCentered': true,
-          'offset': {'dx': 620.0, 'dy': 180.0},
-        },
-        {
-          'type':
-              'RowStackItem', //if we need the RowStackItem any item aligned horizentally we keep dy for that zero so that the RowStackItem dy will be used .
-          'status': 0,
-          'id': 'row_item_1',
-          'size': {'width': 0.0, 'height': 30.0},
-          'isCentered': true,
-          'offset': {'dx': 413.0, 'dy': 660.0},
-          'content': {
-            'items': [
-              {
-                'type': 'StackTextItem',
-
-                'id': 'text_1',
-                'size': {'width': 0.0, 'height': 30.0},
-                'offset': {'dx': 0.0, 'dy': 0.0},
-                'content': {
-                  'data': 'Party Time',
-                  'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
-                },
-                'textAlign': 'center',
-              },
-              {
-                'type': 'StackTextItem',
-                'id': 'text_2',
-                'size': {'width': 0.0, 'height': 30.0},
-                'offset': {'dx': 0.0, 'dy': 0.0},
-                'content': {
-                  'data': '5:30 PM',
-                  'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
-                },
-                'textAlign': 'center',
-              },
-              {
-                'type': 'StackTextItem',
-                'id': 'text_3',
-                'size': {'width': 0.0, 'height': 30.0},
-                'offset': {'dx': 0.0, 'dy': 660.0},
-                'content': {
-                  'data': 'Islamabad',
-                  'googleFont': 'Dancing Script',
-                  'style': {'fontSize': 18.0, 'color': '#F57C00'},
-                },
-                'textAlign': 'center',
-              },
-            ],
-          },
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1040.0, 'height': 300.0},
-          'offset': {'dx': 620.0, 'dy': 675.0},
-          'isCentered': true,
-          'content': {
-            'data': 'You\'re Invited to',
-            'googleFont': 'Dancing Script',
-            'style': {'fontSize': 18.0, 'color': '#F57C00'},
-          },
-          'textAlign': 'center',
-        },
-
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1040.0, 'height': 300.0},
-          'offset': {'dx': 620.0, 'dy': 675.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Masked Text',
-            'googleFont': 'Dancing Script',
-            'style': {
-              'fontSize': 30.0,
-              // 'color': '#00000000', // Transparent for mask
-              'shadows': [
-                {
-                  'offset': {'dx': 2.0, 'dy': 2.0},
-                  'blurRadius': 4.0,
-                  // 'color': '#80000000', // Black with 50% opacity
-                },
-              ],
-            },
-            'maskImage': 'assets/card1.png',
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1040.0, 'height': 100.0},
-          'offset': {'dx': 620.0, 'dy': 675.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Liam\'s 8th \n Birthday!',
-            'googleFont': 'Dancing Script',
-            'style': {
-              'fontSize': 30.0,
-              'color': '#D32F2F',
-              'letterSpacing': 7.8,
-              'height': 1.0,
-            },
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 30.0},
-          'offset': {
-            'dx': 620.0,
-            'dy': 690.0,
-          }, //dy is sam becase we calculate we add as this dy pluse the previous item height
-          'isCentered': true,
-          'content': {
-            'data': 'Join us for cake, games, \n and fun!',
-            'googleFont': stylishGoogleFonts[7],
-            'style': {'fontSize': 20.0, 'color': '#F57C00'},
-          },
-          'textAlign': 'center',
-        },
-        // {
-        //   'type': 'ShapeStackItem',
-        //   'status': 0,
-        //   'id': 'divider_line_1',
-        //   'size': {'width': 800.0, 'height': 10.0},
-        //   'offset': {'dx': 620.0, 'dy': 660.0},
-        //   'isCentered': true,
-        //   'content': {
-        //     'shapeType': 0, // ShapeType.horizontalLine
-        //     'color': '#D32F2F', // Black
-        //     'strokeWidth': 2.0,
-        //   },
-        // },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 690.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Saturday • August 31 • 2:00 PM',
-            'googleFont': stylishGoogleFonts[4],
-            'style': {'fontSize': 18.0, 'color': '#1E88E5'},
-          },
-          'textAlign': 'center',
-        },
-      ],
-      createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
-      updatedAt: null,
-      category: 'birthday',
-      categoryId: 'birthday',
-      compatibleDesigns: [],
-      width: 1240,
-      height: 1748,
-      isPremium: false,
-      tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
-      imagePath: 'assets/birthday_1.png',
-    ),
-    CardTemplate(
-      id: 'birthday_card_20250721',
-      name: 'Liam\'s Birthday Bash',
-      thumbnailPath: null,
-      backgroundImage: 'assets/birthday_1.png',
-      items: [
-        {
-          'type': 'StackImageItem',
-          'id': 'birthday_image',
-          'status': 0,
-          'size': {'width': 400.0, 'height': 400.0},
-          'content': {'assetName': 'assets/Farman.png'},
-          'isCentered': true,
-          'offset': {'dx': 620.0, 'dy': 180.0},
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1040.0, 'height': 300.0},
-          'offset': {'dx': 620.0, 'dy': 580.0},
-          'isCentered': true,
-          'content': {
-            'data': 'You\'re Invited to',
-            'googleFont': 'Dancing Script',
-            'style': {'fontSize': 18.0, 'color': '#F57C00'},
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1040.0, 'height': 100.0},
-          'offset': {'dx': 620.0, 'dy': 585.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Liam\'s 8th \n Birthday!',
-            'googleFont': 'Dancing Script',
-            'style': {
-              'fontSize': 30.0,
-              'color': '#D32F2F',
-              'letterSpacing': 7.8,
-              'height': 1.0,
-            },
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 30.0},
-          'offset': {'dx': 620.0, 'dy': 585.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Join us for cake, games, \n and fun!',
-            'googleFont': stylishGoogleFonts[7],
-            'style': {'fontSize': 20.0, 'color': '#F57C00'},
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 640.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Saturday August 31',
-            'googleFont': stylishGoogleFonts[4],
-            'style': {'fontSize': 18.0, 'color': '#1E88E5'},
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 640.0},
-          'isCentered': true,
-          'content': {
-            'data': '┃',
-            'googleFont': stylishGoogleFonts[4],
-            'style': {'fontSize': 20.0, 'color': '#1E88E5'},
-          },
-          'textAlign': 'center',
-        },
-      ],
-      createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
-      updatedAt: null,
-      category: 'birthday',
-      categoryId: 'birthday',
-      compatibleDesigns: [],
-      width: 1240,
-      height: 1748,
-      isPremium: false,
-      tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
-      imagePath: 'assets/birthday_1.png',
-    ),
-    CardTemplate(
-      id: 'wedding_invite_20250718',
-      name: 'Elegant Wedding Invite',
       thumbnailPath: null,
       backgroundImage: 'assets/card1.png',
       items: [
         {
           'type': 'StackTextItem',
           'status': 0,
-          'size': {'width': 1000.0, 'height': 120.0},
-          'offset': {'dx': 620.0, 'dy': 150.0},
+          'size': {'width': 1040.0, 'height': 300.0},
+          'offset': {
+            'dx': 620.0,
+            'dy': 500.0,
+          }, //zero means half hide from above so we are adding half its heght+button size to make it perfect top
           'isCentered': true,
           'content': {
-            'data': 'Wedding Invitation',
-            'googleFont': 'Great Vibes',
-            'style': {'fontSize': 32.0, 'color': '#C2185B'},
-          },
-          'textAlign': 'center',
-        },
-        {
-          'type': 'StackTextItem',
-          'status': 0,
-          'size': {'width': 1000.0, 'height': 100.0},
-          'offset': {'dx': 620.0, 'dy': 300.0},
-          'isCentered': true,
-          'content': {
-            'data': 'Ali & Zara',
+            'data': 'You\'re Invited to',
             'googleFont': 'Dancing Script',
-            'style': {'fontSize': 40.0, 'color': '#880E4F'},
+            'style': {'fontSize': 25.0, 'color': '#F57C00'},
           },
           'textAlign': 'center',
         },
         {
           'type': 'StackImageItem',
-          'id': 'line_1',
+          'id': 'birthday_image',
           'status': 0,
-          'size': {'width': 400.0, 'height': 300.0},
+          'size': {'width': 500.0, 'height': 200.0}, //
           'content': {'assetName': 'assets/line1.png'},
           'isCentered': true,
-          'offset': {'dx': 620.0, 'dy': 180.0},
+          'offset': {
+            'dx': 620.0,
+            'dy': 500.0,
+          }, //dy zero means half hide from above dy //to make it excatly to top we do dy =imageHeight/2
+        },
+
+        {
+          'type': 'StackTextItem',
+          'status': 0,
+          'size': {'width': 1040.0, 'height': 100.0},
+          'offset': {'dx': 600.0, 'dy': 500.0},
+          'isCentered': true,
+          'content': {
+            'data': 'Liam\'s 8th \n Birthday!',
+            'googleFont': 'Dancing Script',
+            'style': {
+              'fontSize': 30.0,
+              'color': '#D32F2F',
+              'letterSpacing': 7.8,
+              'height': 1.0,
+            },
+          },
+          'textAlign': 'center',
+        },
+
+        // {
+        //   'type': 'StackImageItem',
+        //   'id': 'fr',
+        //   'status': 0,
+        //   'size': {'width': 400.0, 'height': 400.0},
+        //   'content': {'assetName': 'assets/Farman.png'},
+        //   'isCentered': true,
+        //   'offset': {
+        //     'dx': 620.0,
+        //     'dy': 400.0,
+        //   }, // Adjusted dx to center based on new width (1748 / 2)
+        // },
+        // {
+        //   'type': 'StackTextItem',
+        //   'status': 0,
+        //   'size': {'width': 1000.0, 'height': 30.0},
+        //   'offset': {'dx': 620.0, 'dy': 400.0},
+        //   'isCentered': true,
+        //   'content': {
+        //     'data': 'Join us for cake, games, \n and fun!',
+        //     'googleFont': stylishGoogleFonts[7],
+        //     'style': {'fontSize': 20.0, 'color': '#F57C00'},
+        //   },
+        //   'textAlign': 'center',
+        // },
+        // {
+        //   'type': 'StackTextItem',
+        //   'status': 0,
+        //   'size': {'width': 1000.0, 'height': 60.0},
+        //   'offset': {'dx': 620.0, 'dy': 450.0},
+        //   'isCentered': true,
+        //   'content': {
+        //     'data': 'Saturday August 31',
+        //     'googleFont': stylishGoogleFonts[4],
+        //     'style': {'fontSize': 18.0, 'color': '#1E88E5'},
+        //   },
+        //   'textAlign': 'center',
+        // },
+        // {
+        //   'type': 'StackTextItem',
+        //   'status': 0,
+        //   'size': {'width': 1000.0, 'height': 60.0},
+        //   'offset': {'dx': 620.0, 'dy': 640.0},
+        //   'isCentered': true,
+        //   'content': {
+        //     'data': '┃',
+        //     'googleFont': stylishGoogleFonts[4],
+        //     'style': {'fontSize': 20.0, 'color': '#1E88E5'},
+        //   },
+        //   'textAlign': 'center',
+        // },
+      ],
+      createdAt: DateTime.parse('2025-07-21T00:00:00Z'),
+      updatedAt: null,
+      category: 'birthday',
+      categoryId: 'birthday',
+      compatibleDesigns: [],
+      width: 1240,
+      height: 1748,
+      isPremium: false,
+      tags: ['birthday', 'kids', 'party', 'celebration', 'invite'],
+      imagePath: 'assets/card1.png',
+    ),
+
+    CardTemplate(
+      id: 'new_template_20250726',
+      name: 'Summer Celebration Invite',
+      thumbnailPath: null,
+      backgroundImage: 'assets/card2.png',
+      items: [
+        {
+          'type': 'StackImageItem',
+          'id': 'summer_image',
+          'status': 0,
+          'size': {'width': 450.0, 'height': 450.0},
+          'content': {'assetName': 'assets/Farman.png'},
+          'isCentered': true,
+          'offset': {
+            'dx': 874.0,
+            'dy': 100.0,
+          }, // Adjusted dx to center based on new width (1748 / 2)
         },
         {
           'type': 'StackTextItem',
           'status': 0,
-          'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 430.0},
+          'size': {'width': 1000.0, 'height': 120.0},
+          'offset': {'dx': 874.0, 'dy': 100.0}, // Adjusted dx to center
           'isCentered': true,
           'content': {
-            'data': 'are getting married',
-            'googleFont': 'Open Sans',
-            'style': {'fontSize': 20.0, 'color': '#6A1B9A'},
+            'data': 'Join the Summer Fun!',
+            'googleFont': 'Dancing Script',
+            'style': {'fontSize': 28.0, 'color': '#FFCA28'},
           },
-          'textAlign': 'center',
+          'textAlign': 'cenlter',
         },
         {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 80.0},
-          'offset': {'dx': 620.0, 'dy': 550.0},
+          'offset': {'dx': 874.0, 'dy': 120.0}, // Adjusted dx to center
           'isCentered': true,
           'content': {
-            'data': 'Saturday, August 24, 2025',
-            'googleFont': 'Montserrat',
-            'style': {'fontSize': 22.0, 'color': '#4A148C'},
+            'data': 'Outdoor Party',
+            'googleFont': 'Roboto',
+            'style': {'fontSize': 24.0, 'color': '#388E3C'},
           },
           'textAlign': 'center',
         },
@@ -476,12 +471,12 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 650.0},
+          'offset': {'dx': 874.0, 'dy': 140.0}, // Adjusted dx to center
           'isCentered': true,
           'content': {
-            'data': 'Lahore Royal Gardens, Phase 5',
-            'googleFont': 'Roboto',
-            'style': {'fontSize': 18.0, 'color': '#311B92'},
+            'data': 'Saturday, August 15, 2025',
+            'googleFont': 'Dancing Script',
+            'style': {'fontSize': 20.0, 'color': '#1976D2'},
           },
           'textAlign': 'center',
         },
@@ -489,26 +484,26 @@ class HomeController extends GetxController {
           'type': 'StackTextItem',
           'status': 0,
           'size': {'width': 1000.0, 'height': 60.0},
-          'offset': {'dx': 620.0, 'dy': 850.0},
+          'offset': {'dx': 874.0, 'dy': 300.0}, // Adjusted dx to center
           'isCentered': true,
           'content': {
-            'data': 'RSVP by August 10',
-            'googleFont': 'Roboto',
-            'style': {'fontSize': 18.0, 'color': '#1A237E'},
+            'data': 'Karachi Beach Park',
+            'googleFont': 'Dancing Script',
+            'style': {'fontSize': 18.0, 'color': '#D81B60'},
           },
           'textAlign': 'center',
         },
       ],
-      createdAt: DateTime.parse('2025-07-18T00:00:00Z'),
+      createdAt: DateTime.parse('2025-07-26T00:00:00Z'),
       updatedAt: null,
-      category: 'wedding',
-      categoryId: 'wedding',
+      category: 'summer',
+      categoryId: 'summer',
       compatibleDesigns: [],
-      width: 1240,
-      height: 1748,
-      isPremium: true,
-      tags: ['wedding', 'love', 'romance', 'marriage'],
-      imagePath: 'assets/card1.png',
+      width: 1748, // Updated to match your specification
+      height: 1240, // Updated to match your specification
+      isPremium: false,
+      tags: ['summer', 'party', 'outdoor', 'celebration', 'invite'],
+      imagePath: 'assets/card2.png',
     ),
   ]);
 

@@ -44,6 +44,7 @@ dependencies:
   pdf: ^3.11.3
   screenshot: ^3.0.0
   open_file: ^3.5.10
+  get_storage: ^2.1.1
   # stack_board: ^0.2.6+1
 
 dev_dependencies:

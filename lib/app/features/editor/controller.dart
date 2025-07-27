@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
@@ -8,6 +10,7 @@ import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class EditorController extends GetxController {
   final StackBoardController boardController = StackBoardController();
@@ -77,6 +80,127 @@ class EditorController extends GetxController {
     }
   }
 
+  // New method to export design as CardTemplate with pixel-perfect accuracy
+
+  Future<void> exportDesign() async {
+    if (initialTemplate == null) {
+      throw Exception('No initial template loaded to export from.');
+    }
+
+    final double originalWidth = initialTemplate!.width.toDouble(); // 1748
+    final double originalHeight = initialTemplate!.height.toDouble(); // 1240
+    // currentScale is kept for debugging but not applied
+    final double currentScale = canvasWidth.value / originalWidth;
+
+    final List<Map<String, dynamic>> exportedItems = [];
+    final currentItems = boardController.getAllData();
+
+    debugPrint('Current Items: $currentItems', wrapWidth: 1000);
+
+    for (final itemJson in currentItems) {
+      final type = itemJson['type'];
+      final Map<String, dynamic> exportedItem = {
+        'type': type,
+        'id': itemJson['id'],
+        'status': itemJson['status'] ?? 0,
+        'isCentered': itemJson['isCentered'] ?? false,
+        'size': {
+          'width': itemJson['size']['width'], // Export exact width
+          'height': itemJson['size']['height'], // Export exact height
+        },
+        'offset': {
+          'dx': itemJson['offset']['dx'], // Export exact dx
+          'dy': itemJson['offset']['dy'], // Export exact dy
+        },
+      };
+
+      if (type == 'StackTextItem') {
+        exportedItem['content'] = {
+          'data': itemJson['content']['data'],
+          'googleFont': itemJson['content']['googleFont'],
+          'style': {
+            'fontSize': itemJson['content']['style']['fontSize'],
+            'color': itemJson['content']['style']['color'],
+          },
+          'textAlign': itemJson['content']['textAlign'],
+        };
+      } else if (type == 'StackImageItem') {
+        exportedItem['content'] = {
+          'assetName': itemJson['content']['assetName'],
+        };
+      } else if (type == 'RowStackItem') {
+        exportedItem['content'] = {
+          'items': (itemJson['content']['items'] as List)
+              .map(
+                (subItemJson) => {
+                  'type': subItemJson['type'],
+                  'id': subItemJson['id'],
+                  'status': subItemJson['status'] ?? 0,
+                  'size': {
+                    'width': subItemJson['size']['width'], // Export exact width
+                    'height':
+                        subItemJson['size']['height'], // Export exact height
+                  },
+                  'offset': {
+                    'dx': subItemJson['offset']['dx'], // Export exact dx
+                    'dy': subItemJson['offset']['dy'], // Export exact dy
+                  },
+                  'content': {
+                    'data': subItemJson['content']['data'],
+                    'googleFont': subItemJson['content']['googleFont'],
+                    'style': {
+                      'fontSize': subItemJson['content']['style']['fontSize'],
+                      'color': subItemJson['content']['style']['color'],
+                    },
+                    'textAlign': subItemJson['content']['textAlign'],
+                  },
+                  'isCentered': subItemJson['isCentered'] ?? false,
+                },
+              )
+              .toList(),
+        };
+      }
+
+      exportedItems.add(exportedItem);
+    }
+
+    final temp = CardTemplate(
+      id: 'exported_${initialTemplate!.id}_modified_${DateTime.now().millisecondsSinceEpoch}',
+      name: templateName.value.isNotEmpty
+          ? templateName.value
+          : initialTemplate!.name,
+      thumbnailPath: initialTemplate!.thumbnailPath,
+      backgroundImage: selectedBackground.value.isNotEmpty
+          ? selectedBackground.value
+          : initialTemplate!.backgroundImage,
+      items: exportedItems,
+      createdAt: DateTime.now(),
+      updatedAt: null,
+      category: category.value,
+      categoryId: categoryId.value,
+      compatibleDesigns: initialTemplate!.compatibleDesigns,
+      width: originalWidth, // Explicitly keep as original width
+      height: originalHeight, // Explicitly keep as original height
+      isPremium: isPremium.value,
+      tags: tags.value,
+      imagePath: initialTemplate!.backgroundImage,
+    );
+
+    // Serialize to JSON for storage
+    final jsonExport = temp.toJson();
+    final storage = GetStorage();
+    await storage.write(temp.id, jsonEncode(jsonExport)); // Save with id as key
+    debugPrint(
+      'Exported JSON saved with key ${temp.id}: $jsonExport',
+      wrapWidth: 1000,
+    );
+
+    // Add to featuredTemplates
+    Get.find<HomeController>().featuredTemplates.add(temp);
+
+    return; // No need to return temp since it's stored
+  }
+
   void removeTextEditorOverlay() {
     final entry = activeTextEditorOverlay.value;
     if (entry != null && entry.mounted) {
@@ -131,6 +255,217 @@ class EditorController extends GetxController {
       return RowStackItem.fromJson(itemJson);
     } else {
       throw Exception('Unsupported item type: $type');
+    }
+  }
+
+  Future<void> loadFromStorage(
+    String templateId,
+    BuildContext context,
+    BoxConstraints constraints,
+  ) async {
+    final storage = GetStorage();
+    final jsonString = storage.read(templateId);
+    if (jsonString == null) {
+      throw Exception('No template found with id: $templateId');
+    }
+
+    final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
+    final template = CardTemplate.fromJson(jsonMap);
+
+    // Calculate scaled canvas size
+    final double availableWidth = constraints.maxWidth * 0.9;
+    final double availableHeight = constraints.maxHeight * 0.95;
+    final double aspectRatio = template.width / template.height;
+
+    double scaledCanvasWidth, scaledCanvasHeight;
+    if (availableWidth / aspectRatio <= availableHeight) {
+      scaledCanvasWidth = availableWidth;
+      scaledCanvasHeight = availableWidth / aspectRatio;
+    } else {
+      scaledCanvasHeight = availableHeight;
+      scaledCanvasWidth = availableHeight * aspectRatio;
+    }
+
+    final controller = Get.find<EditorController>();
+    controller.canvasWidth.value = scaledCanvasWidth;
+    controller.canvasHeight.value = scaledCanvasHeight;
+    controller.updateStackBoardRenderSize(
+      Size(controller.canvasWidth.value, controller.canvasHeight.value),
+    );
+
+    debugPrint(
+      'Loaded from storage - Updated StackBoard size for template ${template.id}: ${controller.canvasWidth.value} x ${controller.canvasHeight.value}',
+    );
+
+    loadExportedTemplate(
+      template,
+      context,
+      scaledCanvasWidth,
+      scaledCanvasHeight,
+    );
+  }
+
+  void loadExportedTemplate(
+    CardTemplate template,
+    BuildContext context,
+    double scaledCanvasWidth,
+    double scaledCanvasHeight,
+  ) async {
+    print("this one .........................");
+    final controller = Get.find<EditorController>();
+    controller.selectedBackground.value = template.backgroundImage;
+    controller.templateName.value = template.name;
+    controller.category.value = template.category;
+    controller.categoryId.value = template.categoryId;
+    controller.tags.value = template.tags;
+    controller.isPremium.value = template.isPremium;
+    controller.backgroundHue.value = 0.0;
+    controller.templateOriginalWidth.value = template.width.toDouble(); // 1748
+    controller.templateOriginalHeight.value = template.height
+        .toDouble(); // 1240
+    controller.canvasWidth.value = scaledCanvasWidth; // Use scaled width
+    controller.canvasHeight.value = scaledCanvasHeight; // Use scaled height
+    controller.boardController.clear();
+    // double cumulativeYOffset = 0.0;
+
+    for (final itemJson in template.items) {
+      try {
+        final bool isCentered = itemJson['isCentered'] ?? false;
+
+        if (itemJson['type'] == 'RowStackItem') {
+          RowStackItem rowStackItem = RowStackItem.fromJson(itemJson);
+          double totalWidth = 0.0;
+          double maxHeight = 0.0;
+          final List<StackItem> scaledSubItems = [];
+          double rowScaledX = rowStackItem.offset.dx; // No scaling
+          double rowScaledY = rowStackItem.offset.dy; // No scaling
+
+          for (final subItem in rowStackItem.content!.items) {
+            StackItem updatedSubItem;
+
+            if (subItem is StackTextItem) {
+              final updatedStyle = subItem.content!.style!.copyWith(
+                fontSize: subItem.content!.style!.fontSize, // No scaling
+              );
+
+              // Use exact size from exported data
+              final subItemWidth = itemJson['size']['width'];
+              final subItemHeight = itemJson['size']['height'];
+
+              final scaledY = (subItem.offset.dy > 0
+                  ? subItem
+                        .offset
+                        .dy // No scaling
+                  : rowScaledY);
+
+              updatedSubItem = subItem.copyWith(
+                offset: Offset(rowScaledX, scaledY),
+                size: Size(subItemWidth, subItemHeight),
+                content: subItem.content!.copyWith(
+                  style: updatedStyle,
+                  data: subItem.content!.data,
+                ),
+                status: StackItemStatus.idle,
+                isCentered: subItem.isCentered,
+              );
+
+              totalWidth += subItemWidth;
+              maxHeight = subItemHeight;
+              debugPrint(
+                'Loaded sub-item: ${subItem.id}, isCentered: ${subItem.isCentered}, size: ${updatedSubItem.size}, offset: ${updatedSubItem.offset}',
+              );
+              controller.boardController.addItem(updatedSubItem);
+              scaledSubItems.add(updatedSubItem);
+              rowScaledX += subItemWidth; // No scaling in increment
+              controller._undoStack.add(
+                _ItemState(item: updatedSubItem, action: _ItemAction.add),
+              );
+            } else {
+              throw Exception(
+                'Unsupported sub-item type in RowStackItem: ${subItem.runtimeType}',
+              );
+            }
+          }
+
+          if (isCentered) {
+            double startX = ((controller.canvasWidth - totalWidth) / 2);
+            for (var subItem in scaledSubItems) {
+              controller.boardController.updateBasic(
+                subItem.id,
+                offset: Offset(
+                  startX + subItem.size.width / 2,
+                  subItem.offset.dy,
+                ),
+              );
+              startX += subItem.size.width;
+            }
+          }
+
+          // cumulativeYOffset += maxHeight;
+        } else {
+          final item = _deserializeItem(itemJson);
+          Size itemSize;
+          StackItem updatedItem;
+
+          if (item is StackTextItem) {
+            double scaledX = item.offset.dx; // No scaling
+            double scaledY = item.offset.dy; // No scaling
+            // scaledY += cumulativeYOffset;
+
+            final updatedStyle = item.content!.style!.copyWith(
+              fontSize: item.content!.style!.fontSize!, // No scaling
+            );
+
+            // Use exact size from exported data
+            itemSize = Size(
+              itemJson['size']['width'],
+              itemJson['size']['height'],
+            );
+
+            final double buttonSize = 18; // No scaling
+            // if (isCentered) {
+            //   scaledY +=
+            //       (itemSize.height / 2) + buttonSize; // Use unscaled buttonSize
+            // }
+
+            updatedItem = item.copyWith(
+              offset: Offset(scaledX, scaledY),
+              size: itemSize,
+              status: StackItemStatus.idle,
+              content: item.content!.copyWith(style: updatedStyle),
+              isCentered: isCentered,
+            );
+            // cumulativeYOffset += itemSize.height;
+          } else if (item is StackImageItem) {
+            double scaledX = item.offset.dx; // No scaling
+            double scaledY = item.offset.dy; // No scaling
+            final double originalWidth = itemJson['size']['width'];
+            final double originalHeight = itemJson['size']['height'];
+
+            itemSize = Size(originalWidth, originalHeight);
+
+            final double buttonSize = 36; // No scaling
+            // scaledY += buttonSize + cumulativeYOffset;
+
+            updatedItem = item.copyWith(
+              offset: Offset(scaledX, scaledY),
+              size: itemSize,
+              status: StackItemStatus.idle,
+            );
+          } else {
+            throw Exception('Unsupported item type: ${item.runtimeType}');
+          }
+
+          debugPrint(
+            'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
+          );
+
+          controller.boardController.addItem(updatedItem);
+          controller._undoStack.add(
+            _ItemState(item: updatedItem, action: _ItemAction.add),
+          );
+        }
+      } catch (err) {}
     }
   }
 
@@ -288,7 +623,7 @@ class EditorController extends GetxController {
 
             // Update the item's style with the scaled font size
             final updatedStyle = item.content!.style!.copyWith(
-              fontSize: item.content!.style!.fontSize,
+              fontSize: item.content!.style!.fontSize!,
             );
 
             // Calculate the item's size based on the scaled text
@@ -335,9 +670,9 @@ class EditorController extends GetxController {
 
             // Adjust y-position for button size if centered
             final double buttonSize = 36 * canvasScale;
-            if (isCentered) {
-              scaledY += (itemSize.height / 2);
-            }
+
+            // scaledY += (itemSize.height / 2) + buttonSize;
+            scaledY += buttonSize + cumulativeYOffset;
 
             updatedItem = item.copyWith(
               offset: Offset(scaledX, scaledY),
@@ -345,7 +680,6 @@ class EditorController extends GetxController {
               status: StackItemStatus.idle, // Ensure item is movable
               // isCentered: isCentered,
             );
-            // cumulativeYOffset += itemSize.height / 2;
           } else {
             throw Exception('Unsupported item type: ${item.runtimeType}');
           }
@@ -355,6 +689,7 @@ class EditorController extends GetxController {
           );
 
           controller.boardController.addItem(updatedItem);
+
           controller._undoStack.add(
             _ItemState(item: updatedItem, action: _ItemAction.add),
           );
