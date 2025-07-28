@@ -3,11 +3,13 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 import 'app/routes/app_pages.dart'; // You need to create this file
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await GetStorage.init();
   runApp(const CardMakerApp());
 }
 

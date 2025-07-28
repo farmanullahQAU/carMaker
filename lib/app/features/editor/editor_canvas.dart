@@ -37,7 +37,7 @@ class EditorPage extends GetView<EditorController> {
     final RxDouble scaledCanvasHeight = 0.0.obs;
     void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
       print("ccccccccccccccccccccc");
-      if (controller.initialTemplate == null || isTemplateLoaded.value) return;
+      if (isTemplateLoaded.value) return;
 
       // Determine if the template is exported
       final isExportedTemplate =
@@ -289,9 +289,9 @@ class EditorPage extends GetView<EditorController> {
         await pdfFile.writeAsBytes(await pdf.save());
 
         if (await pdfFile.exists()) {
-          // Get.to(
-          //   () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
-          // );
+          Get.to(
+            () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
+          );
         } else {
           Get.snackbar(
             'Error',
@@ -459,7 +459,7 @@ class EditorPage extends GetView<EditorController> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: () {
-              controller.exportDesign();
+              exportAsPDF();
             },
             tooltip: 'Export as PDF',
           ),
@@ -476,10 +476,6 @@ class EditorPage extends GetView<EditorController> {
           Expanded(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                if (controller.initialTemplate == null) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
                 SchedulerBinding.instance.addPostFrameCallback((_) {
                   updateCanvasAndLoadTemplate(constraints);
                 });
