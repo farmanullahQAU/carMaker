@@ -39,80 +39,52 @@ class EditorPage extends GetView<EditorController> {
       print("ccccccccccccccccccccc");
       if (isTemplateLoaded.value) return;
 
-      // Determine if the template is exported
-      final isExportedTemplate =
-          controller.initialTemplate!.id.contains('exported_') ||
-          controller.initialTemplate!.name.contains('Exported');
+      final double availableWidth = constraints.maxWidth * 0.9;
+      final double availableHeight = constraints.maxHeight * 0.95;
+      final double aspectRatio =
+          controller.initialTemplate!.width /
+          controller.initialTemplate!.height;
 
-      if (isExportedTemplate) {
-        print("dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx $isExportedTemplate");
-
-        final double availableWidth = constraints.maxWidth * 0.9;
-        final double availableHeight = constraints.maxHeight * 0.95;
-
-        final double aspectRatio =
-            controller.initialTemplate!.width /
-            controller.initialTemplate!.height;
-
-        if (availableWidth / aspectRatio <= availableHeight) {
-          scaledCanvasWidth.value = availableWidth;
-          scaledCanvasHeight.value = availableWidth / aspectRatio;
-        } else {
-          scaledCanvasHeight.value = availableHeight;
-          scaledCanvasWidth.value = availableHeight * aspectRatio;
-        }
-
-        canvasScale.value =
-            scaledCanvasWidth.value / controller.initialTemplate!.width;
-
-        controller.updateStackBoardRenderSize(
-          Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        );
-        debugPrint(
-          'Updated StackBoard size for non-exported template: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
-        );
-
-        controller.loadExportedTemplate(
-          controller.initialTemplate!,
-          context,
-          scaledCanvasWidth.value,
-          scaledCanvasHeight.value,
-        );
+      if (availableWidth / aspectRatio <= availableHeight) {
+        scaledCanvasWidth.value = availableWidth;
+        scaledCanvasHeight.value = availableWidth / aspectRatio;
       } else {
-        // Use the original working logic for non-exported templates
-        final double availableWidth = constraints.maxWidth * 0.9;
-        final double availableHeight = constraints.maxHeight * 0.95;
-
-        final double aspectRatio =
-            controller.initialTemplate!.width /
-            controller.initialTemplate!.height;
-
-        if (availableWidth / aspectRatio <= availableHeight) {
-          scaledCanvasWidth.value = availableWidth;
-          scaledCanvasHeight.value = availableWidth / aspectRatio;
-        } else {
-          scaledCanvasHeight.value = availableHeight;
-          scaledCanvasWidth.value = availableHeight * aspectRatio;
-        }
-
-        canvasScale.value =
-            scaledCanvasWidth.value / controller.initialTemplate!.width;
-
-        controller.updateStackBoardRenderSize(
-          Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        );
-        debugPrint(
-          'Updated StackBoard size for non-exported template: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
-        );
-
-        controller.loadTemplate(
-          controller.initialTemplate!,
-          canvasScale.value,
-          scaledCanvasWidth.value,
-          scaledCanvasHeight.value,
-          context,
-        );
+        scaledCanvasHeight.value = availableHeight;
+        scaledCanvasWidth.value = availableHeight * aspectRatio;
       }
+
+      canvasScale.value =
+          scaledCanvasWidth.value / controller.initialTemplate!.width;
+
+      controller.updateStackBoardRenderSize(
+        Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+      );
+      debugPrint(
+        'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
+      );
+
+      // // Check if the template is exported or blank
+      // final isExportedTemplate =
+      //     controller.initialTemplate!.id.contains('exported_') ||
+      //     controller.initialTemplate!.name.contains('Exported');
+
+      // if (isExportedTemplate) {
+      //   controller.loadExportedTemplate(
+      //     controller.initialTemplate!,
+      //     context,
+      //     scaledCanvasWidth.value,
+      //     scaledCanvasHeight.value,
+      //   );
+      // } else if (controller.initialTemplate!.items.isNotEmpty) {
+      controller.loadTemplate(
+        controller.initialTemplate!,
+        canvasScale.value,
+        scaledCanvasWidth.value,
+        scaledCanvasHeight.value,
+        context,
+      );
+      // } // No else needed; blank canvas has empty items and is ready
+
       isTemplateLoaded.value = true;
     }
 
@@ -170,95 +142,93 @@ class EditorPage extends GetView<EditorController> {
 
     Future<void> exportAsPDF() async {
       try {
+        print(scaledCanvasWidth.value);
+        print(canvasScale.value);
         final exportKey = GlobalKey();
         final image = await screenshotController.captureFromWidget(
-          Transform.scale(
-            scale: 0.9,
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: scaledCanvasWidth.value,
-              height: scaledCanvasHeight.value,
-              key: exportKey,
-              child: StackBoard(
-                controller: controller.boardController,
-                background: Container(
-                  width: scaledCanvasWidth.value,
-                  height: scaledCanvasHeight.value,
-                  color: controller.selectedBackground.value.isNotEmpty
-                      ? null
-                      : Colors.grey[200],
-                  child: controller.selectedBackground.value.isNotEmpty
-                      ? ColorFiltered(
-                          colorFilter: ColorFilter.matrix(
-                            _hueMatrix(controller.backgroundHue.value),
-                          ),
-                          child: Image.asset(
-                            controller.selectedBackground.value,
-                            width: scaledCanvasWidth.value,
-                            height: scaledCanvasHeight.value,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                          ),
-                        )
-                      : null,
-                ),
-                customBuilder: (item) {
-                  return (item is StackTextItem && item.content != null)
-                      ? StackTextCase(item: item.copyWith(status: item.status))
-                      : (item is StackImageItem && item.content != null)
-                      ? StackImageCase(item: item.copyWith(status: item.status))
-                      : (item is ColorStackItem1 && item.content != null)
-                      ? Container(
-                          width: item.size.width,
-                          height: item.size.height,
-                          color: item.content!.color,
-                        )
-                      : (item is RowStackItem && item.content != null)
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: item.content!.items
-                              .map(
-                                (subItem) => subItem is StackTextItem
-                                    ? StackTextCase(
-                                        item: subItem.copyWith(
-                                          status: subItem.status,
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                              )
-                              .toList(),
-                        )
-                      : const SizedBox.shrink();
-                },
-                borderBuilder: (status, item) {
-                  final CaseStyle style = CaseStyle();
-                  final double leftRight = status == StackItemStatus.idle
-                      ? 0
-                      : -(style.buttonSize) / 2;
-                  final double topBottom = status == StackItemStatus.idle
-                      ? 0
-                      : -(style.buttonSize) * 1.5;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 500),
-                    child: Positioned(
-                      left: -leftRight,
-                      top: -topBottom,
-                      right: -leftRight,
-                      bottom: -topBottom,
-                      child: IgnorePointer(
-                        ignoring: true,
-                        child: CustomPaint(
-                          painter: _BorderPainter(
-                            dotted: status == StackItemStatus.idle,
-                          ),
+          SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: StackBoard(
+              controller: controller.boardController,
+              background: Container(
+                width: scaledCanvasWidth.value,
+                height: scaledCanvasHeight.value,
+                color: controller.selectedBackground.value.isNotEmpty
+                    ? null
+                    : Colors.grey[200],
+                child: controller.selectedBackground.value.isNotEmpty
+                    ? ColorFiltered(
+                        colorFilter: ColorFilter.matrix(
+                          _hueMatrix(controller.backgroundHue.value),
+                        ),
+                        child: Image.asset(
+                          controller.selectedBackground.value,
+                          width: scaledCanvasWidth.value,
+                          height: scaledCanvasHeight.value,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      )
+                    : null,
+              ),
+              customBuilder: (item) {
+                return (item is StackTextItem && item.content != null)
+                    ? StackTextCase(item: item.copyWith(status: item.status))
+                    : (item is StackImageItem && item.content != null)
+                    ? StackImageCase(item: item.copyWith(status: item.status))
+                    : (item is ColorStackItem1 && item.content != null)
+                    ? Container(
+                        width: item.size.width,
+                        height: item.size.height,
+                        color: item.content!.color,
+                      )
+                    : (item is RowStackItem && item.content != null)
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: item.content!.items
+                            .map(
+                              (subItem) => subItem is StackTextItem
+                                  ? StackTextCase(
+                                      item: subItem.copyWith(
+                                        status: subItem.status,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            )
+                            .toList(),
+                      )
+                    : const SizedBox.shrink();
+              },
+              borderBuilder: (status, item) {
+                final CaseStyle style = CaseStyle();
+                final double leftRight = status == StackItemStatus.idle
+                    ? 0
+                    : -(style.buttonSize) / 2;
+                final double topBottom = status == StackItemStatus.idle
+                    ? 0
+                    : -(style.buttonSize) * 1.5;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  child: Positioned(
+                    left: -leftRight,
+                    top: -topBottom,
+                    right: -leftRight,
+                    bottom: -topBottom,
+                    child: IgnorePointer(
+                      ignoring: true,
+                      child: CustomPaint(
+                        painter: _BorderPainter(
+                          dotted: status == StackItemStatus.idle,
                         ),
                       ),
                     ),
-                  );
-                },
-                onDel: (_) {},
-                onStatusChanged: (_, __) => true,
-              ),
+                  ),
+                );
+              },
+              onDel: (_) {},
+              onStatusChanged: (_, __) => true,
             ),
           ),
           targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
@@ -447,9 +417,9 @@ class EditorPage extends GetView<EditorController> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: controller.undo,
-            tooltip: 'Undo',
+            icon: const Icon(Icons.save),
+            onPressed: controller.exportDesign,
+            tooltip: 'Export',
           ),
           IconButton(
             icon: const Icon(Icons.redo),
@@ -552,7 +522,9 @@ class EditorPage extends GetView<EditorController> {
                                         scaledCanvasHeight.value,
                                       ),
                                       showGrid:
-                                          controller.draggedItem.value != null,
+                                          // controller.draggedItem.value !=
+                                          //     null &&
+                                          controller.showGrid.isTrue,
                                       gridSize: 50.0,
                                       guideColor: Colors.blue.withOpacity(0.5),
                                       criticalGuideColor: Colors.red,

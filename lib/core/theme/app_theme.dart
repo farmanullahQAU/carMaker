@@ -8,8 +8,8 @@ class CardMakerTheme {
       fontFamily: 'Inter', // Or any font you use
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
-        secondary: AppColors.secondary,
-        tertiary: AppColors.tertiary,
+        primary: AppColors.primary,
+        // tertiary: AppColors.tertiary,
         brightness: Brightness.light,
       ),
       textTheme: Typography.blackMountainView,
@@ -21,9 +21,13 @@ class CardMakerTheme {
       useMaterial3: true,
       fontFamily: 'Inter', // Or any font you use
       colorScheme: ColorScheme.fromSeed(
+        // seedColor: Colors.pink,
         seedColor: AppColors.primary,
-        secondary: AppColors.secondary,
-        tertiary: AppColors.tertiary,
+        primary: AppColors.primary,
+        // tertiary: Colors.white,
+
+        // secondary: AppColors.secondary
+        // tertiary: AppColors.tertiary,
         brightness: Brightness.dark,
       ),
       textTheme: Typography.whiteMountainView,

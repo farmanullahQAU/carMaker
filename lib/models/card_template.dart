@@ -1,3 +1,4 @@
+// CardTemplate class
 class CardTemplate {
   final String id;
   final String name;

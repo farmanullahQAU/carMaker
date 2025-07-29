@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
-import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
@@ -60,13 +60,26 @@ class EditorController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    initialTemplate = Get.arguments as CardTemplate?;
-    if (initialTemplate != null) {
-      templateOriginalWidth.value = initialTemplate!.width.toDouble();
-      templateOriginalHeight.value = initialTemplate!.height.toDouble();
-      canvasWidth.value = initialTemplate!.width.toDouble();
-      canvasHeight.value = initialTemplate!.height.toDouble();
+    if (Get.arguments is Map<String, dynamic>) {
+      // Initialize blank template
+      initialTemplate = Get.arguments['template'];
+    } else {
+      initialTemplate = Get.arguments as CardTemplate;
     }
+
+    // Initialize properties from initialTemplate
+    templateName.value = initialTemplate!.name;
+    category.value = initialTemplate!.category;
+    categoryId.value = initialTemplate!.categoryId;
+    tags.value = initialTemplate!.tags;
+    isPremium.value = initialTemplate!.isPremium;
+    selectedBackground.value = initialTemplate!.backgroundImage;
+    templateOriginalWidth.value = initialTemplate!.width.toDouble();
+    templateOriginalHeight.value = initialTemplate!.height.toDouble();
+    canvasWidth.value = initialTemplate!.width.toDouble();
+    canvasHeight.value = initialTemplate!.height.toDouble();
+    boardController.clear(); // Ensure the canvas starts fresh
+    print(initialTemplate?.toJson());
   }
 
   void updateStackBoardRenderSize(Size size) {
@@ -83,14 +96,8 @@ class EditorController extends GetxController {
   // New method to export design as CardTemplate with pixel-perfect accuracy
 
   Future<void> exportDesign() async {
-    if (initialTemplate == null) {
-      throw Exception('No initial template loaded to export from.');
-    }
-
-    final double originalWidth = initialTemplate!.width.toDouble(); // 1748
-    final double originalHeight = initialTemplate!.height.toDouble(); // 1240
-    // currentScale is kept for debugging but not applied
-    final double currentScale = canvasWidth.value / originalWidth;
+    final double originalWidth = initialTemplate!.width.toDouble();
+    final double originalHeight = initialTemplate!.height.toDouble();
 
     final List<Map<String, dynamic>> exportedItems = [];
     final currentItems = boardController.getAllData();
@@ -105,12 +112,12 @@ class EditorController extends GetxController {
         'status': itemJson['status'] ?? 0,
         'isCentered': itemJson['isCentered'] ?? false,
         'size': {
-          'width': itemJson['size']['width'], // Export exact width
-          'height': itemJson['size']['height'], // Export exact height
+          'width': itemJson['size']['width'],
+          'height': itemJson['size']['height'],
         },
         'offset': {
-          'dx': itemJson['offset']['dx'], // Export exact dx
-          'dy': itemJson['offset']['dy'], // Export exact dy
+          'dx': itemJson['offset']['dx'],
+          'dy': itemJson['offset']['dy'],
         },
       };
 
@@ -137,13 +144,12 @@ class EditorController extends GetxController {
                   'id': subItemJson['id'],
                   'status': subItemJson['status'] ?? 0,
                   'size': {
-                    'width': subItemJson['size']['width'], // Export exact width
-                    'height':
-                        subItemJson['size']['height'], // Export exact height
+                    'width': subItemJson['size']['width'],
+                    'height': subItemJson['size']['height'],
                   },
                   'offset': {
-                    'dx': subItemJson['offset']['dx'], // Export exact dx
-                    'dy': subItemJson['offset']['dy'], // Export exact dy
+                    'dx': subItemJson['offset']['dx'],
+                    'dy': subItemJson['offset']['dy'],
                   },
                   'content': {
                     'data': subItemJson['content']['data'],
@@ -170,35 +176,22 @@ class EditorController extends GetxController {
           ? templateName.value
           : initialTemplate!.name,
       thumbnailPath: initialTemplate!.thumbnailPath,
-      backgroundImage: selectedBackground.value.isNotEmpty
-          ? selectedBackground.value
-          : initialTemplate!.backgroundImage,
+      backgroundImage: "assets/card1.png",
       items: exportedItems,
       createdAt: DateTime.now(),
       updatedAt: null,
       category: category.value,
       categoryId: categoryId.value,
       compatibleDesigns: initialTemplate!.compatibleDesigns,
-      width: originalWidth, // Explicitly keep as original width
-      height: originalHeight, // Explicitly keep as original height
+      width: originalWidth,
+      height: originalHeight,
       isPremium: isPremium.value,
       tags: tags.value,
-      imagePath: initialTemplate!.backgroundImage,
-    );
-
-    // Serialize to JSON for storage
-    final jsonExport = temp.toJson();
-    final storage = GetStorage();
-    await storage.write(temp.id, jsonEncode(jsonExport)); // Save with id as key
-    debugPrint(
-      'Exported JSON saved with key ${temp.id}: $jsonExport',
-      wrapWidth: 1000,
+      imagePath: selectedBackground.value,
     );
 
     // Add to featuredTemplates
-    Get.find<HomeController>().featuredTemplates.add(temp);
-
-    return; // No need to return temp since it's stored
+    addTemplate(temp);
   }
 
   void removeTextEditorOverlay() {
@@ -703,6 +696,13 @@ class EditorController extends GetxController {
         );
       }
     }
+  }
+
+  // --- Template Management ---
+  Future<void> addTemplate(CardTemplate template) async {
+    print(template.backgroundImage.toString());
+
+    await StorageService.addTemplate(template);
   }
 
   Future<void> deleteItem(StackItem<StackItemContent> item) async {
