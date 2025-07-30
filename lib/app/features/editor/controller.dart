@@ -176,7 +176,7 @@ class EditorController extends GetxController {
           ? templateName.value
           : initialTemplate!.name,
       thumbnailPath: initialTemplate!.thumbnailPath,
-      backgroundImage: "assets/card1.png",
+      backgroundImage: initialTemplate?.backgroundImage ?? "",
       items: exportedItems,
       createdAt: DateTime.now(),
       updatedAt: null,

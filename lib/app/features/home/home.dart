@@ -196,6 +196,8 @@ class HomeTab extends StatelessWidget {
               color: Get.theme.colorScheme.onSurface,
             ),
           ),
+
+          Image.asset("assets/logo2.png"),
         ],
       ),
       actions: [
@@ -216,7 +218,7 @@ class HomeTab extends StatelessWidget {
       ],
       pinned: false,
       floating: true,
-      toolbarHeight: 84,
+      toolbarHeight: 200,
       backgroundColor: Get.theme.colorScheme.surface,
       elevation: 0,
     );

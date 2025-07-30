@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
@@ -40,7 +41,7 @@ class EditorPage extends GetView<EditorController> {
       if (isTemplateLoaded.value) return;
 
       final double availableWidth = constraints.maxWidth * 0.9;
-      final double availableHeight = constraints.maxHeight * 0.95;
+      final double availableHeight = constraints.maxHeight * 0.7;
       final double aspectRatio =
           controller.initialTemplate!.width /
           controller.initialTemplate!.height;
@@ -76,12 +77,12 @@ class EditorPage extends GetView<EditorController> {
       //     scaledCanvasHeight.value,
       //   );
       // } else if (controller.initialTemplate!.items.isNotEmpty) {
-      controller.loadTemplate(
+      controller.loadExportedTemplate(
         controller.initialTemplate!,
-        canvasScale.value,
+        context,
+
         scaledCanvasWidth.value,
         scaledCanvasHeight.value,
-        context,
       );
       // } // No else needed; blank canvas has empty items and is ready
 
@@ -418,7 +419,10 @@ class EditorPage extends GetView<EditorController> {
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: controller.exportDesign,
+            onPressed: () => controller.exportDesign(
+              // scaledCanvasWidth.value,
+              // scaledCanvasHeight.value,
+            ),
             tooltip: 'Export',
           ),
           IconButton(
@@ -442,16 +446,18 @@ class EditorPage extends GetView<EditorController> {
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Expanded(
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                SchedulerBinding.instance.addPostFrameCallback((_) {
-                  updateCanvasAndLoadTemplate(constraints);
-                });
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  SchedulerBinding.instance.addPostFrameCallback((_) {
+                    updateCanvasAndLoadTemplate(constraints);
+                  });
 
-                return Center(
-                  child: Obx(
+                  return Obx(
                     () => SizedBox(
                       width: scaledCanvasWidth.value,
                       height: scaledCanvasHeight.value,
@@ -464,7 +470,7 @@ class EditorPage extends GetView<EditorController> {
                               StackItemStatus.idle,
                             );
                             controller.activeItem.value = null;
-                            selectedToolIndex.value = 3;
+                            // selectedToolIndex.value = 0;
                             showTextPanel.value = true;
                             showStickerPanel.value = false;
                             showHueSlider.value = false;
@@ -485,7 +491,7 @@ class EditorPage extends GetView<EditorController> {
                                             .value
                                             .isNotEmpty
                                         ? null
-                                        : Colors.grey[200],
+                                        : Colors.white,
                                     child:
                                         controller
                                             .selectedBackground
@@ -624,9 +630,9 @@ class EditorPage extends GetView<EditorController> {
                         },
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
           SafeArea(
@@ -634,9 +640,7 @@ class EditorPage extends GetView<EditorController> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainer.withOpacity(0.8),
+                color: Get.theme.colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -647,9 +651,7 @@ class EditorPage extends GetView<EditorController> {
                       icon: Icons.emoji_emotions_outlined,
                       label: 'Stickers',
                       onPressed: () {
-                        selectedToolIndex.value = selectedToolIndex.value == 1
-                            ? 0
-                            : 1;
+                        selectedToolIndex.value = 1;
                         showStickerPanel.value = selectedToolIndex.value == 1;
                         showHueSlider.value = false;
                         showShapePanel.value = false;
@@ -663,9 +665,7 @@ class EditorPage extends GetView<EditorController> {
                       icon: Icons.palette_outlined,
                       label: 'Color',
                       onPressed: () {
-                        selectedToolIndex.value = selectedToolIndex.value == 2
-                            ? 0
-                            : 2;
+                        selectedToolIndex.value = 2;
                         showHueSlider.value = selectedToolIndex.value == 2;
                         showStickerPanel.value = false;
                         showShapePanel.value = false;
@@ -679,9 +679,7 @@ class EditorPage extends GetView<EditorController> {
                       icon: Icons.text_fields,
                       label: 'Text',
                       onPressed: () {
-                        selectedToolIndex.value = selectedToolIndex.value == 3
-                            ? 0
-                            : 3;
+                        selectedToolIndex.value = selectedToolIndex.value = 3;
                         showTextPanel.value = selectedToolIndex.value == 3;
                         showStickerPanel.value = false;
                         showHueSlider.value = false;
@@ -780,7 +778,7 @@ class _ToolbarButton extends StatelessWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             icon: Icon(icon),
-            color: isActive ? Theme.of(context).primaryColor : Colors.grey[800],
+            color: isActive ? AppColors.branding : AppColors.highlight,
             onPressed: onPressed,
             tooltip: label,
           ),
@@ -789,7 +787,7 @@ class _ToolbarButton extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isActive ? Theme.of(context).primaryColor : Colors.grey[800],
+            color: isActive ? AppColors.branding : AppColors.highlight,
           ),
         ),
       ],

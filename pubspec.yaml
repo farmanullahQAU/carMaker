@@ -45,7 +45,20 @@ dependencies:
   screenshot: ^3.0.0
   open_file: ^3.5.10
   get_storage: ^2.1.1
+  flutter_native_splash: ^2.4.6
   # stack_board: ^0.2.6+1
+flutter_native_splash:
+  color: "#ffffff"  # White background for light mode
+
+#our logo has whilte text w,o,r,d so we cant keep dark backdroud for ligt becuase these letter will not show , 
+  image: assets/logo.png  
+  color_dark: "#000000"  # Dark background for dark mode
+
+  android_12: # 12 NOT MEANS ANDOIRD 12 
+    image: assets/logo.png
+    # icon_background_color: "#ffffff"
+    # icon_background_color_dark: "#000000"
+
 
 dev_dependencies:
   flutter_test:

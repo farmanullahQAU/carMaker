@@ -9,51 +9,50 @@ class CanvasSelectionController extends GetxController {
   final widthController = TextEditingController();
   final heightController = TextEditingController();
 
-  // List of card templates with different dimensions
   final List<CardTemplate> cardTemplates = [
     CardTemplate(
       id: '1',
-      name: 'SVGA',
+      name: 'Portrait - 5x7 in',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
-      width: 800,
-      height: 600,
+      width: 1500, // 5 inches * 300 dpi
+      height: 2100, // 7 inches * 300 dpi
       imagePath: '',
     ),
     CardTemplate(
       id: '2',
-      name: 'Square',
+      name: 'Landscape - 6x4 in',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
-      width: 1000,
-      height: 1000,
+      width: 1800,
+      height: 1200,
       imagePath: '',
     ),
     CardTemplate(
       id: '3',
-      name: 'Full HD',
+      name: 'Square - 6x6 in',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
-      width: 1920,
-      height: 1080,
+      width: 1800,
+      height: 1800,
       imagePath: '',
     ),
     CardTemplate(
       id: '4',
-      name: '2K',
+      name: 'Printable - A4',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
-      width: 2560,
-      height: 1440,
+      width: 2480, // A4 width in pixels at 300 dpi
+      height: 3508, // A4 height in pixels at 300 dpi
       imagePath: '',
     ),
     CardTemplate(
       id: '5',
-      name: 'Mobile',
+      name: 'Mobile - 9:16',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
@@ -63,13 +62,35 @@ class CanvasSelectionController extends GetxController {
     ),
     CardTemplate(
       id: '6',
-      name: '4K',
+      name: 'Story - 1080x1920',
       backgroundImage: '',
       items: [],
       categoryId: 'standard',
-      width: 3840,
-      height: 2160,
+      width: 1080,
+      height: 1920,
       imagePath: '',
+    ),
+
+    //greetings card
+    CardTemplate(
+      id: '7',
+      name: 'Oversized Portrait - 10x14 in',
+      backgroundImage: '',
+      items: [],
+      categoryId: 'oversized',
+      width: 3000,
+      height: 4200,
+      imagePath: 'assets/previews/oversized_portrait_10x14.png',
+    ),
+    CardTemplate(
+      id: '8',
+      name: 'Oversized Landscape - 14x10 in',
+      backgroundImage: '',
+      items: [],
+      categoryId: 'oversized',
+      width: 4200,
+      height: 3000,
+      imagePath: 'assets/previews/oversized_landscape_14x10.png',
     ),
   ];
 
