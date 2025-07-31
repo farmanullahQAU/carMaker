@@ -41,7 +41,7 @@ class EditorPage extends GetView<EditorController> {
       if (isTemplateLoaded.value) return;
 
       final double availableWidth = constraints.maxWidth * 0.9;
-      final double availableHeight = constraints.maxHeight * 0.7;
+      final double availableHeight = constraints.maxHeight;
       final double aspectRatio =
           controller.initialTemplate!.width /
           controller.initialTemplate!.height;
@@ -392,8 +392,11 @@ class EditorPage extends GetView<EditorController> {
     return Scaffold(
       bottomSheet: BottomSheet(
         onClosing: () {},
-        builder: (_) => Obx(
-          () => showStickerPanel.value
+        builder: (_) => Obx(() {
+          print(
+            "BottomSheet: activeItem=${controller.activeItem.value?.id}, showTextPanel=${showTextPanel.value}, isTextItem=${controller.activeItem.value is StackTextItem}",
+          );
+          return showStickerPanel.value
               ? _StickerPanel(controller: controller)
               : showHueSlider.value
               ? _HueAdjustmentPanel(controller: controller)
@@ -402,12 +405,32 @@ class EditorPage extends GetView<EditorController> {
               ? showHueSlider.value
                     ? _HueAdjustmentPanel(controller: controller)
                     : _TextEditorPanel(
+                        key: ValueKey(controller.activeItem.value!.id),
                         controller: controller,
                         textItem: controller.activeItem.value as StackTextItem,
+                        showTextPanel: showTextPanel, // Pass showTextPanel
                       )
-              : const SizedBox.shrink(),
-        ),
+              : const SizedBox.shrink();
+        }),
       ),
+      // bottomSheet: BottomSheet(
+      //   onClosing: () {},
+      //   builder: (_) => Obx(
+      //     () => showStickerPanel.value
+      //         ? _StickerPanel(controller: controller)
+      //         : showHueSlider.value
+      //         ? _HueAdjustmentPanel(controller: controller)
+      //         : controller.activeItem.value != null &&
+      //               controller.activeItem.value is StackTextItem
+      //         ? showHueSlider.value
+      //               ? _HueAdjustmentPanel(controller: controller)
+      //               : _TextEditorPanel(
+      //                   controller: controller,
+      //                   textItem: controller.activeItem.value as StackTextItem,
+      //                 )
+      //         : const SizedBox.shrink(),
+      //   ),
+      // ),
       appBar: AppBar(
         title: Obx(
           () => Text(
@@ -466,12 +489,19 @@ class EditorPage extends GetView<EditorController> {
                         controller: controller.boardController,
                         background: InkWell(
                           onTap: () {
+                            // if (Get.isRegistered<TextEditingController>()) {
+                            //   if (selectedToolIndex.value == 2) {
+                            //     //text was just closed
+                            //   //so reset the in
+
+                            //   }
+                            // }
                             controller.boardController.setAllItemStatuses(
                               StackItemStatus.idle,
                             );
                             controller.activeItem.value = null;
-                            // selectedToolIndex.value = 0;
-                            showTextPanel.value = true;
+                            showTextPanel.value =
+                                false; // Hide panel on background tap
                             showStickerPanel.value = false;
                             showHueSlider.value = false;
                             showShapePanel.value = false;
@@ -527,10 +557,7 @@ class EditorPage extends GetView<EditorController> {
                                         scaledCanvasWidth.value,
                                         scaledCanvasHeight.value,
                                       ),
-                                      showGrid:
-                                          // controller.draggedItem.value !=
-                                          //     null &&
-                                          controller.showGrid.isTrue,
+                                      showGrid: controller.showGrid.isTrue,
                                       gridSize: 50.0,
                                       guideColor: Colors.blue.withOpacity(0.5),
                                       criticalGuideColor: Colors.red,
@@ -543,57 +570,40 @@ class EditorPage extends GetView<EditorController> {
                           ),
                         ),
                         customBuilder: (StackItem<StackItemContent> item) {
-                          return InkWell(
-                            onTap: () {
-                              controller.boardController.setAllItemStatuses(
-                                StackItemStatus.idle,
-                              );
-                              controller.activeItem.value = item;
-
-                              final updatedItem = item.copyWith(
-                                status: StackItemStatus.selected,
-                              );
-                              controller.boardController.updateItem(
-                                updatedItem,
-                              );
-                              if (item is StackTextItem) {
-                                selectedToolIndex.value = 3;
-                                showTextPanel.value = true;
-                                showStickerPanel.value = false;
-                                showHueSlider.value = false;
-                                showShapePanel.value = false;
-                              }
-                            },
-                            child:
-                                (item is StackTextItem && item.content != null)
-                                ? StackTextCase(item: item)
-                                : (item is StackImageItem &&
-                                      item.content != null)
-                                ? Container(
-                                    color: Colors.blue.withOpacity(0.1),
-
-                                    child: StackImageCase(item: item),
-                                  )
-                                : (item is ColorStackItem1 &&
-                                      item.content != null)
-                                ? Container(
-                                    width: item.size.width,
-                                    height: item.size.height,
-                                    color: item.content!.color,
-                                  )
-                                : (item is RowStackItem && item.content != null)
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: item.content!.items
-                                        .map(
-                                          (subItem) => subItem is StackTextItem
-                                              ? StackTextCase(item: subItem)
-                                              : const SizedBox.shrink(),
-                                        )
-                                        .toList(),
-                                  )
-                                : const SizedBox.shrink(),
+                          print(
+                            "Rendering item: ${item.id}, type: ${item.runtimeType}, isCircular}",
                           );
+                          return (item is StackTextItem && item.content != null)
+                              ? Container(
+                                  color: Colors.red.withOpacity(
+                                    0.2,
+                                  ), // Visualize hit area
+                                  child: StackTextCase(item: item),
+                                )
+                              : (item is StackImageItem && item.content != null)
+                              ? Container(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  child: StackImageCase(item: item),
+                                )
+                              : (item is ColorStackItem1 &&
+                                    item.content != null)
+                              ? Container(
+                                  width: item.size.width,
+                                  height: item.size.height,
+                                  color: item.content!.color,
+                                )
+                              : (item is RowStackItem && item.content != null)
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: item.content!.items
+                                      .map(
+                                        (subItem) => subItem is StackTextItem
+                                            ? StackTextCase(item: subItem)
+                                            : const SizedBox.shrink(),
+                                      )
+                                      .toList(),
+                                )
+                              : const SizedBox.shrink();
                         },
                         borderBuilder: (status, item) {
                           final CaseStyle style = CaseStyle();
@@ -624,11 +634,203 @@ class EditorPage extends GetView<EditorController> {
                           );
                         },
                         onDel: controller.deleteItem,
+
+                        onTap: (item) {
+                          controller.activeItem.value = item;
+                        },
+
                         onStatusChanged: (item, status) {
+                          if (status == StackItemStatus.selected) {
+                            if (item is StackTextItem) {
+                              print("Selected StackTextItem: ${item.id}");
+                              selectedToolIndex.value = 3;
+                              showTextPanel.value = false;
+                              showStickerPanel.value = false;
+                              showHueSlider.value = false;
+                              showShapePanel.value = false;
+                            } else {
+                              showTextPanel.value =
+                                  false; // Hide panel for non-text items
+                            }
+                          }
                           controller.onItemStatusChanged(item, status);
                           return true;
                         },
                       ),
+
+                      // StackBoard(
+                      //   key: stackBoardKey,
+                      //   controller: controller.boardController,
+                      //   background: InkWell(
+                      //     onTap: () {
+                      //       controller.boardController.setAllItemStatuses(
+                      //         StackItemStatus.idle,
+                      //       );
+                      //       controller.activeItem.value = null;
+                      //       // selectedToolIndex.value = 0;
+                      //       showTextPanel.value = true;
+                      //       showStickerPanel.value = false;
+                      //       showHueSlider.value = false;
+                      //       showShapePanel.value = false;
+                      //     },
+                      //     child: Stack(
+                      //       alignment: Alignment.center,
+                      //       children: [
+                      //         Stack(
+                      //           alignment: Alignment.center,
+                      //           children: [
+                      //             Container(
+                      //               width: scaledCanvasWidth.value,
+                      //               height: scaledCanvasHeight.value,
+                      //               color:
+                      //                   controller
+                      //                       .selectedBackground
+                      //                       .value
+                      //                       .isNotEmpty
+                      //                   ? null
+                      //                   : Colors.white,
+                      //               child:
+                      //                   controller
+                      //                       .selectedBackground
+                      //                       .value
+                      //                       .isNotEmpty
+                      //                   ? ColorFiltered(
+                      //                       colorFilter: ColorFilter.matrix(
+                      //                         _hueMatrix(
+                      //                           controller.backgroundHue.value,
+                      //                         ),
+                      //                       ),
+                      //                       child: Image.asset(
+                      //                         controller
+                      //                             .selectedBackground
+                      //                             .value,
+                      //                         width: scaledCanvasWidth.value,
+                      //                         height: scaledCanvasHeight.value,
+                      //                         fit: BoxFit.contain,
+                      //                       ),
+                      //                     )
+                      //                   : null,
+                      //             ),
+                      //             CustomPaint(
+                      //               size: Size(
+                      //                 scaledCanvasWidth.value,
+                      //                 scaledCanvasHeight.value,
+                      //               ),
+                      //               painter: AlignmentGuidePainter(
+                      //                 draggedItem: controller.draggedItem.value,
+                      //                 alignmentPoints:
+                      //                     controller.alignmentPoints,
+                      //                 stackBoardSize: Size(
+                      //                   scaledCanvasWidth.value,
+                      //                   scaledCanvasHeight.value,
+                      //                 ),
+                      //                 showGrid:
+                      //                     // controller.draggedItem.value !=
+                      //                     //     null &&
+                      //                     controller.showGrid.isTrue,
+                      //                 gridSize: 50.0,
+                      //                 guideColor: Colors.blue.withOpacity(0.5),
+                      //                 criticalGuideColor: Colors.red,
+                      //                 centerGuideColor: Colors.green,
+                      //               ),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      //   customBuilder: (StackItem<StackItemContent> item) {
+                      //     return GestureDetector(
+                      //       onTap: () {
+                      //         print(
+                      //           "Tapped item: ${item.id}, type: ${item.runtimeType} : false}",
+                      //         );
+                      //         controller.boardController.setAllItemStatuses(
+                      //           StackItemStatus.idle,
+                      //         );
+                      //         controller.activeItem.value = item;
+
+                      //         final updatedItem = item.copyWith(
+                      //           status: StackItemStatus.selected,
+                      //         );
+                      //         controller.boardController.updateItem(
+                      //           updatedItem,
+                      //         );
+
+                      //         if (item is StackTextItem) {
+                      //           selectedToolIndex.value = 3;
+                      //           showTextPanel.value = true;
+                      //           showStickerPanel.value = false;
+                      //           showHueSlider.value = false;
+                      //           showShapePanel.value = false;
+                      //         }
+                      //       },
+                      //       child:
+                      //           (item is StackTextItem && item.content != null)
+                      //           ? StackTextCase(item: item)
+                      //           : (item is StackImageItem &&
+                      //                 item.content != null)
+                      //           ? Container(
+                      //               color: Colors.blue.withOpacity(0.1),
+
+                      //               child: StackImageCase(item: item),
+                      //             )
+                      //           : (item is ColorStackItem1 &&
+                      //                 item.content != null)
+                      //           ? Container(
+                      //               width: item.size.width,
+                      //               height: item.size.height,
+                      //               color: item.content!.color,
+                      //             )
+                      //           : (item is RowStackItem && item.content != null)
+                      //           ? Row(
+                      //               mainAxisAlignment: MainAxisAlignment.center,
+                      //               children: item.content!.items
+                      //                   .map(
+                      //                     (subItem) => subItem is StackTextItem
+                      //                         ? StackTextCase(item: subItem)
+                      //                         : const SizedBox.shrink(),
+                      //                   )
+                      //                   .toList(),
+                      //             )
+                      //           : const SizedBox.shrink(),
+                      //     );
+                      //   },
+
+                      //   borderBuilder: (status, item) {
+                      //     final CaseStyle style = CaseStyle();
+                      //     final double leftRight =
+                      //         status == StackItemStatus.idle
+                      //         ? 0
+                      //         : -(style.buttonSize) / 2;
+                      //     final double topBottom =
+                      //         status == StackItemStatus.idle
+                      //         ? 0
+                      //         : -(style.buttonSize) * 1.5;
+                      //     return AnimatedContainer(
+                      //       duration: const Duration(milliseconds: 500),
+                      //       child: Positioned(
+                      //         left: -leftRight,
+                      //         top: -topBottom,
+                      //         right: -leftRight,
+                      //         bottom: -topBottom,
+                      //         child: IgnorePointer(
+                      //           ignoring: true,
+                      //           child: CustomPaint(
+                      //             painter: _BorderPainter(
+                      //               dotted: status == StackItemStatus.idle,
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //     );
+                      //   },
+                      //   onDel: controller.deleteItem,
+                      //   onStatusChanged: (item, status) {
+                      //     controller.onItemStatusChanged(item, status);
+                      //     return true;
+                      //   },
+                      // ),
                     ),
                   );
                 },
@@ -669,7 +871,7 @@ class EditorPage extends GetView<EditorController> {
                         showHueSlider.value = selectedToolIndex.value == 2;
                         showStickerPanel.value = false;
                         showShapePanel.value = false;
-                        showTextPanel.value = false;
+                        showTextPanel.value = true;
                       },
                       isActive: selectedToolIndex.value == 2,
                     ),
@@ -1124,15 +1326,24 @@ class _HueAdjustmentPanel extends StatelessWidget {
 class _TextEditorPanel extends StatelessWidget {
   final EditorController controller;
   final StackTextItem textItem;
+  final RxBool showTextPanel; // Add showTextPanel parameter
 
-  const _TextEditorPanel({required this.controller, required this.textItem});
+  const _TextEditorPanel({
+    super.key,
+    required this.controller,
+    required this.textItem,
+    required this.showTextPanel,
+  });
 
   @override
   Widget build(BuildContext context) {
+    print("Building TextEditorPanel for item: ${textItem.id}, isCircular");
     return TextStylingEditor(
+      key: ValueKey(textItem.id), // Force rebuild on item change
       textItem: textItem,
       onClose: () {
         controller.activeItem.value = null;
+        showTextPanel.value = false; // Update visibility
       },
     );
   }

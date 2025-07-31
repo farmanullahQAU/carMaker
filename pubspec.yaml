@@ -46,6 +46,7 @@ dependencies:
   open_file: ^3.5.10
   get_storage: ^2.1.1
   flutter_native_splash: ^2.4.6
+  widget_mask: ^1.0.0+0
   # stack_board: ^0.2.6+1
 flutter_native_splash:
   color: "#ffffff"  # White background for light mode

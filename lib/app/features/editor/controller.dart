@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
-import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
@@ -83,9 +82,6 @@ class EditorController extends GetxController {
   }
 
   void updateStackBoardRenderSize(Size size) {
-    print(
-      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${size.width}",
-    );
     if (actualStackBoardRenderSize.value != size) {
       actualStackBoardRenderSize.value = size;
 
@@ -412,6 +408,10 @@ class EditorController extends GetxController {
       try {
         final bool isCentered = itemJson['isCentered'] ?? false;
 
+        print(
+          "ccccccccccccccccccccccccccccccvvvvvvvvvvvvvvvvvvvvvvvvvwwwwwwwwwwwwwwwwwwwwwwwww",
+        );
+        print(itemJson);
         if (itemJson['type'] == 'RowStackItem') {
           RowStackItem rowStackItem = RowStackItem.fromJson(itemJson);
           double totalWidth = 0.0;
@@ -546,242 +546,6 @@ class EditorController extends GetxController {
           );
         }
       } catch (err) {}
-    }
-  }
-
-  // Updated loadTemplate to handle row items as separate StackItems
-  void loadTemplate(
-    CardTemplate template,
-    double canvasScale,
-    double scaledCanvasWidth,
-    double scaledCanvasHeight,
-    BuildContext context,
-  ) async {
-    final controller = Get.find<EditorController>();
-    controller.selectedBackground.value = template.backgroundImage;
-    controller.templateName.value = template.name;
-    controller.category.value = template.category;
-    controller.categoryId.value = template.categoryId;
-    controller.tags.value = template.tags;
-    controller.isPremium.value = template.isPremium;
-    controller.backgroundHue.value = 0.0;
-    controller.templateOriginalWidth.value = template.width.toDouble();
-    controller.templateOriginalHeight.value = template.height.toDouble();
-    controller.canvasWidth.value = scaledCanvasWidth;
-    controller.canvasHeight.value = scaledCanvasHeight;
-    controller.boardController.clear();
-    const double previewFactor = 0.1; // Adjust for home screen preview
-    double cumulativeYOffset = 0.0;
-
-    for (final itemJson in template.items) {
-      try {
-        // final double originalX = (itemJson['originalX'] ?? 0.0) as double;
-        // final double originalY = (itemJson['originalY'] ?? 0.0) as double;
-        final bool isCentered = itemJson['isCentered'] ?? false;
-
-        // Scale the item's position based on the provided canvas scale
-
-        if (itemJson['type'] == 'RowStackItem') {
-          RowStackItem rowStackItem = RowStackItem.fromJson(itemJson);
-
-          // Handle row items as separate StackItems
-          // final subItems = (itemJson['content']['items'] as List)
-          //     .map((subItemJson) => _deserializeItem(subItemJson))
-          //     .toList();
-
-          double totalWidth = 0.0; //sum of widths of each row item
-          double maxHeight = 0.0;
-          final List<StackItem> scaledSubItems = [];
-          double subItemWidth = 0.0;
-          double subItemHeight = 0.0;
-          double rowScaledX =
-              (rowStackItem.offset.dx * canvasScale); //offset of the row
-          double rowScaledY = (rowStackItem.offset.dy * canvasScale);
-          // Process each sub-item
-          for (final subItem in rowStackItem.content!.items) {
-            // rowScaledY += cumulativeYOffset;
-            StackItem updatedSubItem;
-
-            if (subItem is StackTextItem) {
-              // Reuse the same scaling logic as standalone StackTextItem
-              final updatedStyle = subItem.content!.style!.copyWith(
-                fontSize: subItem.content!.style!.fontSize,
-              );
-
-              // Calculate the sub-item's size based on the scaled text
-              subItemWidth = getTextWidth(
-                text: subItem.content!.data!,
-                style: updatedStyle,
-              ).width;
-              subItemHeight = getTextWidth(
-                text: subItem.content!.data!,
-                style: updatedStyle,
-              ).height;
-
-              // Adjust y-position for button size if centered
-              final double buttonSize = 18 * canvasScale;
-              // if (subItem.isCentered) {
-              //   subItemY += (subItemHeight / 2) + buttonSize;
-              // }
-
-              final scaledY =
-                  (subItem.offset.dy >
-                      0 //if item.dy is zero it means it is aligned with the Main rowScaledY
-                  ? subItem.offset.dy * canvasScale
-                  : rowScaledY);
-
-              updatedSubItem = subItem.copyWith(
-                offset: Offset(rowScaledX, scaledY),
-                size: Size(subItemWidth, subItemHeight),
-                content: subItem.content!.copyWith(
-                  style: updatedStyle,
-                  data: subItem.content!.data,
-                ),
-                status: StackItemStatus.idle,
-                isCentered: subItem.isCentered,
-              );
-
-              totalWidth += subItemWidth;
-              maxHeight = subItemHeight;
-            }
-            // else if (subItem is ShapeStackItem) {
-            //   subItemWidth = subItem.size.width * canvasScale;
-            //   subItemHeight = subItem.size.height * canvasScale;
-            //   updatedSubItem = subItem.copyWith(
-            //     offset: Offset(scaledX + totalWidth, scaledY),
-            //     size: Size(subItemWidth, subItemHeight),
-            //     status: StackItemStatus.idle,
-            //     isCentered: subItem.isCentered,
-            //   );
-            //   totalWidth += subItemWidth;
-            //   maxHeight = math.max(maxHeight, subItemHeight);
-            // }
-            else {
-              throw Exception(
-                'Unsupported sub-item type in RowStackItem: ${subItem.runtimeType}',
-              );
-            }
-
-            debugPrint(
-              'Loaded sub-item: ${subItem.id}, isCentered: ${subItem.isCentered}, size: ${updatedSubItem.size}, offset: ${updatedSubItem.offset}',
-            );
-            controller.boardController.addItem(updatedSubItem);
-            scaledSubItems.add(updatedSubItem);
-            rowScaledX += (subItemWidth);
-            controller._undoStack.add(
-              _ItemState(item: updatedSubItem, action: _ItemAction.add),
-            );
-          }
-
-          // Adjust for centering the entire row
-          if (isCentered) {
-            // Proper centering: remaining space divided by 2
-            double startX = (((canvasWidth - totalWidth) / 2));
-
-            for (var subItem in scaledSubItems) {
-              controller.boardController.updateBasic(
-                subItem.id,
-                offset: Offset(
-                  startX + subItem.size.width / 2,
-                  subItem.offset.dy,
-                ),
-              );
-              startX += subItem.size.width;
-            }
-          }
-
-          cumulativeYOffset += maxHeight * canvasScale;
-        } else {
-          final item = _deserializeItem(itemJson);
-          Size itemSize;
-          StackItem updatedItem;
-
-          if (item is StackTextItem) {
-            double scaledX = item.offset.dx * canvasScale;
-            double scaledY = item.offset.dy * canvasScale;
-            scaledY += cumulativeYOffset;
-
-            // Update the item's style with the scaled font size
-            final updatedStyle = item.content!.style!.copyWith(
-              fontSize: item.content!.style!.fontSize!,
-            );
-
-            // Calculate the item's size based on the scaled text
-            itemSize = Size(
-              getTextWidth(
-                    text: item.content!.data!,
-                    style: updatedStyle,
-                  ).width +
-                  20,
-              getTextWidth(
-                text: item.content!.data!,
-                style: updatedStyle,
-              ).height,
-            );
-
-            // Adjust y-position for button size if centered
-            final double buttonSize = 18 * canvasScale;
-            if (isCentered) {
-              scaledY += (itemSize.height / 2) + buttonSize;
-            }
-
-            updatedItem = item.copyWith(
-              offset: Offset(scaledX, scaledY),
-              size: itemSize,
-              status: StackItemStatus.idle, // Ensure item is movable
-              content: item.content!.copyWith(style: updatedStyle),
-              isCentered: isCentered,
-            );
-            cumulativeYOffset += itemSize.height;
-          } else if (item is StackImageItem) {
-            double scaledX = item.offset.dx * canvasScale;
-            double scaledY = item.offset.dy * canvasScale;
-            // Assume itemJson contains width and height for the image
-            final double originalWidth =
-                (itemJson['size']?['width'] ?? 100.0) as double;
-            final double originalHeight =
-                (itemJson['size']?['height'] ?? 100.0) as double;
-
-            // Scale the image size
-            itemSize = Size(
-              originalWidth * canvasScale,
-              originalHeight * canvasScale,
-            );
-
-            // Adjust y-position for button size if centered
-            final double buttonSize = 36 * canvasScale;
-
-            // scaledY += (itemSize.height / 2) + buttonSize;
-            scaledY += buttonSize + cumulativeYOffset;
-
-            updatedItem = item.copyWith(
-              offset: Offset(scaledX, scaledY),
-              size: itemSize,
-              status: StackItemStatus.idle, // Ensure item is movable
-              // isCentered: isCentered,
-            );
-          } else {
-            throw Exception('Unsupported item type: ${item.runtimeType}');
-          }
-
-          debugPrint(
-            'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
-          );
-
-          controller.boardController.addItem(updatedItem);
-
-          controller._undoStack.add(
-            _ItemState(item: updatedItem, action: _ItemAction.add),
-          );
-        }
-      } catch (e) {
-        debugPrint("Error loading item: $e");
-        Get.snackbar(
-          'Error',
-          'Failed to load item: $e',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
     }
   }
 
@@ -1002,6 +766,30 @@ class EditorController extends GetxController {
     _updateSpatialIndex();
   }
 
+  // void onItemStatusChanged(StackItem item, StackItemStatus status) {
+  //   print(item.toJson());
+  //   if (status == StackItemStatus.moving) {
+  //     draggedItem.value = item;
+
+  //     activeItem.value = null;
+
+  //     _dragStart = null;
+  //     _lastOffset = null;
+  //   } else if (status == StackItemStatus.selected) {
+  //     activeItem.value = null;
+  //     draggedItem.value = null;
+  //     _dragStart = null;
+  //     _lastOffset = null;
+  //     alignmentPoints.value = [];
+  //   } else if (status == StackItemStatus.idle) {
+  //     if (draggedItem.value?.id == item.id) {
+  //     } else if (activeItem.value?.id == item.id) {
+  //       activeItem.value = null;
+  //       alignmentPoints.value = [];
+  //     }
+  //   }
+  // }
+
   void onItemStatusChanged(StackItem item, StackItemStatus status) {
     if (status == StackItemStatus.moving) {
       draggedItem.value = item;
@@ -1011,15 +799,15 @@ class EditorController extends GetxController {
       _dragStart = null;
       _lastOffset = null;
     } else if (status == StackItemStatus.selected) {
-      print("ssssssssssssssssssssssssssssss");
-      activeItem.value = null;
       draggedItem.value = null;
       _dragStart = null;
       _lastOffset = null;
       alignmentPoints.value = [];
     } else if (status == StackItemStatus.idle) {
       if (draggedItem.value?.id == item.id) {
-      } else if (activeItem.value?.id == item.id) {
+        draggedItem.value = null;
+      }
+      if (activeItem.value?.id == item.id) {
         activeItem.value = null;
         alignmentPoints.value = [];
       }

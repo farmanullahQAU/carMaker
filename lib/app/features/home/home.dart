@@ -3,6 +3,7 @@ import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:widget_mask/widget_mask.dart';
 
 // --- ENHANCED DATA MODELS ---
 class CategoryModel {
@@ -363,13 +364,8 @@ class AIBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FilledButton.tonal(
-                  onPressed: () => Get.find<HomeController>().onQuickActionTap(
-                    QuickAction(
-                      title: 'AI Generate',
-                      icon: Icons.auto_awesome_outlined,
-                      color: const Color(0xFF8B5CF6),
-                    ),
-                  ),
+                  onPressed: () => Get.to(() => MaskingExamplePage()),
+
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Get.theme.colorScheme.primary,
@@ -599,4 +595,40 @@ Size getTextWidth({required String text, required TextStyle style}) {
   )..layout(maxWidth: 300);
 
   return textPainter.size;
+}
+
+class MaskingExamplePage extends StatelessWidget {
+  const MaskingExamplePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mask Boundary Example')),
+      body: Center(
+        // Centering the single example for clarity
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Visualizing Mask Boundaries:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              // This color helps visualize the container's boundaries
+              child: WidgetMask(
+                blendMode: BlendMode.srcATop,
+                childSaveLayer: true,
+                mask: Image.asset(
+                  'assets/Farman.png', // A simple circle mask (you need this asset)
+                  fit: BoxFit.cover,
+                ),
+                child: FlutterLogo(size: 200),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
