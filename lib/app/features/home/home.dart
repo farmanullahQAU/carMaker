@@ -197,7 +197,7 @@ class HomeTab extends StatelessWidget {
             ),
           ),
 
-          Image.asset("assets/logo2.png"),
+          Image.asset("assets/logo.png"),
         ],
       ),
       actions: [

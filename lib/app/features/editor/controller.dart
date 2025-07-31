@@ -94,7 +94,6 @@ class EditorController extends GetxController {
   }
 
   // New method to export design as CardTemplate with pixel-perfect accuracy
-
   Future<void> exportDesign() async {
     final double originalWidth = initialTemplate!.width.toDouble();
     final double originalHeight = initialTemplate!.height.toDouble();
@@ -122,48 +121,38 @@ class EditorController extends GetxController {
       };
 
       if (type == 'StackTextItem') {
-        exportedItem['content'] = {
-          'data': itemJson['content']['data'],
-          'googleFont': itemJson['content']['googleFont'],
-          'style': {
-            'fontSize': itemJson['content']['style']['fontSize'],
-            'color': itemJson['content']['style']['color'],
-          },
-          'textAlign': itemJson['content']['textAlign'],
-        };
+        // Use TextItemContent.toJson to include all properties, including circular text
+        exportedItem['content'] = itemJson['content'];
       } else if (type == 'StackImageItem') {
         exportedItem['content'] = {
           'assetName': itemJson['content']['assetName'],
         };
       } else if (type == 'RowStackItem') {
         exportedItem['content'] = {
-          'items': (itemJson['content']['items'] as List)
-              .map(
-                (subItemJson) => {
-                  'type': subItemJson['type'],
-                  'id': subItemJson['id'],
-                  'status': subItemJson['status'] ?? 0,
-                  'size': {
-                    'width': subItemJson['size']['width'],
-                    'height': subItemJson['size']['height'],
-                  },
-                  'offset': {
-                    'dx': subItemJson['offset']['dx'],
-                    'dy': subItemJson['offset']['dy'],
-                  },
-                  'content': {
-                    'data': subItemJson['content']['data'],
-                    'googleFont': subItemJson['content']['googleFont'],
-                    'style': {
-                      'fontSize': subItemJson['content']['style']['fontSize'],
-                      'color': subItemJson['content']['style']['color'],
-                    },
-                    'textAlign': subItemJson['content']['textAlign'],
-                  },
-                  'isCentered': subItemJson['isCentered'] ?? false,
-                },
-              )
-              .toList(),
+          'items': (itemJson['content']['items'] as List).map((subItemJson) {
+            final subItemType = subItemJson['type'];
+            final Map<String, dynamic> subItem = {
+              'type': subItemType,
+              'id': subItemJson['id'],
+              'status': subItemJson['status'] ?? 0,
+              'size': {
+                'width': subItemJson['size']['width'],
+                'height': subItemJson['size']['height'],
+              },
+              'offset': {
+                'dx': subItemJson['offset']['dx'],
+                'dy': subItemJson['offset']['dy'],
+              },
+              'isCentered': subItemJson['isCentered'] ?? false,
+            };
+            if (subItemType == 'StackTextItem') {
+              // Use TextItemContent.toJson for sub-item content
+              subItem['content'] = subItemJson['content'];
+            } else {
+              throw Exception('Unsupported sub-item type: $subItemType');
+            }
+            return subItem;
+          }).toList(),
         };
       }
 
@@ -191,8 +180,106 @@ class EditorController extends GetxController {
     );
 
     // Add to featuredTemplates
-    addTemplate(temp);
+    await addTemplate(temp);
   }
+  // Future<void> exportDesign() async {
+  //   final double originalWidth = initialTemplate!.width.toDouble();
+  //   final double originalHeight = initialTemplate!.height.toDouble();
+
+  //   final List<Map<String, dynamic>> exportedItems = [];
+  //   final currentItems = boardController.getAllData();
+
+  //   debugPrint('Current Items: $currentItems', wrapWidth: 1000);
+
+  //   for (final itemJson in currentItems) {
+  //     final type = itemJson['type'];
+  //     final Map<String, dynamic> exportedItem = {
+  //       'type': type,
+  //       'id': itemJson['id'],
+  //       'status': itemJson['status'] ?? 0,
+  //       'isCentered': itemJson['isCentered'] ?? false,
+  //       'size': {
+  //         'width': itemJson['size']['width'],
+  //         'height': itemJson['size']['height'],
+  //       },
+  //       'offset': {
+  //         'dx': itemJson['offset']['dx'],
+  //         'dy': itemJson['offset']['dy'],
+  //       },
+  //     };
+
+  //     if (type == 'StackTextItem') {
+  //       exportedItem['content'] = {
+  //         'data': itemJson['content']['data'],
+  //         'googleFont': itemJson['content']['googleFont'],
+  //         'style': {
+  //           'fontSize': itemJson['content']['style']['fontSize'],
+  //           'color': itemJson['content']['style']['color'],
+  //         },
+  //         'textAlign': itemJson['content']['textAlign'],
+  //       };
+  //     } else if (type == 'StackImageItem') {
+  //       exportedItem['content'] = {
+  //         'assetName': itemJson['content']['assetName'],
+  //       };
+  //     } else if (type == 'RowStackItem') {
+  //       exportedItem['content'] = {
+  //         'items': (itemJson['content']['items'] as List)
+  //             .map(
+  //               (subItemJson) => {
+  //                 'type': subItemJson['type'],
+  //                 'id': subItemJson['id'],
+  //                 'status': subItemJson['status'] ?? 0,
+  //                 'size': {
+  //                   'width': subItemJson['size']['width'],
+  //                   'height': subItemJson['size']['height'],
+  //                 },
+  //                 'offset': {
+  //                   'dx': subItemJson['offset']['dx'],
+  //                   'dy': subItemJson['offset']['dy'],
+  //                 },
+  //                 'content': {
+  //                   'data': subItemJson['content']['data'],
+  //                   'googleFont': subItemJson['content']['googleFont'],
+  //                   'style': {
+  //                     'fontSize': subItemJson['content']['style']['fontSize'],
+  //                     'color': subItemJson['content']['style']['color'],
+  //                   },
+  //                   'textAlign': subItemJson['content']['textAlign'],
+  //                 },
+  //                 'isCentered': subItemJson['isCentered'] ?? false,
+  //               },
+  //             )
+  //             .toList(),
+  //       };
+  //     }
+
+  //     exportedItems.add(exportedItem);
+  //   }
+
+  //   final temp = CardTemplate(
+  //     id: 'exported_${initialTemplate!.id}_modified_${DateTime.now().millisecondsSinceEpoch}',
+  //     name: templateName.value.isNotEmpty
+  //         ? templateName.value
+  //         : initialTemplate!.name,
+  //     thumbnailPath: initialTemplate!.thumbnailPath,
+  //     backgroundImage: initialTemplate?.backgroundImage ?? "",
+  //     items: exportedItems,
+  //     createdAt: DateTime.now(),
+  //     updatedAt: null,
+  //     category: category.value,
+  //     categoryId: categoryId.value,
+  //     compatibleDesigns: initialTemplate!.compatibleDesigns,
+  //     width: originalWidth,
+  //     height: originalHeight,
+  //     isPremium: isPremium.value,
+  //     tags: tags.value,
+  //     imagePath: selectedBackground.value,
+  //   );
+
+  //   // Add to featuredTemplates
+  //   addTemplate(temp);
+  // }
 
   void removeTextEditorOverlay() {
     final entry = activeTextEditorOverlay.value;
