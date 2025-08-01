@@ -16,12 +16,14 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:photo_view/photo_view.dart';
 import 'package:screenshot/screenshot.dart';
 
 class EditorPage extends GetView<EditorController> {
   EditorPage({super.key});
 
   final ScreenshotController screenshotController = ScreenshotController();
+  final RxBool allowTouch = true.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +32,7 @@ class EditorPage extends GetView<EditorController> {
     final RxBool showStickerPanel = false.obs;
     final RxBool showShapePanel = false.obs;
     final RxBool showTextPanel = false.obs;
+
     final RxInt selectedToolIndex =
         0.obs; // 0: none, 1: sticker, 2: color, 3: text, 4: shape
     final RxBool isTemplateLoaded = false.obs;
@@ -89,45 +92,6 @@ class EditorPage extends GetView<EditorController> {
       isTemplateLoaded.value = true;
     }
 
-    /*
-    void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
-      if (controller.initialTemplate == null || isTemplateLoaded.value) return;
-
-      final double availableWidth = constraints.maxWidth * 0.9;
-      final double availableHeight = constraints.maxHeight * 0.95;
-
-      final double aspectRatio =
-          controller.initialTemplate!.width /
-          controller.initialTemplate!.height;
-
-      if (availableWidth / aspectRatio <= availableHeight) {
-        scaledCanvasWidth.value = availableWidth;
-        scaledCanvasHeight.value = availableWidth / aspectRatio;
-      } else {
-        scaledCanvasHeight.value = availableHeight;
-        scaledCanvasWidth.value = availableHeight * aspectRatio;
-      }
-
-      canvasScale.value =
-          scaledCanvasWidth.value / controller.initialTemplate!.width;
-
-      controller.updateStackBoardRenderSize(
-        Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-      );
-      debugPrint(
-        'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Aspect Ratio: $aspectRatio',
-      );
-
-      controller.loadTemplate(
-        controller.initialTemplate!,
-        canvasScale.value,
-        scaledCanvasWidth.value,
-        scaledCanvasHeight.value,
-        context,
-      );
-      isTemplateLoaded.value = true;
-    }
-*/
     StackItem deserializeItem(Map<String, dynamic> itemJson) {
       final type = itemJson['type'];
       if (type == 'StackTextItem') {
@@ -389,6 +353,16 @@ class EditorPage extends GetView<EditorController> {
       }
     }
 
+    bool isInHole(Offset position, double scale) {
+      final hole = Rect.fromLTWH(
+        690 * scale,
+        115 * scale,
+        436 * scale,
+        574 * scale,
+      );
+      return hole.contains(position);
+    }
+
     return Scaffold(
       bottomSheet: BottomSheet(
         onClosing: () {},
@@ -432,13 +406,7 @@ class EditorPage extends GetView<EditorController> {
       //   ),
       // ),
       appBar: AppBar(
-        title: Obx(
-          () => Text(
-            controller.templateName.value.isEmpty
-                ? 'Design Editor'
-                : controller.templateName.value,
-          ),
-        ),
+        title: Obx(() => Text(allowTouch.value.toString())),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -478,365 +446,618 @@ class EditorPage extends GetView<EditorController> {
                 builder: (BuildContext context, BoxConstraints constraints) {
                   SchedulerBinding.instance.addPostFrameCallback((_) {
                     updateCanvasAndLoadTemplate(constraints);
+                    print(
+                      "ddddddddddddddddddddddddddddddddddddds...... ${canvasScale.value}",
+                    );
                   });
 
                   return Obx(
-                    () => SizedBox(
-                      width: scaledCanvasWidth.value,
-                      height: scaledCanvasHeight.value,
-                      child: StackBoard(
-                        key: stackBoardKey,
-                        controller: controller.boardController,
-                        background: InkWell(
-                          onTap: () {
-                            // if (Get.isRegistered<TextEditingController>()) {
-                            //   if (selectedToolIndex.value == 2) {
-                            //     //text was just closed
-                            //   //so reset the in
-
-                            //   }
-                            // }
-                            controller.boardController.setAllItemStatuses(
-                              StackItemStatus.idle,
-                            );
-                            controller.activeItem.value = null;
-                            showTextPanel.value =
-                                false; // Hide panel on background tap
-                            showStickerPanel.value = false;
-                            showHueSlider.value = false;
-                            showShapePanel.value = false;
-                          },
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Container(
-                                    width: scaledCanvasWidth.value,
-                                    height: scaledCanvasHeight.value,
-                                    color:
-                                        controller
-                                            .selectedBackground
-                                            .value
-                                            .isNotEmpty
-                                        ? null
-                                        : Colors.white,
-                                    child:
-                                        controller
-                                            .selectedBackground
-                                            .value
-                                            .isNotEmpty
-                                        ? ColorFiltered(
-                                            colorFilter: ColorFilter.matrix(
-                                              _hueMatrix(
-                                                controller.backgroundHue.value,
-                                              ),
-                                            ),
-                                            child: Image.asset(
-                                              controller
-                                                  .selectedBackground
-                                                  .value,
-                                              width: scaledCanvasWidth.value,
-                                              height: scaledCanvasHeight.value,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  CustomPaint(
-                                    size: Size(
-                                      scaledCanvasWidth.value,
-                                      scaledCanvasHeight.value,
-                                    ),
-                                    painter: AlignmentGuidePainter(
-                                      draggedItem: controller.draggedItem.value,
-                                      alignmentPoints:
-                                          controller.alignmentPoints,
-                                      stackBoardSize: Size(
-                                        scaledCanvasWidth.value,
-                                        scaledCanvasHeight.value,
+                    () => Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IgnorePointer(
+                          ignoring: true,
+                          child: SizedBox(
+                            width: scaledCanvasWidth.value,
+                            height: scaledCanvasHeight.value,
+                            child:
+                                controller.selectedBackground.value.isNotEmpty
+                                ? ColorFiltered(
+                                    colorFilter: ColorFilter.matrix(
+                                      _hueMatrix(
+                                        controller.backgroundHue.value,
                                       ),
-                                      showGrid: controller.showGrid.isTrue,
-                                      gridSize: 50.0,
-                                      guideColor: Colors.blue.withOpacity(0.5),
-                                      criticalGuideColor: Colors.red,
-                                      centerGuideColor: Colors.green,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    child: Image.asset(
+                                      controller.selectedBackground.value,
+                                      width: scaledCanvasWidth.value,
+                                      height: scaledCanvasHeight.value,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  )
+                                : Container(color: Colors.grey[200]),
                           ),
                         ),
-                        customBuilder: (StackItem<StackItemContent> item) {
-                          print(
-                            "Rendering item: ${item.id}, type: ${item.runtimeType}, isCircular}",
-                          );
-                          return (item is StackTextItem && item.content != null)
-                              ? Container(
-                                  color: Colors.red.withOpacity(
-                                    0.2,
-                                  ), // Visualize hit area
-                                  child: StackTextCase(item: item),
-                                )
-                              : (item is StackImageItem && item.content != null)
-                              ? Container(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  child: StackImageCase(item: item),
-                                )
-                              : (item is ColorStackItem1 &&
-                                    item.content != null)
-                              ? Container(
-                                  width: item.size.width,
-                                  height: item.size.height,
-                                  color: item.content!.color,
-                                )
-                              : (item is RowStackItem && item.content != null)
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: item.content!.items
-                                      .map(
-                                        (subItem) => subItem is StackTextItem
-                                            ? StackTextCase(item: subItem)
-                                            : const SizedBox.shrink(),
-                                      )
-                                      .toList(),
-                                )
-                              : const SizedBox.shrink();
-                        },
-                        borderBuilder: (status, item) {
-                          final CaseStyle style = CaseStyle();
-                          final double leftRight =
-                              status == StackItemStatus.idle
-                              ? 0
-                              : -(style.buttonSize) / 2;
-                          final double topBottom =
-                              status == StackItemStatus.idle
-                              ? 0
-                              : -(style.buttonSize) * 1.5;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 500),
-                            child: Positioned(
-                              left: -leftRight,
-                              top: -topBottom,
-                              right: -leftRight,
-                              bottom: -topBottom,
-                              child: IgnorePointer(
-                                ignoring: true,
-                                child: CustomPaint(
-                                  painter: _BorderPainter(
-                                    dotted: status == StackItemStatus.idle,
-                                  ),
+                        Positioned(
+                          left: 690 * canvasScale.value,
+                          top: 115 * canvasScale.value,
+                          child: ClipRect(
+                            child: SizedBox(
+                              width: 436 * canvasScale.value,
+                              height: 574 * canvasScale.value,
+                              child: PhotoView(
+                                imageProvider: const AssetImage(
+                                  'assets/birthday_2.png',
+                                ),
+                                minScale:
+                                    PhotoViewComputedScale.contained * 0.4,
+                                maxScale: PhotoViewComputedScale.covered * 3.0,
+                                initialScale: PhotoViewComputedScale.contained,
+                                basePosition: Alignment.center,
+                                enablePanAlways: true,
+                                filterQuality: FilterQuality.high,
+                                backgroundDecoration: const BoxDecoration(
+                                  color: Colors.transparent,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                        onDel: controller.deleteItem,
+                          ),
+                        ),
 
-                        onTap: (item) {
-                          controller.activeItem.value = item;
-                        },
+                        // 👇 3. The full card6.png on top (with a transparent hole)
+                        IgnorePointer(
+                          ignoring: true,
+                          child: SizedBox(
+                            width: scaledCanvasWidth.value,
+                            height: scaledCanvasHeight.value,
+                            child: Image.asset(
+                              "assets/card6.png",
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
 
-                        onStatusChanged: (item, status) {
-                          if (status == StackItemStatus.selected) {
-                            if (item is StackTextItem) {
-                              print("Selected StackTextItem: ${item.id}");
-                              selectedToolIndex.value = 3;
-                              showTextPanel.value = false;
-                              showStickerPanel.value = false;
-                              showHueSlider.value = false;
-                              showShapePanel.value = false;
-                            } else {
-                              showTextPanel.value =
-                                  false; // Hide panel for non-text items
-                            }
-                          }
-                          controller.onItemStatusChanged(item, status);
-                          return true;
-                        },
-                      ),
-
-                      // StackBoard(
-                      //   key: stackBoardKey,
-                      //   controller: controller.boardController,
-                      //   background: InkWell(
-                      //     onTap: () {
-                      //       controller.boardController.setAllItemStatuses(
-                      //         StackItemStatus.idle,
-                      //       );
-                      //       controller.activeItem.value = null;
-                      //       // selectedToolIndex.value = 0;
-                      //       showTextPanel.value = true;
-                      //       showStickerPanel.value = false;
-                      //       showHueSlider.value = false;
-                      //       showShapePanel.value = false;
-                      //     },
-                      //     child: Stack(
-                      //       alignment: Alignment.center,
-                      //       children: [
-                      //         Stack(
-                      //           alignment: Alignment.center,
-                      //           children: [
-                      //             Container(
-                      //               width: scaledCanvasWidth.value,
-                      //               height: scaledCanvasHeight.value,
-                      //               color:
-                      //                   controller
-                      //                       .selectedBackground
-                      //                       .value
-                      //                       .isNotEmpty
-                      //                   ? null
-                      //                   : Colors.white,
-                      //               child:
-                      //                   controller
-                      //                       .selectedBackground
-                      //                       .value
-                      //                       .isNotEmpty
-                      //                   ? ColorFiltered(
-                      //                       colorFilter: ColorFilter.matrix(
-                      //                         _hueMatrix(
-                      //                           controller.backgroundHue.value,
-                      //                         ),
-                      //                       ),
-                      //                       child: Image.asset(
-                      //                         controller
-                      //                             .selectedBackground
-                      //                             .value,
-                      //                         width: scaledCanvasWidth.value,
-                      //                         height: scaledCanvasHeight.value,
-                      //                         fit: BoxFit.contain,
-                      //                       ),
-                      //                     )
-                      //                   : null,
-                      //             ),
-                      //             CustomPaint(
-                      //               size: Size(
-                      //                 scaledCanvasWidth.value,
-                      //                 scaledCanvasHeight.value,
-                      //               ),
-                      //               painter: AlignmentGuidePainter(
-                      //                 draggedItem: controller.draggedItem.value,
-                      //                 alignmentPoints:
-                      //                     controller.alignmentPoints,
-                      //                 stackBoardSize: Size(
-                      //                   scaledCanvasWidth.value,
-                      //                   scaledCanvasHeight.value,
-                      //                 ),
-                      //                 showGrid:
-                      //                     // controller.draggedItem.value !=
-                      //                     //     null &&
-                      //                     controller.showGrid.isTrue,
-                      //                 gridSize: 50.0,
-                      //                 guideColor: Colors.blue.withOpacity(0.5),
-                      //                 criticalGuideColor: Colors.red,
-                      //                 centerGuideColor: Colors.green,
-                      //               ),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       ],
-                      //     ),
-                      //   ),
-                      //   customBuilder: (StackItem<StackItemContent> item) {
-                      //     return GestureDetector(
-                      //       onTap: () {
-                      //         print(
-                      //           "Tapped item: ${item.id}, type: ${item.runtimeType} : false}",
-                      //         );
-                      //         controller.boardController.setAllItemStatuses(
-                      //           StackItemStatus.idle,
-                      //         );
-                      //         controller.activeItem.value = item;
-
-                      //         final updatedItem = item.copyWith(
-                      //           status: StackItemStatus.selected,
-                      //         );
-                      //         controller.boardController.updateItem(
-                      //           updatedItem,
-                      //         );
-
-                      //         if (item is StackTextItem) {
-                      //           selectedToolIndex.value = 3;
-                      //           showTextPanel.value = true;
-                      //           showStickerPanel.value = false;
-                      //           showHueSlider.value = false;
-                      //           showShapePanel.value = false;
-                      //         }
-                      //       },
-                      //       child:
-                      //           (item is StackTextItem && item.content != null)
-                      //           ? StackTextCase(item: item)
-                      //           : (item is StackImageItem &&
-                      //                 item.content != null)
-                      //           ? Container(
-                      //               color: Colors.blue.withOpacity(0.1),
-
-                      //               child: StackImageCase(item: item),
-                      //             )
-                      //           : (item is ColorStackItem1 &&
-                      //                 item.content != null)
-                      //           ? Container(
-                      //               width: item.size.width,
-                      //               height: item.size.height,
-                      //               color: item.content!.color,
-                      //             )
-                      //           : (item is RowStackItem && item.content != null)
-                      //           ? Row(
-                      //               mainAxisAlignment: MainAxisAlignment.center,
-                      //               children: item.content!.items
-                      //                   .map(
-                      //                     (subItem) => subItem is StackTextItem
-                      //                         ? StackTextCase(item: subItem)
-                      //                         : const SizedBox.shrink(),
-                      //                   )
-                      //                   .toList(),
-                      //             )
-                      //           : const SizedBox.shrink(),
-                      //     );
-                      //   },
-
-                      //   borderBuilder: (status, item) {
-                      //     final CaseStyle style = CaseStyle();
-                      //     final double leftRight =
-                      //         status == StackItemStatus.idle
-                      //         ? 0
-                      //         : -(style.buttonSize) / 2;
-                      //     final double topBottom =
-                      //         status == StackItemStatus.idle
-                      //         ? 0
-                      //         : -(style.buttonSize) * 1.5;
-                      //     return AnimatedContainer(
-                      //       duration: const Duration(milliseconds: 500),
-                      //       child: Positioned(
-                      //         left: -leftRight,
-                      //         top: -topBottom,
-                      //         right: -leftRight,
-                      //         bottom: -topBottom,
-                      //         child: IgnorePointer(
-                      //           ignoring: true,
-                      //           child: CustomPaint(
-                      //             painter: _BorderPainter(
-                      //               dotted: status == StackItemStatus.idle,
-                      //             ),
-                      //           ),
-                      //         ),
-                      //       ),
-                      //     );
-                      //   },
-                      //   onDel: controller.deleteItem,
-                      //   onStatusChanged: (item, status) {
-                      //     controller.onItemStatusChanged(item, status);
-                      //     return true;
-                      //   },
-                      // ),
+                        SizedBox(
+                          width: scaledCanvasWidth.value,
+                          height: scaledCanvasHeight.value,
+                          child: Listener(
+                            behavior: HitTestBehavior.translucent,
+                            onPointerDown: (event) {
+                              final localPos = event.localPosition;
+                              final scale = canvasScale.value;
+                              if (isInHole(localPos, scale)) {
+                                print(
+                                  "Touched inside hole. Allowing PhotoView.",
+                                );
+                                allowTouch.value =
+                                    false; // Allow PhotoView to take over
+                              } else {
+                                print(
+                                  "Touched outside hole. Blocking for StackBoard.",
+                                );
+                                allowTouch.value =
+                                    true; // Block PhotoView, let StackBoard handle
+                              }
+                            },
+                            child: Obx(
+                              () => IgnorePointer(
+                                ignoring: !allowTouch
+                                    .value, // Absorb only when outside hole
+                                child: StackBoard(
+                                  key: stackBoardKey,
+                                  controller: controller.boardController,
+                                  customBuilder: (StackItem<StackItemContent> item) {
+                                    print(
+                                      "Rendering item: ${item.id}, type: ${item.runtimeType}",
+                                    );
+                                    return (item is StackTextItem &&
+                                            item.content != null)
+                                        ? Container(
+                                            color: Colors.red.withOpacity(0.2),
+                                            child: StackTextCase(item: item),
+                                          )
+                                        : (item is StackImageItem &&
+                                              item.content != null)
+                                        ? Container(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            child: StackImageCase(item: item),
+                                          )
+                                        : (item is ColorStackItem1 &&
+                                              item.content != null)
+                                        ? Container(
+                                            width: item.size.width,
+                                            height: item.size.height,
+                                            color: item.content!.color,
+                                          )
+                                        : (item is RowStackItem &&
+                                              item.content != null)
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: item.content!.items
+                                                .map(
+                                                  (subItem) =>
+                                                      subItem is StackTextItem
+                                                      ? StackTextCase(
+                                                          item: subItem,
+                                                        )
+                                                      : const SizedBox.shrink(),
+                                                )
+                                                .toList(),
+                                          )
+                                        : const SizedBox.shrink();
+                                  },
+                                  borderBuilder: (status, item) {
+                                    final CaseStyle style = CaseStyle();
+                                    final double leftRight =
+                                        status == StackItemStatus.idle
+                                        ? 0
+                                        : -(style.buttonSize) / 2;
+                                    final double topBottom =
+                                        status == StackItemStatus.idle
+                                        ? 0
+                                        : -(style.buttonSize) * 1.5;
+                                    return AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      child: Positioned(
+                                        left: -leftRight,
+                                        top: -topBottom,
+                                        right: -leftRight,
+                                        bottom: -topBottom,
+                                        child: IgnorePointer(
+                                          ignoring: true,
+                                          child: CustomPaint(
+                                            painter: _BorderPainter(
+                                              dotted:
+                                                  status ==
+                                                  StackItemStatus.idle,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  onDel: controller.deleteItem,
+                                  onTap: (item) {
+                                    controller.activeItem.value = item;
+                                  },
+                                  onStatusChanged: (item, status) {
+                                    if (status == StackItemStatus.selected) {
+                                      if (item is StackTextItem) {
+                                        print(
+                                          "Selected StackTextItem: ${item.id}",
+                                        );
+                                        selectedToolIndex.value = 3;
+                                        showTextPanel.value = false;
+                                        showStickerPanel.value = false;
+                                        showHueSlider.value = false;
+                                        showShapePanel.value = false;
+                                      } else {
+                                        showTextPanel.value = false;
+                                      }
+                                    }
+                                    controller.onItemStatusChanged(
+                                      item,
+                                      status,
+                                    );
+                                    return true;
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Alignment guides (visual only)
+                        IgnorePointer(
+                          ignoring: true,
+                          child: CustomPaint(
+                            size: Size(
+                              scaledCanvasWidth.value,
+                              scaledCanvasHeight.value,
+                            ),
+                            painter: AlignmentGuidePainter(
+                              draggedItem: controller.draggedItem.value,
+                              alignmentPoints: controller.alignmentPoints,
+                              stackBoardSize: Size(
+                                scaledCanvasWidth.value,
+                                scaledCanvasHeight.value,
+                              ),
+                              showGrid: controller.showGrid.isTrue,
+                              gridSize: 50.0,
+                              guideColor: Colors.blue.withOpacity(0.5),
+                              criticalGuideColor: Colors.red,
+                              centerGuideColor: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
               ),
             ),
           ),
+
+          // Expanded(
+          //   child: Align(
+          //     alignment: Alignment.topCenter,
+          //     child: LayoutBuilder(
+          //       builder: (BuildContext context, BoxConstraints constraints) {
+          //         SchedulerBinding.instance.addPostFrameCallback((_) {
+          //           updateCanvasAndLoadTemplate(constraints);
+          //         });
+
+          //         return Obx(
+          //           () => Stack(
+          //             alignment: Alignment.center,
+          //             children: [
+          //               Positioned(
+          //                 left: 690 * canvasScale.value,
+          //                 top: 115 * canvasScale.value,
+          //                 child: SizedBox(
+          //                   width: 436 * canvasScale.value,
+          //                   height: 574 * canvasScale.value,
+          //                   child: PhotoView(
+          //                     key:
+          //                         UniqueKey(), // Unique key for widget rebuilds
+          //                     imageProvider: const AssetImage(
+          //                       'assets/birthday_2.png',
+          //                     ),
+          //                     loadingBuilder: (context, event) => const Center(
+          //                       child: CircularProgressIndicator(),
+          //                     ),
+          //                     backgroundDecoration: const BoxDecoration(
+          //                       color: Colors.transparent,
+          //                     ), // Transparent background
+          //                     minScale:
+          //                         PhotoViewComputedScale.contained *
+          //                         0.5, // 50% of contained size
+          //                     maxScale:
+          //                         PhotoViewComputedScale.covered *
+          //                         3.0, // 300% of covered size
+          //                     initialScale: PhotoViewComputedScale
+          //                         .contained, // Fit within 436x574
+          //                     basePosition: Alignment
+          //                         .center, // Center the image initially
+          //                     enablePanAlways:
+          //                         true, // Allow panning even when zoomed out
+          //                     customSize: Size(
+          //                       436 * canvasScale.value,
+          //                       574 * canvasScale.value,
+          //                     ), // Match oval dimensions
+          //                     // boundaryMargin: EdgeInsets.only(
+          //                     //   left: 0, // Start from positioned left
+          //                     //   top: 0, // Start from positioned top
+          //                     //   right: scaledCanvasWidth.value - (690 * canvasScale.value + 436 * canvasScale.value),
+          //                     //   bottom: scaledCanvasHeight.value - (115 * canvasScale.value + 574 * canvasScale.value),
+          //                     // ), // Constrain to canvas minus oval area
+          //                     filterQuality:
+          //                         FilterQuality.high, // Improve image quality
+          //                     errorBuilder: (context, error, stackTrace) =>
+          //                         const Text('Failed to load image'),
+          //                   ),
+          //                 ),
+          //               ),
+          //               IgnorePointer(
+          //                 ignoring: false,
+          //                 child: SizedBox(
+          //                   width: scaledCanvasWidth.value,
+          //                   height: scaledCanvasHeight.value,
+          //                   child: Image.asset(
+          //                     "assets/card6.png",
+          //                     // width: 1240,
+          //                     // height: 1748,
+          //                     fit: BoxFit.contain,
+          //                   ),
+          //                 ),
+          //               ),
+          //               SizedBox(
+          //                 width: scaledCanvasWidth.value,
+          //                 height: scaledCanvasHeight.value,
+          //                 child: StackBoard(
+          //                   key: stackBoardKey,
+          //                   controller: controller.boardController,
+
+          //                   customBuilder: (StackItem<StackItemContent> item) {
+          //                     print(
+          //                       "Rendering item: ${item.id}, type: ${item.runtimeType}, isCircular}",
+          //                     );
+          //                     return (item is StackTextItem &&
+          //                             item.content != null)
+          //                         ? Container(
+          //                             color: Colors.red.withOpacity(
+          //                               0.2,
+          //                             ), // Visualize hit area
+          //                             child: StackTextCase(item: item),
+          //                           )
+          //                         : (item is StackImageItem &&
+          //                               item.content != null)
+          //                         ? Container(
+          //                             color: Colors.blue.withOpacity(0.1),
+          //                             child: StackImageCase(item: item),
+          //                           )
+          //                         : (item is ColorStackItem1 &&
+          //                               item.content != null)
+          //                         ? Container(
+          //                             width: item.size.width,
+          //                             height: item.size.height,
+          //                             color: item.content!.color,
+          //                           )
+          //                         : (item is RowStackItem &&
+          //                               item.content != null)
+          //                         ? Row(
+          //                             mainAxisAlignment:
+          //                                 MainAxisAlignment.center,
+          //                             children: item.content!.items
+          //                                 .map(
+          //                                   (subItem) =>
+          //                                       subItem is StackTextItem
+          //                                       ? StackTextCase(item: subItem)
+          //                                       : const SizedBox.shrink(),
+          //                                 )
+          //                                 .toList(),
+          //                           )
+          //                         : const SizedBox.shrink();
+          //                   },
+          //                   borderBuilder: (status, item) {
+          //                     final CaseStyle style = CaseStyle();
+          //                     final double leftRight =
+          //                         status == StackItemStatus.idle
+          //                         ? 0
+          //                         : -(style.buttonSize) / 2;
+          //                     final double topBottom =
+          //                         status == StackItemStatus.idle
+          //                         ? 0
+          //                         : -(style.buttonSize) * 1.5;
+          //                     return AnimatedContainer(
+          //                       duration: const Duration(milliseconds: 500),
+          //                       child: Positioned(
+          //                         left: -leftRight,
+          //                         top: -topBottom,
+          //                         right: -leftRight,
+          //                         bottom: -topBottom,
+          //                         child: IgnorePointer(
+          //                           ignoring: true,
+          //                           child: CustomPaint(
+          //                             painter: _BorderPainter(
+          //                               dotted: status == StackItemStatus.idle,
+          //                             ),
+          //                           ),
+          //                         ),
+          //                       ),
+          //                     );
+          //                   },
+          //                   onDel: controller.deleteItem,
+
+          //                   onTap: (item) {
+          //                     controller.activeItem.value = item;
+          //                   },
+
+          //                   onStatusChanged: (item, status) {
+          //                     if (status == StackItemStatus.selected) {
+          //                       if (item is StackTextItem) {
+          //                         print("Selected StackTextItem: ${item.id}");
+          //                         selectedToolIndex.value = 3;
+          //                         showTextPanel.value = false;
+          //                         showStickerPanel.value = false;
+          //                         showHueSlider.value = false;
+          //                         showShapePanel.value = false;
+          //                       } else {
+          //                         showTextPanel.value =
+          //                             false; // Hide panel for non-text items
+          //                       }
+          //                     }
+          //                     controller.onItemStatusChanged(item, status);
+          //                     return true;
+          //                   },
+          //                 ),
+
+          //                 // StackBoard(
+          //                 //   key: stackBoardKey,
+          //                 //   controller: controller.boardController,
+          //                 //   background: InkWell(
+          //                 //     onTap: () {
+          //                 //       controller.boardController.setAllItemStatuses(
+          //                 //         StackItemStatus.idle,
+          //                 //       );
+          //                 //       controller.activeItem.value = null;
+          //                 //       // selectedToolIndex.value = 0;
+          //                 //       showTextPanel.value = true;
+          //                 //       showStickerPanel.value = false;
+          //                 //       showHueSlider.value = false;
+          //                 //       showShapePanel.value = false;
+          //                 //     },
+          //                 //     child: Stack(
+          //                 //       alignment: Alignment.center,
+          //                 //       children: [
+          //                 //         Stack(
+          //                 //           alignment: Alignment.center,
+          //                 //           children: [
+          //                 //             Container(
+          //                 //               width: scaledCanvasWidth.value,
+          //                 //               height: scaledCanvasHeight.value,
+          //                 //               color:
+          //                 //                   controller
+          //                 //                       .selectedBackground
+          //                 //                       .value
+          //                 //                       .isNotEmpty
+          //                 //                   ? null
+          //                 //                   : Colors.white,
+          //                 //               child:
+          //                 //                   controller
+          //                 //                       .selectedBackground
+          //                 //                       .value
+          //                 //                       .isNotEmpty
+          //                 //                   ? ColorFiltered(
+          //                 //                       colorFilter: ColorFilter.matrix(
+          //                 //                         _hueMatrix(
+          //                 //                           controller.backgroundHue.value,
+          //                 //                         ),
+          //                 //                       ),
+          //                 //                       child: Image.asset(
+          //                 //                         controller
+          //                 //                             .selectedBackground
+          //                 //                             .value,
+          //                 //                         width: scaledCanvasWidth.value,
+          //                 //                         height: scaledCanvasHeight.value,
+          //                 //                         fit: BoxFit.contain,
+          //                 //                       ),
+          //                 //                     )
+          //                 //                   : null,
+          //                 //             ),
+          //                 //             CustomPaint(
+          //                 //               size: Size(
+          //                 //                 scaledCanvasWidth.value,
+          //                 //                 scaledCanvasHeight.value,
+          //                 //               ),
+          //                 //               painter: AlignmentGuidePainter(
+          //                 //                 draggedItem: controller.draggedItem.value,
+          //                 //                 alignmentPoints:
+          //                 //                     controller.alignmentPoints,
+          //                 //                 stackBoardSize: Size(
+          //                 //                   scaledCanvasWidth.value,
+          //                 //                   scaledCanvasHeight.value,
+          //                 //                 ),
+          //                 //                 showGrid:
+          //                 //                     // controller.draggedItem.value !=
+          //                 //                     //     null &&
+          //                 //                     controller.showGrid.isTrue,
+          //                 //                 gridSize: 50.0,
+          //                 //                 guideColor: Colors.blue.withOpacity(0.5),
+          //                 //                 criticalGuideColor: Colors.red,
+          //                 //                 centerGuideColor: Colors.green,
+          //                 //               ),
+          //                 //             ),
+          //                 //           ],
+          //                 //         ),
+          //                 //       ],
+          //                 //     ),
+          //                 //   ),
+          //                 //   customBuilder: (StackItem<StackItemContent> item) {
+          //                 //     return GestureDetector(
+          //                 //       onTap: () {
+          //                 //         print(
+          //                 //           "Tapped item: ${item.id}, type: ${item.runtimeType} : false}",
+          //                 //         );
+          //                 //         controller.boardController.setAllItemStatuses(
+          //                 //           StackItemStatus.idle,
+          //                 //         );
+          //                 //         controller.activeItem.value = item;
+
+          //                 //         final updatedItem = item.copyWith(
+          //                 //           status: StackItemStatus.selected,
+          //                 //         );
+          //                 //         controller.boardController.updateItem(
+          //                 //           updatedItem,
+          //                 //         );
+
+          //                 //         if (item is StackTextItem) {
+          //                 //           selectedToolIndex.value = 3;
+          //                 //           showTextPanel.value = true;
+          //                 //           showStickerPanel.value = false;
+          //                 //           showHueSlider.value = false;
+          //                 //           showShapePanel.value = false;
+          //                 //         }
+          //                 //       },
+          //                 //       child:
+          //                 //           (item is StackTextItem && item.content != null)
+          //                 //           ? StackTextCase(item: item)
+          //                 //           : (item is StackImageItem &&
+          //                 //                 item.content != null)
+          //                 //           ? Container(
+          //                 //               color: Colors.blue.withOpacity(0.1),
+
+          //                 //               child: StackImageCase(item: item),
+          //                 //             )
+          //                 //           : (item is ColorStackItem1 &&
+          //                 //                 item.content != null)
+          //                 //           ? Container(
+          //                 //               width: item.size.width,
+          //                 //               height: item.size.height,
+          //                 //               color: item.content!.color,
+          //                 //             )
+          //                 //           : (item is RowStackItem && item.content != null)
+          //                 //           ? Row(
+          //                 //               mainAxisAlignment: MainAxisAlignment.center,
+          //                 //               children: item.content!.items
+          //                 //                   .map(
+          //                 //                     (subItem) => subItem is StackTextItem
+          //                 //                         ? StackTextCase(item: subItem)
+          //                 //                         : const SizedBox.shrink(),
+          //                 //                   )
+          //                 //                   .toList(),
+          //                 //             )
+          //                 //           : const SizedBox.shrink(),
+          //                 //     );
+          //                 //   },
+
+          //                 //   borderBuilder: (status, item) {
+          //                 //     final CaseStyle style = CaseStyle();
+          //                 //     final double leftRight =
+          //                 //         status == StackItemStatus.idle
+          //                 //         ? 0
+          //                 //         : -(style.buttonSize) / 2;
+          //                 //     final double topBottom =
+          //                 //         status == StackItemStatus.idle
+          //                 //         ? 0
+          //                 //         : -(style.buttonSize) * 1.5;
+          //                 //     return AnimatedContainer(
+          //                 //       duration: const Duration(milliseconds: 500),
+          //                 //       child: Positioned(
+          //                 //         left: -leftRight,
+          //                 //         top: -topBottom,
+          //                 //         right: -leftRight,
+          //                 //         bottom: -topBottom,
+          //                 //         child: IgnorePointer(
+          //                 //           ignoring: true,
+          //                 //           child: CustomPaint(
+          //                 //             painter: _BorderPainter(
+          //                 //               dotted: status == StackItemStatus.idle,
+          //                 //             ),
+          //                 //           ),
+          //                 //         ),
+          //                 //       ),
+          //                 //     );
+          //                 //   },
+          //                 //   onDel: controller.deleteItem,
+          //                 //   onStatusChanged: (item, status) {
+          //                 //     controller.onItemStatusChanged(item, status);
+          //                 //     return true;
+          //                 //   },
+          //                 // ),
+          //               ),
+
+          //               IgnorePointer(
+          //                 ignoring: true,
+          //                 child: CustomPaint(
+          //                   size: Size(
+          //                     scaledCanvasWidth.value,
+          //                     scaledCanvasHeight.value,
+          //                   ),
+          //                   painter: AlignmentGuidePainter(
+          //                     draggedItem: controller.draggedItem.value,
+          //                     alignmentPoints: controller.alignmentPoints,
+          //                     stackBoardSize: Size(
+          //                       scaledCanvasWidth.value,
+          //                       scaledCanvasHeight.value,
+          //                     ),
+          //                     showGrid: controller.showGrid.isTrue,
+          //                     gridSize: 50.0,
+          //                     guideColor: Colors.blue.withOpacity(0.5),
+          //                     criticalGuideColor: Colors.red,
+          //                     centerGuideColor: Colors.green,
+          //                   ),
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         );
+          //       },
+          //     ),
+          //   ),
+          // ),
           SafeArea(
             bottom: true,
             child: Container(
@@ -1776,4 +1997,71 @@ class ExportPreviewPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class HoleClipper extends CustomClipper<Path> {
+  final scale = 0.285;
+  @override
+  Path getClip(Size size) {
+    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    // Define the hole (example: circular hole at x=690, y=115)
+    final holeRect = Rect.fromLTWH(
+      690 * scale, // left
+      115 * scale, // top
+      436 * scale, // width
+      574 * scale, // height
+    );
+
+    path.addOval(holeRect);
+    path.fillType = PathFillType.evenOdd;
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class TransparentHoleMask extends StatelessWidget {
+  final double width;
+  final double height;
+
+  const TransparentHoleMask({
+    super.key,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      // Don't block gestures!
+      child: CustomPaint(size: Size(width, height), painter: HolePainter()),
+    );
+  }
+}
+
+class HolePainter extends CustomPainter {
+  final double scale = 0.285;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.black.withOpacity(0.7);
+    final hole = Rect.fromLTWH(
+      690 * scale,
+      115 * scale,
+      436 * scale,
+      574 * scale,
+    );
+
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addOval(hole)
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

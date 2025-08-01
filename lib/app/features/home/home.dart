@@ -3,7 +3,6 @@ import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:widget_mask/widget_mask.dart';
 
 // --- ENHANCED DATA MODELS ---
 class CategoryModel {
@@ -605,7 +604,6 @@ class MaskingExamplePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mask Boundary Example')),
       body: Center(
-        // Centering the single example for clarity
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -614,16 +612,40 @@ class MaskingExamplePage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Container(
-              // This color helps visualize the container's boundaries
-              child: WidgetMask(
-                blendMode: BlendMode.srcATop,
-                childSaveLayer: true,
-                mask: Image.asset(
-                  'assets/Farman.png', // A simple circle mask (you need this asset)
-                  fit: BoxFit.cover,
-                ),
-                child: FlutterLogo(size: 200),
+            SizedBox(
+              child: Stack(
+                // fit: StackFit.expand,
+                children: [
+                  // Interactive Farman image (background)
+                  InteractiveViewer(
+                    boundaryMargin: const EdgeInsets.all(
+                      0,
+                    ), // No extra panning space
+                    minScale: 0.5,
+                    maxScale: 3.0,
+                    child: SizedBox(
+                      child: Image.asset(
+                        width: 200,
+                        height: 200,
+                        'assets/Farman.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.bottomCenter,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Text('Failed to load image'),
+                      ),
+                    ),
+                  ),
+                  // Static card3 mask (foreground) with gesture passthrough
+                  IgnorePointer(
+                    ignoring: true,
+                    child: Image.asset(
+                      'assets/card4.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Text('Failed to load mask'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -632,3 +654,48 @@ class MaskingExamplePage extends StatelessWidget {
     );
   }
 }
+
+// class MaskingExamplePage extends StatelessWidget {
+//   const MaskingExamplePage({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Mask Boundary Example')),
+//       body: Center(
+//         // Centering the single example for clarity
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             const Text(
+//               'Visualizing Mask Boundaries:',
+//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//             ),
+//             const SizedBox(height: 10),
+//             SizedBox(
+//               width: Get.width * 0.8,
+//               height: 600,
+//               // This color helps visualize the container's boundaries
+//               child: WidgetMask(
+//                 blendMode: BlendMode.srcOver,
+
+//                 childSaveLayer: true,
+//                 mask: Image.asset(
+//                   'assets/card3.png', // A simple circle mask (you need this asset)
+//                   // fit: BoxFit.contain,
+//                 ),
+//                 child: Image.asset(
+//                   width: 300,
+//                   height: 300,
+//                   alignment: Alignment.topRight,
+//                   'assets/Farman.png', // A simple circle mask (you need this asset)
+//                   fit: BoxFit.cover,
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

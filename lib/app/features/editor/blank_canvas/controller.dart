@@ -92,6 +92,17 @@ class CanvasSelectionController extends GetxController {
       height: 3000,
       imagePath: 'assets/previews/oversized_landscape_14x10.png',
     ),
+
+    CardTemplate(
+      id: '9',
+      name: 'Greetog',
+      backgroundImage: '',
+      items: [],
+      categoryId: 'Greetings',
+      width: 1240,
+      height: 1748,
+      imagePath: 'assets/previews/oversized_landscape_14x10.png',
+    ),
   ];
 
   void toggleTheme() {

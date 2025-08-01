@@ -403,148 +403,95 @@ class EditorController extends GetxController {
     controller.canvasHeight.value = scaledCanvasHeight; // Use scaled height
     controller.boardController.clear();
     // double cumulativeYOffset = 0.0;
+    // final StackImageItem background = StackImageItem.fromJson({
+    //   'type': 'StackImageItem',
+    //   "offset": {'dx': 0.0, 'dy': 0.0},
+    //   'size': {'width': scaledCanvasWidth, 'height': scaledCanvasHeight},
+    //   'content': {'assetName': 'assets/card6.png'},
+    //   'status': 1,
+    //   'lockZOrder': true,
+    //   'fit': 'cover',
+    // });
+    // boardController.addItem(background);
+
+    // final StackImageItem scaledImageItem = StackImageItem.fromJson({
+    //   'type': 'StackImageItem',
+    //   "offset": {'dx': 200.0, 'dy': 200.0},
+    //   'size': {'width': 222.0, 'height': 222.0},
+    //   'content': {'assetName': 'assets/birthday_1.png'},
+    //   'status': 1,
+    //   'lockZOrder': false,
+    //   // 'fit': 'cover',
+    // });
+
+    // boardController.addItem(scaledImageItem);
 
     for (final itemJson in template.items) {
       try {
         final bool isCentered = itemJson['isCentered'] ?? false;
 
-        print(
-          "ccccccccccccccccccccccccccccccvvvvvvvvvvvvvvvvvvvvvvvvvwwwwwwwwwwwwwwwwwwwwwwwww",
-        );
-        print(itemJson);
-        if (itemJson['type'] == 'RowStackItem') {
-          RowStackItem rowStackItem = RowStackItem.fromJson(itemJson);
-          double totalWidth = 0.0;
-          double maxHeight = 0.0;
-          final List<StackItem> scaledSubItems = [];
-          double rowScaledX = rowStackItem.offset.dx; // No scaling
-          double rowScaledY = rowStackItem.offset.dy; // No scaling
+        final item = _deserializeItem(itemJson);
+        Size itemSize;
+        StackItem updatedItem;
 
-          for (final subItem in rowStackItem.content!.items) {
-            StackItem updatedSubItem;
+        if (item is StackTextItem) {
+          double scaledX = item.offset.dx; // No scaling
+          double scaledY = item.offset.dy; // No scaling
+          // scaledY += cumulativeYOffset;
 
-            if (subItem is StackTextItem) {
-              final updatedStyle = subItem.content!.style!.copyWith(
-                fontSize: subItem.content!.style!.fontSize, // No scaling
-              );
+          final updatedStyle = item.content!.style!.copyWith(
+            fontSize: item.content!.style!.fontSize!, // No scaling
+          );
 
-              // Use exact size from exported data
-              final subItemWidth = itemJson['size']['width'];
-              final subItemHeight = itemJson['size']['height'];
+          // Use exact size from exported data
+          itemSize = Size(
+            itemJson['size']['width'],
+            itemJson['size']['height'],
+          );
 
-              final scaledY = (subItem.offset.dy > 0
-                  ? subItem
-                        .offset
-                        .dy // No scaling
-                  : rowScaledY);
+          final double buttonSize = 18; // No scaling
+          // if (isCentered) {
+          //   scaledY +=
+          //       (itemSize.height / 2) + buttonSize; // Use unscaled buttonSize
+          // }
 
-              updatedSubItem = subItem.copyWith(
-                offset: Offset(rowScaledX, scaledY),
-                size: Size(subItemWidth, subItemHeight),
-                content: subItem.content!.copyWith(
-                  style: updatedStyle,
-                  data: subItem.content!.data,
-                ),
-                status: StackItemStatus.idle,
-                isCentered: subItem.isCentered,
-              );
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+            content: item.content!.copyWith(style: updatedStyle),
+            isCentered: isCentered,
+          );
+          // cumulativeYOffset += itemSize.height;
+        } else if (item is StackImageItem) {
+          double scaledX = item.offset.dx; // No scaling
+          double scaledY = item.offset.dy; // No scaling
+          final double originalWidth = itemJson['size']['width'];
+          final double originalHeight = itemJson['size']['height'];
 
-              totalWidth += subItemWidth;
-              maxHeight = subItemHeight;
-              debugPrint(
-                'Loaded sub-item: ${subItem.id}, isCentered: ${subItem.isCentered}, size: ${updatedSubItem.size}, offset: ${updatedSubItem.offset}',
-              );
-              controller.boardController.addItem(updatedSubItem);
-              scaledSubItems.add(updatedSubItem);
-              rowScaledX += subItemWidth; // No scaling in increment
-              controller._undoStack.add(
-                _ItemState(item: updatedSubItem, action: _ItemAction.add),
-              );
-            } else {
-              throw Exception(
-                'Unsupported sub-item type in RowStackItem: ${subItem.runtimeType}',
-              );
-            }
-          }
+          itemSize = Size(originalWidth, originalHeight);
 
-          if (isCentered) {
-            double startX = ((controller.canvasWidth - totalWidth) / 2);
-            for (var subItem in scaledSubItems) {
-              controller.boardController.updateBasic(
-                subItem.id,
-                offset: Offset(
-                  startX + subItem.size.width / 2,
-                  subItem.offset.dy,
-                ),
-              );
-              startX += subItem.size.width;
-            }
-          }
+          final double buttonSize = 36; // No scaling
+          // scaledY += buttonSize + cumulativeYOffset;
 
-          // cumulativeYOffset += maxHeight;
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+          );
         } else {
-          final item = _deserializeItem(itemJson);
-          Size itemSize;
-          StackItem updatedItem;
-
-          if (item is StackTextItem) {
-            double scaledX = item.offset.dx; // No scaling
-            double scaledY = item.offset.dy; // No scaling
-            // scaledY += cumulativeYOffset;
-
-            final updatedStyle = item.content!.style!.copyWith(
-              fontSize: item.content!.style!.fontSize!, // No scaling
-            );
-
-            // Use exact size from exported data
-            itemSize = Size(
-              itemJson['size']['width'],
-              itemJson['size']['height'],
-            );
-
-            final double buttonSize = 18; // No scaling
-            // if (isCentered) {
-            //   scaledY +=
-            //       (itemSize.height / 2) + buttonSize; // Use unscaled buttonSize
-            // }
-
-            updatedItem = item.copyWith(
-              offset: Offset(scaledX, scaledY),
-              size: itemSize,
-              status: StackItemStatus.idle,
-              content: item.content!.copyWith(style: updatedStyle),
-              isCentered: isCentered,
-            );
-            // cumulativeYOffset += itemSize.height;
-          } else if (item is StackImageItem) {
-            double scaledX = item.offset.dx; // No scaling
-            double scaledY = item.offset.dy; // No scaling
-            final double originalWidth = itemJson['size']['width'];
-            final double originalHeight = itemJson['size']['height'];
-
-            itemSize = Size(originalWidth, originalHeight);
-
-            final double buttonSize = 36; // No scaling
-            // scaledY += buttonSize + cumulativeYOffset;
-
-            updatedItem = item.copyWith(
-              offset: Offset(scaledX, scaledY),
-              size: itemSize,
-              status: StackItemStatus.idle,
-            );
-          } else {
-            throw Exception('Unsupported item type: ${item.runtimeType}');
-          }
-
-          debugPrint(
-            'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
-          );
-
-          controller.boardController.addItem(updatedItem);
-          controller._undoStack.add(
-            _ItemState(item: updatedItem, action: _ItemAction.add),
-          );
+          throw Exception('Unsupported item type: ${item.runtimeType}');
         }
+
+        debugPrint(
+          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
+        );
+
+        controller.boardController.addItem(updatedItem);
+
+        controller._undoStack.add(
+          _ItemState(item: updatedItem, action: _ItemAction.add),
+        );
       } catch (err) {}
     }
   }
