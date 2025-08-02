@@ -41,6 +41,7 @@ class StackTextItem extends StackItem<TextItemContent> {
   }
 
   @override
+  @override
   StackTextItem copyWith({
     double? angle,
     Size? size,
@@ -49,6 +50,7 @@ class StackTextItem extends StackItem<TextItemContent> {
     bool? lockZOrder,
     TextItemContent? content,
     bool? isCentered,
+    bool? isProfileImage, // Added to match base class signature
   }) {
     return StackTextItem(
       id: id,
@@ -59,6 +61,7 @@ class StackTextItem extends StackItem<TextItemContent> {
       lockZOrder: lockZOrder ?? this.lockZOrder,
       content: content ?? this.content,
       isCentered: isCentered ?? this.isCentered,
+      // isProfileImage is ignored as StackTextItem does not use it
     );
   }
 

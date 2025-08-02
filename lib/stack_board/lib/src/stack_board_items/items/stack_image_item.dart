@@ -126,6 +126,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
     super.offset,
     super.status = null,
     super.lockZOrder = null,
+    super.isProfileImage = false,
   });
 
   factory StackImageItem.fromJson(Map<String, dynamic> data) {
@@ -138,6 +139,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
           : jsonToOffset(asMap(data['offset'])),
       status: StackItemStatus.values[data['status'] as int],
       lockZOrder: asNullT<bool>(data['lockZOrder']) ?? false,
+      isProfileImage: asNullT<bool>(data['isProfileImage']) ?? false,
       content: ImageItemContent.fromJson(asMap(data['content'])),
     );
   }
@@ -158,6 +160,8 @@ class StackImageItem extends StackItem<ImageItemContent> {
     StackItemStatus? status,
     bool? lockZOrder,
     ImageItemContent? content,
+    bool? isProfileImage,
+    bool? isCentered,
   }) {
     return StackImageItem(
       id: id,
@@ -167,6 +171,9 @@ class StackImageItem extends StackItem<ImageItemContent> {
       status: status ?? this.status,
       lockZOrder: lockZOrder ?? this.lockZOrder,
       content: content ?? this.content,
+      isProfileImage: isProfileImage ?? this.isProfileImage,
+
+      // isCentered is ignored here unless you want to use it
     );
   }
 }

@@ -135,12 +135,16 @@ abstract class StackItem<T extends StackItemContent> {
     double? angle = 0,
     StackItemStatus? status = StackItemStatus.selected,
     bool? lockZOrder = false,
+    bool? isProfileImage = false,
+
     this.content,
   }) : id = id ?? _genId(),
        offset = offset ?? Offset.zero,
        angle = angle ?? 0,
        lockZOrder = lockZOrder ?? false,
+
        isCentered = isCentered = false,
+       isProfileImage = isProfileImage ?? false,
 
        status = status ?? StackItemStatus.selected;
 
@@ -152,6 +156,7 @@ abstract class StackItem<T extends StackItemContent> {
     required this.content,
     required this.lockZOrder,
     required this.isCentered,
+    required this.isProfileImage,
   }) : id = '';
 
   /// id
@@ -171,6 +176,7 @@ abstract class StackItem<T extends StackItemContent> {
   final bool isCentered;
 
   final bool lockZOrder;
+  final bool isProfileImage;
 
   /// Content
   final T? content;
@@ -182,6 +188,8 @@ abstract class StackItem<T extends StackItemContent> {
     double? angle,
     StackItemStatus? status,
     bool? lockZOrder,
+    bool? isCentered,
+    bool? isProfileImage,
     T? content,
   });
 
@@ -197,6 +205,7 @@ abstract class StackItem<T extends StackItemContent> {
       'status': status.index,
       'lockZOrder': lockZOrder,
       'isCentered': isCentered,
+      'isProfileImage': isProfileImage,
       if (content != null) 'content': content?.toJson(),
     };
   }

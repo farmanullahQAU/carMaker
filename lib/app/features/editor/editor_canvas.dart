@@ -33,12 +33,12 @@ class EditorPage extends GetView<EditorController> {
     final RxBool showShapePanel = false.obs;
     final RxBool showTextPanel = false.obs;
 
-    final RxInt selectedToolIndex =
-        0.obs; // 0: none, 1: sticker, 2: color, 3: text, 4: shape
+    final RxInt selectedToolIndex = 0.obs;
     final RxBool isTemplateLoaded = false.obs;
     final RxDouble canvasScale = 1.0.obs;
     final RxDouble scaledCanvasWidth = 0.0.obs;
     final RxDouble scaledCanvasHeight = 0.0.obs;
+
     void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
       print("ccccccccccccccccccccc");
       if (isTemplateLoaded.value) return;
@@ -67,27 +67,12 @@ class EditorPage extends GetView<EditorController> {
         'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
       );
 
-      // // Check if the template is exported or blank
-      // final isExportedTemplate =
-      //     controller.initialTemplate!.id.contains('exported_') ||
-      //     controller.initialTemplate!.name.contains('Exported');
-
-      // if (isExportedTemplate) {
-      //   controller.loadExportedTemplate(
-      //     controller.initialTemplate!,
-      //     context,
-      //     scaledCanvasWidth.value,
-      //     scaledCanvasHeight.value,
-      //   );
-      // } else if (controller.initialTemplate!.items.isNotEmpty) {
       controller.loadExportedTemplate(
         controller.initialTemplate!,
         context,
-
         scaledCanvasWidth.value,
         scaledCanvasHeight.value,
       );
-      // } // No else needed; blank canvas has empty items and is ready
 
       isTemplateLoaded.value = true;
     }
@@ -115,85 +100,111 @@ class EditorPage extends GetView<EditorController> {
             width: scaledCanvasWidth.value,
             height: scaledCanvasHeight.value,
             key: exportKey,
-            child: StackBoard(
-              controller: controller.boardController,
-              background: Container(
-                width: scaledCanvasWidth.value,
-                height: scaledCanvasHeight.value,
-                color: controller.selectedBackground.value.isNotEmpty
-                    ? null
-                    : Colors.grey[200],
-                child: controller.selectedBackground.value.isNotEmpty
-                    ? ColorFiltered(
-                        colorFilter: ColorFilter.matrix(
-                          _hueMatrix(controller.backgroundHue.value),
-                        ),
-                        child: Image.asset(
-                          controller.selectedBackground.value,
-                          width: scaledCanvasWidth.value,
-                          height: scaledCanvasHeight.value,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                        ),
-                      )
-                    : null,
-              ),
-              customBuilder: (item) {
-                return (item is StackTextItem && item.content != null)
-                    ? StackTextCase(item: item.copyWith(status: item.status))
-                    : (item is StackImageItem && item.content != null)
-                    ? StackImageCase(item: item.copyWith(status: item.status))
-                    : (item is ColorStackItem1 && item.content != null)
-                    ? Container(
-                        width: item.size.width,
-                        height: item.size.height,
-                        color: item.content!.color,
-                      )
-                    : (item is RowStackItem && item.content != null)
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: item.content!.items
-                            .map(
-                              (subItem) => subItem is StackTextItem
-                                  ? StackTextCase(
-                                      item: subItem.copyWith(
-                                        status: subItem.status,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            )
-                            .toList(),
-                      )
-                    : const SizedBox.shrink();
-              },
-              borderBuilder: (status, item) {
-                final CaseStyle style = CaseStyle();
-                final double leftRight = status == StackItemStatus.idle
-                    ? 0
-                    : -(style.buttonSize) / 2;
-                final double topBottom = status == StackItemStatus.idle
-                    ? 0
-                    : -(style.buttonSize) * 1.5;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  child: Positioned(
-                    left: -leftRight,
-                    top: -topBottom,
-                    right: -leftRight,
-                    bottom: -topBottom,
-                    child: IgnorePointer(
-                      ignoring: true,
-                      child: CustomPaint(
-                        painter: _BorderPainter(
-                          dotted: status == StackItemStatus.idle,
-                        ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // CHANGED: Render all profile images
+                ...controller.profileImageItems.map(
+                  (profileItem) => Positioned(
+                    left: profileItem.offset.dx * canvasScale.value,
+                    top: profileItem.offset.dy * canvasScale.value,
+                    child: SizedBox(
+                      width: profileItem.size.width * canvasScale.value,
+                      height: profileItem.size.height * canvasScale.value,
+                      child: Image.asset(
+                        profileItem.content?.assetName ?? "",
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                );
-              },
-              onDel: (_) {},
-              onStatusChanged: (_, __) => true,
+                ),
+                // Background image
+                Container(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  color: controller.selectedBackground.value.isNotEmpty
+                      ? null
+                      : Colors.grey[200],
+                  child: controller.selectedBackground.value.isNotEmpty
+                      ? ColorFiltered(
+                          colorFilter: ColorFilter.matrix(
+                            _hueMatrix(controller.backgroundHue.value),
+                          ),
+                          child: Image.asset(
+                            controller.selectedBackground.value,
+                            width: scaledCanvasWidth.value,
+                            height: scaledCanvasHeight.value,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                          ),
+                        )
+                      : null,
+                ),
+                // StackBoard items
+                StackBoard(
+                  controller: controller.boardController,
+                  customBuilder: (item) {
+                    return (item is StackTextItem && item.content != null)
+                        ? StackTextCase(
+                            item: item.copyWith(status: item.status),
+                          )
+                        : (item is StackImageItem && item.content != null)
+                        ? StackImageCase(
+                            item: item.copyWith(status: item.status),
+                          )
+                        : (item is ColorStackItem1 && item.content != null)
+                        ? Container(
+                            width: item.size.width,
+                            height: item.size.height,
+                            color: item.content!.color,
+                          )
+                        : (item is RowStackItem && item.content != null)
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: item.content!.items
+                                .map(
+                                  (subItem) => subItem is StackTextItem
+                                      ? StackTextCase(
+                                          item: subItem.copyWith(
+                                            status: subItem.status,
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                )
+                                .toList(),
+                          )
+                        : const SizedBox.shrink();
+                  },
+                  borderBuilder: (status, item) {
+                    final CaseStyle style = CaseStyle();
+                    final double leftRight = status == StackItemStatus.idle
+                        ? 0
+                        : -(style.buttonSize) / 2;
+                    final double topBottom = status == StackItemStatus.idle
+                        ? 0
+                        : -(style.buttonSize) * 1.5;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      child: Positioned(
+                        left: -leftRight,
+                        top: -topBottom,
+                        right: -leftRight,
+                        bottom: -topBottom,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: CustomPaint(
+                            painter: _BorderPainter(
+                              dotted: status == StackItemStatus.idle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  onDel: (_) {},
+                  onStatusChanged: (_, __) => true,
+                ),
+              ],
             ),
           ),
           targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
@@ -252,84 +263,110 @@ class EditorPage extends GetView<EditorController> {
             width: scaledCanvasWidth.value,
             height: scaledCanvasHeight.value,
             key: exportKey,
-            child: StackBoard(
-              controller: controller.boardController,
-              background: Container(
-                width: scaledCanvasWidth.value,
-                height: scaledCanvasHeight.value,
-                color: controller.selectedBackground.value.isNotEmpty
-                    ? null
-                    : Colors.grey[200],
-                child: controller.selectedBackground.value.isNotEmpty
-                    ? ColorFiltered(
-                        colorFilter: ColorFilter.matrix(
-                          _hueMatrix(controller.backgroundHue.value),
-                        ),
-                        child: Image.asset(
-                          controller.selectedBackground.value,
-                          width: scaledCanvasWidth.value,
-                          height: scaledCanvasHeight.value,
-                          fit: BoxFit.contain,
-                        ),
-                      )
-                    : null,
-              ),
-              customBuilder: (StackItem<StackItemContent> item) {
-                return (item is StackTextItem && item.content != null)
-                    ? StackTextCase(item: item.copyWith(status: item.status))
-                    : (item is StackImageItem && item.content != null)
-                    ? StackImageCase(item: item.copyWith(status: item.status))
-                    : (item is ColorStackItem1 && item.content != null)
-                    ? Container(
-                        width: item.size.width,
-                        height: item.size.height,
-                        color: item.content!.color,
-                      )
-                    : (item is RowStackItem && item.content != null)
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: item.content!.items
-                            .map(
-                              (subItem) => subItem is StackTextItem
-                                  ? StackTextCase(
-                                      item: subItem.copyWith(
-                                        status: subItem.status,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            )
-                            .toList(),
-                      )
-                    : const SizedBox.shrink();
-              },
-              borderBuilder: (status, item) {
-                final CaseStyle style = CaseStyle();
-                final double leftRight = status == StackItemStatus.idle
-                    ? 0
-                    : -(style.buttonSize) / 2;
-                final double topBottom = status == StackItemStatus.idle
-                    ? 0
-                    : -(style.buttonSize) * 1.5;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  child: Positioned(
-                    left: -leftRight,
-                    top: -topBottom,
-                    right: -leftRight,
-                    bottom: -topBottom,
-                    child: IgnorePointer(
-                      ignoring: true,
-                      child: CustomPaint(
-                        painter: _BorderPainter(
-                          dotted: status == StackItemStatus.idle,
-                        ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // CHANGED: Render all profile images
+                ...controller.profileImageItems.map(
+                  (profileItem) => Positioned(
+                    left: profileItem.offset.dx * canvasScale.value,
+                    top: profileItem.offset.dy * canvasScale.value,
+                    child: SizedBox(
+                      width: profileItem.size.width * canvasScale.value,
+                      height: profileItem.size.height * canvasScale.value,
+                      child: Image.asset(
+                        profileItem.content?.assetName ?? "",
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
-                );
-              },
-              onDel: (_) {},
-              onStatusChanged: (_, __) => true,
+                ),
+                // Background image
+                Container(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  color: controller.selectedBackground.value.isNotEmpty
+                      ? null
+                      : Colors.grey[200],
+                  child: controller.selectedBackground.value.isNotEmpty
+                      ? ColorFiltered(
+                          colorFilter: ColorFilter.matrix(
+                            _hueMatrix(controller.backgroundHue.value),
+                          ),
+                          child: Image.asset(
+                            controller.selectedBackground.value,
+                            width: scaledCanvasWidth.value,
+                            height: scaledCanvasHeight.value,
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                      : null,
+                ),
+                // StackBoard items
+                StackBoard(
+                  controller: controller.boardController,
+                  customBuilder: (StackItem<StackItemContent> item) {
+                    return (item is StackTextItem && item.content != null)
+                        ? StackTextCase(
+                            item: item.copyWith(status: item.status),
+                          )
+                        : (item is StackImageItem && item.content != null)
+                        ? StackImageCase(
+                            item: item.copyWith(status: item.status),
+                          )
+                        : (item is ColorStackItem1 && item.content != null)
+                        ? Container(
+                            width: item.size.width,
+                            height: item.size.height,
+                            color: item.content!.color,
+                          )
+                        : (item is RowStackItem && item.content != null)
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: item.content!.items
+                                .map(
+                                  (subItem) => subItem is StackTextItem
+                                      ? StackTextCase(
+                                          item: subItem.copyWith(
+                                            status: subItem.status,
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                )
+                                .toList(),
+                          )
+                        : const SizedBox.shrink();
+                  },
+                  borderBuilder: (status, item) {
+                    final CaseStyle style = CaseStyle();
+                    final double leftRight = status == StackItemStatus.idle
+                        ? 0
+                        : -(style.buttonSize) / 2;
+                    final double topBottom = status == StackItemStatus.idle
+                        ? 0
+                        : -(style.buttonSize) * 1.5;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      child: Positioned(
+                        left: -leftRight,
+                        top: -topBottom,
+                        right: -leftRight,
+                        bottom: -topBottom,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: CustomPaint(
+                            painter: _BorderPainter(
+                              dotted: status == StackItemStatus.idle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  onDel: (_) {},
+                  onStatusChanged: (_, __) => true,
+                ),
+              ],
             ),
           ),
         );
@@ -354,6 +391,7 @@ class EditorPage extends GetView<EditorController> {
     }
 
     bool isInHole(Offset position, double scale) {
+      // TODO: Update if multiple profile images have different regions
       final hole = Rect.fromLTWH(
         690 * scale,
         115 * scale,
@@ -382,38 +420,17 @@ class EditorPage extends GetView<EditorController> {
                         key: ValueKey(controller.activeItem.value!.id),
                         controller: controller,
                         textItem: controller.activeItem.value as StackTextItem,
-                        showTextPanel: showTextPanel, // Pass showTextPanel
+                        showTextPanel: showTextPanel,
                       )
               : const SizedBox.shrink();
         }),
       ),
-      // bottomSheet: BottomSheet(
-      //   onClosing: () {},
-      //   builder: (_) => Obx(
-      //     () => showStickerPanel.value
-      //         ? _StickerPanel(controller: controller)
-      //         : showHueSlider.value
-      //         ? _HueAdjustmentPanel(controller: controller)
-      //         : controller.activeItem.value != null &&
-      //               controller.activeItem.value is StackTextItem
-      //         ? showHueSlider.value
-      //               ? _HueAdjustmentPanel(controller: controller)
-      //               : _TextEditorPanel(
-      //                   controller: controller,
-      //                   textItem: controller.activeItem.value as StackTextItem,
-      //                 )
-      //         : const SizedBox.shrink(),
-      //   ),
-      // ),
       appBar: AppBar(
         title: Obx(() => Text(allowTouch.value.toString())),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: () => controller.exportDesign(
-              // scaledCanvasWidth.value,
-              // scaledCanvasHeight.value,
-            ),
+            onPressed: () => controller.exportDesign(),
             tooltip: 'Export',
           ),
           IconButton(
@@ -455,6 +472,7 @@ class EditorPage extends GetView<EditorController> {
                     () => Stack(
                       alignment: Alignment.center,
                       children: [
+                        // Background image
                         IgnorePointer(
                           ignoring: true,
                           child: SizedBox(
@@ -478,33 +496,39 @@ class EditorPage extends GetView<EditorController> {
                                 : Container(color: Colors.grey[200]),
                           ),
                         ),
-                        Positioned(
-                          left: 690 * canvasScale.value,
-                          top: 115 * canvasScale.value,
-                          child: ClipRect(
-                            child: SizedBox(
-                              width: 436 * canvasScale.value,
-                              height: 574 * canvasScale.value,
-                              child: PhotoView(
-                                imageProvider: const AssetImage(
-                                  'assets/birthday_2.png',
-                                ),
-                                minScale:
-                                    PhotoViewComputedScale.contained * 0.4,
-                                maxScale: PhotoViewComputedScale.covered * 3.0,
-                                initialScale: PhotoViewComputedScale.contained,
-                                basePosition: Alignment.center,
-                                enablePanAlways: true,
-                                filterQuality: FilterQuality.high,
-                                backgroundDecoration: const BoxDecoration(
-                                  color: Colors.transparent,
+                        // CHANGED: Render all profile images
+                        ...controller.profileImageItems.map(
+                          (profileItem) => Positioned(
+                            left: profileItem.offset.dx * canvasScale.value,
+                            top: profileItem.offset.dy * canvasScale.value,
+                            child: ClipRect(
+                              child: SizedBox(
+                                width:
+                                    profileItem.size.width * canvasScale.value,
+                                height:
+                                    profileItem.size.height * canvasScale.value,
+                                child: PhotoView(
+                                  imageProvider: AssetImage(
+                                    profileItem.content?.assetName ?? "",
+                                  ),
+                                  minScale:
+                                      PhotoViewComputedScale.contained * 0.4,
+                                  maxScale:
+                                      PhotoViewComputedScale.covered * 3.0,
+                                  initialScale:
+                                      PhotoViewComputedScale.contained,
+                                  basePosition: Alignment.center,
+                                  enablePanAlways: true,
+                                  filterQuality: FilterQuality.high,
+                                  backgroundDecoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-
-                        // 👇 3. The full card6.png on top (with a transparent hole)
+                        // Foreground image with transparent hole
                         IgnorePointer(
                           ignoring: true,
                           child: SizedBox(
@@ -516,7 +540,7 @@ class EditorPage extends GetView<EditorController> {
                             ),
                           ),
                         ),
-
+                        // StackBoard with touch handling
                         SizedBox(
                           width: scaledCanvasWidth.value,
                           height: scaledCanvasHeight.value,
@@ -529,22 +553,34 @@ class EditorPage extends GetView<EditorController> {
                                 print(
                                   "Touched inside hole. Allowing PhotoView.",
                                 );
-                                allowTouch.value =
-                                    false; // Allow PhotoView to take over
+                                allowTouch.value = false;
                               } else {
                                 print(
                                   "Touched outside hole. Blocking for StackBoard.",
                                 );
-                                allowTouch.value =
-                                    true; // Block PhotoView, let StackBoard handle
+                                allowTouch.value = true;
                               }
                             },
                             child: Obx(
                               () => IgnorePointer(
-                                ignoring: !allowTouch
-                                    .value, // Absorb only when outside hole
+                                ignoring: !allowTouch.value,
                                 child: StackBoard(
                                   key: stackBoardKey,
+
+                                  background: InkWell(
+                                    onTap: () {
+                                      controller.boardController
+                                          .setAllItemStatuses(
+                                            StackItemStatus.idle,
+                                          );
+                                      controller.activeItem.value = null;
+                                      // selectedToolIndex.value = 0;
+                                      showTextPanel.value = true;
+                                      showStickerPanel.value = false;
+                                      showHueSlider.value = false;
+                                      showShapePanel.value = false;
+                                    },
+                                  ),
                                   controller: controller.boardController,
                                   customBuilder: (StackItem<StackItemContent> item) {
                                     print(
@@ -619,7 +655,7 @@ class EditorPage extends GetView<EditorController> {
                                       ),
                                     );
                                   },
-                                  onDel: controller.deleteItem,
+                                  onDel: (_) => controller.onDelete(),
                                   onTap: (item) {
                                     controller.activeItem.value = item;
                                   },
@@ -649,7 +685,7 @@ class EditorPage extends GetView<EditorController> {
                             ),
                           ),
                         ),
-                        // Alignment guides (visual only)
+                        // Alignment guides
                         IgnorePointer(
                           ignoring: true,
                           child: CustomPaint(
@@ -679,385 +715,6 @@ class EditorPage extends GetView<EditorController> {
               ),
             ),
           ),
-
-          // Expanded(
-          //   child: Align(
-          //     alignment: Alignment.topCenter,
-          //     child: LayoutBuilder(
-          //       builder: (BuildContext context, BoxConstraints constraints) {
-          //         SchedulerBinding.instance.addPostFrameCallback((_) {
-          //           updateCanvasAndLoadTemplate(constraints);
-          //         });
-
-          //         return Obx(
-          //           () => Stack(
-          //             alignment: Alignment.center,
-          //             children: [
-          //               Positioned(
-          //                 left: 690 * canvasScale.value,
-          //                 top: 115 * canvasScale.value,
-          //                 child: SizedBox(
-          //                   width: 436 * canvasScale.value,
-          //                   height: 574 * canvasScale.value,
-          //                   child: PhotoView(
-          //                     key:
-          //                         UniqueKey(), // Unique key for widget rebuilds
-          //                     imageProvider: const AssetImage(
-          //                       'assets/birthday_2.png',
-          //                     ),
-          //                     loadingBuilder: (context, event) => const Center(
-          //                       child: CircularProgressIndicator(),
-          //                     ),
-          //                     backgroundDecoration: const BoxDecoration(
-          //                       color: Colors.transparent,
-          //                     ), // Transparent background
-          //                     minScale:
-          //                         PhotoViewComputedScale.contained *
-          //                         0.5, // 50% of contained size
-          //                     maxScale:
-          //                         PhotoViewComputedScale.covered *
-          //                         3.0, // 300% of covered size
-          //                     initialScale: PhotoViewComputedScale
-          //                         .contained, // Fit within 436x574
-          //                     basePosition: Alignment
-          //                         .center, // Center the image initially
-          //                     enablePanAlways:
-          //                         true, // Allow panning even when zoomed out
-          //                     customSize: Size(
-          //                       436 * canvasScale.value,
-          //                       574 * canvasScale.value,
-          //                     ), // Match oval dimensions
-          //                     // boundaryMargin: EdgeInsets.only(
-          //                     //   left: 0, // Start from positioned left
-          //                     //   top: 0, // Start from positioned top
-          //                     //   right: scaledCanvasWidth.value - (690 * canvasScale.value + 436 * canvasScale.value),
-          //                     //   bottom: scaledCanvasHeight.value - (115 * canvasScale.value + 574 * canvasScale.value),
-          //                     // ), // Constrain to canvas minus oval area
-          //                     filterQuality:
-          //                         FilterQuality.high, // Improve image quality
-          //                     errorBuilder: (context, error, stackTrace) =>
-          //                         const Text('Failed to load image'),
-          //                   ),
-          //                 ),
-          //               ),
-          //               IgnorePointer(
-          //                 ignoring: false,
-          //                 child: SizedBox(
-          //                   width: scaledCanvasWidth.value,
-          //                   height: scaledCanvasHeight.value,
-          //                   child: Image.asset(
-          //                     "assets/card6.png",
-          //                     // width: 1240,
-          //                     // height: 1748,
-          //                     fit: BoxFit.contain,
-          //                   ),
-          //                 ),
-          //               ),
-          //               SizedBox(
-          //                 width: scaledCanvasWidth.value,
-          //                 height: scaledCanvasHeight.value,
-          //                 child: StackBoard(
-          //                   key: stackBoardKey,
-          //                   controller: controller.boardController,
-
-          //                   customBuilder: (StackItem<StackItemContent> item) {
-          //                     print(
-          //                       "Rendering item: ${item.id}, type: ${item.runtimeType}, isCircular}",
-          //                     );
-          //                     return (item is StackTextItem &&
-          //                             item.content != null)
-          //                         ? Container(
-          //                             color: Colors.red.withOpacity(
-          //                               0.2,
-          //                             ), // Visualize hit area
-          //                             child: StackTextCase(item: item),
-          //                           )
-          //                         : (item is StackImageItem &&
-          //                               item.content != null)
-          //                         ? Container(
-          //                             color: Colors.blue.withOpacity(0.1),
-          //                             child: StackImageCase(item: item),
-          //                           )
-          //                         : (item is ColorStackItem1 &&
-          //                               item.content != null)
-          //                         ? Container(
-          //                             width: item.size.width,
-          //                             height: item.size.height,
-          //                             color: item.content!.color,
-          //                           )
-          //                         : (item is RowStackItem &&
-          //                               item.content != null)
-          //                         ? Row(
-          //                             mainAxisAlignment:
-          //                                 MainAxisAlignment.center,
-          //                             children: item.content!.items
-          //                                 .map(
-          //                                   (subItem) =>
-          //                                       subItem is StackTextItem
-          //                                       ? StackTextCase(item: subItem)
-          //                                       : const SizedBox.shrink(),
-          //                                 )
-          //                                 .toList(),
-          //                           )
-          //                         : const SizedBox.shrink();
-          //                   },
-          //                   borderBuilder: (status, item) {
-          //                     final CaseStyle style = CaseStyle();
-          //                     final double leftRight =
-          //                         status == StackItemStatus.idle
-          //                         ? 0
-          //                         : -(style.buttonSize) / 2;
-          //                     final double topBottom =
-          //                         status == StackItemStatus.idle
-          //                         ? 0
-          //                         : -(style.buttonSize) * 1.5;
-          //                     return AnimatedContainer(
-          //                       duration: const Duration(milliseconds: 500),
-          //                       child: Positioned(
-          //                         left: -leftRight,
-          //                         top: -topBottom,
-          //                         right: -leftRight,
-          //                         bottom: -topBottom,
-          //                         child: IgnorePointer(
-          //                           ignoring: true,
-          //                           child: CustomPaint(
-          //                             painter: _BorderPainter(
-          //                               dotted: status == StackItemStatus.idle,
-          //                             ),
-          //                           ),
-          //                         ),
-          //                       ),
-          //                     );
-          //                   },
-          //                   onDel: controller.deleteItem,
-
-          //                   onTap: (item) {
-          //                     controller.activeItem.value = item;
-          //                   },
-
-          //                   onStatusChanged: (item, status) {
-          //                     if (status == StackItemStatus.selected) {
-          //                       if (item is StackTextItem) {
-          //                         print("Selected StackTextItem: ${item.id}");
-          //                         selectedToolIndex.value = 3;
-          //                         showTextPanel.value = false;
-          //                         showStickerPanel.value = false;
-          //                         showHueSlider.value = false;
-          //                         showShapePanel.value = false;
-          //                       } else {
-          //                         showTextPanel.value =
-          //                             false; // Hide panel for non-text items
-          //                       }
-          //                     }
-          //                     controller.onItemStatusChanged(item, status);
-          //                     return true;
-          //                   },
-          //                 ),
-
-          //                 // StackBoard(
-          //                 //   key: stackBoardKey,
-          //                 //   controller: controller.boardController,
-          //                 //   background: InkWell(
-          //                 //     onTap: () {
-          //                 //       controller.boardController.setAllItemStatuses(
-          //                 //         StackItemStatus.idle,
-          //                 //       );
-          //                 //       controller.activeItem.value = null;
-          //                 //       // selectedToolIndex.value = 0;
-          //                 //       showTextPanel.value = true;
-          //                 //       showStickerPanel.value = false;
-          //                 //       showHueSlider.value = false;
-          //                 //       showShapePanel.value = false;
-          //                 //     },
-          //                 //     child: Stack(
-          //                 //       alignment: Alignment.center,
-          //                 //       children: [
-          //                 //         Stack(
-          //                 //           alignment: Alignment.center,
-          //                 //           children: [
-          //                 //             Container(
-          //                 //               width: scaledCanvasWidth.value,
-          //                 //               height: scaledCanvasHeight.value,
-          //                 //               color:
-          //                 //                   controller
-          //                 //                       .selectedBackground
-          //                 //                       .value
-          //                 //                       .isNotEmpty
-          //                 //                   ? null
-          //                 //                   : Colors.white,
-          //                 //               child:
-          //                 //                   controller
-          //                 //                       .selectedBackground
-          //                 //                       .value
-          //                 //                       .isNotEmpty
-          //                 //                   ? ColorFiltered(
-          //                 //                       colorFilter: ColorFilter.matrix(
-          //                 //                         _hueMatrix(
-          //                 //                           controller.backgroundHue.value,
-          //                 //                         ),
-          //                 //                       ),
-          //                 //                       child: Image.asset(
-          //                 //                         controller
-          //                 //                             .selectedBackground
-          //                 //                             .value,
-          //                 //                         width: scaledCanvasWidth.value,
-          //                 //                         height: scaledCanvasHeight.value,
-          //                 //                         fit: BoxFit.contain,
-          //                 //                       ),
-          //                 //                     )
-          //                 //                   : null,
-          //                 //             ),
-          //                 //             CustomPaint(
-          //                 //               size: Size(
-          //                 //                 scaledCanvasWidth.value,
-          //                 //                 scaledCanvasHeight.value,
-          //                 //               ),
-          //                 //               painter: AlignmentGuidePainter(
-          //                 //                 draggedItem: controller.draggedItem.value,
-          //                 //                 alignmentPoints:
-          //                 //                     controller.alignmentPoints,
-          //                 //                 stackBoardSize: Size(
-          //                 //                   scaledCanvasWidth.value,
-          //                 //                   scaledCanvasHeight.value,
-          //                 //                 ),
-          //                 //                 showGrid:
-          //                 //                     // controller.draggedItem.value !=
-          //                 //                     //     null &&
-          //                 //                     controller.showGrid.isTrue,
-          //                 //                 gridSize: 50.0,
-          //                 //                 guideColor: Colors.blue.withOpacity(0.5),
-          //                 //                 criticalGuideColor: Colors.red,
-          //                 //                 centerGuideColor: Colors.green,
-          //                 //               ),
-          //                 //             ),
-          //                 //           ],
-          //                 //         ),
-          //                 //       ],
-          //                 //     ),
-          //                 //   ),
-          //                 //   customBuilder: (StackItem<StackItemContent> item) {
-          //                 //     return GestureDetector(
-          //                 //       onTap: () {
-          //                 //         print(
-          //                 //           "Tapped item: ${item.id}, type: ${item.runtimeType} : false}",
-          //                 //         );
-          //                 //         controller.boardController.setAllItemStatuses(
-          //                 //           StackItemStatus.idle,
-          //                 //         );
-          //                 //         controller.activeItem.value = item;
-
-          //                 //         final updatedItem = item.copyWith(
-          //                 //           status: StackItemStatus.selected,
-          //                 //         );
-          //                 //         controller.boardController.updateItem(
-          //                 //           updatedItem,
-          //                 //         );
-
-          //                 //         if (item is StackTextItem) {
-          //                 //           selectedToolIndex.value = 3;
-          //                 //           showTextPanel.value = true;
-          //                 //           showStickerPanel.value = false;
-          //                 //           showHueSlider.value = false;
-          //                 //           showShapePanel.value = false;
-          //                 //         }
-          //                 //       },
-          //                 //       child:
-          //                 //           (item is StackTextItem && item.content != null)
-          //                 //           ? StackTextCase(item: item)
-          //                 //           : (item is StackImageItem &&
-          //                 //                 item.content != null)
-          //                 //           ? Container(
-          //                 //               color: Colors.blue.withOpacity(0.1),
-
-          //                 //               child: StackImageCase(item: item),
-          //                 //             )
-          //                 //           : (item is ColorStackItem1 &&
-          //                 //                 item.content != null)
-          //                 //           ? Container(
-          //                 //               width: item.size.width,
-          //                 //               height: item.size.height,
-          //                 //               color: item.content!.color,
-          //                 //             )
-          //                 //           : (item is RowStackItem && item.content != null)
-          //                 //           ? Row(
-          //                 //               mainAxisAlignment: MainAxisAlignment.center,
-          //                 //               children: item.content!.items
-          //                 //                   .map(
-          //                 //                     (subItem) => subItem is StackTextItem
-          //                 //                         ? StackTextCase(item: subItem)
-          //                 //                         : const SizedBox.shrink(),
-          //                 //                   )
-          //                 //                   .toList(),
-          //                 //             )
-          //                 //           : const SizedBox.shrink(),
-          //                 //     );
-          //                 //   },
-
-          //                 //   borderBuilder: (status, item) {
-          //                 //     final CaseStyle style = CaseStyle();
-          //                 //     final double leftRight =
-          //                 //         status == StackItemStatus.idle
-          //                 //         ? 0
-          //                 //         : -(style.buttonSize) / 2;
-          //                 //     final double topBottom =
-          //                 //         status == StackItemStatus.idle
-          //                 //         ? 0
-          //                 //         : -(style.buttonSize) * 1.5;
-          //                 //     return AnimatedContainer(
-          //                 //       duration: const Duration(milliseconds: 500),
-          //                 //       child: Positioned(
-          //                 //         left: -leftRight,
-          //                 //         top: -topBottom,
-          //                 //         right: -leftRight,
-          //                 //         bottom: -topBottom,
-          //                 //         child: IgnorePointer(
-          //                 //           ignoring: true,
-          //                 //           child: CustomPaint(
-          //                 //             painter: _BorderPainter(
-          //                 //               dotted: status == StackItemStatus.idle,
-          //                 //             ),
-          //                 //           ),
-          //                 //         ),
-          //                 //       ),
-          //                 //     );
-          //                 //   },
-          //                 //   onDel: controller.deleteItem,
-          //                 //   onStatusChanged: (item, status) {
-          //                 //     controller.onItemStatusChanged(item, status);
-          //                 //     return true;
-          //                 //   },
-          //                 // ),
-          //               ),
-
-          //               IgnorePointer(
-          //                 ignoring: true,
-          //                 child: CustomPaint(
-          //                   size: Size(
-          //                     scaledCanvasWidth.value,
-          //                     scaledCanvasHeight.value,
-          //                   ),
-          //                   painter: AlignmentGuidePainter(
-          //                     draggedItem: controller.draggedItem.value,
-          //                     alignmentPoints: controller.alignmentPoints,
-          //                     stackBoardSize: Size(
-          //                       scaledCanvasWidth.value,
-          //                       scaledCanvasHeight.value,
-          //                     ),
-          //                     showGrid: controller.showGrid.isTrue,
-          //                     gridSize: 50.0,
-          //                     guideColor: Colors.blue.withOpacity(0.5),
-          //                     criticalGuideColor: Colors.red,
-          //                     centerGuideColor: Colors.green,
-          //                   ),
-          //                 ),
-          //               ),
-          //             ],
-          //           ),
-          //         );
-          //       },
-          //     ),
-          //   ),
-          // ),
           SafeArea(
             bottom: true,
             child: Container(
@@ -1800,6 +1457,8 @@ class ColorStackItem1 extends StackItem<ColorContent> {
     StackItemStatus? status,
     bool? lockZOrder,
     ColorContent? content,
+    bool? isCentered,
+    bool? isProfileImage,
   }) {
     return ColorStackItem1(
       id: id,
@@ -1866,6 +1525,7 @@ class RowStackItem extends StackItem<RowStackContent> {
     bool? lockZOrder,
     RowStackContent? content,
     bool? isCentered,
+    bool? isProfileImage, // Added to match base class signature
   }) {
     return RowStackItem(
       id: id,

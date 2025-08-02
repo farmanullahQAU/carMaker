@@ -1,4 +1,16 @@
-import 'dart:convert';
+// import 'dart:convert';
+// import 'dart:math' as math;
+
+// import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+// import 'package:cardmaker/models/card_template.dart';
+// import 'package:cardmaker/services/storage_service.dart';
+// import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
+// import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
+// import 'package:cardmaker/stack_board/lib/stack_items.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:get_storage/get_storage.dart';
+
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
@@ -9,7 +21,6 @@ import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 
 class EditorController extends GetxController {
   final StackBoardController boardController = StackBoardController();
@@ -47,6 +58,9 @@ class EditorController extends GetxController {
   Rx<Offset> midYOffset = Rx<Offset>(Offset(0, 0));
   Rx<Size> midSize = Rx<Size>(Size(0, 0));
 
+  // CHANGED: Use RxList for multiple profile images
+  final RxList<StackImageItem> profileImageItems = <StackImageItem>[].obs;
+
   Offset? _dragStart;
   Offset? _lastOffset;
   static const double _dragThreshold = 5.0;
@@ -54,19 +68,15 @@ class EditorController extends GetxController {
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
 
-  // bool get showVerticalLine =>
-
   @override
   void onInit() {
     super.onInit();
     if (Get.arguments is Map<String, dynamic>) {
-      // Initialize blank template
       initialTemplate = Get.arguments['template'];
     } else {
       initialTemplate = Get.arguments as CardTemplate;
     }
 
-    // Initialize properties from initialTemplate
     templateName.value = initialTemplate!.name;
     category.value = initialTemplate!.category;
     categoryId.value = initialTemplate!.categoryId;
@@ -77,19 +87,29 @@ class EditorController extends GetxController {
     templateOriginalHeight.value = initialTemplate!.height.toDouble();
     canvasWidth.value = initialTemplate!.width.toDouble();
     canvasHeight.value = initialTemplate!.height.toDouble();
-    boardController.clear(); // Ensure the canvas starts fresh
+    boardController.clear();
+
+    // CHANGED: Collect all profile images from initialTemplate
+    profileImageItems.clear();
+    for (var itemJson in initialTemplate!.items) {
+      if (itemJson['isProfileImage'] == true) {
+        final item = _deserializeItem(itemJson);
+        if (item is StackImageItem) {
+          profileImageItems.add(item);
+        }
+      }
+    }
+
     print(initialTemplate?.toJson());
   }
 
   void updateStackBoardRenderSize(Size size) {
     if (actualStackBoardRenderSize.value != size) {
       actualStackBoardRenderSize.value = size;
-
       _updateGridSize();
     }
   }
 
-  // New method to export design as CardTemplate with pixel-perfect accuracy
   Future<void> exportDesign() async {
     final double originalWidth = initialTemplate!.width.toDouble();
     final double originalHeight = initialTemplate!.height.toDouble();
@@ -98,6 +118,27 @@ class EditorController extends GetxController {
     final currentItems = boardController.getAllData();
 
     debugPrint('Current Items: $currentItems', wrapWidth: 1000);
+
+    // CHANGED: Include all profile images from profileImageItems
+
+    if (profileImageItems.isNotEmpty) {
+      for (final profileItem in profileImageItems) {
+        exportedItems.add(profileItem.toJson());
+      }
+    } else {
+      final profile = {
+        "type": "StackImageItem",
+        "id": "profile_image_1698765432100",
+        "offset": {"dx": 690.0, "dy": 115.0},
+        "size": {"width": 436.0, "height": 574.0},
+        "content": {"assetName": "assets/Farman.png"},
+        "status": 0,
+        "isCentered": false,
+        "lockZOrder": true,
+        "isProfileImage": true,
+      };
+      exportedItems.add(StackImageItem.fromJson(profile).toJson());
+    }
 
     for (final itemJson in currentItems) {
       final type = itemJson['type'];
@@ -114,10 +155,10 @@ class EditorController extends GetxController {
           'dx': itemJson['offset']['dx'],
           'dy': itemJson['offset']['dy'],
         },
+        'isProfileImage': false,
       };
 
       if (type == 'StackTextItem') {
-        // Use TextItemContent.toJson to include all properties, including circular text
         exportedItem['content'] = itemJson['content'];
       } else if (type == 'StackImageItem') {
         exportedItem['content'] = {
@@ -140,9 +181,9 @@ class EditorController extends GetxController {
                 'dy': subItemJson['offset']['dy'],
               },
               'isCentered': subItemJson['isCentered'] ?? false,
+              'isProfileImage': false,
             };
             if (subItemType == 'StackTextItem') {
-              // Use TextItemContent.toJson for sub-item content
               subItem['content'] = subItemJson['content'];
             } else {
               throw Exception('Unsupported sub-item type: $subItemType');
@@ -175,113 +216,108 @@ class EditorController extends GetxController {
       imagePath: selectedBackground.value,
     );
 
-    // Add to featuredTemplates
     await addTemplate(temp);
   }
-  // Future<void> exportDesign() async {
-  //   final double originalWidth = initialTemplate!.width.toDouble();
-  //   final double originalHeight = initialTemplate!.height.toDouble();
 
-  //   final List<Map<String, dynamic>> exportedItems = [];
-  //   final currentItems = boardController.getAllData();
+  // NEW: Method to add profile images dynamically
+  void addProfileImage(String assetPath, {Offset? offset, Size? size}) {
+    final profileImage = StackImageItem(
+      id: 'profile_image_${DateTime.now().millisecondsSinceEpoch}',
+      offset: offset ?? const Offset(690.0, 115.0), // Default position
+      size: size ?? const Size(436.0, 574.0), // Default size
+      content: ImageItemContent(assetName: assetPath),
+      isProfileImage: true,
+      lockZOrder: true,
+      status: StackItemStatus.idle,
+    );
+    profileImageItems.add(profileImage);
+  }
 
-  //   debugPrint('Current Items: $currentItems', wrapWidth: 1000);
+  void loadExportedTemplate(
+    CardTemplate template,
+    BuildContext context,
+    double scaledCanvasWidth,
+    double scaledCanvasHeight,
+  ) async {
+    print("this one .........................");
+    final controller = Get.find<EditorController>();
+    controller.selectedBackground.value = template.backgroundImage;
+    controller.templateName.value = template.name;
+    controller.category.value = template.category;
+    controller.categoryId.value = template.categoryId;
+    controller.tags.value = template.tags;
+    controller.isPremium.value = template.isPremium;
+    controller.backgroundHue.value = 0.0;
+    controller.templateOriginalWidth.value = template.width.toDouble();
+    controller.templateOriginalHeight.value = template.height.toDouble();
+    controller.canvasWidth.value = scaledCanvasWidth;
+    controller.canvasHeight.value = scaledCanvasHeight;
+    controller.boardController.clear();
+    controller.profileImageItems.clear(); // CHANGED: Clear profile images list
 
-  //   for (final itemJson in currentItems) {
-  //     final type = itemJson['type'];
-  //     final Map<String, dynamic> exportedItem = {
-  //       'type': type,
-  //       'id': itemJson['id'],
-  //       'status': itemJson['status'] ?? 0,
-  //       'isCentered': itemJson['isCentered'] ?? false,
-  //       'size': {
-  //         'width': itemJson['size']['width'],
-  //         'height': itemJson['size']['height'],
-  //       },
-  //       'offset': {
-  //         'dx': itemJson['offset']['dx'],
-  //         'dy': itemJson['offset']['dy'],
-  //       },
-  //     };
+    for (final itemJson in template.items) {
+      try {
+        final bool isCentered = itemJson['isCentered'] ?? false;
+        final bool isProfileImage = itemJson['isProfileImage'] ?? false;
 
-  //     if (type == 'StackTextItem') {
-  //       exportedItem['content'] = {
-  //         'data': itemJson['content']['data'],
-  //         'googleFont': itemJson['content']['googleFont'],
-  //         'style': {
-  //           'fontSize': itemJson['content']['style']['fontSize'],
-  //           'color': itemJson['content']['style']['color'],
-  //         },
-  //         'textAlign': itemJson['content']['textAlign'],
-  //       };
-  //     } else if (type == 'StackImageItem') {
-  //       exportedItem['content'] = {
-  //         'assetName': itemJson['content']['assetName'],
-  //       };
-  //     } else if (type == 'RowStackItem') {
-  //       exportedItem['content'] = {
-  //         'items': (itemJson['content']['items'] as List)
-  //             .map(
-  //               (subItemJson) => {
-  //                 'type': subItemJson['type'],
-  //                 'id': subItemJson['id'],
-  //                 'status': subItemJson['status'] ?? 0,
-  //                 'size': {
-  //                   'width': subItemJson['size']['width'],
-  //                   'height': subItemJson['size']['height'],
-  //                 },
-  //                 'offset': {
-  //                   'dx': subItemJson['offset']['dx'],
-  //                   'dy': subItemJson['offset']['dy'],
-  //                 },
-  //                 'content': {
-  //                   'data': subItemJson['content']['data'],
-  //                   'googleFont': subItemJson['content']['googleFont'],
-  //                   'style': {
-  //                     'fontSize': subItemJson['content']['style']['fontSize'],
-  //                     'color': subItemJson['content']['style']['color'],
-  //                   },
-  //                   'textAlign': subItemJson['content']['textAlign'],
-  //                 },
-  //                 'isCentered': subItemJson['isCentered'] ?? false,
-  //               },
-  //             )
-  //             .toList(),
-  //       };
-  //     }
+        final item = _deserializeItem(itemJson);
+        if (isProfileImage) {
+          // CHANGED: Add to profileImageItems instead of StackBoard
+          if (item is StackImageItem) {
+            controller.profileImageItems.add(item);
+          }
+          continue;
+        }
 
-  //     exportedItems.add(exportedItem);
-  //   }
+        Size itemSize;
+        StackItem updatedItem;
 
-  //   final temp = CardTemplate(
-  //     id: 'exported_${initialTemplate!.id}_modified_${DateTime.now().millisecondsSinceEpoch}',
-  //     name: templateName.value.isNotEmpty
-  //         ? templateName.value
-  //         : initialTemplate!.name,
-  //     thumbnailPath: initialTemplate!.thumbnailPath,
-  //     backgroundImage: initialTemplate?.backgroundImage ?? "",
-  //     items: exportedItems,
-  //     createdAt: DateTime.now(),
-  //     updatedAt: null,
-  //     category: category.value,
-  //     categoryId: categoryId.value,
-  //     compatibleDesigns: initialTemplate!.compatibleDesigns,
-  //     width: originalWidth,
-  //     height: originalHeight,
-  //     isPremium: isPremium.value,
-  //     tags: tags.value,
-  //     imagePath: selectedBackground.value,
-  //   );
+        if (item is StackTextItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
 
-  //   // Add to featuredTemplates
-  //   addTemplate(temp);
-  // }
+          final updatedStyle = item.content!.style!.copyWith(
+            fontSize: item.content!.style!.fontSize!,
+          );
 
-  void removeTextEditorOverlay() {
-    final entry = activeTextEditorOverlay.value;
-    if (entry != null && entry.mounted) {
-      entry.remove();
-      activeTextEditorOverlay.value = null;
+          itemSize = Size(
+            itemJson['size']['width'],
+            itemJson['size']['height'],
+          );
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+            content: item.content!.copyWith(style: updatedStyle),
+            isCentered: isCentered,
+          );
+        } else if (item is StackImageItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
+          final double originalWidth = itemJson['size']['width'];
+          final double originalHeight = itemJson['size']['height'];
+
+          itemSize = Size(originalWidth, originalHeight);
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+          );
+        } else {
+          throw Exception('Unsupported item type: ${item.runtimeType}');
+        }
+
+        debugPrint(
+          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
+        );
+
+        controller.boardController.addItem(updatedItem);
+        controller._undoStack.add(
+          _ItemState(item: updatedItem, action: _ItemAction.add),
+        );
+      } catch (err) {}
     }
   }
 
@@ -320,7 +356,6 @@ class EditorController extends GetxController {
     return Offset(clampedX, clampedY);
   }
 
-  // Deserialize item based on type
   StackItem _deserializeItem(Map<String, dynamic> itemJson) {
     final type = itemJson['type'];
     if (type == 'StackTextItem') {
@@ -334,207 +369,13 @@ class EditorController extends GetxController {
     }
   }
 
-  Future<void> loadFromStorage(
-    String templateId,
-    BuildContext context,
-    BoxConstraints constraints,
-  ) async {
-    final storage = GetStorage();
-    final jsonString = storage.read(templateId);
-    if (jsonString == null) {
-      throw Exception('No template found with id: $templateId');
-    }
-
-    final jsonMap = jsonDecode(jsonString) as Map<String, dynamic>;
-    final template = CardTemplate.fromJson(jsonMap);
-
-    // Calculate scaled canvas size
-    final double availableWidth = constraints.maxWidth * 0.9;
-    final double availableHeight = constraints.maxHeight * 0.95;
-    final double aspectRatio = template.width / template.height;
-
-    double scaledCanvasWidth, scaledCanvasHeight;
-    if (availableWidth / aspectRatio <= availableHeight) {
-      scaledCanvasWidth = availableWidth;
-      scaledCanvasHeight = availableWidth / aspectRatio;
-    } else {
-      scaledCanvasHeight = availableHeight;
-      scaledCanvasWidth = availableHeight * aspectRatio;
-    }
-
-    final controller = Get.find<EditorController>();
-    controller.canvasWidth.value = scaledCanvasWidth;
-    controller.canvasHeight.value = scaledCanvasHeight;
-    controller.updateStackBoardRenderSize(
-      Size(controller.canvasWidth.value, controller.canvasHeight.value),
-    );
-
-    debugPrint(
-      'Loaded from storage - Updated StackBoard size for template ${template.id}: ${controller.canvasWidth.value} x ${controller.canvasHeight.value}',
-    );
-
-    loadExportedTemplate(
-      template,
-      context,
-      scaledCanvasWidth,
-      scaledCanvasHeight,
-    );
-  }
-
-  void loadExportedTemplate(
-    CardTemplate template,
-    BuildContext context,
-    double scaledCanvasWidth,
-    double scaledCanvasHeight,
-  ) async {
-    print("this one .........................");
-    final controller = Get.find<EditorController>();
-    controller.selectedBackground.value = template.backgroundImage;
-    controller.templateName.value = template.name;
-    controller.category.value = template.category;
-    controller.categoryId.value = template.categoryId;
-    controller.tags.value = template.tags;
-    controller.isPremium.value = template.isPremium;
-    controller.backgroundHue.value = 0.0;
-    controller.templateOriginalWidth.value = template.width.toDouble(); // 1748
-    controller.templateOriginalHeight.value = template.height
-        .toDouble(); // 1240
-    controller.canvasWidth.value = scaledCanvasWidth; // Use scaled width
-    controller.canvasHeight.value = scaledCanvasHeight; // Use scaled height
-    controller.boardController.clear();
-    // double cumulativeYOffset = 0.0;
-    // final StackImageItem background = StackImageItem.fromJson({
-    //   'type': 'StackImageItem',
-    //   "offset": {'dx': 0.0, 'dy': 0.0},
-    //   'size': {'width': scaledCanvasWidth, 'height': scaledCanvasHeight},
-    //   'content': {'assetName': 'assets/card6.png'},
-    //   'status': 1,
-    //   'lockZOrder': true,
-    //   'fit': 'cover',
-    // });
-    // boardController.addItem(background);
-
-    // final StackImageItem scaledImageItem = StackImageItem.fromJson({
-    //   'type': 'StackImageItem',
-    //   "offset": {'dx': 200.0, 'dy': 200.0},
-    //   'size': {'width': 222.0, 'height': 222.0},
-    //   'content': {'assetName': 'assets/birthday_1.png'},
-    //   'status': 1,
-    //   'lockZOrder': false,
-    //   // 'fit': 'cover',
-    // });
-
-    // boardController.addItem(scaledImageItem);
-
-    for (final itemJson in template.items) {
-      try {
-        final bool isCentered = itemJson['isCentered'] ?? false;
-
-        final item = _deserializeItem(itemJson);
-        Size itemSize;
-        StackItem updatedItem;
-
-        if (item is StackTextItem) {
-          double scaledX = item.offset.dx; // No scaling
-          double scaledY = item.offset.dy; // No scaling
-          // scaledY += cumulativeYOffset;
-
-          final updatedStyle = item.content!.style!.copyWith(
-            fontSize: item.content!.style!.fontSize!, // No scaling
-          );
-
-          // Use exact size from exported data
-          itemSize = Size(
-            itemJson['size']['width'],
-            itemJson['size']['height'],
-          );
-
-          final double buttonSize = 18; // No scaling
-          // if (isCentered) {
-          //   scaledY +=
-          //       (itemSize.height / 2) + buttonSize; // Use unscaled buttonSize
-          // }
-
-          updatedItem = item.copyWith(
-            offset: Offset(scaledX, scaledY),
-            size: itemSize,
-            status: StackItemStatus.idle,
-            content: item.content!.copyWith(style: updatedStyle),
-            isCentered: isCentered,
-          );
-          // cumulativeYOffset += itemSize.height;
-        } else if (item is StackImageItem) {
-          double scaledX = item.offset.dx; // No scaling
-          double scaledY = item.offset.dy; // No scaling
-          final double originalWidth = itemJson['size']['width'];
-          final double originalHeight = itemJson['size']['height'];
-
-          itemSize = Size(originalWidth, originalHeight);
-
-          final double buttonSize = 36; // No scaling
-          // scaledY += buttonSize + cumulativeYOffset;
-
-          updatedItem = item.copyWith(
-            offset: Offset(scaledX, scaledY),
-            size: itemSize,
-            status: StackItemStatus.idle,
-          );
-        } else {
-          throw Exception('Unsupported item type: ${item.runtimeType}');
-        }
-
-        debugPrint(
-          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
-        );
-
-        controller.boardController.addItem(updatedItem);
-
-        controller._undoStack.add(
-          _ItemState(item: updatedItem, action: _ItemAction.add),
-        );
-      } catch (err) {}
-    }
-  }
-
-  // --- Template Management ---
-  Future<void> addTemplate(CardTemplate template) async {
-    print(template.backgroundImage.toString());
-
-    await StorageService.addTemplate(template);
-  }
-
-  Future<void> deleteItem(StackItem<StackItemContent> item) async {
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this item?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      _undoStack.add(_ItemState(item: item, action: _ItemAction.delete));
-      _redoStack.clear();
-      boardController.removeById(item.id);
-      if (activeItem.value?.id == item.id) activeItem.value = null;
-      _updateSpatialIndex();
-    }
-  }
-
   void addSticker(String imagePath) {
     final sticker = StackImageItem(
       id: UniqueKey().toString(),
       size: const Size(100, 100),
       offset: getCenteredOffset(const Size(100, 100)),
       content: ImageItemContent(assetName: imagePath),
+      isProfileImage: false, // NEW: Explicitly set for stickers
     );
     boardController.addItem(sticker);
     _undoStack.add(_ItemState(item: sticker, action: _ItemAction.add));
@@ -713,36 +554,10 @@ class EditorController extends GetxController {
     _updateSpatialIndex();
   }
 
-  // void onItemStatusChanged(StackItem item, StackItemStatus status) {
-  //   print(item.toJson());
-  //   if (status == StackItemStatus.moving) {
-  //     draggedItem.value = item;
-
-  //     activeItem.value = null;
-
-  //     _dragStart = null;
-  //     _lastOffset = null;
-  //   } else if (status == StackItemStatus.selected) {
-  //     activeItem.value = null;
-  //     draggedItem.value = null;
-  //     _dragStart = null;
-  //     _lastOffset = null;
-  //     alignmentPoints.value = [];
-  //   } else if (status == StackItemStatus.idle) {
-  //     if (draggedItem.value?.id == item.id) {
-  //     } else if (activeItem.value?.id == item.id) {
-  //       activeItem.value = null;
-  //       alignmentPoints.value = [];
-  //     }
-  //   }
-  // }
-
   void onItemStatusChanged(StackItem item, StackItemStatus status) {
     if (status == StackItemStatus.moving) {
       draggedItem.value = item;
-
       activeItem.value = null;
-
       _dragStart = null;
       _lastOffset = null;
     } else if (status == StackItemStatus.selected) {
@@ -801,6 +616,12 @@ class EditorController extends GetxController {
         }
       }
     }
+  }
+
+  Future<void> addTemplate(CardTemplate template) async {
+    print(template.backgroundImage.toString());
+
+    await StorageService.addTemplate(template);
   }
 
   @override
