@@ -67,6 +67,7 @@ class StackTextCase extends StatelessWidget {
 
     final textWidget = Text(
       content?.data ?? "",
+
       style: textStyle,
       strutStyle: content?.strutStyle?.style,
       textAlign: content?.textAlign ?? TextAlign.center,

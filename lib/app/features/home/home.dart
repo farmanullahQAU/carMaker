@@ -437,9 +437,9 @@ class HorizontalCardList extends GetView<HomeController> {
                 margin: const EdgeInsets.only(right: 12),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: template.backgroundImage.isNotEmpty
+                  child: (template.thumbnailPath?.isNotEmpty ?? false)
                       ? Image.asset(
-                          template.backgroundImage,
+                          template.thumbnailPath!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(

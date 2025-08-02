@@ -2184,6 +2184,7 @@ class TextStyleController extends GetxController {
       style: TextStyle(
         fontFamily: GoogleFonts.getFont(selectedFont.value).fontFamily,
         fontSize: fontSize.value,
+
         letterSpacing: letterSpacing.value,
         height: lineHeight.value,
         color: maskImage.value != null || maskColor.value != null
@@ -2208,6 +2209,7 @@ class TextStyleController extends GetxController {
       textAlign: textAlign.value,
       maskImage: maskImage.value,
       maskColor: maskColor.value,
+
       isCircular: isCircular.value,
       radius: radius.value,
       space: space.value,
@@ -2447,7 +2449,7 @@ class _ColorTab extends StatelessWidget {
               runSpacing: 6,
               children: [
                 ...TextStyleController.predefinedColors.map((color) {
-                  final isSelected = color.value == controller.textColor.value;
+                  final isSelected = color == controller.textColor.value;
                   return GestureDetector(
                     onTap: () {
                       controller.textColor.value = color;
@@ -2541,8 +2543,7 @@ class _BackgroundTab extends StatelessWidget {
                   ),
                 ),
                 ...TextStyleController.predefinedColors.map((color) {
-                  final isSelected =
-                      color.value == controller.backgroundColor.value;
+                  final isSelected = color == controller.backgroundColor.value;
                   return GestureDetector(
                     onTap: () {
                       controller.backgroundColor.value = color;

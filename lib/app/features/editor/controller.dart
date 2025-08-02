@@ -61,9 +61,6 @@ class EditorController extends GetxController {
   // CHANGED: Use RxList for multiple profile images
   final RxList<StackImageItem> profileImageItems = <StackImageItem>[].obs;
 
-  Offset? _dragStart;
-  Offset? _lastOffset;
-  static const double _dragThreshold = 5.0;
   final RxBool showHueSlider = false.obs;
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
@@ -126,18 +123,18 @@ class EditorController extends GetxController {
         exportedItems.add(profileItem.toJson());
       }
     } else {
-      final profile = {
-        "type": "StackImageItem",
-        "id": "profile_image_1698765432100",
-        "offset": {"dx": 690.0, "dy": 115.0},
-        "size": {"width": 436.0, "height": 574.0},
-        "content": {"assetName": "assets/Farman.png"},
-        "status": 0,
-        "isCentered": false,
-        "lockZOrder": true,
-        "isProfileImage": true,
-      };
-      exportedItems.add(StackImageItem.fromJson(profile).toJson());
+      // final profile = {
+      //   "type": "StackImageItem",
+      //   "id": "profile_image_1698765432100",
+      //   "offset": {"dx": 690.0, "dy": 115.0},
+      //   "size": {"width": 436.0, "height": 574.0},
+      //   "content": {"assetName": "assets/Farman.png"},
+      //   "status": 0,
+      //   "isCentered": false,
+      //   "lockZOrder": true,
+      //   "isProfileImage": true,
+      // };
+      // exportedItems.add(StackImageItem.fromJson(profile).toJson());
     }
 
     for (final itemJson in currentItems) {
@@ -254,6 +251,20 @@ class EditorController extends GetxController {
     controller.canvasHeight.value = scaledCanvasHeight;
     controller.boardController.clear();
     controller.profileImageItems.clear(); // CHANGED: Clear profile images list
+
+    // final dummy = {
+    //   "type": "StackImageItem",
+    //   "id": "profile_image_1698765432100",
+    //   "offset": {"dx": 555.0, "dy": 1077.0},
+    //   "size": {"width": 791.0, "height": 778.0},
+    //   "content": {"assetName": "assets/Farman.png"},
+    //   "status": 0,
+    //   "isCentered": false,
+    //   "lockZOrder": true,
+    //   "isProfileImage": true,
+    // };
+
+    // profileImageItems.add(StackImageItem.fromJson(dummy));
 
     for (final itemJson in template.items) {
       try {
@@ -399,7 +410,7 @@ class EditorController extends GetxController {
     _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));
     _redoStack.clear();
     _updateSpatialIndex();
-    activeItem.value = textItem;
+    // activeItem.value = textItem;
   }
 
   void updateBackgroundHue(double hue) {
@@ -507,23 +518,6 @@ class EditorController extends GetxController {
     _updateSpatialIndex();
   }
 
-  void onItemOffsetChanged(StackItem item, Offset offset) {
-    if (draggedItem.value?.id != item.id) return;
-    if (_dragStart == null) {
-      _dragStart = offset;
-      _lastOffset = offset;
-      draggedItem.value = item.copyWith(offset: offset);
-      return;
-    }
-    final double distance = (offset - _dragStart!).distance;
-    if (distance < _dragThreshold && _lastOffset != null) {
-      draggedItem.value = item.copyWith(offset: _lastOffset!);
-      return;
-    }
-    _lastOffset = offset;
-    draggedItem.value = item.copyWith(offset: offset);
-  }
-
   void onItemSizeChanged(StackItem item, Size newSize) {
     final currentItemJson = boardController.getAllData().firstWhere(
       (json) => json['id'] == item.id,
@@ -558,12 +552,8 @@ class EditorController extends GetxController {
     if (status == StackItemStatus.moving) {
       draggedItem.value = item;
       activeItem.value = null;
-      _dragStart = null;
-      _lastOffset = null;
     } else if (status == StackItemStatus.selected) {
       draggedItem.value = null;
-      _dragStart = null;
-      _lastOffset = null;
       alignmentPoints.value = [];
     } else if (status == StackItemStatus.idle) {
       if (draggedItem.value?.id == item.id) {
