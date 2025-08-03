@@ -14,6 +14,7 @@
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
@@ -408,16 +409,18 @@ class EditorController extends GetxController {
       offset = Offset(100, 100);
       size = const Size(200, 50);
     }
+
+    final content = TextItemContent(
+      data: data,
+      googleFont: 'Roboto',
+      style: const TextStyle(fontSize: 24, color: Colors.black),
+      textAlign: TextAlign.center,
+    );
     final textItem = StackTextItem(
       id: UniqueKey().toString(),
-      size: size,
+      size: getTextWidth(text: data, style: content.style!),
       offset: offset,
-      content: TextItemContent(
-        data: data,
-        googleFont: 'Roboto',
-        style: const TextStyle(fontSize: 24, color: Colors.black),
-        textAlign: TextAlign.center,
-      ),
+      content: content,
     );
     boardController.addItem(textItem);
     _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));

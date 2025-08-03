@@ -168,7 +168,7 @@ class EditorPage extends GetView<EditorController> {
                         "Rendering item: ${item.id}, type: ${item.runtimeType}",
                       );
                       return (item is StackTextItem && item.content != null)
-                          ? StackTextCase(item: item, isFitted: false)
+                          ? StackTextCase(item: item, isFitted: true)
                           : (item is StackImageItem && item.content != null)
                           ? StackImageCase(item: item)
                           : (item is ColorStackItem1 && item.content != null)
@@ -469,7 +469,8 @@ class EditorPage extends GetView<EditorController> {
       floatingActionButton: FloatingActionButton(
         heroTag: 'addText',
         onPressed: () {
-          controller.addText("550 board way hiland ");
+          controller.addText('''Hi i Love you my
+how are you brother ''');
         },
         tooltip: 'Add Text',
         child: const Icon(Icons.text_fields),
@@ -1062,8 +1063,8 @@ class _BorderPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = Get.find<EditorController>().draggedItem.value == null
-          ? Colors.blue
-          : Colors.red
+          ? AppColors.accent
+          : AppColors.accent
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke;
 

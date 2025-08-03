@@ -218,7 +218,10 @@ class TextStyleController extends GetxController {
         maxLines: null,
       );
 
-      const double maxWidth = 200.0;
+      // const double maxWidth = 200.0; //for not using fittedbox
+
+      const double maxWidth = 800.0;
+
       painter.layout(maxWidth: maxWidth);
 
       final width = painter.width.clamp(50.0, maxWidth);
