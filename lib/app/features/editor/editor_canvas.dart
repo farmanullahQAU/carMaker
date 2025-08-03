@@ -19,6 +19,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:photo_view/photo_view.dart';
 import 'package:screenshot/screenshot.dart';
 
+// Define panel types as an enum
+enum PanelType { none, stickers, color, text, shapes }
+
 class EditorPage extends GetView<EditorController> {
   EditorPage({super.key});
 
@@ -28,6 +31,10 @@ class EditorPage extends GetView<EditorController> {
   final Rx<StackImageItem?> activePhotoItem = Rx<StackImageItem?>(
     null,
   ); // Track active PhotoView
+
+  // Single state to manage active panel
+  final Rx<PanelType> activePanel = PanelType.none.obs;
+
   StackItem deserializeItem(Map<String, dynamic> itemJson) {
     final type = itemJson['type'];
     if (type == 'StackTextItem') {
@@ -45,10 +52,6 @@ class EditorPage extends GetView<EditorController> {
     required bool showGrid,
     required bool showBorders,
     required GlobalKey stackBoardKey,
-    required RxBool showTextPanel,
-    required RxBool showStickerPanel,
-    required RxBool showHueSlider,
-    required RxBool showShapePanel,
     required RxDouble canvasScale,
     required RxDouble scaledCanvasWidth,
     required RxDouble scaledCanvasHeight,
@@ -144,9 +147,6 @@ class EditorPage extends GetView<EditorController> {
                         activePhotoItem.value = tappedItem;
                         allowTouch.value =
                             true; // Lock StackBoard for this PhotoView
-                        controller.boardController.setAllItemStatuses(
-                          StackItemStatus.idle,
-                        );
                       } else {
                         print(
                           "Touched outside PhotoView areas, enabling StackBoard.",
@@ -161,39 +161,16 @@ class EditorPage extends GetView<EditorController> {
                   ignoring: allowTouch.value,
                   child: StackBoard(
                     key: stackBoardKey,
-                    background: InkWell(
-                      onTap: showGrid
-                          ? () {
-                              controller.boardController.setAllItemStatuses(
-                                StackItemStatus.idle,
-                              );
-                              controller.activeItem.value = null;
-                              showTextPanel.value = true;
-                              showStickerPanel.value = false;
-                              showHueSlider.value = false;
-                              showShapePanel.value = false;
-                            }
-                          : null,
-                    ),
+
                     controller: controller.boardController,
                     customBuilder: (StackItem<StackItemContent> item) {
                       print(
                         "Rendering item: ${item.id}, type: ${item.runtimeType}",
                       );
                       return (item is StackTextItem && item.content != null)
-                          ? Container(
-                              color: showGrid
-                                  ? Colors.red.withOpacity(0.2)
-                                  : null,
-                              child: StackTextCase(item: item),
-                            )
+                          ? StackTextCase(item: item)
                           : (item is StackImageItem && item.content != null)
-                          ? Container(
-                              color: showGrid
-                                  ? Colors.blue.withOpacity(0.1)
-                                  : null,
-                              child: StackImageCase(item: item),
-                            )
+                          ? StackImageCase(item: item)
                           : (item is ColorStackItem1 && item.content != null)
                           ? Container(
                               width: item.size.width,
@@ -213,6 +190,7 @@ class EditorPage extends GetView<EditorController> {
                             )
                           : const SizedBox.shrink();
                     },
+
                     borderBuilder: showBorders
                         ? (status, item) {
                             final CaseStyle style = CaseStyle();
@@ -243,52 +221,34 @@ class EditorPage extends GetView<EditorController> {
                             );
                           }
                         : (status, item) => const SizedBox.shrink(),
-                    onTap: showGrid
-                        ? (item) {
-                            controller.activeItem.value = item;
-                          }
-                        : null,
-
                     onDel: (item) =>
                         controller.boardController.removeById(item.id),
                     onStatusChanged: (item, status) {
+                      print(
+                        "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv $status",
+                      );
                       print("Item ${item.id} status changed to $status");
                       if (status == StackItemStatus.selected) {
-                        controller.activeItem.value = controller.boardController
-                            .getById(item.id);
+                        controller.activeItem.value = item;
                         if (item is StackTextItem) {
                           print("Selected StackTextItem: ${item.id}");
-                          showTextPanel.value = true;
-                          showStickerPanel.value = false;
-                          showHueSlider.value = false;
-                          showShapePanel.value = false;
+                          activePanel.value = PanelType.text;
                         } else {
-                          showTextPanel.value = false;
-                          showStickerPanel.value = false;
-                          showHueSlider.value = false;
-                          showShapePanel.value = false;
+                          activePanel.value = PanelType.none;
                         }
                         controller.draggedItem.value =
                             null; // Clear dragged item
                         controller.alignmentPoints.value =
                             []; // Clear alignment points
                       } else if (status == StackItemStatus.moving) {
+                        activePanel.value = PanelType.none;
                         controller.draggedItem.value = item; // Set dragged item
-                        // Do not clear activeItem to prevent reset during drag
                       } else if (status == StackItemStatus.idle) {
+                        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+                        activePanel.value = PanelType.none;
                         if (controller.draggedItem.value?.id == item.id) {
                           controller.draggedItem.value =
                               null; // Clear dragged item
-                        }
-                        if (controller.activeItem.value?.id == item.id) {
-                          controller.activeItem.value =
-                              null; // Clear active item only if not selected
-                          showTextPanel.value = false;
-                          showStickerPanel.value = false;
-                          showHueSlider.value = false;
-                          showShapePanel.value = false;
-                          controller.alignmentPoints.value =
-                              []; // Clear alignment points
                         }
                       }
                       return true;
@@ -327,19 +287,12 @@ class EditorPage extends GetView<EditorController> {
   @override
   Widget build(BuildContext context) {
     final GlobalKey stackBoardKey = GlobalKey();
-    final RxBool showHueSlider = false.obs;
-    final RxBool showStickerPanel = false.obs;
-    final RxBool showShapePanel = false.obs;
-    final RxBool showTextPanel = false.obs;
-
-    final RxInt selectedToolIndex = 0.obs;
     final RxBool isTemplateLoaded = false.obs;
     final RxDouble canvasScale = 1.0.obs;
     final RxDouble scaledCanvasWidth = 0.0.obs;
     final RxDouble scaledCanvasHeight = 0.0.obs;
 
     void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
-      print("ccccccccccccccccccccc");
       if (isTemplateLoaded.value) return;
 
       final double availableWidth = constraints.maxWidth * 0.9;
@@ -378,8 +331,7 @@ class EditorPage extends GetView<EditorController> {
 
     Future<void> exportAsPDF() async {
       try {
-        print(scaledCanvasWidth.value);
-        print(canvasScale.value);
+        controller.boardController.unSelectAll();
         final exportKey = GlobalKey();
         final image = await screenshotController.captureFromWidget(
           Material(
@@ -391,10 +343,6 @@ class EditorPage extends GetView<EditorController> {
                 showGrid: false,
                 showBorders: false,
                 stackBoardKey: GlobalKey(),
-                showTextPanel: showTextPanel,
-                showStickerPanel: showStickerPanel,
-                showHueSlider: showHueSlider,
-                showShapePanel: showShapePanel,
                 canvasScale: canvasScale,
                 scaledCanvasWidth: scaledCanvasWidth,
                 scaledCanvasHeight: scaledCanvasHeight,
@@ -461,10 +409,6 @@ class EditorPage extends GetView<EditorController> {
               showGrid: false,
               showBorders: false,
               stackBoardKey: GlobalKey(),
-              showTextPanel: showTextPanel,
-              showStickerPanel: showStickerPanel,
-              showHueSlider: showHueSlider,
-              showShapePanel: showShapePanel,
               canvasScale: canvasScale,
               scaledCanvasWidth: scaledCanvasWidth,
               scaledCanvasHeight: scaledCanvasHeight,
@@ -493,34 +437,37 @@ class EditorPage extends GetView<EditorController> {
       }
     }
 
-    return Scaffold(
-      bottomSheet: BottomSheet(
-        onClosing: () {},
-        builder: (_) => Obx(() {
-          return AnimatedSize(
-            duration: Duration(milliseconds: 200),
+    Widget buildPanelContent() {
+      if (activePanel.value == PanelType.stickers) {
+        return _StickerPanel(controller: controller);
+      } else if (activePanel.value == PanelType.color) {
+        return _HueAdjustmentPanel(controller: controller);
+      } else if (activePanel.value == PanelType.text &&
+          controller.activeItem.value is StackTextItem) {
+        return _TextEditorPanel(
+          key: ValueKey(controller.activeItem.value!.id),
+          controller: controller,
+          textItem: controller.activeItem.value as StackTextItem,
+        );
+      } else if (activePanel.value == PanelType.shapes) {
+        return _ShapePanel(controller: controller);
+      }
+      return const SizedBox.shrink();
+    }
 
-            child: showStickerPanel.value
-                ? _StickerPanel(controller: controller)
-                : showHueSlider.value
-                ? _HueAdjustmentPanel(controller: controller)
-                : controller.activeItem.value != null &&
-                      controller.activeItem.value is StackTextItem
-                ? showHueSlider.value
-                      ? _HueAdjustmentPanel(controller: controller)
-                      : _TextEditorPanel(
-                          key: ValueKey(controller.activeItem.value!.id),
-                          controller: controller,
-                          textItem:
-                              controller.activeItem.value as StackTextItem,
-                          showTextPanel: showTextPanel,
-                        )
-                : const SizedBox.shrink(),
-          );
-        }),
-      ),
+    return Scaffold(
+      bottomSheet: Obx(() {
+        if (activePanel.value == PanelType.none) return SizedBox.shrink();
+
+        return AnimatedSize(
+          duration: Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: buildPanelContent(),
+        );
+      }),
+
       appBar: AppBar(
-        title: Obx(() => Text(allowTouch.value.toString())), // Debug allowTouch
+        title: Obx(() => Text("Active Panel: ${activePanel.value}")),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -534,9 +481,7 @@ class EditorPage extends GetView<EditorController> {
           ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () {
-              exportAsPDF();
-            },
+            onPressed: () => exportAsPDF(),
             tooltip: 'Export as PDF',
           ),
           IconButton(
@@ -546,119 +491,111 @@ class EditorPage extends GetView<EditorController> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  SchedulerBinding.instance.addPostFrameCallback((_) {
-                    updateCanvasAndLoadTemplate(constraints);
-                    print(
-                      "ddddddddddddddddddddddddddddddddddddds...... ${canvasScale.value}",
-                    );
-                  });
+      body: GestureDetector(
+        onTap: () {
+          activePanel.value = PanelType.none;
+        },
 
-                  return _buildCanvasStack(
-                    showGrid: true,
-                    showBorders: true,
-                    stackBoardKey: stackBoardKey,
-                    showTextPanel: showTextPanel,
-                    showStickerPanel: showStickerPanel,
-                    showHueSlider: showHueSlider,
-                    showShapePanel: showShapePanel,
-                    canvasScale: canvasScale,
-                    scaledCanvasWidth: scaledCanvasWidth,
-                    scaledCanvasHeight: scaledCanvasHeight,
-                  );
-                },
-              ),
-            ),
-          ),
-          SafeArea(
-            bottom: true,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Obx(
-                    () => _ToolbarButton(
-                      icon: Icons.emoji_emotions_outlined,
-                      label: 'Stickers',
-                      onPressed: () {
-                        selectedToolIndex.value = 1;
-                        showStickerPanel.value = selectedToolIndex.value == 1;
-                        showHueSlider.value = false;
-                        showShapePanel.value = false;
-                        showTextPanel.value = false;
-                      },
-                      isActive: selectedToolIndex.value == 1,
-                    ),
-                  ),
-                  Obx(
-                    () => _ToolbarButton(
-                      icon: Icons.palette_outlined,
-                      label: 'Color',
-                      onPressed: () {
-                        selectedToolIndex.value = 2;
-                        showHueSlider.value = selectedToolIndex.value == 2;
-                        showStickerPanel.value = false;
-                        showShapePanel.value = false;
-                        showTextPanel.value = true;
-                      },
-                      isActive: selectedToolIndex.value == 2,
-                    ),
-                  ),
-                  Obx(
-                    () => _ToolbarButton(
-                      icon: Icons.text_fields,
-                      label: 'Text',
-                      onPressed: () {
-                        selectedToolIndex.value = selectedToolIndex.value = 3;
-                        showTextPanel.value = selectedToolIndex.value == 3;
-                        showStickerPanel.value = false;
-                        showHueSlider.value = false;
-                        showShapePanel.value = false;
-                        if (controller.activeItem.value == null ||
-                            controller.activeItem.value is! StackTextItem) {
-                          controller.addText(
-                            "New Text",
-                            size: const Size(100, 50),
+        child: Container(
+          color: Colors.transparent,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: LayoutBuilder(
+                    builder:
+                        (BuildContext context, BoxConstraints constraints) {
+                          SchedulerBinding.instance.addPostFrameCallback((_) {
+                            updateCanvasAndLoadTemplate(constraints);
+                          });
+                          return _buildCanvasStack(
+                            showGrid: true,
+                            showBorders: true,
+                            stackBoardKey: stackBoardKey,
+                            canvasScale: canvasScale,
+                            scaledCanvasWidth: scaledCanvasWidth,
+                            scaledCanvasHeight: scaledCanvasHeight,
                           );
-                        }
-                      },
-                      isActive: selectedToolIndex.value == 3,
-                    ),
+                        },
                   ),
-                  Obx(
-                    () => _ToolbarButton(
-                      icon: Icons.shape_line_outlined,
-                      label: 'Shapes',
-                      onPressed: () {
-                        selectedToolIndex.value = selectedToolIndex.value == 4
-                            ? 0
-                            : 4;
-                        showShapePanel.value = selectedToolIndex.value == 4;
-                        showStickerPanel.value = false;
-                        showHueSlider.value = false;
-                        showTextPanel.value = false;
-                      },
-                      isActive: selectedToolIndex.value == 4,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              SafeArea(
+                bottom: true,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Get.theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _ToolbarButton(
+                        icon: Icons.emoji_emotions_outlined,
+                        label: 'Stickers',
+                        panelType: PanelType.stickers,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.stickers
+                              ? PanelType.none
+                              : PanelType.stickers;
+                        },
+                      ),
+                      _ToolbarButton(
+                        icon: Icons.palette_outlined,
+                        label: 'Color',
+                        panelType: PanelType.color,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.color
+                              ? PanelType.none
+                              : PanelType.color;
+                        },
+                      ),
+                      _ToolbarButton(
+                        icon: Icons.text_fields,
+                        label: 'Text',
+                        panelType: PanelType.text,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.text
+                              ? PanelType.none
+                              : PanelType.text;
+                          if (controller.activeItem.value == null ||
+                              controller.activeItem.value is! StackTextItem) {
+                            controller.addText(
+                              "New Text",
+                              size: const Size(100, 50),
+                            );
+                          }
+                        },
+                      ),
+                      _ToolbarButton(
+                        icon: Icons.shape_line_outlined,
+                        label: 'Shapes',
+                        panelType: PanelType.shapes,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.shapes
+                              ? PanelType.none
+                              : PanelType.shapes;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -700,40 +637,62 @@ class EditorPage extends GetView<EditorController> {
 class _ToolbarButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final PanelType panelType;
+  final Rx<PanelType> activePanel;
   final VoidCallback onPressed;
-  final bool isActive;
 
   const _ToolbarButton({
     required this.icon,
     required this.label,
+    required this.panelType,
+    required this.activePanel,
     required this.onPressed,
-    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          child: IconButton(
+    return Obx(
+      () => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
             style: IconButton.styleFrom(
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             icon: Icon(icon),
-            color: isActive ? AppColors.branding : AppColors.highlight,
+            color: activePanel.value == panelType
+                ? AppColors.branding
+                : AppColors.highlight,
             onPressed: onPressed,
             tooltip: label,
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isActive ? AppColors.branding : AppColors.highlight,
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: activePanel.value == panelType
+                  ? AppColors.branding
+                  : AppColors.highlight,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+// Placeholder for ShapePanel (implement as needed)
+class _ShapePanel extends StatelessWidget {
+  final EditorController controller;
+
+  const _ShapePanel({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 100,
+      color: Colors.grey[200],
+      child: Center(child: Text('Shapes Panel (Implement as needed)')),
     );
   }
 }
@@ -1067,24 +1026,21 @@ class _HueAdjustmentPanel extends StatelessWidget {
 class _TextEditorPanel extends StatelessWidget {
   final EditorController controller;
   final StackTextItem textItem;
-  final RxBool showTextPanel; // Add showTextPanel parameter
 
   const _TextEditorPanel({
     super.key,
     required this.controller,
     required this.textItem,
-    required this.showTextPanel,
   });
 
   @override
   Widget build(BuildContext context) {
-    print("Building TextEditorPanel for item: ${textItem.id}, isCircular");
     return TextStylingEditor(
       key: ValueKey(textItem.id), // Force rebuild on item change
       textItem: textItem,
       onClose: () {
-        controller.activeItem.value = null;
-        showTextPanel.value = false; // Update visibility
+        // controller.activeItem.value = null;
+        // showTextPanel.value = false; // Update visibility
       },
     );
   }
@@ -1520,71 +1476,4 @@ class ExportPreviewPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class HoleClipper extends CustomClipper<Path> {
-  final scale = 0.285;
-  @override
-  Path getClip(Size size) {
-    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    // Define the hole (example: circular hole at x=690, y=115)
-    final holeRect = Rect.fromLTWH(
-      690 * scale, // left
-      115 * scale, // top
-      436 * scale, // width
-      574 * scale, // height
-    );
-
-    path.addOval(holeRect);
-    path.fillType = PathFillType.evenOdd;
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class TransparentHoleMask extends StatelessWidget {
-  final double width;
-  final double height;
-
-  const TransparentHoleMask({
-    super.key,
-    required this.width,
-    required this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      // Don't block gestures!
-      child: CustomPaint(size: Size(width, height), painter: HolePainter()),
-    );
-  }
-}
-
-class HolePainter extends CustomPainter {
-  final double scale = 0.285;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withOpacity(0.7);
-    final hole = Rect.fromLTWH(
-      690 * scale,
-      115 * scale,
-      436 * scale,
-      574 * scale,
-    );
-
-    final path = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addOval(hole)
-      ..fillType = PathFillType.evenOdd;
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
