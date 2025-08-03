@@ -394,11 +394,24 @@ class EditorController extends GetxController {
     _updateSpatialIndex();
   }
 
-  void addText(String data, {Size? size}) {
+  void addText(String data) {
+    Offset offset;
+    Size size;
+    if (activeItem.value != null && activeItem.value is StackTextItem) {
+      //we will put the new text down and a little right to the previous one like moder text editor
+      offset = Offset(
+        activeItem.value!.offset.dx + 20,
+        activeItem.value!.offset.dy + 40,
+      );
+      size = activeItem.value!.size;
+    } else {
+      offset = Offset(100, 100);
+      size = const Size(200, 50);
+    }
     final textItem = StackTextItem(
       id: UniqueKey().toString(),
-      size: size ?? const Size(200, 50),
-      offset: getCenteredOffset(size ?? const Size(200, 50)),
+      size: size,
+      offset: offset,
       content: TextItemContent(
         data: data,
         googleFont: 'Roboto',
@@ -410,7 +423,7 @@ class EditorController extends GetxController {
     _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));
     _redoStack.clear();
     _updateSpatialIndex();
-    // activeItem.value = textItem;
+    activeItem.value = textItem;
   }
 
   void updateBackgroundHue(double hue) {

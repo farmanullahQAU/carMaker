@@ -168,7 +168,7 @@ class EditorPage extends GetView<EditorController> {
                         "Rendering item: ${item.id}, type: ${item.runtimeType}",
                       );
                       return (item is StackTextItem && item.content != null)
-                          ? StackTextCase(item: item)
+                          ? StackTextCase(item: item, isFitted: false)
                           : (item is StackImageItem && item.content != null)
                           ? StackImageCase(item: item)
                           : (item is ColorStackItem1 && item.content != null)
@@ -466,6 +466,14 @@ class EditorPage extends GetView<EditorController> {
         );
       }),
 
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'addText',
+        onPressed: () {
+          controller.addText("550 board way hiland ");
+        },
+        tooltip: 'Add Text',
+        child: const Icon(Icons.text_fields),
+      ),
       appBar: AppBar(
         title: Obx(() => Text("Active Panel: ${activePanel.value}")),
         actions: [
@@ -568,12 +576,8 @@ class EditorPage extends GetView<EditorController> {
                               activePanel.value == PanelType.text
                               ? PanelType.none
                               : PanelType.text;
-                          if (controller.activeItem.value == null ||
-                              controller.activeItem.value is! StackTextItem) {
-                            controller.addText(
-                              "New Text",
-                              size: const Size(100, 50),
-                            );
+                          if (controller.activeItem.value == null) {
+                            controller.addText("New Text");
                           }
                         },
                       ),
@@ -936,7 +940,7 @@ class _StickerPanel extends StatelessWidget {
                         bottom: true,
                         child: GestureDetector(
                           onTap: () {
-                            controller.addText(sticker, size: Size(100, 100));
+                            controller.addText(sticker);
                           },
                           child: Container(
                             decoration: BoxDecoration(

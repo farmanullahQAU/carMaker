@@ -115,7 +115,7 @@ class CanvasSelectionController extends GetxController {
           "id": "profile_image_1698765432100",
           "offset": {"dx": 555.0, "dy": 1077.0},
           "size": {"width": 791.0, "height": 778.0},
-          "content": {"assetName": "assets/Farman.png"},
+          "content": {"assetName": "assets/hisham.jpeg"},
           "status": 0,
           "isCentered": false,
           "lockZOrder": true,
