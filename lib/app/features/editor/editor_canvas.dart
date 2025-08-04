@@ -163,10 +163,16 @@ class EditorPage extends GetView<EditorController> {
                     key: stackBoardKey,
 
                     controller: controller.boardController,
+                    background: InkWell(
+                      onTap: () {
+                        controller.boardController.setAllItemStatuses(
+                          StackItemStatus.idle,
+                        );
+
+                        activePanel.value = PanelType.none;
+                      },
+                    ),
                     customBuilder: (StackItem<StackItemContent> item) {
-                      print(
-                        "Rendering item: ${item.id}, type: ${item.runtimeType}",
-                      );
                       return (item is StackTextItem && item.content != null)
                           ? StackTextCase(item: item, isFitted: true)
                           : (item is StackImageItem && item.content != null)
@@ -224,10 +230,6 @@ class EditorPage extends GetView<EditorController> {
                     onDel: (item) =>
                         controller.boardController.removeById(item.id),
                     onStatusChanged: (item, status) {
-                      print(
-                        "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv $status",
-                      );
-                      print("Item ${item.id} status changed to $status");
                       if (status == StackItemStatus.selected) {
                         controller.activeItem.value = item;
                         if (item is StackTextItem) {
@@ -244,7 +246,6 @@ class EditorPage extends GetView<EditorController> {
                         activePanel.value = PanelType.none;
                         controller.draggedItem.value = item; // Set dragged item
                       } else if (status == StackItemStatus.idle) {
-                        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
                         activePanel.value = PanelType.none;
                         if (controller.draggedItem.value?.id == item.id) {
                           controller.draggedItem.value =
@@ -291,6 +292,7 @@ class EditorPage extends GetView<EditorController> {
     final RxDouble canvasScale = 1.0.obs;
     final RxDouble scaledCanvasWidth = 0.0.obs;
     final RxDouble scaledCanvasHeight = 0.0.obs;
+    final RxBool isExporting = false.obs;
 
     void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
       if (isTemplateLoaded.value) return;
@@ -331,6 +333,7 @@ class EditorPage extends GetView<EditorController> {
 
     Future<void> exportAsPDF() async {
       try {
+        isExporting.value = true;
         controller.boardController.unSelectAll();
         final exportKey = GlobalKey();
         final image = await screenshotController.captureFromWidget(
@@ -339,13 +342,16 @@ class EditorPage extends GetView<EditorController> {
               width: scaledCanvasWidth.value,
               height: scaledCanvasHeight.value,
               key: exportKey,
-              child: _buildCanvasStack(
-                showGrid: false,
-                showBorders: false,
-                stackBoardKey: GlobalKey(),
-                canvasScale: canvasScale,
-                scaledCanvasWidth: scaledCanvasWidth,
-                scaledCanvasHeight: scaledCanvasHeight,
+              child: Transform.scale(
+                scale: 0.95,
+                child: _buildCanvasStack(
+                  showGrid: false,
+                  showBorders: false,
+                  stackBoardKey: GlobalKey(),
+                  canvasScale: canvasScale,
+                  scaledCanvasWidth: scaledCanvasWidth,
+                  scaledCanvasHeight: scaledCanvasHeight,
+                ),
               ),
             ),
           ),
@@ -385,6 +391,8 @@ class EditorPage extends GetView<EditorController> {
             'Error',
             'Failed to create PDF file',
             snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.shade100,
+            colorText: Colors.red.shade900,
           );
         }
       } catch (e, s) {
@@ -393,12 +401,17 @@ class EditorPage extends GetView<EditorController> {
           'Error',
           'Failed to export PDF due to widget issue',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
         );
+      } finally {
+        isExporting.value = false;
       }
     }
 
     Future<void> exportAsImage() async {
       try {
+        isExporting.value = true;
         final exportKey = GlobalKey();
         final image = await screenshotController.captureFromWidget(
           SizedBox(
@@ -423,8 +436,10 @@ class EditorPage extends GetView<EditorController> {
         await file.writeAsBytes(image);
         Get.snackbar(
           'Success',
-          'Image exported to ${file.path}',
+          'Image exported successfully',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
         );
         Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
       } catch (e, s) {
@@ -433,7 +448,11 @@ class EditorPage extends GetView<EditorController> {
           'Error',
           'Failed to export image due to widget issue',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
         );
+      } finally {
+        isExporting.value = false;
       }
     }
 
@@ -456,95 +475,201 @@ class EditorPage extends GetView<EditorController> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
+
+      // Professional App Bar
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.grey[800],
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit, size: 16, color: Colors.blue.shade700),
+                  SizedBox(width: 4),
+                  Text(
+                    'Editor',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          // Undo/Redo Group
+          Container(
+            margin: EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.undo, size: 20),
+                  onPressed: controller.undo,
+                  tooltip: 'Undo',
+                  color: Colors.grey[700],
+                ),
+                Container(width: 1, height: 20, color: Colors.grey.shade300),
+                IconButton(
+                  icon: Icon(Icons.redo, size: 20),
+                  onPressed: controller.redo,
+                  tooltip: 'Redo',
+                  color: Colors.grey[700],
+                ),
+              ],
+            ),
+          ),
+
+          // Export Button with Menu
+          _ExportMenuButton(
+            onExportPDF: exportAsPDF,
+            onExportImage: exportAsImage,
+            onSave: () => controller.exportDesign(),
+            isExporting: isExporting,
+          ),
+
+          SizedBox(width: 16),
+        ],
+      ),
+
+      // Dynamic Bottom Sheet for Panels
       bottomSheet: Obx(() {
         if (activePanel.value == PanelType.none) return SizedBox.shrink();
 
-        return AnimatedSize(
-          duration: Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          child: buildPanelContent(),
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Panel Header
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _getPanelIcon(activePanel.value),
+                      size: 20,
+                      color: AppColors.branding,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      _getPanelTitle(activePanel.value),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.close, size: 20),
+                      onPressed: () => activePanel.value = PanelType.none,
+                      color: Colors.grey[600],
+                    ),
+                  ],
+                ),
+              ),
+              // Panel Content
+              AnimatedSize(
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: buildPanelContent(),
+              ),
+            ],
+          ),
         );
       }),
 
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addText',
-        onPressed: () {
-          controller.addText('''Hi i Love you my
-how are you brother ''');
-        },
-        tooltip: 'Add Text',
-        child: const Icon(Icons.text_fields),
-      ),
-      appBar: AppBar(
-        title: Obx(() => Text("Active Panel: ${activePanel.value}")),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () => controller.exportDesign(),
-            tooltip: 'Export',
-          ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            onPressed: controller.redo,
-            tooltip: 'Redo',
-          ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () => exportAsPDF(),
-            tooltip: 'Export as PDF',
-          ),
-          IconButton(
-            icon: const Icon(Icons.image),
-            onPressed: () => exportAsImage(),
-            tooltip: 'Export as Image',
-          ),
-        ],
-      ),
+      // Main Body
       body: GestureDetector(
         onTap: () {
           activePanel.value = PanelType.none;
         },
-
         child: Container(
           color: Colors.transparent,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Canvas Area
               Expanded(
                 child: Align(
                   alignment: Alignment.topCenter,
-                  child: LayoutBuilder(
-                    builder:
-                        (BuildContext context, BoxConstraints constraints) {
-                          SchedulerBinding.instance.addPostFrameCallback((_) {
-                            updateCanvasAndLoadTemplate(constraints);
-                          });
-                          return _buildCanvasStack(
-                            showGrid: true,
-                            showBorders: true,
-                            stackBoardKey: stackBoardKey,
-                            canvasScale: canvasScale,
-                            scaledCanvasWidth: scaledCanvasWidth,
-                            scaledCanvasHeight: scaledCanvasHeight,
-                          );
-                        },
+                  child: Material(
+                    elevation: 10,
+                    // alignment: Alignment.topCenter,
+
+                    // margin: EdgeInsets.all(16),
+                    child: LayoutBuilder(
+                      builder:
+                          (BuildContext context, BoxConstraints constraints) {
+                            SchedulerBinding.instance.addPostFrameCallback((_) {
+                              updateCanvasAndLoadTemplate(constraints);
+                            });
+                            return _buildCanvasStack(
+                              showGrid: true,
+                              showBorders: true,
+                              stackBoardKey: stackBoardKey,
+                              canvasScale: canvasScale,
+                              scaledCanvasWidth: scaledCanvasWidth,
+                              scaledCanvasHeight: scaledCanvasHeight,
+                            );
+                          },
+                    ),
                   ),
                 ),
               ),
+
+              // Professional Toolbar
               SafeArea(
-                bottom: true,
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Get.theme.colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _ToolbarButton(
+                      _ProfessionalToolbarButton(
                         icon: Icons.emoji_emotions_outlined,
+                        activeIcon: Icons.emoji_emotions,
                         label: 'Stickers',
                         panelType: PanelType.stickers,
                         activePanel: activePanel,
@@ -555,9 +680,10 @@ how are you brother ''');
                               : PanelType.stickers;
                         },
                       ),
-                      _ToolbarButton(
+                      _ProfessionalToolbarButton(
                         icon: Icons.palette_outlined,
-                        label: 'Color',
+                        activeIcon: Icons.palette,
+                        label: 'Colors',
                         panelType: PanelType.color,
                         activePanel: activePanel,
                         onPressed: () {
@@ -567,23 +693,27 @@ how are you brother ''');
                               : PanelType.color;
                         },
                       ),
-                      _ToolbarButton(
-                        icon: Icons.text_fields,
+                      _ProfessionalToolbarButton(
+                        icon: Icons.text_fields_outlined,
+                        activeIcon: Icons.text_fields,
                         label: 'Text',
                         panelType: PanelType.text,
                         activePanel: activePanel,
                         onPressed: () {
-                          activePanel.value =
-                              activePanel.value == PanelType.text
-                              ? PanelType.none
-                              : PanelType.text;
-                          if (controller.activeItem.value == null) {
-                            controller.addText("New Text");
+                          if (activePanel.value == PanelType.text) {
+                            activePanel.value = PanelType.none;
+                          } else {
+                            if (controller.activeItem.value == null ||
+                                controller.activeItem.value is! StackTextItem) {
+                              controller.addText("Tap to edit text");
+                            }
+                            activePanel.value = PanelType.text;
                           }
                         },
                       ),
-                      _ToolbarButton(
-                        icon: Icons.shape_line_outlined,
+                      _ProfessionalToolbarButton(
+                        icon: Icons.outbond,
+                        activeIcon: Icons.outbond_outlined,
                         label: 'Shapes',
                         panelType: PanelType.shapes,
                         activePanel: activePanel,
@@ -603,6 +733,37 @@ how are you brother ''');
         ),
       ),
     );
+  }
+
+  // Helper methods for panel management
+  IconData _getPanelIcon(PanelType panelType) {
+    switch (panelType) {
+      case PanelType.stickers:
+        return Icons.emoji_emotions;
+      case PanelType.color:
+        return Icons.palette;
+      case PanelType.text:
+        return Icons.text_fields;
+      case PanelType.shapes:
+        return Icons.shape_line;
+      case PanelType.none:
+        return Icons.help_outline;
+    }
+  }
+
+  String _getPanelTitle(PanelType panelType) {
+    switch (panelType) {
+      case PanelType.stickers:
+        return 'Stickers & Emojis';
+      case PanelType.color:
+        return 'Background Colors';
+      case PanelType.text:
+        return 'Text Styling';
+      case PanelType.shapes:
+        return 'Shapes & Elements';
+      case PanelType.none:
+        return 'Unknown';
+    }
   }
 
   List<double> _hueMatrix(double degrees) {
@@ -1028,28 +1189,28 @@ class _HueAdjustmentPanel extends StatelessWidget {
   }
 }
 
-class _TextEditorPanel extends StatelessWidget {
-  final EditorController controller;
-  final StackTextItem textItem;
+// class _TextEditorPanel extends StatelessWidget {
+//   final EditorController controller;
+//   final StackTextItem textItem;
 
-  const _TextEditorPanel({
-    super.key,
-    required this.controller,
-    required this.textItem,
-  });
+//   const _TextEditorPanel({
+//     super.key,
+//     required this.controller,
+//     required this.textItem,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return TextStylingEditor(
-      key: ValueKey(textItem.id), // Force rebuild on item change
-      textItem: textItem,
-      onClose: () {
-        // controller.activeItem.value = null;
-        // showTextPanel.value = false; // Update visibility
-      },
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return TextStylingEditor(
+//       key: ValueKey(textItem.id), // Force rebuild on item change
+//       textItem: textItem,
+//       onClose: () {
+//         // controller.activeItem.value = null;
+//         // showTextPanel.value = false; // Update visibility
+//       },
+//     );
+//   }
+// }
 
 class _BorderPainter extends CustomPainter {
   final bool dotted;
@@ -1478,6 +1639,266 @@ class ExportPreviewPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProfessionalToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final PanelType panelType;
+  final Rx<PanelType> activePanel;
+  final VoidCallback onPressed;
+
+  const _ProfessionalToolbarButton({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.panelType,
+    required this.activePanel,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isActive = activePanel.value == panelType;
+      return GestureDetector(
+        onTap: onPressed,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.branding.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: isActive ? 1.1 : 1.0,
+                duration: Duration(milliseconds: 200),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  color: isActive ? AppColors.branding : Colors.grey[600],
+                  size: 24,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: isActive ? AppColors.branding : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+// Professional Export Menu Button
+class _ExportMenuButton extends StatelessWidget {
+  final VoidCallback onExportPDF;
+  final VoidCallback onExportImage;
+  final VoidCallback onSave;
+  final RxBool isExporting;
+
+  const _ExportMenuButton({
+    required this.onExportPDF,
+    required this.onExportImage,
+    required this.onSave,
+    required this.isExporting,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => PopupMenuButton<String>(
+        offset: Offset(0, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        enabled: !isExporting.value,
+        itemBuilder: (context) => [
+          PopupMenuItem<String>(
+            value: 'save',
+            child: Row(
+              children: [
+                Icon(Icons.save, color: Colors.grey[700], size: 20),
+                SizedBox(width: 12),
+                Text('Save Project'),
+              ],
+            ),
+          ),
+          PopupMenuDivider(),
+          PopupMenuItem<String>(
+            value: 'pdf',
+            child: Row(
+              children: [
+                Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+                SizedBox(width: 12),
+                Text('Export as PDF'),
+              ],
+            ),
+          ),
+          PopupMenuItem<String>(
+            value: 'image',
+            child: Row(
+              children: [
+                Icon(Icons.image, color: Colors.green, size: 20),
+                SizedBox(width: 12),
+                Text('Export as Image'),
+              ],
+            ),
+          ),
+        ],
+        onSelected: (value) {
+          switch (value) {
+            case 'save':
+              onSave();
+              break;
+            case 'pdf':
+              onExportPDF();
+              break;
+            case 'image':
+              onExportImage();
+              break;
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade600, Colors.blue.shade700],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isExporting.value) ...[
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Exporting...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ] else ...[
+                Icon(Icons.download, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Export',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Enhanced Text Editor Panel
+class _TextEditorPanel extends StatelessWidget {
+  final EditorController controller;
+  final StackTextItem textItem;
+
+  const _TextEditorPanel({
+    super.key,
+    required this.controller,
+    required this.textItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(maxHeight: 300),
+
+      child: Column(
+        children: [
+          // Quick Text Edit
+          Container(
+            padding: EdgeInsets.all(16),
+            child: TextField(
+              controller: TextEditingController(text: textItem.content?.data),
+              onChanged: (value) {
+                // Update text content immediately
+                if (textItem.content != null) {
+                  final updatedContent = textItem.content!.copyWith(
+                    data: value,
+                  );
+                  final updatedItem = textItem.copyWith(
+                    content: updatedContent,
+                  );
+                  controller.boardController.updateItem(
+                    // textItem.id,
+                    updatedItem,
+                  );
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'Enter your text here...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: AppColors.branding, width: 2),
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              maxLines: 3,
+              minLines: 1,
+            ),
+          ),
+
+          // Advanced Text Styling
+          Flexible(
+            child: TextStylingEditor(
+              key: ValueKey(textItem.id),
+              textItem: textItem,
+              onClose: () {
+                // Keep the panel open for better UX
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
