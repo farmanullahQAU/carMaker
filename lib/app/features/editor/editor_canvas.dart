@@ -475,69 +475,14 @@ class EditorPage extends GetView<EditorController> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-
       // Professional App Bar
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.grey[800],
-        title: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.edit, size: 16, color: Colors.blue.shade700),
-                  SizedBox(width: 4),
-                  Text(
-                    'Editor',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Undo/Redo Group
-          Container(
-            margin: EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.undo, size: 20),
-                  onPressed: controller.undo,
-                  tooltip: 'Undo',
-                  color: Colors.grey[700],
-                ),
-                Container(width: 1, height: 20, color: Colors.grey.shade300),
-                IconButton(
-                  icon: Icon(Icons.redo, size: 20),
-                  onPressed: controller.redo,
-                  tooltip: 'Redo',
-                  color: Colors.grey[700],
-                ),
-              ],
-            ),
-          ),
 
+        // backgroundColor: Colors.white,
+        actions: [
           // Export Button with Menu
-          _ExportMenuButton(
+          _ModernExportButton(
             onExportPDF: exportAsPDF,
             onExportImage: exportAsImage,
             onSave: () => controller.exportDesign(),
@@ -552,61 +497,45 @@ class EditorPage extends GetView<EditorController> {
       bottomSheet: Obx(() {
         if (activePanel.value == PanelType.none) return SizedBox.shrink();
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Panel Header
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getPanelIcon(activePanel.value),
-                      size: 20,
-                      color: AppColors.branding,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Panel Header
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+
+              child: Row(
+                children: [
+                  Icon(
+                    _getPanelIcon(activePanel.value),
+                    size: 20,
+                    color: AppColors.branding,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    _getPanelTitle(activePanel.value),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      _getPanelTitle(activePanel.value),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.close, size: 20),
-                      onPressed: () => activePanel.value = PanelType.none,
-                      color: Colors.grey[600],
-                    ),
-                  ],
-                ),
+                  ),
+                  Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 20),
+                    onPressed: () => activePanel.value = PanelType.none,
+                    color: Colors.grey[600],
+                  ),
+                ],
               ),
-              // Panel Content
-              AnimatedSize(
-                duration: Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: buildPanelContent(),
-              ),
-            ],
-          ),
+            ),
+            // Panel Content
+            AnimatedSize(
+              duration: Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: buildPanelContent(),
+            ),
+          ],
         );
       }),
 
@@ -653,17 +582,17 @@ class EditorPage extends GetView<EditorController> {
               SafeArea(
                 child: Container(
                   // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                  // decoration: BoxDecoration(
+                  //   color: Colors.white,
+                  //   borderRadius: BorderRadius.circular(16),
+                  //   boxShadow: [
+                  //     BoxShadow(
+                  //       color: Colors.black.withOpacity(0.1),
+                  //       blurRadius: 20,
+                  //       offset: Offset(0, 4),
+                  //     ),
+                  //   ],
+                  // ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -871,61 +800,43 @@ class _StickerPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = {
-      'Greetings': [
-        '💌',
-        '✉️',
-        '📩',
-        '📨',
-        '📧',
-        '📮',
-        '🏷️',
-        '📪',
-        '📫',
-        '📬',
-        '📭',
-        '📯',
-        '🎀',
-        '🎊',
+      'Popular': [
+        '❤️',
+        '😍',
         '🎉',
-        '🎈',
-      ],
-      'Birthday': [
-        '🎂',
-        '🍰',
-        '🧁',
-        '🥮',
-        '🎁',
-        '🎀',
-        '🎊',
-        '🎉',
-        '🎈',
-        '🪅',
-        '🪩',
-        '🎆',
-        '🎇',
         '✨',
         '🌟',
-        '🎗️',
-      ],
-      'Party': [
+        '💝',
+        '🎈',
+        '🎊',
         '🥳',
-        '🎭',
-        '🎪',
-        '🪩',
-        '🎠',
-        '🎡',
-        '🎢',
-        '🎪',
-        '🎫',
-        '🎟️',
-        '🎭',
-        '🃏',
-        '🎴',
-        '🀄',
-        '🎲',
-        '🧩',
+        '💕',
+        '🎁',
+        '🌈',
+        '⭐',
+        '💎',
+        '🔥',
+        '👑',
       ],
-      'Love': [
+      'Emojis': [
+        '😀',
+        '😂',
+        '🥰',
+        '😎',
+        '🤩',
+        '😘',
+        '🙂',
+        '😊',
+        '😇',
+        '🤗',
+        '🤔',
+        '😋',
+        '😜',
+        '🤪',
+        '😴',
+        '🥺',
+      ],
+      'Hearts': [
         '❤️',
         '🧡',
         '💛',
@@ -943,182 +854,130 @@ class _StickerPanel extends StatelessWidget {
         '💘',
         '💝',
       ],
-      'Congratulations': [
+      'Party': [
+        '🎉',
+        '🎊',
+        '🎈',
+        '🎁',
+        '🎂',
+        '🍰',
+        '🥳',
+        '🪅',
+        '🎆',
+        '🎇',
+        '✨',
+        '🌟',
+        '💫',
+        '⭐',
+        '🎪',
+        '🎭',
+      ],
+      'Nature': [
+        '🌸',
+        '🌺',
+        '🌻',
+        '🌷',
+        '🌹',
+        '🌿',
+        '🍃',
+        '🌳',
+        '🌲',
+        '🌴',
+        '🌵',
+        '🌾',
+        '🌊',
+        '⛅',
+        '🌈',
+        '☀️',
+      ],
+      'Symbols': [
+        '✨',
+        '⭐',
+        '💎',
+        '👑',
+        '🔥',
+        '💫',
+        '⚡',
+        '🌟',
+        '💥',
+        '🎯',
         '🏆',
         '🎖️',
         '🏅',
         '🥇',
-        '🥈',
-        '🥉',
         '🎗️',
-        '🎫',
-        '🎟️',
         '🎪',
-        '🎭',
-        '🎨',
-        '🎬',
-        '🎤',
-        '🎧',
-        '🎼',
-      ],
-      'Alphabet Fun': [
-        '🅰️',
-        '🅱️',
-        '🅲',
-        '🅳',
-        '🅴',
-        '🅵',
-        '🅶',
-        '🅷',
-        '🅸',
-        '🅹',
-        '🅺',
-        '🅻',
-        '🅼',
-        '🅽',
-        '🅾️',
-        '🅿️',
-        '🆀',
-        '🆁',
-        '🆂',
-        '🆃',
-        '🆄',
-        '🆅',
-        '🆆',
-        '🆇',
-        '🆈',
-        '🆉',
-      ],
-      'Celebration': [
-        '🎉',
-        '🎊',
-        '🎂',
-        '🎁',
-        '🥳',
-        '🎈',
-        '🎀',
-        '🪅',
-        '🎆',
-        '🎇',
-        '🧨',
-        '🪔',
-        '🎐',
-        '🎏',
-        '🧧',
-        '🏮',
-      ],
-      'Nature': [
-        '🌿',
-        '🌸',
-        '🌞',
-        '🌻',
-        '🍃',
-        '🌺',
-        '🌴',
-        '🌊',
-        '🌍',
-        '🌎',
-        '🌏',
-        '🌕',
-        '🌖',
-        '🌗',
-        '🌘',
-        '🌑',
-        '🌒',
-        '🌓',
-        '🌔',
-      ],
-      'Animals': [
-        '🐶',
-        '🐱',
-        '🦋',
-        '🐝',
-        '🐞',
-        '🐠',
-        '🦄',
-        '🐧',
-        '🦁',
-        '🐯',
-        '🦊',
-        '🐰',
-        '🐮',
-        '🐷',
-        '🐸',
-        '🐵',
-        '🐔',
-        '🐦',
-        '🐤',
-      ],
-      'Symbols': [
-        '❤️',
-        '✨',
-        '⭐',
-        '💎',
-        '🔶',
-        '🔷',
-        '🟢',
-        '🟣',
-        '🔴',
-        '🟠',
-        '🟡',
-        '🟤',
-        '⚫',
-        '⚪',
-        '🟥',
-        '🟧',
-        '🟨',
-        '🟩',
-        '🟦',
       ],
     };
 
     return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-      ),
+      height: 180,
+      decoration: BoxDecoration(color: Colors.white),
       child: DefaultTabController(
         length: categories.length,
         child: Column(
           children: [
-            TabBar(
-              isScrollable: true,
-              // indicatorPadding: EdgeInsets.zero,
-              tabAlignment: TabAlignment.start,
-              tabs: categories.keys.map((category) {
-                return Tab(text: category);
-              }).toList(),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                labelColor: AppColors.branding,
+                unselectedLabelColor: Colors.grey[600],
+                indicatorColor: AppColors.branding,
+                indicatorWeight: 3,
+                labelStyle: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+                tabs: categories.keys.map((category) {
+                  return Tab(text: category);
+                }).toList(),
+              ),
             ),
             Expanded(
               child: TabBarView(
                 children: categories.values.map((stickers) {
-                  return GridView.count(
-                    padding: EdgeInsets.all(12),
-                    crossAxisCount: 8,
-                    mainAxisSpacing: 4,
-                    crossAxisSpacing: 4,
-                    children: stickers.map((sticker) {
-                      return SafeArea(
-                        bottom: true,
-                        child: GestureDetector(
-                          onTap: () {
-                            controller.addText(sticker);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              color: Colors.white,
-                            ),
-                            child: Center(
-                              child: Text(
-                                sticker,
-                                style: TextStyle(fontSize: 24),
-                              ),
+                  return GridView.builder(
+                    padding: EdgeInsets.all(16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 8,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: stickers.length,
+                    itemBuilder: (context, index) {
+                      final sticker = stickers[index];
+                      return GestureDetector(
+                        onTap: () {
+                          controller.addText(sticker);
+                          // Haptic feedback
+                          // HapticFeedback.lightImpact();
+                        },
+                        child: AnimatedContainer(
+                          duration: Duration(milliseconds: 150),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Center(
+                            child: Text(
+                              sticker,
+                              style: TextStyle(fontSize: 28),
                             ),
                           ),
                         ),
                       );
-                    }).toList(),
+                    },
                   );
                 }).toList(),
               ),
@@ -1138,34 +997,27 @@ class _HueAdjustmentPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
-      ),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Background Color',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 16),
           Obx(
             () => Row(
               children: [
-                Icon(Icons.color_lens, size: 20, color: Colors.grey[600]),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Slider(
-                    value: controller.backgroundHue.value,
-                    min: 0.0,
-                    max: 360.0,
-                    // divisions: 360,
-                    label: '${controller.backgroundHue.value.round()}°',
-                    onChanged: (value) {
-                      controller.updateBackgroundHue(value);
-                    },
-                  ),
-                ),
-                SizedBox(width: 8),
                 Container(
-                  width: 24,
-                  height: 24,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -1177,11 +1029,104 @@ class _HueAdjustmentPanel extends StatelessWidget {
                         Colors.red,
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hue: ${controller.backgroundHue.value.round()}°',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: AppColors.branding,
+                          inactiveTrackColor: Colors.grey.shade300,
+                          thumbColor: AppColors.branding,
+                          overlayColor: AppColors.branding.withOpacity(0.2),
+                          trackHeight: 6,
+                          thumbShape: RoundSliderThumbShape(
+                            enabledThumbRadius: 8,
+                          ),
+                        ),
+                        child: Slider(
+                          value: controller.backgroundHue.value,
+                          min: 0.0,
+                          max: 360.0,
+                          onChanged: (value) {
+                            controller.updateBackgroundHue(value);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.grey[600]),
+                    onPressed: () {
+                      controller.updateBackgroundHue(0.0);
+                    },
+                    tooltip: 'Reset',
                   ),
                 ),
               ],
             ),
+          ),
+          SizedBox(height: 16),
+          // Color Presets
+          Text(
+            'Presets',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              _ColorPreset(color: Colors.red, hue: 0, controller: controller),
+              _ColorPreset(
+                color: Colors.orange,
+                hue: 30,
+                controller: controller,
+              ),
+              _ColorPreset(
+                color: Colors.yellow,
+                hue: 60,
+                controller: controller,
+              ),
+              _ColorPreset(
+                color: Colors.green,
+                hue: 120,
+                controller: controller,
+              ),
+              _ColorPreset(
+                color: Colors.blue,
+                hue: 240,
+                controller: controller,
+              ),
+              _ColorPreset(
+                color: Colors.purple,
+                hue: 270,
+                controller: controller,
+              ),
+            ],
           ),
         ],
       ),
@@ -1189,28 +1134,43 @@ class _HueAdjustmentPanel extends StatelessWidget {
   }
 }
 
-// class _TextEditorPanel extends StatelessWidget {
-//   final EditorController controller;
-//   final StackTextItem textItem;
+// Color Preset Widget
+class _ColorPreset extends StatelessWidget {
+  final Color color;
+  final double hue;
+  final EditorController controller;
 
-//   const _TextEditorPanel({
-//     super.key,
-//     required this.controller,
-//     required this.textItem,
-//   });
+  const _ColorPreset({
+    required this.color,
+    required this.hue,
+    required this.controller,
+  });
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return TextStylingEditor(
-//       key: ValueKey(textItem.id), // Force rebuild on item change
-//       textItem: textItem,
-//       onClose: () {
-//         // controller.activeItem.value = null;
-//         // showTextPanel.value = false; // Update visibility
-//       },
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => controller.updateBackgroundHue(hue),
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 4),
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _BorderPainter extends CustomPainter {
   final bool dotted;
@@ -1706,13 +1666,15 @@ class _ProfessionalToolbarButton extends StatelessWidget {
 }
 
 // Professional Export Menu Button
-class _ExportMenuButton extends StatelessWidget {
+// Professional Export Menu Button
+// Modern Export Button
+class _ModernExportButton extends StatelessWidget {
   final VoidCallback onExportPDF;
   final VoidCallback onExportImage;
   final VoidCallback onSave;
   final RxBool isExporting;
 
-  const _ExportMenuButton({
+  const _ModernExportButton({
     required this.onExportPDF,
     required this.onExportImage,
     required this.onSave,
@@ -1723,17 +1685,41 @@ class _ExportMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => PopupMenuButton<String>(
-        offset: Offset(0, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        offset: Offset(0, 55),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 10,
         enabled: !isExporting.value,
         itemBuilder: (context) => [
           PopupMenuItem<String>(
             value: 'save',
             child: Row(
               children: [
-                Icon(Icons.save, color: Colors.grey[700], size: 20),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.save_outlined,
+                    color: AppColors.accent,
+                    size: 18,
+                  ),
+                ),
                 SizedBox(width: 12),
-                Text('Save Project'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Save Project',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'Save current design',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1742,9 +1728,32 @@ class _ExportMenuButton extends StatelessWidget {
             value: 'pdf',
             child: Row(
               children: [
-                Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf_outlined,
+                    color: Colors.red.shade700,
+                    size: 18,
+                  ),
+                ),
                 SizedBox(width: 12),
-                Text('Export as PDF'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Export as PDF',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'High-quality PDF format',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1752,9 +1761,32 @@ class _ExportMenuButton extends StatelessWidget {
             value: 'image',
             child: Row(
               children: [
-                Icon(Icons.image, color: Colors.green, size: 20),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.image_outlined,
+                    color: Colors.purple.shade700,
+                    size: 18,
+                  ),
+                ),
                 SizedBox(width: 12),
-                Text('Export as Image'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Export as Image',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'PNG format for sharing',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1763,6 +1795,28 @@ class _ExportMenuButton extends StatelessWidget {
           switch (value) {
             case 'save':
               onSave();
+              // Show success feedback
+              Get.snackbar(
+                '',
+                '',
+                titleText: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text(
+                      'Saved!',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                messageText: Text('Your design has been saved successfully'),
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: Colors.green.shade50,
+                colorText: Colors.green.shade800,
+                borderRadius: 12,
+                margin: EdgeInsets.all(16),
+                duration: Duration(seconds: 2),
+              );
               break;
             case 'pdf':
               onExportPDF();
@@ -1772,28 +1826,26 @@ class _ExportMenuButton extends StatelessWidget {
               break;
           }
         },
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade600, Colors.blue.shade700],
-            ),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.3),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+            color: AppColors.branding,
+            // gradient: LinearGradient(
+            //   colors: [
+            //     AppColors.branding,
+            //     AppColors.accent.withValues(alpha: 0.5),
+            //   ],
+            // ),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isExporting.value) ...[
                 SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -1809,7 +1861,11 @@ class _ExportMenuButton extends StatelessWidget {
                   ),
                 ),
               ] else ...[
-                Icon(Icons.download, color: Colors.white, size: 18),
+                Icon(
+                  Icons.file_download_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Export',
@@ -1820,7 +1876,7 @@ class _ExportMenuButton extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 4),
-                Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+                Icon(Icons.expand_more, size: 18, color: Colors.white),
               ],
             ],
           ),
@@ -1903,3 +1959,736 @@ class _TextEditorPanel extends StatelessWidget {
     );
   }
 }
+
+
+
+
+/*// Replace the existing build method and related widgets with these improvements:
+
+@override
+Widget build(BuildContext context) {
+  final GlobalKey stackBoardKey = GlobalKey();
+  final RxBool isTemplateLoaded = false.obs;
+  final RxDouble canvasScale = 1.0.obs;
+  final RxDouble scaledCanvasWidth = 0.0.obs;
+  final RxDouble scaledCanvasHeight = 0.0.obs;
+  final RxBool isExporting = false.obs;
+
+  void updateCanvasAndLoadTemplate(BoxConstraints constraints) {
+    if (isTemplateLoaded.value) return;
+
+    final double availableWidth = constraints.maxWidth * 0.9;
+    final double availableHeight = constraints.maxHeight;
+    final double aspectRatio =
+        controller.initialTemplate!.width /
+        controller.initialTemplate!.height;
+
+    if (availableWidth / aspectRatio <= availableHeight) {
+      scaledCanvasWidth.value = availableWidth;
+      scaledCanvasHeight.value = availableWidth / aspectRatio;
+    } else {
+      scaledCanvasHeight.value = availableHeight;
+      scaledCanvasWidth.value = availableHeight * aspectRatio;
+    }
+
+    canvasScale.value =
+        scaledCanvasWidth.value / controller.initialTemplate!.width;
+
+    controller.updateStackBoardRenderSize(
+      Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+    );
+    debugPrint(
+      'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
+    );
+
+    controller.loadExportedTemplate(
+      controller.initialTemplate!,
+      context,
+      scaledCanvasWidth.value,
+      scaledCanvasHeight.value,
+    );
+
+    isTemplateLoaded.value = true;
+  }
+
+  Future<void> exportAsPDF() async {
+    try {
+      isExporting.value = true;
+      controller.boardController.unSelectAll();
+      final exportKey = GlobalKey();
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          child: SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: _buildCanvasStack(
+              showGrid: false,
+              showBorders: false,
+              stackBoardKey: GlobalKey(),
+              canvasScale: canvasScale,
+              scaledCanvasWidth: scaledCanvasWidth,
+              scaledCanvasHeight: scaledCanvasHeight,
+            ),
+          ),
+        ),
+        targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        pixelRatio: 2,
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final imagePath = '${tempDir.path}/temp_invitation_card.png';
+      final imageFile = File(imagePath);
+      await imageFile.writeAsBytes(image);
+
+      final pdf = pw.Document();
+      final imageProvider = pw.MemoryImage(image);
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat(
+            scaledCanvasWidth.value,
+            scaledCanvasHeight.value,
+          ),
+          build: (pw.Context context) {
+            return pw.Center(child: pw.Image(imageProvider));
+          },
+        ),
+      );
+
+      final pdfPath = '${tempDir.path}/invitation_card.pdf';
+      final pdfFile = File(pdfPath);
+      await pdfFile.writeAsBytes(await pdf.save());
+
+      if (await pdfFile.exists()) {
+        Get.to(
+          () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to create PDF file',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Export PDF failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export PDF due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isExporting.value = false;
+    }
+  }
+
+  Future<void> exportAsImage() async {
+    try {
+      isExporting.value = true;
+      final exportKey = GlobalKey();
+      final image = await screenshotController.captureFromWidget(
+        SizedBox(
+          width: scaledCanvasWidth.value,
+          height: scaledCanvasHeight.value,
+          key: exportKey,
+          child: _buildCanvasStack(
+            showGrid: false,
+            showBorders: false,
+            stackBoardKey: GlobalKey(),
+            canvasScale: canvasScale,
+            scaledCanvasWidth: scaledCanvasWidth,
+            scaledCanvasHeight: scaledCanvasHeight,
+          ),
+        ),
+        targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        pixelRatio: 2,
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/invitation_card.png");
+      await file.writeAsBytes(image);
+      Get.snackbar(
+        'Success',
+        'Image exported successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+      );
+      Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+    } catch (e, s) {
+      debugPrint('Export Image failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export image due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isExporting.value = false;
+    }
+  }
+
+  Widget buildPanelContent() {
+    if (activePanel.value == PanelType.stickers) {
+      return _StickerPanel(controller: controller);
+    } else if (activePanel.value == PanelType.color) {
+      return _HueAdjustmentPanel(controller: controller);
+    } else if (activePanel.value == PanelType.text &&
+        controller.activeItem.value is StackTextItem) {
+      return _TextEditorPanel(
+        key: ValueKey(controller.activeItem.value!.id),
+        controller: controller,
+        textItem: controller.activeItem.value as StackTextItem,
+      );
+    } else if (activePanel.value == PanelType.shapes) {
+      return _ShapePanel(controller: controller);
+    }
+    return const SizedBox.shrink();
+  }
+
+  return Scaffold(
+    backgroundColor: Colors.grey[50],
+    
+    // Professional App Bar
+    appBar: AppBar(
+      elevation: 0,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.grey[800],
+      title: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.edit, size: 16, color: Colors.blue.shade700),
+                SizedBox(width: 4),
+                Text(
+                  'Editor',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // Undo/Redo Group
+        Container(
+          margin: EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.undo, size: 20),
+                onPressed: controller.undo,
+                tooltip: 'Undo',
+                color: Colors.grey[700],
+              ),
+              Container(width: 1, height: 20, color: Colors.grey.shade300),
+              IconButton(
+                icon: Icon(Icons.redo, size: 20),
+                onPressed: controller.redo,
+                tooltip: 'Redo',
+                color: Colors.grey[700],
+              ),
+            ],
+          ),
+        ),
+        
+        // Export Button with Menu
+        _ExportMenuButton(
+          onExportPDF: exportAsPDF,
+          onExportImage: exportAsImage,
+          onSave: () => controller.exportDesign(),
+          isExporting: isExporting,
+        ),
+        
+        SizedBox(width: 16),
+      ],
+    ),
+
+    // Dynamic Bottom Sheet for Panels
+    bottomSheet: Obx(() {
+      if (activePanel.value == PanelType.none) return SizedBox.shrink();
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Panel Header
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getPanelIcon(activePanel.value),
+                    size: 20,
+                    color: AppColors.branding,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    _getPanelTitle(activePanel.value),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.close, size: 20),
+                    onPressed: () => activePanel.value = PanelType.none,
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
+            ),
+            // Panel Content
+            AnimatedSize(
+              duration: Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: buildPanelContent(),
+            ),
+          ],
+        ),
+      );
+    }),
+
+    // Main Body
+    body: GestureDetector(
+      onTap: () {
+        activePanel.value = PanelType.none;
+      },
+      child: Container(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            // Canvas Area
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints constraints) {
+                      SchedulerBinding.instance.addPostFrameCallback((_) {
+                        updateCanvasAndLoadTemplate(constraints);
+                      });
+                      return _buildCanvasStack(
+                        showGrid: true,
+                        showBorders: true,
+                        stackBoardKey: stackBoardKey,
+                        canvasScale: canvasScale,
+                        scaledCanvasWidth: scaledCanvasWidth,
+                        scaledCanvasHeight: scaledCanvasHeight,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            
+            // Professional Toolbar
+            SafeArea(
+              child: Container(
+                margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _ProfessionalToolbarButton(
+                      icon: Icons.emoji_emotions_outlined,
+                      activeIcon: Icons.emoji_emotions,
+                      label: 'Stickers',
+                      panelType: PanelType.stickers,
+                      activePanel: activePanel,
+                      onPressed: () {
+                        activePanel.value = activePanel.value == PanelType.stickers
+                            ? PanelType.none
+                            : PanelType.stickers;
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.palette_outlined,
+                      activeIcon: Icons.palette,
+                      label: 'Colors',
+                      panelType: PanelType.color,
+                      activePanel: activePanel,
+                      onPressed: () {
+                        activePanel.value = activePanel.value == PanelType.color
+                            ? PanelType.none
+                            : PanelType.color;
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.text_fields_outlined,
+                      activeIcon: Icons.text_fields,
+                      label: 'Text',
+                      panelType: PanelType.text,
+                      activePanel: activePanel,
+                      onPressed: () {
+                        if (activePanel.value == PanelType.text) {
+                          activePanel.value = PanelType.none;
+                        } else {
+                          if (controller.activeItem.value == null || 
+                              controller.activeItem.value is! StackTextItem) {
+                            controller.addText("Tap to edit text");
+                          }
+                          activePanel.value = PanelType.text;
+                        }
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.shapes_outlined,
+                      activeIcon: Icons.shapes,
+                      label: 'Shapes',
+                      panelType: PanelType.shapes,
+                      activePanel: activePanel,
+                      onPressed: () {
+                        activePanel.value = activePanel.value == PanelType.shapes
+                            ? PanelType.none
+                            : PanelType.shapes;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// Helper methods for panel management
+IconData _getPanelIcon(PanelType panelType) {
+  switch (panelType) {
+    case PanelType.stickers:
+      return Icons.emoji_emotions;
+    case PanelType.color:
+      return Icons.palette;
+    case PanelType.text:
+      return Icons.text_fields;
+    case PanelType.shapes:
+      return Icons.shapes;
+    case PanelType.none:
+      return Icons.help_outline;
+  }
+}
+
+String _getPanelTitle(PanelType panelType) {
+  switch (panelType) {
+    case PanelType.stickers:
+      return 'Stickers & Emojis';
+    case PanelType.color:
+      return 'Background Colors';
+    case PanelType.text:
+      return 'Text Styling';
+    case PanelType.shapes:
+      return 'Shapes & Elements';
+    case PanelType.none:
+      return 'Unknown';
+  }
+}
+
+// Professional Toolbar Button
+class _ProfessionalToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final PanelType panelType;
+  final Rx<PanelType> activePanel;
+  final VoidCallback onPressed;
+
+  const _ProfessionalToolbarButton({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.panelType,
+    required this.activePanel,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isActive = activePanel.value == panelType;
+      return GestureDetector(
+        onTap: onPressed,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.branding.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: isActive ? 1.1 : 1.0,
+                duration: Duration(milliseconds: 200),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  color: isActive ? AppColors.branding : Colors.grey[600],
+                  size: 24,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: isActive ? AppColors.branding : Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+// Professional Export Menu Button
+class _ExportMenuButton extends StatelessWidget {
+  final VoidCallback onExportPDF;
+  final VoidCallback onExportImage;
+  final VoidCallback onSave;
+  final RxBool isExporting;
+
+  const _ExportMenuButton({
+    required this.onExportPDF,
+    required this.onExportImage,
+    required this.onSave,
+    required this.isExporting,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => PopupMenuButton<String>(
+      offset: Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade600, Colors.blue.shade700],
+          ),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isExporting.value) ...[
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Exporting...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ] else ...[
+              Icon(Icons.download, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Export',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(width: 4),
+              Icon(Icons.arrow_drop_down, color: Colors.white, size: 18),
+            ],
+          ],
+        ),
+      ),
+      enabled: !isExporting.value,
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'save',
+          child: Row(
+            children: [
+              Icon(Icons.save, color: Colors.grey[700], size: 20),
+              SizedBox(width: 12),
+              Text('Save Project'),
+            ],
+          ),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'pdf',
+          child: Row(
+            children: [
+              Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+              SizedBox(width: 12),
+              Text('Export as PDF'),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'image',
+          child: Row(
+            children: [
+              Icon(Icons.image, color: Colors.green, size: 20),
+              SizedBox(width: 12),
+              Text('Export as Image'),
+            ],
+          ),
+        ),
+      ],
+      onSelected: (value) {
+        switch (value) {
+          case 'save':
+            onSave();
+            break;
+          case 'pdf':
+            onExportPDF();
+            break;
+          case 'image':
+            onExportImage();
+            break;
+        }
+      },
+    ));
+  }
+}
+
+// Enhanced Text Editor Panel
+class _TextEditorPanel extends StatelessWidget {
+  final EditorController controller;
+  final StackTextItem textItem;
+
+  const _TextEditorPanel({
+    super.key,
+    required this.controller,
+    required this.textItem,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(maxHeight: 300),
+      child: Column(
+        children: [
+          // Quick Text Edit
+          Container(
+            padding: EdgeInsets.all(16),
+            child: TextField(
+              controller: TextEditingController(text: textItem.content?.value ?? ''),
+              onChanged: (value) {
+                // Update text content immediately
+                if (textItem.content != null) {
+                  final updatedContent = textItem.content!.copyWith(value: value);
+                  final updatedItem = textItem.copyWith(content: updatedContent);
+                  controller.boardController.replaceItem(textItem.id, updatedItem);
+                }
+              },
+              decoration: InputDecoration(
+                hintText: 'Enter your text here...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: AppColors.branding, width: 2),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              maxLines: 3,
+              minLines: 1,
+            ),
+          ),
+          
+          // Advanced Text Styling
+          Flexible(
+            child: TextStylingEditor(
+              key: ValueKey(textItem.id),
+              textItem: textItem,
+              onClose: () {
+                // Keep the panel open for better UX
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+} */
