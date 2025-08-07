@@ -1,19 +1,7 @@
-// import 'dart:convert';
-// import 'dart:math' as math;
-
-// import 'package:cardmaker/app/features/editor/editor_canvas.dart';
-// import 'package:cardmaker/models/card_template.dart';
-// import 'package:cardmaker/services/storage_service.dart';
-// import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
-// import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
-// import 'package:cardmaker/stack_board/lib/stack_items.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-// import 'package:get_storage/get_storage.dart';
-
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/home/home.dart' show getTextWidth;
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
@@ -66,6 +54,15 @@ class EditorController extends GetxController {
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
 
+  ///
+  ///
+  ///    final GlobalKey stackBoardKey = GlobalKey();
+  final RxBool isTemplateLoaded = false.obs;
+  final RxDouble canvasScale = 1.0.obs;
+  final RxDouble scaledCanvasWidth = 0.0.obs;
+  final RxDouble scaledCanvasHeight = 0.0.obs;
+  final GlobalKey stackBoardKey = GlobalKey();
+
   @override
   void onInit() {
     super.onInit();
@@ -99,6 +96,43 @@ class EditorController extends GetxController {
     }
 
     print(initialTemplate?.toJson());
+  }
+
+  void updateCanvasAndLoadTemplate(
+    BoxConstraints constraints,
+    BuildContext context,
+  ) {
+    if (isTemplateLoaded.value) return;
+
+    final double availableWidth = constraints.maxWidth * 0.9;
+    final double availableHeight = constraints.maxHeight;
+    final double aspectRatio = initialTemplate!.width / initialTemplate!.height;
+
+    if (availableWidth / aspectRatio <= availableHeight) {
+      scaledCanvasWidth.value = availableWidth;
+      scaledCanvasHeight.value = availableWidth / aspectRatio;
+    } else {
+      scaledCanvasHeight.value = availableHeight;
+      scaledCanvasWidth.value = availableHeight * aspectRatio;
+    }
+
+    canvasScale.value = scaledCanvasWidth.value / initialTemplate!.width;
+
+    updateStackBoardRenderSize(
+      Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+    );
+    debugPrint(
+      'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
+    );
+
+    loadExportedTemplate(
+      initialTemplate!,
+      context,
+      scaledCanvasWidth.value,
+      scaledCanvasHeight.value,
+    );
+
+    isTemplateLoaded.value = true;
   }
 
   void updateStackBoardRenderSize(Size size) {

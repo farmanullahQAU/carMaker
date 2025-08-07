@@ -80,7 +80,7 @@ class CanvasSelectionController extends GetxController {
       categoryId: 'oversized',
       width: 3000,
       height: 4200,
-      imagePath: 'assets/previews/oversized_portrait_10x14.png',
+      imagePath: '',
     ),
     CardTemplate(
       id: '8',
@@ -90,7 +90,7 @@ class CanvasSelectionController extends GetxController {
       categoryId: 'oversized',
       width: 4200,
       height: 3000,
-      imagePath: 'assets/previews/oversized_landscape_14x10.png',
+      imagePath: '',
     ),
 
     CardTemplate(
@@ -101,7 +101,7 @@ class CanvasSelectionController extends GetxController {
       categoryId: 'Greetings',
       width: 1240,
       height: 1748,
-      imagePath: 'assets/previews/oversized_landscape_14x10.png',
+      imagePath: '',
     ),
 
     CardTemplate(
@@ -126,7 +126,7 @@ class CanvasSelectionController extends GetxController {
           "id": "sssss",
           "offset": {"dx": 22.0, "dy": 44.0},
           "size": {"width": 100.0, "height": 111.0},
-          "content": {"assetName": "assets/Farman.png"},
+          "content": {"assetName": "assets/hisham.jpeg"},
           "status": 0,
           "isCentered": false,
           "lockZOrder": true,

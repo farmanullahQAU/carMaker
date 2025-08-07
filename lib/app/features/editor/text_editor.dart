@@ -844,14 +844,14 @@ class _SpacingTab extends StatelessWidget {
                 return SliderTheme(
                   data: SliderTheme.of(Get.context!).copyWith(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    activeTrackColor: AppColors.branding,
-                    inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
-                    thumbColor: AppColors.branding,
-                    overlayColor: AppColors.branding.withOpacity(0.2),
+                    // activeTrackColor: AppColors.branding,
+                    // inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
+                    // thumbColor: AppColors.branding,
+                    // overlayColor: AppColors.branding.withOpacity(0.2),
                     thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 6,
+                      enabledThumbRadius: 8,
                     ),
-                    trackHeight: 3,
+                    trackHeight: 8,
                   ),
                   child: Slider(
                     value: controller.letterSpacing.value,
@@ -888,9 +888,9 @@ class _SpacingTab extends StatelessWidget {
                     thumbColor: AppColors.accent,
                     overlayColor: AppColors.accent.withOpacity(0.2),
                     thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 6,
+                      enabledThumbRadius: 8,
                     ),
-                    trackHeight: 3,
+                    trackHeight: 8,
                   ),
                   child: Slider(
                     value: controller.lineHeight.value,
