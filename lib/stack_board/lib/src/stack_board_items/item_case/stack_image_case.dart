@@ -118,6 +118,7 @@ class StackImageCase extends StatelessWidget {
             color: content.borderColor!,
             width: content.borderWidth,
           ),
+
           borderRadius: content.borderRadius > 0.0
               ? BorderRadius.circular(content.borderRadius)
               : null,

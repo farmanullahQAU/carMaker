@@ -36,7 +36,6 @@ class EditorController extends GetxController {
 
   final Rx<StackItem?> draggedItem = Rx<StackItem?>(null);
   Rx<StackItem?> activeItem = Rx<StackItem?>(null);
-  final RxList<AlignmentPoint> alignmentPoints = <AlignmentPoint>[].obs;
   final RxBool showGrid = true.obs;
   final RxDouble gridSize = 20.0.obs;
   final Rx<Color> guideColor = Colors.black.obs;
@@ -94,8 +93,6 @@ class EditorController extends GetxController {
         }
       }
     }
-
-    print(initialTemplate?.toJson());
   }
 
   void updateCanvasAndLoadTemplate(
@@ -133,7 +130,235 @@ class EditorController extends GetxController {
     );
 
     isTemplateLoaded.value = true;
+    update(['canvas_stack']); // Trigger rebuild of canvas stack
   }
+
+  void loadExportedTemplate(
+    CardTemplate template,
+    BuildContext context,
+    double scaledCanvasWidth,
+    double scaledCanvasHeight,
+  ) async {
+    print("this one .........................");
+    final controller = Get.find<EditorController>();
+    controller.selectedBackground.value = template.backgroundImage;
+    controller.templateName.value = template.name;
+    controller.category.value = template.category;
+    controller.categoryId.value = template.categoryId;
+    controller.tags.value = template.tags;
+    controller.isPremium.value = template.isPremium;
+    controller.backgroundHue.value = 0.0;
+    controller.templateOriginalWidth.value = template.width.toDouble();
+    controller.templateOriginalHeight.value = template.height.toDouble();
+    controller.canvasWidth.value = scaledCanvasWidth;
+    controller.canvasHeight.value = scaledCanvasHeight;
+    controller.boardController.clear();
+    controller.profileImageItems.clear();
+
+    for (final itemJson in template.items) {
+      try {
+        final bool isCentered = itemJson['isCentered'] ?? false;
+        final bool isProfileImage = itemJson['isProfileImage'] ?? false;
+
+        final item = _deserializeItem(itemJson);
+        if (isProfileImage) {
+          if (item is StackImageItem) {
+            controller.profileImageItems.add(item);
+          }
+          continue;
+        }
+
+        Size itemSize;
+        StackItem updatedItem;
+
+        if (item is StackTextItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
+
+          final updatedStyle = item.content!.style!.copyWith(
+            fontSize: item.content!.style!.fontSize!,
+          );
+
+          itemSize = Size(
+            itemJson['size']['width'],
+            itemJson['size']['height'],
+          );
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+            content: item.content!.copyWith(style: updatedStyle),
+            isCentered: isCentered,
+          );
+        } else if (item is StackImageItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
+          final double originalWidth = itemJson['size']['width'];
+          final double originalHeight = itemJson['size']['height'];
+
+          itemSize = Size(originalWidth, originalHeight);
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+          );
+        } else {
+          throw Exception('Unsupported item type: ${item.runtimeType}');
+        }
+
+        debugPrint(
+          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
+        );
+
+        controller.boardController.addItem(updatedItem);
+        controller._undoStack.add(
+          _ItemState(item: updatedItem, action: _ItemAction.add),
+        );
+      } catch (err) {}
+    }
+    update([
+      'canvas_stack',
+      'bottom_sheet',
+    ]); // Trigger rebuild of canvas and bottom sheet
+  }
+
+  void addProfileImage(String assetPath, {Offset? offset, Size? size}) {
+    final profileImage = StackImageItem(
+      id: 'profile_image_${DateTime.now().millisecondsSinceEpoch}',
+      offset: offset ?? const Offset(690.0, 115.0),
+      size: size ?? const Size(436.0, 574.0),
+      content: ImageItemContent(assetName: assetPath),
+      isProfileImage: true,
+      lockZOrder: true,
+      status: StackItemStatus.idle,
+    );
+    profileImageItems.add(profileImage);
+    update(['canvas_stack']); // Trigger rebuild of canvas stack
+  }
+
+  void addSticker(String imagePath) {
+    final sticker = StackImageItem(
+      id: UniqueKey().toString(),
+      size: const Size(100, 100),
+      offset: getCenteredOffset(const Size(100, 100)),
+      content: ImageItemContent(assetName: imagePath),
+      isProfileImage: false,
+    );
+    boardController.addItem(sticker);
+    _undoStack.add(_ItemState(item: sticker, action: _ItemAction.add));
+    _redoStack.clear();
+    update(['canvas_stack']); // Trigger rebuild of canvas stack
+  }
+
+  void addText(String data) {
+    Offset offset;
+    Size size;
+    if (activeItem.value != null && activeItem.value is StackTextItem) {
+      offset = Offset(
+        activeItem.value!.offset.dx + 20,
+        activeItem.value!.offset.dy + 40,
+      );
+      size = activeItem.value!.size;
+    } else {
+      offset = Offset(100, 100);
+      size = const Size(200, 50);
+    }
+
+    final content = TextItemContent(
+      data: data,
+      googleFont: 'Roboto',
+      style: const TextStyle(fontSize: 24, color: Colors.black),
+      textAlign: TextAlign.center,
+    );
+    final textItem = StackTextItem(
+      id: UniqueKey().toString(),
+      size: getTextWidth(text: data, style: content.style!),
+      offset: offset,
+      content: content,
+    );
+    boardController.addItem(textItem);
+    _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));
+    _redoStack.clear();
+    activeItem.value = textItem;
+    update([
+      'canvas_stack',
+      'bottom_sheet',
+    ]); // Trigger rebuild of canvas and bottom sheet
+  }
+
+  void updateBackgroundHue(double hue) {
+    final previousHue = backgroundHue.value;
+    _undoStack.add(
+      _ItemState(
+        item: ColorStackItem1(
+          id: 'background_hue',
+          size: Size.zero,
+          content: ColorContent(color: Colors.transparent),
+        ),
+        action: _ItemAction.hue,
+        previousHue: previousHue,
+      ),
+    );
+    _redoStack.clear();
+    backgroundHue.value = hue;
+    update(['canvas_stack']); // Trigger rebuild of canvas stack
+  }
+
+  void toggleGrid() {
+    showGrid.value = !showGrid.value;
+    update(['canvas_stack']); // Trigger rebuild of canvas stack
+  }
+
+  void onItemStatusChanged(StackItem item, StackItemStatus status) {
+    if (status == StackItemStatus.moving) {
+      draggedItem.value = item;
+      activeItem.value = null;
+    } else if (status == StackItemStatus.selected) {
+      draggedItem.value = null;
+    } else if (status == StackItemStatus.idle) {
+      if (draggedItem.value?.id == item.id) {
+        draggedItem.value = null;
+      }
+      if (activeItem.value?.id == item.id) {
+        activeItem.value = null;
+      }
+    }
+    update([
+      'canvas_stack',
+      'bottom_sheet',
+    ]); // Trigger rebuild of canvas and bottom sheet
+  }
+
+  void updateTextItem(
+    StackTextItem item,
+    StackItemContent content, {
+    Size? newSize,
+  }) {
+    final currentItemJson = boardController.getAllData().firstWhere(
+      (json) => json['id'] == item.id,
+      orElse: () => <String, dynamic>{},
+    );
+    if (currentItemJson.isNotEmpty) {
+      final previousItem = _deserializeItem(currentItemJson);
+      _undoStack.add(
+        _ItemState(item: previousItem, action: _ItemAction.update),
+      );
+      _redoStack.clear();
+      final updatedItem = item.copyWith(
+        content: content as TextItemContent,
+        size: newSize ?? item.size,
+      );
+      boardController.updateItem(updatedItem);
+      activeItem.value = updatedItem;
+      update([
+        'canvas_stack',
+        'bottom_sheet',
+      ]); // Trigger rebuild of canvas and bottom sheet
+    }
+  }
+  /////////////////////////////
 
   void updateStackBoardRenderSize(Size size) {
     if (actualStackBoardRenderSize.value != size) {
@@ -157,20 +382,7 @@ class EditorController extends GetxController {
       for (final profileItem in profileImageItems) {
         exportedItems.add(profileItem.toJson());
       }
-    } else {
-      // final profile = {
-      //   "type": "StackImageItem",
-      //   "id": "profile_image_1698765432100",
-      //   "offset": {"dx": 690.0, "dy": 115.0},
-      //   "size": {"width": 436.0, "height": 574.0},
-      //   "content": {"assetName": "assets/Farman.png"},
-      //   "status": 0,
-      //   "isCentered": false,
-      //   "lockZOrder": true,
-      //   "isProfileImage": true,
-      // };
-      // exportedItems.add(StackImageItem.fromJson(profile).toJson());
-    }
+    } else {}
 
     for (final itemJson in currentItems) {
       final type = itemJson['type'];
@@ -252,120 +464,6 @@ class EditorController extends GetxController {
   }
 
   // NEW: Method to add profile images dynamically
-  void addProfileImage(String assetPath, {Offset? offset, Size? size}) {
-    final profileImage = StackImageItem(
-      id: 'profile_image_${DateTime.now().millisecondsSinceEpoch}',
-      offset: offset ?? const Offset(690.0, 115.0), // Default position
-      size: size ?? const Size(436.0, 574.0), // Default size
-      content: ImageItemContent(assetName: assetPath),
-      isProfileImage: true,
-      lockZOrder: true,
-      status: StackItemStatus.idle,
-    );
-    profileImageItems.add(profileImage);
-  }
-
-  void loadExportedTemplate(
-    CardTemplate template,
-    BuildContext context,
-    double scaledCanvasWidth,
-    double scaledCanvasHeight,
-  ) async {
-    print("this one .........................");
-    final controller = Get.find<EditorController>();
-    controller.selectedBackground.value = template.backgroundImage;
-    controller.templateName.value = template.name;
-    controller.category.value = template.category;
-    controller.categoryId.value = template.categoryId;
-    controller.tags.value = template.tags;
-    controller.isPremium.value = template.isPremium;
-    controller.backgroundHue.value = 0.0;
-    controller.templateOriginalWidth.value = template.width.toDouble();
-    controller.templateOriginalHeight.value = template.height.toDouble();
-    controller.canvasWidth.value = scaledCanvasWidth;
-    controller.canvasHeight.value = scaledCanvasHeight;
-    controller.boardController.clear();
-    controller.profileImageItems.clear(); // CHANGED: Clear profile images list
-
-    // final dummy = {
-    //   "type": "StackImageItem",
-    //   "id": "profile_image_1698765432100",
-    //   "offset": {"dx": 555.0, "dy": 1077.0},
-    //   "size": {"width": 791.0, "height": 778.0},
-    //   "content": {"assetName": "assets/Farman.png"},
-    //   "status": 0,
-    //   "isCentered": false,
-    //   "lockZOrder": true,
-    //   "isProfileImage": true,
-    // };
-
-    // profileImageItems.add(StackImageItem.fromJson(dummy));
-
-    for (final itemJson in template.items) {
-      try {
-        final bool isCentered = itemJson['isCentered'] ?? false;
-        final bool isProfileImage = itemJson['isProfileImage'] ?? false;
-
-        final item = _deserializeItem(itemJson);
-        if (isProfileImage) {
-          // CHANGED: Add to profileImageItems instead of StackBoard
-          if (item is StackImageItem) {
-            controller.profileImageItems.add(item);
-          }
-          continue;
-        }
-
-        Size itemSize;
-        StackItem updatedItem;
-
-        if (item is StackTextItem) {
-          double scaledX = item.offset.dx;
-          double scaledY = item.offset.dy;
-
-          final updatedStyle = item.content!.style!.copyWith(
-            fontSize: item.content!.style!.fontSize!,
-          );
-
-          itemSize = Size(
-            itemJson['size']['width'],
-            itemJson['size']['height'],
-          );
-
-          updatedItem = item.copyWith(
-            offset: Offset(scaledX, scaledY),
-            size: itemSize,
-            status: StackItemStatus.idle,
-            content: item.content!.copyWith(style: updatedStyle),
-            isCentered: isCentered,
-          );
-        } else if (item is StackImageItem) {
-          double scaledX = item.offset.dx;
-          double scaledY = item.offset.dy;
-          final double originalWidth = itemJson['size']['width'];
-          final double originalHeight = itemJson['size']['height'];
-
-          itemSize = Size(originalWidth, originalHeight);
-
-          updatedItem = item.copyWith(
-            offset: Offset(scaledX, scaledY),
-            size: itemSize,
-            status: StackItemStatus.idle,
-          );
-        } else {
-          throw Exception('Unsupported item type: ${item.runtimeType}');
-        }
-
-        debugPrint(
-          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
-        );
-
-        controller.boardController.addItem(updatedItem);
-        controller._undoStack.add(
-          _ItemState(item: updatedItem, action: _ItemAction.add),
-        );
-      } catch (err) {}
-    }
-  }
 
   void _updateGridSize() {
     if (actualStackBoardRenderSize.value == Size.zero) return;
@@ -408,164 +506,9 @@ class EditorController extends GetxController {
       return StackTextItem.fromJson(itemJson);
     } else if (type == 'StackImageItem') {
       return StackImageItem.fromJson(itemJson);
-    } else if (type == 'RowStackItem') {
-      return RowStackItem.fromJson(itemJson);
     } else {
       throw Exception('Unsupported item type: $type');
     }
-  }
-
-  void addSticker(String imagePath) {
-    final sticker = StackImageItem(
-      id: UniqueKey().toString(),
-      size: const Size(100, 100),
-      offset: getCenteredOffset(const Size(100, 100)),
-      content: ImageItemContent(assetName: imagePath),
-      isProfileImage: false, // NEW: Explicitly set for stickers
-    );
-    boardController.addItem(sticker);
-    _undoStack.add(_ItemState(item: sticker, action: _ItemAction.add));
-    _redoStack.clear();
-    _updateSpatialIndex();
-  }
-
-  void addText(String data) {
-    Offset offset;
-    Size size;
-    if (activeItem.value != null && activeItem.value is StackTextItem) {
-      //we will put the new text down and a little right to the previous one like moder text editor
-      offset = Offset(
-        activeItem.value!.offset.dx + 20,
-        activeItem.value!.offset.dy + 40,
-      );
-      size = activeItem.value!.size;
-    } else {
-      offset = Offset(100, 100);
-      size = const Size(200, 50);
-    }
-
-    final content = TextItemContent(
-      data: data,
-      googleFont: 'Roboto',
-      style: const TextStyle(fontSize: 24, color: Colors.black),
-      textAlign: TextAlign.center,
-    );
-    final textItem = StackTextItem(
-      id: UniqueKey().toString(),
-      size: getTextWidth(text: data, style: content.style!),
-      offset: offset,
-      content: content,
-    );
-    boardController.addItem(textItem);
-    _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));
-    _redoStack.clear();
-    _updateSpatialIndex();
-    activeItem.value = textItem;
-  }
-
-  void updateBackgroundHue(double hue) {
-    final previousHue = backgroundHue.value;
-    _undoStack.add(
-      _ItemState(
-        item: ColorStackItem1(
-          id: 'background_hue',
-          size: Size.zero,
-          content: ColorContent(color: Colors.transparent),
-        ),
-        action: _ItemAction.hue,
-        previousHue: previousHue,
-      ),
-    );
-    _redoStack.clear();
-    backgroundHue.value = hue;
-  }
-
-  void toggleGrid() => showGrid.value = !showGrid.value;
-
-  void undo() {
-    if (_undoStack.isEmpty) return;
-    final state = _undoStack.removeLast();
-    switch (state.action) {
-      case _ItemAction.add:
-        boardController.removeById(state.item.id);
-        _redoStack.add(state);
-        if (activeItem.value?.id == state.item.id) activeItem.value = null;
-        break;
-      case _ItemAction.update:
-        final currentItemJson = boardController.getAllData().firstWhere(
-          (json) => json['id'] == state.item.id,
-          orElse: () => <String, dynamic>{},
-        );
-        if (currentItemJson.isNotEmpty) {
-          final currentItem = _deserializeItem(currentItemJson);
-          _redoStack.add(
-            _ItemState(item: currentItem, action: _ItemAction.update),
-          );
-          boardController.updateItem(state.item);
-          activeItem.value = state.item;
-        }
-        break;
-      case _ItemAction.delete:
-        boardController.addItem(state.item);
-        _redoStack.add(state);
-        activeItem.value = state.item;
-        break;
-      case _ItemAction.hue:
-        final previousHue = state.previousHue ?? 0.0;
-        _redoStack.add(
-          _ItemState(
-            item: state.item,
-            action: _ItemAction.hue,
-            previousHue: backgroundHue.value,
-          ),
-        );
-        backgroundHue.value = previousHue;
-        break;
-    }
-    _updateSpatialIndex();
-  }
-
-  void redo() {
-    if (_redoStack.isEmpty) return;
-    final state = _redoStack.removeLast();
-    switch (state.action) {
-      case _ItemAction.add:
-        boardController.addItem(state.item);
-        _undoStack.add(state);
-        activeItem.value = state.item;
-        break;
-      case _ItemAction.update:
-        final currentItemJson = boardController.getAllData().firstWhere(
-          (json) => json['id'] == state.item.id,
-          orElse: () => <String, dynamic>{},
-        );
-        if (currentItemJson.isNotEmpty) {
-          final currentItem = _deserializeItem(currentItemJson);
-          _undoStack.add(
-            _ItemState(item: currentItem, action: _ItemAction.update),
-          );
-          boardController.updateItem(state.item);
-          activeItem.value = state.item;
-        }
-        break;
-      case _ItemAction.delete:
-        boardController.removeById(state.item.id);
-        _undoStack.add(state);
-        if (activeItem.value?.id == state.item.id) activeItem.value = null;
-        break;
-      case _ItemAction.hue:
-        final previousHue = state.previousHue ?? 0.0;
-        _undoStack.add(
-          _ItemState(
-            item: state.item,
-            action: _ItemAction.hue,
-            previousHue: backgroundHue.value,
-          ),
-        );
-        backgroundHue.value = previousHue;
-        break;
-    }
-    _updateSpatialIndex();
   }
 
   void onItemSizeChanged(StackItem item, Size newSize) {
@@ -595,67 +538,6 @@ class EditorController extends GetxController {
       boardController.updateItem(updatedItem);
       activeItem.value = updatedItem;
     }
-    _updateSpatialIndex();
-  }
-
-  void onItemStatusChanged(StackItem item, StackItemStatus status) {
-    if (status == StackItemStatus.moving) {
-      draggedItem.value = item;
-      activeItem.value = null;
-    } else if (status == StackItemStatus.selected) {
-      draggedItem.value = null;
-      alignmentPoints.value = [];
-    } else if (status == StackItemStatus.idle) {
-      if (draggedItem.value?.id == item.id) {
-        draggedItem.value = null;
-      }
-      if (activeItem.value?.id == item.id) {
-        activeItem.value = null;
-        alignmentPoints.value = [];
-      }
-    }
-  }
-
-  void updateTextItem(
-    StackTextItem item,
-    StackItemContent content, {
-    Size? newSize,
-  }) {
-    final currentItemJson = boardController.getAllData().firstWhere(
-      (json) => json['id'] == item.id,
-      orElse: () => <String, dynamic>{},
-    );
-    if (currentItemJson.isNotEmpty) {
-      final previousItem = _deserializeItem(currentItemJson);
-      _undoStack.add(
-        _ItemState(item: previousItem, action: _ItemAction.update),
-      );
-      _redoStack.clear();
-      final updatedItem = item.copyWith(
-        content: content as TextItemContent,
-        size: newSize ?? item.size,
-      );
-      boardController.updateItem(updatedItem);
-      activeItem.value = updatedItem;
-      _updateSpatialIndex();
-    }
-  }
-
-  _SpatialIndex _spatialIndex = _SpatialIndex();
-
-  void _updateSpatialIndex() {
-    _spatialIndex = _SpatialIndex();
-    final allItems = boardController.getAllData();
-    for (final itemJson in allItems) {
-      if (itemJson['id'] != draggedItem.value?.id) {
-        try {
-          final item = _deserializeItem(itemJson);
-          _spatialIndex.addItem(item);
-        } catch (e) {
-          debugPrint('Error adding item to spatial index: $e');
-        }
-      }
-    }
   }
 
   Future<void> addTemplate(CardTemplate template) async {
@@ -671,51 +553,6 @@ class EditorController extends GetxController {
   }
 }
 
-class _SnapResult {
-  final List<AlignmentPoint> points;
-  final Offset snappedOffset;
-
-  _SnapResult({required this.points, required this.snappedOffset});
-}
-
-class _SpatialIndex {
-  final Map<int, List<StackItem>> _buckets = {};
-  static const double bucketSize = 30.0;
-
-  void addItem(StackItem item) {
-    final double centerX = item.offset.dx + item.size.width / 2;
-    final double centerY = item.offset.dy + item.size.height / 2;
-    final int bucketX = (centerX / bucketSize).floor();
-    final int bucketY = (centerY / bucketSize).floor();
-    final int key = bucketX * 10000 + bucketY;
-    _buckets.putIfAbsent(key, () => []).add(item);
-  }
-
-  List<StackItem> getNearbyItems(Offset center) {
-    const double maxDistance = 150.0;
-    final int centerBucketX = (center.dx / bucketSize).floor();
-    final int centerBucketY = (center.dy / bucketSize).floor();
-    final List<StackItem> nearbyItems = [];
-    for (int dx = -2; dx <= 2; dx++) {
-      for (int dy = -2; dy <= 2; dy++) {
-        final int bucketX = centerBucketX + dx;
-        final int bucketY = centerBucketY + dy;
-        final int key = bucketX * 10000 + bucketY;
-        final items = _buckets[key] ?? [];
-        for (final item in items) {
-          final itemCenter = Offset(
-            item.offset.dx + item.size.width / 2,
-            item.offset.dy + item.size.height / 2,
-          );
-          if ((center - itemCenter).distance < maxDistance)
-            nearbyItems.add(item);
-        }
-      }
-    }
-    return nearbyItems;
-  }
-}
-
 class _ItemState {
   final StackItem item;
   final _ItemAction action;
@@ -724,43 +561,4 @@ class _ItemState {
   _ItemState({required this.item, required this.action, this.previousHue});
 }
 
-enum _ItemAction { add, update, delete, hue }
-
-enum AlignmentOption { center, left, right, top, bottom }
-
-enum SnapType { inactive, edge, center, edgeCritical, centerCritical }
-
-class AlignmentPoint {
-  final double value;
-  final bool isVertical;
-  final SnapType snapType;
-
-  AlignmentPoint({
-    required this.value,
-    required this.isVertical,
-    required this.snapType,
-  });
-
-  bool get isSnapped => snapType != SnapType.inactive;
-  bool get isCriticalSnap =>
-      snapType == SnapType.edgeCritical || snapType == SnapType.centerCritical;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AlignmentPoint &&
-          value == other.value &&
-          isVertical == other.isVertical &&
-          snapType == other.snapType;
-
-  @override
-  int get hashCode => Object.hash(value, isVertical, snapType);
-}
-
-extension IterableExtension<T> on Iterable<T> {
-  List<T> sorted(int Function(T, T) compare) {
-    final list = toList();
-    list.sort(compare);
-    return list;
-  }
-}
+enum _ItemAction { add, update, hue }
