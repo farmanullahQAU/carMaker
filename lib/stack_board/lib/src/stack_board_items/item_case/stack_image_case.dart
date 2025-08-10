@@ -769,7 +769,7 @@ class StackImageCase extends StatelessWidget {
 }
 
 // Updated enums and helper classes
-enum ImageFilter {
+enum ImageFilters {
   none,
   grayscale,
   sepia,
@@ -809,7 +809,7 @@ enum ImageFilter {
   emboss,
 }
 
-extension ImageFilterExtension on ImageFilter {
+extension ImageFilterExtension on ImageFilters {
   String get name {
     return toString().split('.').last;
   }

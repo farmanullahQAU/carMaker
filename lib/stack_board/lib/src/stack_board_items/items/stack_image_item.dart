@@ -2,7 +2,7 @@ import 'package:cardmaker/stack_board/lib/helpers.dart';
 import 'package:cardmaker/stack_board/lib/src/widget_style_extension/ex_size.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart'
-    show ImageFilter, ImageMaskShape, ImagePattern;
+    show ImageFilters, ImageMaskShape, ImagePattern;
 import 'package:cardmaker/stack_board/lib/widget_style_extension.dart';
 import 'package:flutter/material.dart';
 /*
@@ -227,18 +227,18 @@ class ImageItemContent extends StackItemContent {
     if (flipV != null) flipVertical = flipV;
   }
 
-  void applyFilter(ImageFilter filter) {
+  void applyFilter(ImageFilters filter) {
     switch (filter) {
-      case ImageFilter.grayscale:
+      case ImageFilters.grayscale:
         grayscale = !grayscale;
         break;
-      case ImageFilter.sepia:
+      case ImageFilters.sepia:
         sepia = !sepia;
         break;
-      case ImageFilter.vintage:
+      case ImageFilters.vintage:
         vintage = !vintage;
         break;
-      case ImageFilter.emboss:
+      case ImageFilters.emboss:
         emboss = !emboss;
         break;
     }
@@ -1682,7 +1682,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
     );
   }
 
-  void applyFilter(ImageFilter filter) {
+  void applyFilter(ImageFilters filter) {
     content?.applyFilter(filter.name);
   }
 

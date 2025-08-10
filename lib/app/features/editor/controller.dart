@@ -45,7 +45,7 @@ class EditorController extends GetxController {
   final RxList<_ItemState> _redoStack = <_ItemState>[].obs;
   Rx<Offset> midYOffset = Rx<Offset>(Offset(0, 0));
   Rx<Size> midSize = Rx<Size>(Size(0, 0));
-
+  bool isDragging = false;
   // CHANGED: Use RxList for multiple profile images
   final RxList<StackImageItem> profileImageItems = <StackImageItem>[].obs;
 

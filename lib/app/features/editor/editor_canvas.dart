@@ -1844,14 +1844,14 @@ class AdvancedImagePanel extends StatefulWidget {
 class _AdvancedImagePanelState extends State<AdvancedImagePanel>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  bool _isExpanded = false;
-  String _updateId = 'advanced_image_panel';
+  final bool _isExpanded = true;
+  final String _updateId = 'advanced_image_panel';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _updateId = 'advanced_image_panel_${widget.imageItem.id}';
+    // _updateId = 'advanced_image_panel_${widget.imageItem.id}';
   }
 
   @override
@@ -1883,11 +1883,12 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOutCubic,
-        height: _isExpanded ? 320 : 160,
+        // height: _isExpanded ? 250 : 160,
+        height: _tabController.index == 0 ? 200 : 250,
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
-            // Compact Header
+            /*    // Compact Header
             Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1937,7 +1938,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                 ],
               ),
             ),
-
+*/
             // Tab Bar
             SizedBox(
               height: 50,
@@ -2037,43 +2038,43 @@ class _AdjustPage extends StatelessWidget {
       builder: (controller) {
         String selectedAdjustment = controller.selectedAdjustment;
 
-        return Container(
-          color: Colors.black,
-          child: Column(
-            children: [
-              // Main slider area
-              Container(
-                height: 80,
-                width: double.infinity,
-                color: Colors.black,
-                child: Center(
-                  child: _ProfessionalSlider(
+        return Column(
+          // mainAxisSize: MainAxisSize.min,
+          children: [
+            // Main slider area
+            SizedBox(height: 16),
+            Container(
+              child: _ProfessionalSlider(
+                selectedAdjustment: selectedAdjustment,
+                content: content,
+                onUpdate: onUpdate,
+                updateId: updateId,
+              ),
+            ),
+
+            // Adjustment tools
+            Expanded(
+              // height: 88,
+              // color: Colors.black,
+              // padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  // color: Colors.redAccent,
+                  child: _AdjustmentToolsRow(
                     selectedAdjustment: selectedAdjustment,
                     content: content,
-                    onUpdate: onUpdate,
+                    isExpanded: isExpanded,
                     updateId: updateId,
+                    onSelectionChanged: (String adjustment) {
+                      controller.setSelectedAdjustment(adjustment);
+                      controller.update([updateId]);
+                    },
                   ),
                 ),
               ),
-
-              // Adjustment tools
-              Container(
-                height: 88,
-                color: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: _AdjustmentToolsRow(
-                  selectedAdjustment: selectedAdjustment,
-                  content: content,
-                  isExpanded: isExpanded,
-                  updateId: updateId,
-                  onSelectionChanged: (String adjustment) {
-                    controller.setSelectedAdjustment(adjustment);
-                    controller.update([updateId]);
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -2132,14 +2133,13 @@ class _AdjustmentToolButton extends StatelessWidget {
       width: 68,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFFFFA500)
-                  : const Color(0xFF2A2A2A),
+              color: isSelected ? AppColors.branding : AppColors.highlight,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -2152,7 +2152,7 @@ class _AdjustmentToolButton extends StatelessWidget {
           Text(
             tool.label,
             style: TextStyle(
-              color: isSelected ? const Color(0xFFFFA500) : Colors.white70,
+              color: isSelected ? AppColors.branding : AppColors.highlight,
               fontSize: 10,
               fontWeight: FontWeight.w500,
             ),
@@ -2185,110 +2185,213 @@ class _ProfessionalSlider extends StatelessWidget {
     final currentValue = config.getValue(content);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Value display
-          Text(
-            config.formatValue(currentValue),
-            style: const TextStyle(
-              color: Color(0xFFFFA500),
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Professional slider
-          SizedBox(
-            height: 24,
-            child: Stack(
-              children: [
-                // Background track
-                Positioned(
-                  top: 10,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF333333),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-
-                // Center indicator for bidirectional sliders
-                if (config.isBidirectional)
-                  Positioned(
-                    top: 8,
-                    left: (MediaQuery.of(context).size.width - 48) / 2 - 1,
-                    child: Container(
-                      width: 2,
-                      height: 8,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: LayoutBuilder(
+        builder: (context, constraint) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Modern slider with built-in label
+              SizedBox(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Background track
+                    Container(
+                      height: 16,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF666666),
-                        borderRadius: BorderRadius.circular(1),
+                        color: Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                  ),
 
-                // Active track
-                Positioned(
-                  top: 10,
-                  left: config.getTrackLeft(
-                    currentValue,
-                    MediaQuery.of(context).size.width - 48,
-                  ),
-                  width: config.getTrackWidth(
-                    currentValue,
-                    MediaQuery.of(context).size.width - 48,
-                  ),
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFA500),
-                      borderRadius: BorderRadius.circular(2),
+                    // Active track
+                    Positioned(
+                      left: config.getTrackLeft(
+                        currentValue,
+                        constraint.maxWidth,
+                      ),
+                      width: config.getTrackWidth(
+                        currentValue,
+                        constraint.maxWidth,
+                      ),
+                      child: Container(
+                        height: 16,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              AppColors.branding, // Blue
+                              AppColors.accent,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-                // Slider
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 0,
-                    activeTrackColor: Colors.transparent,
-                    inactiveTrackColor: Colors.transparent,
-                    thumbColor: const Color(0xFFFFA500),
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 12,
-                      elevation: 2,
+                    // Slider with custom theme and built-in label
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 0,
+                        activeTrackColor: Colors.transparent,
+                        inactiveTrackColor: Colors.transparent,
+                        thumbColor: Colors.white, //small round circle
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 6,
+                          elevation: 0,
+                        ),
+                        overlayColor: Colors
+                            .white, //when start drag then overlay around that small circel
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 8,
+                        ),
+                        // valueIndicatorColor: Colors.red,
+                        valueIndicatorTextStyle: const TextStyle(
+                          color: AppColors.surface,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        showValueIndicator:
+                            ShowValueIndicator.always, // Show label on drag
+                      ),
+                      child: Slider(
+                        value: currentValue.clamp(config.min, config.max),
+                        min: config.min,
+                        max: config.max,
+                        label: config.formatValue(currentValue),
+                        onChanged: (value) {
+                          config.updateValue(content, value);
+                          onUpdate();
+                          Get.find<EditorController>().update([updateId]);
+                        },
+                      ),
                     ),
-                    overlayColor: const Color(0xFFFFA500).withOpacity(0.1),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 18,
-                    ),
-                  ),
-                  child: Slider(
-                    value: currentValue.clamp(config.min, config.max),
-                    min: config.min,
-                    max: config.max,
-                    onChanged: (value) {
-                      config.updateValue(content, value);
-                      onUpdate();
-                      Get.find<EditorController>().update([updateId]);
-                    },
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+// class _ProfessionalSlider extends StatelessWidget {
+//   final String selectedAdjustment;
+//   final ImageItemContent content;
+//   final VoidCallback onUpdate;
+//   final String updateId;
+
+//   const _ProfessionalSlider({
+//     required this.selectedAdjustment,
+//     required this.content,
+//     required this.onUpdate,
+//     required this.updateId,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final config = _ImageAdjustmentConfig.getConfig(selectedAdjustment);
+//     final currentValue = config.getValue(content);
+
+//     return Container(
+//       margin: const EdgeInsets.symmetric(horizontal: 20),
+
+//       child: LayoutBuilder(
+//         builder: (context, constraint) {
+//           return Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               // Value display with modern typography
+
+//               // Modern slider
+//               SizedBox(
+//                 // height: 40,
+//                 child: Stack(
+//                   alignment: Alignment.center,
+//                   children: [
+//                     // Background track
+//                     Container(
+//                       height: 16,
+//                       decoration: BoxDecoration(
+//                         color: Get.theme.colorScheme.surfaceContainerLow,
+//                         borderRadius: BorderRadius.circular(16),
+//                       ),
+//                     ),
+
+//                     // Center indicator for bidirectional sliders
+//                     // if (config.isBidirectional)
+//                     //   Positioned(
+//                     //     left: (constraint.maxWidth) / 2,
+//                     //     child: Container(
+//                     //       width: 1,
+//                     //       height: 16,
+//                     //       color: Colors.red.shade600,
+//                     //     ),
+//                     //   ),
+
+//                     // Active track
+//                     Positioned(
+//                       left: config.getTrackLeft(
+//                         currentValue,
+//                         constraint.maxWidth,
+//                       ),
+//                       width: config.getTrackWidth(
+//                         currentValue,
+//                         constraint.maxWidth,
+//                       ),
+//                       child: Container(
+//                         height: 16,
+//                         decoration: BoxDecoration(
+//                           gradient: const LinearGradient(
+//                             colors: [
+//                               AppColors.branding, // Blue
+//                               AppColors.accent,
+//                             ],
+//                           ),
+//                           borderRadius: BorderRadius.circular(16),
+//                         ),
+//                       ),
+//                     ),
+
+//                     // Slider with custom theme
+//                     SliderTheme(
+//                       data: SliderTheme.of(context).copyWith(
+//                         trackHeight: 0,
+
+//                         // activeTrackColor: Colors.transparent,
+//                         // inactiveTrackColor: Colors.transparent,
+//                         thumbColor: Colors.white,
+//                         thumbShape: const RoundSliderThumbShape(
+//                           enabledThumbRadius: 6,
+//                           elevation: 0,
+//                         ),
+//                         // overlayColor: const Color(0xFF3B82F6).withOpacity(0.3),
+//                         overlayShape: const RoundSliderOverlayShape(
+//                           overlayRadius: 8,
+//                         ),
+//                       ),
+//                       child: Slider(
+//                         value: currentValue.clamp(config.min, config.max),
+//                         min: config.min,
+//                         max: config.max,
+//                         onChanged: (value) {
+//                           config.updateValue(content, value);
+//                           onUpdate();
+//                           Get.find<EditorController>().update([updateId]);
+//                         },
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ],
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
 
 class _AdjustmentTool {
   final String key;
@@ -2388,24 +2491,20 @@ class _ImageAdjustmentConfig {
         label: 'Saturation',
         value: _configs['saturation']!.getValue(content),
       ),
-    ];
 
-    if (isExpanded) {
-      basic.addAll([
-        _AdjustmentTool(
-          key: 'hue',
-          icon: Icons.palette,
-          label: 'Hue',
-          value: _configs['hue']!.getValue(content),
-        ),
-        _AdjustmentTool(
-          key: 'opacity',
-          icon: Icons.opacity,
-          label: 'Opacity',
-          value: _configs['opacity']!.getValue(content),
-        ),
-      ]);
-    }
+      _AdjustmentTool(
+        key: 'hue',
+        icon: Icons.palette,
+        label: 'Hue',
+        value: _configs['hue']!.getValue(content),
+      ),
+      _AdjustmentTool(
+        key: 'opacity',
+        icon: Icons.opacity,
+        label: 'Opacity',
+        value: _configs['opacity']!.getValue(content),
+      ),
+    ];
 
     return basic;
   }
@@ -2479,146 +2578,6 @@ class _ImageAdjustmentConfig {
     ),
   };
 }
-/*
-// Filters Page - Grid of filter thumbnails with GetBuilder
-class _FiltersPage extends StatelessWidget {
-  final ImageItemContent content;
-  final VoidCallback onUpdate;
-  final bool isExpanded;
-  final String updateId;
-
-  const _FiltersPage({
-    required this.content,
-    required this.onUpdate,
-    required this.isExpanded,
-    required this.updateId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder<EditorController>(
-      id: updateId,
-      builder: (controller) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          children: [
-            // Quick Presets Row
-            SizedBox(
-              height: 60,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _FilterPreview(
-                    name: 'Original',
-                    isActive: _isOriginal(),
-                    onTap: () {
-                      content.resetFilters();
-                      onUpdate();
-                    },
-                  ),
-                  _FilterPreview(
-                    name: 'Vintage',
-                    isActive: content.vintage,
-                    onTap: () {
-                      _applyVintage();
-                      onUpdate();
-                    },
-                  ),
-                  _FilterPreview(
-                    name: 'B&W',
-                    isActive: content.grayscale,
-                    onTap: () {
-                      content.applyFilter(ImageFilter.grayscale);
-                      onUpdate();
-                    },
-                  ),
-                  _FilterPreview(
-                    name: 'Sepia',
-                    isActive: content.sepia,
-                    onTap: () {
-                      content.applyFilter(ImageFilter.sepia);
-                      onUpdate();
-                    },
-                  ),
-                  _FilterPreview(
-                    name: 'Vivid',
-                    isActive: _isVivid(),
-                    onTap: () {
-                      _applyVivid();
-                      onUpdate();
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            if (isExpanded) ...[
-              const SizedBox(height: 12),
-              // Advanced Filter Controls
-              Row(
-                children: [
-                  Expanded(
-                    child: _CompactSlider(
-                      icon: Icons.vignette,
-                      value: content.vignette,
-                      min: 0.0,
-                      max: 1.0,
-                      onChanged: (v) {
-                        content.vignette = v;
-                        onUpdate();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _CompactSlider(
-                      icon: Icons.grain,
-                      value: content.noiseIntensity,
-                      min: 0.0,
-                      max: 1.0,
-                      onChanged: (v) {
-                        content.noiseIntensity = v;
-                        onUpdate();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _isOriginal() {
-    return !content.grayscale &&
-        !content.sepia &&
-        !content.vintage &&
-        content.brightness == 0.0 &&
-        content.contrast == 1.0 &&
-        content.saturation == 1.0;
-  }
-
-  bool _isVivid() {
-    return content.saturation > 1.2 && content.contrast > 1.0;
-  }
-
-  void _applyVintage() {
-    content.resetFilters();
-    content.sepia = true;
-    content.adjustContrast(1.2);
-    content.adjustBrightness(0.1);
-    content.vignette = 0.3;
-  }
-
-  void _applyVivid() {
-    content.resetFilters();
-    content.adjustSaturation(1.4);
-    content.adjustContrast(1.1);
-  }
-}
-*/
 
 class _FiltersPage extends StatelessWidget {
   final ImageItemContent content;
@@ -2682,168 +2641,6 @@ class _FiltersPage extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // const SizedBox(height: 12),
-
-              // Border color picker
-              // Text(
-              //   'Border Color',
-              //   style: TextStyle(
-              //     color: Colors.white.withOpacity(0.7),
-              //     fontSize: 12,
-              //     fontWeight: FontWeight.w500,
-              //   ),
-              // ),
-              // const SizedBox(height: 8),
-              // SizedBox(
-              //   height: 32,
-              //   child: ListView(
-              //     scrollDirection: Axis.horizontal,
-              //     children: [
-              //       _ColorChip(
-              //         color: null,
-              //         isActive: content.borderColor == null,
-              //         onTap: () {
-              //           content.borderColor = null;
-              //           onUpdate();
-              //         },
-              //       ),
-              //       ...Colors.primaries.map((color) {
-              //         return _ColorChip(
-              //           color: color,
-              //           isActive: content.borderColor?.value == color.value,
-              //           onTap: () {
-              //             content.borderColor = color;
-              //             onUpdate();
-              //           },
-              //         );
-              //       }),
-              //     ],
-              //   ),
-              // ),
-              // if (isExpanded) ...[
-              //   const SizedBox(height: 16),
-
-              //   // Shadow controls
-              //   Text(
-              //     'Shadow',
-              //     style: TextStyle(
-              //       color: Colors.white.withOpacity(0.7),
-              //       fontSize: 12,
-              //       fontWeight: FontWeight.w500,
-              //     ),
-              //   ),
-              //   const SizedBox(height: 8),
-
-              //   Row(
-              //     children: [
-              //       Expanded(
-              //         child: _CompactSlider(
-              //           icon: Icons.blur_on,
-              //           label: 'Blur',
-              //           value: content.shadowBlur,
-              //           min: 0.0,
-              //           max: 20.0,
-              //           onChanged: (v) {
-              //             content.shadowBlur = v;
-              //             onUpdate();
-              //           },
-              //         ),
-              //       ),
-              //       const SizedBox(width: 12),
-              //       Expanded(
-              //         child: _CompactSlider(
-              //           icon: Icons.open_with,
-              //           label: 'Offset X',
-              //           value: content.shadowOffset.dx,
-              //           min: -20.0,
-              //           max: 20.0,
-              //           onChanged: (v) {
-              //             content.shadowOffset = Offset(
-              //               v,
-              //               content.shadowOffset.dy,
-              //             );
-              //             onUpdate();
-              //           },
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-
-              //   const SizedBox(height: 8),
-
-              //   Row(
-              //     children: [
-              //       Expanded(
-              //         child: _CompactSlider(
-              //           icon: Icons.open_with,
-              //           label: 'Offset Y',
-              //           value: content.shadowOffset.dy,
-              //           min: -20.0,
-              //           max: 20.0,
-              //           onChanged: (v) {
-              //             content.shadowOffset = Offset(
-              //               content.shadowOffset.dx,
-              //               v,
-              //             );
-              //             onUpdate();
-              //           },
-              //         ),
-              //       ),
-              //       const SizedBox(width: 12),
-              //       Expanded(
-              //         child: Container(
-              //           height: 40,
-              //           decoration: BoxDecoration(
-              //             color: const Color(0xFF2A2A2A),
-              //             borderRadius: BorderRadius.circular(8),
-              //           ),
-              //           child: Center(
-              //             child: Text(
-              //               'Shadow Color',
-              //               style: TextStyle(
-              //                 color: Colors.white70,
-              //                 fontSize: 10,
-              //               ),
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-
-              //   const SizedBox(height: 8),
-
-              //   // Shadow color picker
-              //   SizedBox(
-              //     height: 32,
-              //     child: ListView(
-              //       scrollDirection: Axis.horizontal,
-              //       children: [
-              //         _ColorChip(
-              //           color: null,
-              //           isActive: content.shadowColor == null,
-              //           onTap: () {
-              //             content.shadowColor = null;
-              //             onUpdate();
-              //           },
-              //         ),
-              //         ...Colors.primaries.map((color) {
-              //           return _ColorChip(
-              //             color: color.withOpacity(0.5),
-              //             isActive:
-              //                 content.shadowColor?.value ==
-              //                 color.withOpacity(0.5).value,
-              //             onTap: () {
-              //               content.shadowColor = color.withOpacity(0.5);
-              //               onUpdate();
-              //             },
-              //           );
-              //         }),
-              //       ],
-              //     ),
-              //   ),
-              // ],
             ],
           ],
         ),
@@ -3201,265 +2998,6 @@ class _BorderPage extends StatelessWidget {
 }
 
 // Transform Page with GetBuilder
-/*
-class _TransformPage extends StatelessWidget {
-  final ImageItemContent content;
-  final VoidCallback onUpdate;
-  final bool isExpanded;
-  final String updateId;
-
-  const _TransformPage({
-    required this.content,
-    required this.onUpdate,
-    required this.isExpanded,
-    required this.updateId,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder<EditorController>(
-      id: updateId,
-      builder: (controller) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          children: [
-            _CompactSlider(
-              icon: Icons.rotate_right,
-              value: content.rotationAngle,
-              min: -180.0,
-              max: 180.0,
-              onChanged: (v) {
-                content.rotationAngle = v;
-                onUpdate();
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _TransformButton(
-                    icon: Icons.flip,
-                    label: 'Flip H',
-                    isActive: content.flipHorizontal,
-                    onTap: () {
-                      content.flipHorizontal = !content.flipHorizontal;
-                      onUpdate();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _TransformButton(
-                    icon: Icons.flip,
-                    label: 'Flip V',
-                    isActive: content.flipVertical,
-                    onTap: () {
-                      content.flipVertical = !content.flipVertical;
-                      onUpdate();
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-
-// Custom Compact Widgets (unchanged but optimized)
-
-class _CompactButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _CompactButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(icon, color: Colors.white, size: 16),
-      ),
-    );
-  }
-}
-
-class _CompactSlider extends StatelessWidget {
-  final IconData icon;
-  final String? label;
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double> onChanged;
-
-  const _CompactSlider({
-    required this.icon,
-    this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white70, size: 16),
-          if (label != null) ...[
-            const SizedBox(width: 4),
-            Text(
-              label!,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 2,
-                activeTrackColor: const Color(0xFFFFA500),
-                inactiveTrackColor: Colors.white24,
-                thumbColor: const Color(0xFFFFA500),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              ),
-              child: Slider(
-                value: value.clamp(min, max),
-                min: min,
-                max: max,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          Text(
-            value.round().toString(),
-            style: const TextStyle(
-              color: Color(0xFFFFA500),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MaskButton extends StatelessWidget {
-  final ImageMaskShape shape;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _MaskButton({
-    required this.shape,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isActive
-              ? Colors.blue.withOpacity(0.2)
-              : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isActive ? Colors.blue : Colors.transparent,
-            width: 1.5,
-          ),
-        ),
-        child: Icon(
-          _getMaskIcon(shape),
-          size: 18,
-          color: isActive ? Colors.blue : Colors.white.withOpacity(0.6),
-        ),
-      ),
-    );
-  }
-
-  IconData _getMaskIcon(ImageMaskShape shape) {
-    switch (shape) {
-      case ImageMaskShape.none:
-        return Icons.crop_free;
-      case ImageMaskShape.circle:
-        return Icons.circle_outlined;
-      case ImageMaskShape.roundedRectangle:
-        return Icons.rounded_corner;
-      case ImageMaskShape.star:
-        return Icons.star_outline;
-      case ImageMaskShape.heart:
-        return Icons.favorite_outline;
-      case ImageMaskShape.hexagon:
-        return Icons.hexagon_outlined;
-    }
-  }
-}
-
-class _ColorChip extends StatelessWidget {
-  final Color? color;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ColorChip({
-    required this.color,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        margin: const EdgeInsets.only(right: 6),
-        decoration: BoxDecoration(
-          color: color ?? Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isActive ? Colors.blue : Colors.white.withOpacity(0.3),
-            width: isActive ? 2 : 1,
-          ),
-        ),
-        child: color == null
-            ? Icon(Icons.close, size: 14, color: Colors.white.withOpacity(0.6))
-            : null,
-      ),
-    );
-  }
-}
-
-
-*/
 
 class _TransformPage extends StatelessWidget {
   final ImageItemContent content;
