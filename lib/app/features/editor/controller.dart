@@ -52,6 +52,14 @@ class EditorController extends GetxController {
   final RxBool showHueSlider = false.obs;
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
+  String _selectedAdjustment = 'brightness';
+
+  String get selectedAdjustment => _selectedAdjustment;
+
+  void setSelectedAdjustment(String adjustment) {
+    _selectedAdjustment = adjustment;
+    update(); // This will trigger GetBuilder rebuild
+  }
 
   ///
   ///

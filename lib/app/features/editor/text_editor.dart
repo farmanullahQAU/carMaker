@@ -225,7 +225,7 @@ class TextStyleController extends GetxController {
       painter.layout(maxWidth: maxWidth);
 
       final width = painter.width.clamp(50.0, maxWidth);
-      final height = painter.height.clamp(50.0, double.infinity);
+      final height = painter.height.clamp(30.0, double.infinity);
 
       editorController.boardController.updateBasic(
         updatedItem.id,

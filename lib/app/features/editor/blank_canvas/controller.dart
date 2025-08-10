@@ -125,7 +125,7 @@ class CanvasSelectionController extends GetxController {
           "type": "StackImageItem",
           "id": "sssss",
           "offset": {"dx": 50.0, "dy": 44.0},
-          "size": {"width": 100.0, "height": 111.0},
+          "size": {"width": 100.0, "height": 100.0},
           "content": {"assetName": "assets/hisham.jpeg"},
           "status": 0,
           "isCentered": false,
