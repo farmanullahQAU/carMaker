@@ -33,6 +33,9 @@ class ImageEditorController extends GetxController {
   final RxDouble _shadowBlur = 0.0.obs;
   final Rx<Color?> _shadowColor = Rx<Color?>(null);
 
+  bool? showOverlayControls;
+  bool? showVignetteControls;
+
   // Transform properties
   final RxDouble _rotationAngle = 0.0.obs;
   final RxBool _flipHorizontal = false.obs;
@@ -171,7 +174,7 @@ class ImageEditorController extends GetxController {
     _selectedMaskShape.value = shape;
     _selectedImageItem.value!.content!.maskShape = shape;
     _notifyImageUpdate();
-    update(['effects_page']);
+    update(['mask_shapes']);
   }
 
   void setOverlayColor(Color? color) {
@@ -184,7 +187,7 @@ class ImageEditorController extends GetxController {
           _overlayBlendMode.value;
     }
     _notifyImageUpdate();
-    update(['effects_page']);
+    update(['color_overlay_page']);
   }
 
   void setOverlayBlendMode(BlendMode blendMode) {
@@ -193,7 +196,15 @@ class ImageEditorController extends GetxController {
     _overlayBlendMode.value = blendMode;
     _selectedImageItem.value!.content!.overlayBlendMode = blendMode;
     _notifyImageUpdate();
-    update(['effects_page']);
+    update(['color_overlay_page']);
+  }
+
+  void setVignette(double value) {
+    // if (_selectedImageItem.value?.content == null) return;
+
+    _selectedImageItem.value!.content!.vignette = value;
+    _notifyImageUpdate();
+    update(['vignette_slider']);
   }
 
   // Border methods

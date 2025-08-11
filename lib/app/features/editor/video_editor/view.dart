@@ -27,7 +27,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
 
     // Initialize or get the ImageEditorController
     try {
@@ -70,7 +70,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
-        height: _tabController.index < 2 ? 160 : 250,
+        height: _tabController.index < 4 ? 160 : 250,
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
@@ -103,10 +103,14 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                     icon: Icon(Icons.filter_vintage, size: 18),
                     text: 'Filters',
                   ),
+
                   Tab(
                     icon: Icon(Icons.auto_fix_high, size: 18),
                     text: 'Effects',
                   ),
+                  //selepart tab for color overlay
+                  Tab(icon: Icon(Icons.color_lens, size: 18), text: 'Overlay'),
+
                   Tab(icon: Icon(Icons.border_outer, size: 18), text: 'Border'),
                   Tab(icon: Icon(Icons.transform, size: 18), text: 'Transform'),
                 ],
@@ -130,6 +134,11 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                   _EffectsPage(
                     imageEditorController: controller,
                     onUpdate: _updateImage,
+                  ),
+
+                  _ColorOverlayPage(
+                    onUpdate: () {},
+                    imageEditorController: controller,
                   ),
                   _BorderPage(
                     imageEditorController: controller,
@@ -537,48 +546,25 @@ class _FiltersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<ImageEditorController>(
       id: 'filters_page',
-      builder: (controller) => Column(
-        children: [
-          // Filter Grid
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _getAvailableFilters().length,
-              itemBuilder: (context, index) {
-                final filter = _getAvailableFilters()[index];
-                final isActive = controller.activeFilter == filter.key;
+      builder: (controller) => Expanded(
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          itemCount: _getAvailableFilters().length,
+          itemBuilder: (context, index) {
+            final filter = _getAvailableFilters()[index];
+            final isActive = controller.activeFilter == filter.key;
 
-                return GestureDetector(
-                  onTap: () {
-                    controller.applyFilter(filter.key);
-                    onUpdate();
-                  },
-                  child: _FilterThumbnail(filter: filter, isActive: isActive),
-                );
+            return GestureDetector(
+              onTap: () {
+                controller.applyFilter(filter.key);
+                onUpdate();
               },
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-            ),
-          ),
-
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: _CompactSlider(
-          //         icon: Icons.vignette,
-          //         label: 'Vignette',
-          //         value: controller.borderRadius,
-          //         min: 0.0,
-          //         max: 50.0,
-          //         onChanged: (v) {
-          //           controller.setBorderRadius(v);
-          //           onUpdate();
-          //         },
-          //       ),
-          //     ),
-          //   ],
-          // ),
-        ],
+              child: _FilterThumbnail(filter: filter, isActive: isActive),
+            );
+          },
+          separatorBuilder: (context, index) => const SizedBox(width: 8),
+        ),
       ),
     );
   }
@@ -703,73 +689,37 @@ class _EffectsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<ImageEditorController>(
-      id: 'effects_page',
-      builder: (controller) => Column(
-        children: [
-          const SizedBox(height: 8),
-          // Mask Shapes
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: ImageMaskShape.values.length,
-              itemBuilder: (context, index) {
-                final shape = ImageMaskShape.values[index];
-                return _MaskButton(
-                  shape: shape,
-                  isActive: controller.selectedMaskShape == shape,
-                  onTap: () {
-                    controller.setMaskShape(shape);
-                    onUpdate();
-                  },
-                );
-              },
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-            ),
-          ),
-
-          // Color Overlay
-          Text(
-            'Overlay',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 32,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _ColorChip(
-                  color: null,
-                  isActive: controller.overlayColor == null,
-                  onTap: () {
-                    controller.setOverlayColor(null);
-                    onUpdate();
-                  },
-                ),
-                ...Colors.primaries.take(8).map((color) {
-                  return _ColorChip(
-                    color: color.withOpacity(0.3),
-                    isActive:
-                        controller.overlayColor?.value ==
-                        color.withOpacity(0.3).value,
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        // Mask Shapes
+        Expanded(
+          flex: 2,
+          child: GetBuilder<ImageEditorController>(
+            id: 'mask_shapes',
+            builder: (controller) {
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: ImageMaskShape.values.length,
+                itemBuilder: (context, index) {
+                  final shape = ImageMaskShape.values[index];
+                  return _MaskButton(
+                    shape: shape,
+                    isActive: controller.selectedMaskShape == shape,
                     onTap: () {
-                      controller.setOverlayColor(color.withOpacity(0.3));
-                      controller.setOverlayBlendMode(BlendMode.overlay);
+                      controller.setMaskShape(shape);
                       onUpdate();
                     },
                   );
-                }),
-              ],
-            ),
+                },
+                separatorBuilder: (context, index) => const SizedBox(width: 8),
+              );
+            },
           ),
-          /*
+        ),
+
+        /*
           // Noise Effect
           const SizedBox(height: 8),
           Text(
@@ -797,121 +747,178 @@ class _EffectsPage extends StatelessWidget {
 
           */
 
-          // Vignette Effect
-          const SizedBox(height: 8),
-          Text(
-            'Vignette',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Slider(
-            value: controller.selectedImageItem?.content?.vignette ?? 0.0,
-            min: 0.0,
-            max: 1.0,
-            divisions: 100,
-            onChanged: (value) {
-              if (controller.selectedImageItem?.content != null) {
-                controller.selectedImageItem!.content!.vignette = value;
-                controller.update(['effects_page']);
-                onUpdate();
-              }
+        // Vignette Effect
+        const SizedBox(height: 8),
+        Expanded(
+          child: GetBuilder<ImageEditorController>(
+            id: 'vignette_slider',
+            builder: (controller) {
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: Get.width * 0.19),
+                child: LayoutBuilder(
+                  builder: (context, constraint) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Modern slider with built-in label
+                        SizedBox(
+                          child: SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              trackHeight: 16,
+                              inactiveTrackColor:
+                                  Get.theme.colorScheme.surfaceContainerLow,
+                              thumbColor: Get.theme.colorScheme.secondary,
+                              thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 6,
+                                // disabledThumbRadius: 6,
+                                elevation: 0,
+                              ),
+                              overlayColor: AppColors.brandingLight,
+                              overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 8,
+                              ),
+                              valueIndicatorTextStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              showValueIndicator: ShowValueIndicator.always,
+                            ),
+                            child: Slider(
+                              value:
+                                  controller
+                                      .selectedImageItem
+                                      ?.content
+                                      ?.vignette ??
+                                  0.0,
+                              min: 0.0,
+                              max: 1.0,
+                              divisions: 100,
+                              onChanged: controller.setVignette,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-/*
-class _EffectsPage extends StatelessWidget {
+class _ColorOverlayPage extends StatelessWidget {
   final ImageEditorController imageEditorController;
   final VoidCallback onUpdate;
 
-  const _EffectsPage({
+  const _ColorOverlayPage({
     required this.imageEditorController,
     required this.onUpdate,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = [
+      null, // For "no color"
+      ...Colors.primaries.take(55).map((color) => color.withOpacity(0.3)),
+    ];
+
     return GetBuilder<ImageEditorController>(
-      id: 'effects_page',
-      builder: (controller) => Column(
-        children: [
-          SizedBox(height: 8),
-          //covert to Listview.buidler
-          Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: ImageMaskShape.values.length,
-              itemBuilder: (context, index) {
-                final shape = ImageMaskShape.values[index];
-                return _MaskButton(
-                  shape: shape,
-                  isActive: controller.selectedMaskShape == shape,
-                  onTap: () {
-                    controller.setMaskShape(shape);
-                    onUpdate();
-                  },
-                );
-              },
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-            ),
-          ),
+      id: 'color_overlay_page',
+      builder: (controller) {
+        return Expanded(
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: colors.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final color = colors[index];
+              final isActive = color == null
+                  ? controller.overlayColor == null
+                  : controller.overlayColor?.value == color.value;
 
-    
-
-          // Color Overlay
-          Text(
-            'Overlay',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+              return _ColorChip(
+                color: color,
+                isActive: isActive,
+                onTap: () {
+                  controller.setOverlayColor(color);
+                  if (color != null) {
+                    controller.setOverlayBlendMode(BlendMode.overlay);
+                  }
+                  onUpdate();
+                },
+              );
+            },
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 32,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _ColorChip(
-                  color: null,
-                  isActive: controller.overlayColor == null,
-                  onTap: () {
-                    controller.setOverlayColor(null);
-                    onUpdate();
-                  },
-                ),
-                ...Colors.primaries.take(8).map((color) {
-                  return _ColorChip(
-                    color: color.withOpacity(0.3),
-                    isActive:
-                        controller.overlayColor?.value ==
-                        color.withOpacity(0.3).value,
-                    onTap: () {
-                      controller.setOverlayColor(color.withOpacity(0.3));
-                      controller.setOverlayBlendMode(BlendMode.overlay);
-                      onUpdate();
-                    },
-                  );
-                }),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
-*/
+
+class _ColorChip extends StatelessWidget {
+  final Color? color;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _ColorChip({
+    required this.color,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: 55,
+            height: 55,
+            // margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: color ?? Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: isActive
+                  ? Border.all(color: AppColors.branding, width: 1)
+                  : null,
+            ),
+            child: color == null
+                ? Icon(
+                    Icons.block,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 24,
+                  )
+                : null,
+          ),
+        ),
+        SizedBox(height: 6),
+        Text(
+          '#${color?.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+          style: TextStyle(
+            color: isActive ? AppColors.branding : null,
+
+            fontSize: 8,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
 class _BorderPage extends StatelessWidget {
   final ImageEditorController imageEditorController;
   final VoidCallback onUpdate;
@@ -1335,43 +1342,6 @@ class _CompactSlider extends StatelessWidget {
   }
 }
 
-class _ColorChip extends StatelessWidget {
-  final Color? color;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ColorChip({
-    required this.color,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: color ?? Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isActive ? const Color(0xFFFFA500) : Colors.white24,
-              width: isActive ? 2 : 1,
-            ),
-          ),
-          child: color == null
-              ? const Icon(Icons.clear, color: Colors.white70, size: 16)
-              : null,
-        ),
-      ),
-    );
-  }
-}
-
 class _MaskButton extends StatelessWidget {
   final ImageMaskShape shape;
   final bool isActive;
@@ -1391,7 +1361,9 @@ class _MaskButton extends StatelessWidget {
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surface,
+          color: isActive
+              ? AppColors.brandingLight.withValues(alpha: 0.05)
+              : Get.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: isActive
               ? Border.all(color: AppColors.brandingLight, width: 2)
