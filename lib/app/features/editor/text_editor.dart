@@ -419,6 +419,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
 
   Widget _buildTabBar() {
     return Container(
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         border: Border(

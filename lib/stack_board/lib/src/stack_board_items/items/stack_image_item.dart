@@ -532,11 +532,6 @@ class ImageItemContent extends StackItemContent {
     activeFilter = filterName;
   }
 
-  // Compatibility getters for backward compatibility
-  bool get grayscale => activeFilter == 'grayscale';
-  bool get sepia => activeFilter == 'sepia';
-  bool get vintage => activeFilter == 'vintage';
-
   void resetFilters() {
     brightness = 0.0;
     contrast = 1.0;
