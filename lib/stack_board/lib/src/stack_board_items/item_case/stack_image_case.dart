@@ -236,14 +236,19 @@ class StackImageCase extends StatelessWidget {
       );
     }
 
-    // Apply color overlay
+    // Apply color overlay with border radius
     if (content.overlayColor != null) {
       children.add(
         Positioned.fill(
           child: Container(
             width: content.width,
             height: content.height,
-            color: content.overlayColor,
+            decoration: BoxDecoration(
+              color: content.overlayColor,
+              borderRadius: content.borderRadius > 0.0
+                  ? BorderRadius.circular(content.borderRadius)
+                  : null,
+            ),
             child: content.overlayBlendMode != null
                 ? ColorFiltered(
                     colorFilter: ColorFilter.mode(
@@ -318,6 +323,104 @@ class StackImageCase extends StatelessWidget {
             ),
           );
   }
+  // Widget _applyOverlayEffects(Widget widget) {
+  //   List<Widget> children = [widget];
+
+  //   // Apply gradient overlay
+  //   if (content.gradientOverlay != null) {
+  //     children.add(
+  //       Positioned.fill(
+  //         child: Container(
+  //           width: content.width,
+  //           height: content.height,
+  //           decoration: BoxDecoration(gradient: content.gradientOverlay),
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   // Apply color overlay
+  //   if (content.overlayColor != null) {
+  //     children.add(
+  //       Positioned.fill(
+  //         child: Container(
+  //           width: content.width,
+  //           height: content.height,
+  //           color: content.overlayColor,
+  //           child: content.overlayBlendMode != null
+  //               ? ColorFiltered(
+  //                   colorFilter: ColorFilter.mode(
+  //                     content.overlayColor!,
+  //                     content.overlayBlendMode!,
+  //                   ),
+  //                   child: Container(),
+  //                 )
+  //               : null,
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   // Apply vignette effect
+  //   if (content.vignette > 0.0) {
+  //     children.add(
+  //       Positioned.fill(
+  //         child: Container(
+  //           width: content.width,
+  //           height: content.height,
+  //           decoration: BoxDecoration(
+  //             gradient: RadialGradient(
+  //               colors: [
+  //                 Colors.transparent,
+  //                 (content.vignetteColor ?? Colors.black).withOpacity(
+  //                   content.vignette,
+  //                 ),
+  //               ],
+  //               stops: const [0.3, 1.0],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   // Apply noise effect
+  //   if (content.noiseIntensity > 0.0) {
+  //     children.add(
+  //       Positioned.fill(
+  //         child: SizedBox(
+  //           width: content.width,
+  //           height: content.height,
+  //           child: Opacity(
+  //             opacity: content.noiseIntensity,
+  //             child: Container(
+  //               decoration: const BoxDecoration(
+  //                 image: DecorationImage(
+  //                   image: AssetImage('assets/noise_texture.png'),
+  //                   fit: BoxFit.cover,
+  //                   opacity: 0.1,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   // Wrap the Stack with a SizedBox to enforce image dimensions
+  //   return children.length == 1
+  //       ? widget
+  //       : SizedBox(
+  //           width: content.width,
+  //           height: content.height,
+  //           child: Stack(
+  //             fit: StackFit.passthrough,
+  //             alignment: Alignment.center,
+  //             children: children,
+  //           ),
+  //         );
+  // }
 }
 
 // Updated enums and helper classes

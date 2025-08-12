@@ -70,7 +70,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
-        height: _tabController.index < 4 ? 160 : 250,
+        height: _tabController.index < 4 ? 160 : 180,
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
@@ -546,25 +546,23 @@ class _FiltersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<ImageEditorController>(
       id: 'filters_page',
-      builder: (controller) => Expanded(
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          itemCount: _getAvailableFilters().length,
-          itemBuilder: (context, index) {
-            final filter = _getAvailableFilters()[index];
-            final isActive = controller.activeFilter == filter.key;
+      builder: (controller) => ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _getAvailableFilters().length,
+        itemBuilder: (context, index) {
+          final filter = _getAvailableFilters()[index];
+          final isActive = controller.activeFilter == filter.key;
 
-            return GestureDetector(
-              onTap: () {
-                controller.applyFilter(filter.key);
-                onUpdate();
-              },
-              child: _FilterThumbnail(filter: filter, isActive: isActive),
-            );
-          },
-          separatorBuilder: (context, index) => const SizedBox(width: 8),
-        ),
+          return GestureDetector(
+            onTap: () {
+              controller.applyFilter(filter.key);
+              onUpdate();
+            },
+            child: _FilterThumbnail(filter: filter, isActive: isActive),
+          );
+        },
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
       ),
     );
   }
@@ -690,8 +688,9 @@ class _EffectsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         // Mask Shapes
         Expanded(
           flex: 2,
@@ -829,31 +828,29 @@ class _ColorOverlayPage extends StatelessWidget {
     return GetBuilder<ImageEditorController>(
       id: 'color_overlay_page',
       builder: (controller) {
-        return Expanded(
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: colors.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final color = colors[index];
-              final isActive = color == null
-                  ? controller.overlayColor == null
-                  : controller.overlayColor?.value == color.value;
+        return ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: colors.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final color = colors[index];
+            final isActive = color == null
+                ? controller.overlayColor == null
+                : controller.overlayColor?.value == color.value;
 
-              return _ColorChip(
-                color: color,
-                isActive: isActive,
-                onTap: () {
-                  controller.setOverlayColor(color);
-                  if (color != null) {
-                    controller.setOverlayBlendMode(BlendMode.overlay);
-                  }
-                  onUpdate();
-                },
-              );
-            },
-          ),
+            return _ColorChip(
+              color: color,
+              isActive: isActive,
+              onTap: () {
+                controller.setOverlayColor(color);
+                if (color != null) {
+                  controller.setOverlayBlendMode(BlendMode.overlay);
+                }
+                onUpdate();
+              },
+            );
+          },
         );
       },
     );
@@ -932,90 +929,117 @@ class _BorderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<ImageEditorController>(
       id: 'border_page',
-      builder: (controller) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _CompactSlider(
-                    icon: Icons.border_outer,
-                    value: controller.borderWidth,
-                    min: 0.0,
-                    max: 50.0,
-                    onChanged: (v) {
-                      controller.setBorderWidth(v);
-                      onUpdate();
-                    },
+      builder: (controller) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: GetBuilder<ImageEditorController>(
+                      id: 'border_width',
+                      builder: (controller) {
+                        return _CompactSlider(
+                          icon: Icons.border_outer,
+                          value: controller.borderWidth,
+                          min: 0.0,
+                          max: 50.0,
+                          onChanged: (v) {
+                            controller.setBorderWidth(v);
+                            onUpdate();
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _CompactSlider(
-                    icon: Icons.rounded_corner,
-                    value: controller.borderRadius,
-                    min: 0.0,
-                    max: 100.0,
-                    onChanged: (v) {
-                      controller.setBorderRadius(v);
-                      onUpdate();
-                    },
-                  ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GetBuilder<ImageEditorController>(
+                      id: 'border_radius',
 
-            if (controller.isExpanded) ...[
+                      builder: (controller) {
+                        return _CompactSlider(
+                          icon: Icons.rounded_corner,
+                          value: controller.borderRadius,
+                          min: 0.0,
+                          max: 100.0,
+                          onChanged: (v) {
+                            controller.setBorderRadius(v);
+                            onUpdate();
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: _CompactSlider(
-                      icon: Icons.blur_on,
-                      value: controller.shadowBlur,
-                      min: 0.0,
-                      max: 20.0,
-                      onChanged: (v) {
-                        controller.setShadowBlur(v);
-                        onUpdate();
+                    child: GetBuilder<ImageEditorController>(
+                      id: 'shadow_blur',
+                      builder: (controller) {
+                        return _CompactSlider(
+                          icon: Icons.blur_on,
+                          value: controller.shadowBlur,
+                          min: 0.0,
+                          max: 20.0,
+                          onChanged: (v) {
+                            controller.setShadowBlur(v);
+                            onUpdate();
+                          },
+                        );
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     children: [
-                      _MiniColorButton(
-                        color: controller.borderColor,
-                        onTap: () => _showColorPicker(
-                          context,
-                          'Border',
-                          controller.borderColor,
-                          (color) {
-                            controller.setBorderColor(color);
-                            onUpdate();
-                          },
-                        ),
+                      GetBuilder<ImageEditorController>(
+                        id: 'border_color',
+                        builder: (controller) {
+                          return _MiniColorButton(
+                            color: controller.borderColor,
+                            onTap: () => _showColorPicker(
+                              context,
+                              'Border',
+                              controller.borderColor,
+                              (color) {
+                                controller.setBorderColor(color);
+                                onUpdate();
+                              },
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 4),
-                      _MiniColorButton(
-                        color: controller.shadowColor,
-                        onTap: () => _showColorPicker(
-                          context,
-                          'Shadow',
-                          controller.shadowColor,
-                          (color) {
-                            controller.setShadowColor(color);
-                            onUpdate();
-                          },
-                        ),
+                      GetBuilder<ImageEditorController>(
+                        id: 'shadow_color',
+                        builder: (controller) {
+                          return _MiniColorButton(
+                            color: controller.shadowColor,
+                            onTap: () => _showColorPicker(
+                              context,
+                              'Shadow',
+                              controller.shadowColor,
+                              (color) {
+                                controller.setShadowColor(color);
+                                onUpdate();
+                              },
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
                 ],
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1029,7 +1053,7 @@ class _BorderPage extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1C1C1E),
+      // backgroundColor: const Color(0xFF1C1C1E),
       builder: (context) => _QuickColorPicker(
         title: title,
         currentColor: currentColor,
@@ -1050,142 +1074,148 @@ class _TransformPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<ImageEditorController>(
-      id: 'transform_page',
-      builder: (controller) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          children: [
-            // Rotation slider
-            _CompactSlider(
-              icon: Icons.rotate_right,
-              label: 'Rotation',
-              value: controller.rotationAngle,
-              min: -180.0,
-              max: 180.0,
-              onChanged: (v) {
-                controller.setRotationAngle(v);
-                onUpdate();
-              },
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Rotation slider
+          GetBuilder<ImageEditorController>(
+            id: 'rotation_slider',
 
-            const SizedBox(height: 16),
+            builder: (controller) {
+              return _CompactSlider(
+                icon: Icons.rotate_right,
+                label: 'Rotation',
+                value: controller.rotationAngle,
+                min: -180.0,
+                max: 180.0,
+                onChanged: (v) {
+                  controller.setRotationAngle(v);
+                  onUpdate();
+                },
+              );
+            },
+          ),
 
-            // Flip buttons
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: controller.flipHorizontal
-                          ? const Color(0xFFFFA500)
-                          : const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+          const SizedBox(height: 16),
+
+          // Flip buttons
+          GetBuilder<ImageEditorController>(
+            id: "flip_buttons",
+            builder: (controller) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: controller.flipHorizontal
+                            ? AppColors.branding
+                            : Get.theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
-                        onTap: () {
-                          controller.setFlipHorizontal(
-                            !controller.flipHorizontal,
-                          );
-                          onUpdate();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.flip,
-                              color: controller.flipHorizontal
-                                  ? Colors.black
-                                  : Colors.white,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Flip H',
-                              style: TextStyle(
-                                color: controller.flipHorizontal
-                                    ? Colors.black
-                                    : Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: controller.flipVertical
-                          ? const Color(0xFFFFA500)
-                          : const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () {
-                          controller.setFlipVertical(!controller.flipVertical);
-                          onUpdate();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Transform.rotate(
-                              angle: 1.5708, // 90 degrees
-                              child: Icon(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            controller.setFlipHorizontal(
+                              !controller.flipHorizontal,
+                            );
+                            onUpdate();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
                                 Icons.flip,
-                                color: controller.flipVertical
-                                    ? Colors.black
-                                    : Colors.white,
+                                // color: controller.flipHorizontal
+                                //     ? Colors.black
+                                //     : Colors.white,
                                 size: 20,
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Flip V',
-                              style: TextStyle(
-                                color: controller.flipVertical
-                                    ? Colors.black
-                                    : Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(width: 8),
+                              Text(
+                                'Flip H',
+                                style: TextStyle(
+                                  // color: controller.flipHorizontal
+                                  //     ? Colors.black
+                                  //     : Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: controller.flipVertical
+                            ? AppColors.branding
+                            : Get.theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            controller.setFlipVertical(
+                              !controller.flipVertical,
+                            );
+                            onUpdate();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Transform.rotate(
+                                angle: 1.5708, // 90 degrees
+                                child: Icon(
+                                  Icons.flip,
+                                  // color: controller.flipVertical
+                                  //     ? Colors.black
+                                  //     : Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Flip V',
+                                style: TextStyle(
+                                  // color: controller.flipVertical
+                                  //     ? Colors.black
+                                  //     : Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
 
-            if (controller.isExpanded) ...[
-              const SizedBox(height: 16),
+          // Quick rotation buttons
 
-              // Quick rotation buttons
-              Text(
-                'Quick Rotate',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
+          /*
+          const SizedBox(height: 8),
 
-              Row(
+          GetBuilder<ImageEditorController>(
+            id: "rotations",
+            builder: (controller) {
+              return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _RotationButton(
@@ -1217,10 +1247,12 @@ class _TransformPage extends StatelessWidget {
                     },
                   ),
                 ],
-              ),
-            ],
-          ],
-        ),
+              );
+            },
+          ),
+     
+     */
+        ],
       ),
     );
   }
@@ -1292,19 +1324,19 @@ class _CompactSlider extends StatelessWidget {
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: Get.theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 16),
+          Icon(icon, size: 16),
           if (label != null) ...[
             const SizedBox(width: 4),
             Text(
               label!,
               style: const TextStyle(
-                color: Colors.white70,
+                // color: Colors.white70,
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
               ),
@@ -1314,9 +1346,10 @@ class _CompactSlider extends StatelessWidget {
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 2,
-                activeTrackColor: const Color(0xFFFFA500),
-                inactiveTrackColor: Colors.white24,
-                thumbColor: const Color(0xFFFFA500),
+                // activeTrackColor: const Color(0xFFFFA500),
+                // activeTrackColor: AppColors.branding,
+                // inactiveTrackColor: Colors.white24,
+                // thumbColor: const Color(0xFFFFA500),
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
               ),
@@ -1331,7 +1364,7 @@ class _CompactSlider extends StatelessWidget {
           Text(
             value.round().toString(),
             style: const TextStyle(
-              color: Color(0xFFFFA500),
+              color: AppColors.accent,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
@@ -1412,13 +1445,13 @@ class _MiniColorButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: color ?? Colors.transparent,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.white24, width: 1),
+          border: Border.all(color: AppColors.branding, width: 1),
         ),
         child: color == null
             ? Icon(
                 Icons.colorize,
                 size: 12,
-                color: Colors.white.withOpacity(0.6),
+                // color: Colors.white.withOpacity(0.6),
               )
             : null,
       ),
@@ -1444,7 +1477,7 @@ class _QuickColorPicker extends StatelessWidget {
       height: 200,
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
-        color: Color(0xFF1C1C1E),
+        // color: Color(0xFF1C1C1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
@@ -1455,7 +1488,7 @@ class _QuickColorPicker extends StatelessWidget {
               Text(
                 '$title Color',
                 style: const TextStyle(
-                  color: Colors.white,
+                  // color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1467,10 +1500,10 @@ class _QuickColorPicker extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    // color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 16),
+                  child: const Icon(Icons.close, size: 16),
                 ),
               ),
             ],

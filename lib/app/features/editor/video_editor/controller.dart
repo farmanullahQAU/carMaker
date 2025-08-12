@@ -217,7 +217,7 @@ class ImageEditorController extends GetxController {
       setBorderColor(Colors.white);
     }
     _notifyImageUpdate();
-    update(['border_page']);
+    update(['border_width']);
   }
 
   void setBorderRadius(double radius) {
@@ -226,7 +226,7 @@ class ImageEditorController extends GetxController {
     _borderRadius.value = radius;
     _selectedImageItem.value!.content!.borderRadius = radius;
     _notifyImageUpdate();
-    update(['border_page']);
+    update(['border_radius']);
   }
 
   void setBorderColor(Color? color) {
@@ -247,7 +247,7 @@ class ImageEditorController extends GetxController {
       setShadowColor(Colors.black);
     }
     _notifyImageUpdate();
-    update(['border_page']);
+    update(['shadow_blur']);
   }
 
   void setShadowColor(Color? color) {
@@ -266,7 +266,7 @@ class ImageEditorController extends GetxController {
     _rotationAngle.value = angle;
     _selectedImageItem.value!.content!.rotationAngle = angle;
     _notifyImageUpdate();
-    update(['transform_page']);
+    update(['rotation_slider']);
   }
 
   void rotateQuick(double degrees) {
@@ -281,7 +281,7 @@ class ImageEditorController extends GetxController {
     _flipHorizontal.value = flip;
     _selectedImageItem.value!.content!.flipHorizontal = flip;
     _notifyImageUpdate();
-    update(['transform_page']);
+    update(['flip_buttons']);
   }
 
   void setFlipVertical(bool flip) {
@@ -290,7 +290,7 @@ class ImageEditorController extends GetxController {
     _flipVertical.value = flip;
     _selectedImageItem.value!.content!.flipVertical = flip;
     _notifyImageUpdate();
-    update(['transform_page']);
+    update(['flip_buttons']);
   }
 
   // Reset methods
