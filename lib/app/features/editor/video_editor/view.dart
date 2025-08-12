@@ -2,6 +2,8 @@ import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/compact_slider.dart';
+import 'package:cardmaker/widgets/common/quick_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -941,7 +943,7 @@ class _BorderPage extends StatelessWidget {
                     child: GetBuilder<ImageEditorController>(
                       id: 'border_width',
                       builder: (controller) {
-                        return _CompactSlider(
+                        return CompactSlider(
                           icon: Icons.border_outer,
                           value: controller.borderWidth,
                           min: 0.0,
@@ -960,7 +962,7 @@ class _BorderPage extends StatelessWidget {
                       id: 'border_radius',
 
                       builder: (controller) {
-                        return _CompactSlider(
+                        return CompactSlider(
                           icon: Icons.rounded_corner,
                           value: controller.borderRadius,
                           min: 0.0,
@@ -983,7 +985,7 @@ class _BorderPage extends StatelessWidget {
                     child: GetBuilder<ImageEditorController>(
                       id: 'shadow_blur',
                       builder: (controller) {
-                        return _CompactSlider(
+                        return CompactSlider(
                           icon: Icons.blur_on,
                           value: controller.shadowBlur,
                           min: 0.0,
@@ -1054,7 +1056,7 @@ class _BorderPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       // backgroundColor: const Color(0xFF1C1C1E),
-      builder: (context) => _QuickColorPicker(
+      builder: (context) => QuickColorPicker(
         title: title,
         currentColor: currentColor,
         onChanged: onChanged,
@@ -1084,7 +1086,7 @@ class _TransformPage extends StatelessWidget {
             id: 'rotation_slider',
 
             builder: (controller) {
-              return _CompactSlider(
+              return CompactSlider(
                 icon: Icons.rotate_right,
                 label: 'Rotation',
                 value: controller.rotationAngle,
@@ -1301,80 +1303,6 @@ class _RotationButton extends StatelessWidget {
   }
 }
 
-// Helper widgets
-class _CompactSlider extends StatelessWidget {
-  final IconData icon;
-  final String? label;
-  final double value;
-  final double min;
-  final double max;
-  final ValueChanged<double> onChanged;
-
-  const _CompactSlider({
-    required this.icon,
-    this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 16),
-          if (label != null) ...[
-            const SizedBox(width: 4),
-            Text(
-              label!,
-              style: const TextStyle(
-                // color: Colors.white70,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 2,
-                // activeTrackColor: const Color(0xFFFFA500),
-                // activeTrackColor: AppColors.branding,
-                // inactiveTrackColor: Colors.white24,
-                // thumbColor: const Color(0xFFFFA500),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              ),
-              child: Slider(
-                value: value.clamp(min, max),
-                min: min,
-                max: max,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          Text(
-            value.round().toString(),
-            style: const TextStyle(
-              color: AppColors.accent,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _MaskButton extends StatelessWidget {
   final ImageMaskShape shape;
   final bool isActive;
@@ -1456,144 +1384,5 @@ class _MiniColorButton extends StatelessWidget {
             : null,
       ),
     );
-  }
-}
-
-// Quick Color Picker Modal
-class _QuickColorPicker extends StatelessWidget {
-  final String title;
-  final Color? currentColor;
-  final Function(Color?) onChanged;
-
-  const _QuickColorPicker({
-    required this.title,
-    required this.currentColor,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        // color: Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '$title Color',
-                style: const TextStyle(
-                  // color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    // color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.close, size: 16),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Color Grid
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 8,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: _getColorPalette().length,
-              itemBuilder: (context, index) {
-                final color = _getColorPalette()[index];
-                final isSelected = color?.value == currentColor?.value;
-
-                return GestureDetector(
-                  onTap: () {
-                    onChanged(color);
-                    Navigator.pop(context);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: color ?? Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? Colors.blue
-                            : Colors.white.withOpacity(0.2),
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: color == null
-                        ? Icon(
-                            Icons.not_interested,
-                            color: Colors.white.withOpacity(0.6),
-                            size: 16,
-                          )
-                        : isSelected
-                        ? const Icon(Icons.check, color: Colors.white, size: 16)
-                        : null,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Color?> _getColorPalette() {
-    return [
-      null, // No color option
-      Colors.white,
-      Colors.black,
-      Colors.grey,
-      Colors.red,
-      Colors.pink,
-      Colors.purple,
-      Colors.deepPurple,
-      Colors.indigo,
-      Colors.blue,
-      Colors.lightBlue,
-      Colors.cyan,
-      Colors.teal,
-      Colors.green,
-      Colors.lightGreen,
-      Colors.lime,
-      Colors.yellow,
-      Colors.amber,
-      Colors.orange,
-      Colors.deepOrange,
-      Colors.brown,
-      Colors.blueGrey,
-      // Additional shades
-      Colors.red.shade300,
-      Colors.pink.shade300,
-      Colors.purple.shade300,
-      Colors.blue.shade300,
-      Colors.green.shade300,
-      Colors.orange.shade300,
-      Colors.red.shade700,
-      Colors.blue.shade700,
-      Colors.green.shade700,
-      Colors.purple.shade700,
-    ];
   }
 }

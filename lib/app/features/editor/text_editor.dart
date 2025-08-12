@@ -3,6 +3,7 @@ import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/ruler_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -1569,9 +1570,6 @@ class _MaskTab extends StatelessWidget {
 }
 
 class _EffectsTab extends StatelessWidget {
-  final TextStyleController controller;
-  const _EffectsTab({required this.controller});
-
   static const List<EffectTemplate> effectTemplates = [
     EffectTemplate(
       id: 'none',
@@ -1581,52 +1579,16 @@ class _EffectsTab extends StatelessWidget {
       hasStroke: false,
       fontSize: 16.0,
     ),
-
-    // EffectTemplate(
-    //   id: 'soft_shadow',
-    //   name: 'Soft Shadow',
-    //   icon: Icons.blur_on,
-    //   hasShadow: true,
-    //   shadowOffset: Offset(1, 1),
-    //   shadowBlur: 2.0,
-    //   shadowColor: Colors.black26,
-    //   hasStroke: false,
-    //   fontSize: 16.0,
-    // ),
-    // EffectTemplate(
-    //   id: 'hard_shadow',
-    //   name: 'Hard Shadow',
-    //   icon: Icons.filter_drama,
-    //   hasShadow: true,
-    //   shadowOffset: Offset(3, 3),
-    //   shadowBlur: 0.0,
-    //   shadowColor: Colors.black54,
-    //   hasStroke: false,
-    //   fontSize: 16.0,
-    // ),
-    // EffectTemplate(
-    //   id: 'glow',
-    //   name: 'Glow',
-    //   icon: Icons.lightbulb_outline,
-    //   hasShadow: true,
-    //   shadowOffset: Offset(0, 0),
-    //   shadowBlur: 8.0,
-    //   shadowColor: Color(0xFF4CAF50),
-    //   hasStroke: false,
-    //   fontSize: 16.0,
-    // ),
     EffectTemplate(
       id: 'basic_stroke',
       name: 'Basic Stroke',
       icon: Icons.border_color,
-      hasShadow: false,
+      hasShadow: true,
       hasStroke: true,
       strokeWidth: 2.0,
       strokeColor: Colors.black,
       textColor: Colors.white,
-      shadowColor: Colors.amber,
-
-      fontSize: 55.0,
+      fontSize: 22.0,
     ),
     EffectTemplate(
       id: 'thick_stroke',
@@ -1648,20 +1610,6 @@ class _EffectsTab extends StatelessWidget {
       strokeColor: Color(0xFFFF5722),
       fontSize: 16.0,
     ),
-
-    // EffectTemplate(
-    //   id: 'stroke_shadow',
-    //   name: 'Stroke + Shadow',
-    //   icon: Icons.layers,
-    //   hasShadow: true,
-    //   shadowOffset: Offset(2, 2),
-    //   shadowBlur: 4.0,
-    //   shadowColor: Colors.black38,
-    //   hasStroke: true,
-    //   strokeWidth: 2.0,
-    //   strokeColor: Colors.white,
-    //   fontSize: 16.0,
-    // ),
     EffectTemplate(
       id: 'neon_stroke',
       name: 'Neon Stroke',
@@ -1676,77 +1624,84 @@ class _EffectsTab extends StatelessWidget {
       fontSize: 33.0,
     ),
   ];
+  final TextStyleController controller;
+  const _EffectsTab({required this.controller});
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return Container(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Templates Header
-          const Text(
-            'Effect Templates',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.highlight,
+          SizedBox(height: 8),
+
+          _buildPresetCards(),
+
+          /* stunning tabbar
+          Container(
+            height: 33,
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(25),
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // Horizontal Templates ListView
-          SizedBox(
-            height: 90,
-            child: GetBuilder<TextStyleController>(
-              id: 'effect_templates',
-              builder: (controller) {
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: effectTemplates.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final template = effectTemplates[index];
-                    final isSelected = _isTemplateSelected(
-                      controller,
-                      template,
-                    );
-
-                    return _buildTemplateCard(
-                      template: template,
-                      isSelected: isSelected,
-                      onTap: () => _applyTemplate(controller, template),
-                    );
-                  },
-                );
-              },
+            margin: EdgeInsets.symmetric(horizontal: Get.width * 0.2),
+            child: TabBar(
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerHeight: 0,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                color: AppColors.branding,
+              ),
+              labelColor: Colors.white,
+              // unselectedLabelColor: Colors.grey.shade700,
+              labelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: const [
+                Tab(text: 'Stroke'),
+                Tab(text: 'Shadow'),
+              ],
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Template Properties Panel
-          GetBuilder<TextStyleController>(
-            id: 'template_properties',
-            builder: (controller) {
-              final hasEffects =
-                  controller.hasShadow.value || controller.hasStroke.value;
-              if (!hasEffects) return const SizedBox.shrink();
-
-              return Column(
-                children: [
-                  if (controller.hasStroke.value) ...[
-                    _buildStrokeProperties(controller),
-                    if (controller.hasShadow.value) const SizedBox(height: 16),
-                  ],
-                  if (controller.hasShadow.value)
-                    _buildShadowProperties(controller),
-                ],
-              );
-            },
-          ),
+          ),*/
         ],
       ),
+    );
+  }
+
+  Widget _buildPresetCards() {
+    return SizedBox(
+      height: 112,
+      child: GetBuilder<TextStyleController>(
+        id: 'effect_templates',
+        builder: (controller) {
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: effectTemplates.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final template = effectTemplates[index];
+              final isSelected = _isTemplateSelected(controller, template);
+
+              return _buildTemplateCard(
+                template: template,
+                isSelected: isSelected,
+                onTap: () => _applyTemplate(controller, template),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showTuneBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: null,
+      elevation: 0,
+      builder: (context) => _TuneBottomSheet(controller: controller),
     );
   }
 
@@ -1755,78 +1710,106 @@ class _EffectsTab extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    // Create text style based on template
-    TextStyle textStyle = TextStyle(
-      fontSize: template.fontSize,
-      color: template.textColor ?? Colors.black,
-    );
-
-    if (template.hasStroke) {
-      textStyle = textStyle.copyWith(
-        foreground: Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = template.strokeWidth
-          ..color = template.strokeColor,
-      );
-    }
-
-    List<Shadow> shadows = [];
-    if (template.hasShadow) {
-      shadows.add(
-        Shadow(
-          offset: template.shadowOffset,
-          blurRadius: template.shadowBlur,
-          color: template.shadowColor,
-        ),
-      );
-    }
-
-    textStyle = textStyle.copyWith(shadows: shadows);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 90, // Slightly wider to accommodate text
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
-              : AppColors.highlight.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.branding
-                : AppColors.highlight.withOpacity(0.2),
-            width: isSelected ? 2 : 1,
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 88,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.branding.withOpacity(0.08)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? AppColors.branding : Colors.grey.shade200,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade200, width: 0.5),
+                  ),
+                  child: Center(
+                    child: StrokeText(
+                      text: "Aa",
+                      strokeColor: template.strokeColor,
+                      strokeWidth: template.strokeWidth,
+                      textStyle: TextStyle(
+                        fontSize: 24,
+                        color: template.textColor ?? Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  template.name,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.branding
+                        : Colors.grey.shade800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Show styled text instead of icon
-            Container(
-              height: 40,
-              alignment: Alignment.center,
-              child: Text(
-                'Ag', // Sample text to demonstrate the style
-                style: textStyle,
-                maxLines: 1,
+
+        if (isSelected)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () {
+                _showTuneBottomSheet(Get.context!);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.branding,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.branding.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.tune, color: Colors.white, size: 16),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 
-  // Update _applyTemplate to include fontSize
+  // Keep all other existing methods exactly as they were
   void _applyTemplate(TextStyleController controller, EffectTemplate template) {
     if (template.textColor != null) controller.textColor(template.textColor);
-
-    // Apply font size
     controller.fontSize.value = template.fontSize;
 
-    // Apply shadow properties
     controller.hasShadow.value = template.hasShadow;
     if (template.hasShadow) {
       controller.shadowOffset.value = template.shadowOffset;
@@ -1834,7 +1817,6 @@ class _EffectsTab extends StatelessWidget {
       controller.shadowColor.value = template.shadowColor;
     }
 
-    // Apply stroke properties
     controller.hasStroke.value = template.hasStroke;
     if (template.hasStroke) {
       controller.strokeWidth.value = template.strokeWidth;
@@ -1845,345 +1827,6 @@ class _EffectsTab extends StatelessWidget {
     controller.update(['effect_templates', 'template_properties']);
   }
 
-  Widget _buildStrokeProperties(TextStyleController controller) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.highlight.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.branding.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Properties Header
-          Row(
-            children: [
-              Icon(Icons.border_color, color: AppColors.branding, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Stroke Properties',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.branding,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Stroke width slider
-          _buildStrokeSlider(
-            label: 'Stroke Width',
-            value: controller.strokeWidth.value,
-            min: 0.0,
-            max: 10.0,
-            onChanged: (value) {
-              controller.strokeWidth.value = value;
-              controller.updateTextItem();
-              controller.update(['template_properties']);
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Stroke color section
-          Row(
-            children: [
-              Icon(Icons.format_paint, color: AppColors.branding, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                'Stroke Color',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.branding,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Color grid for stroke
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1,
-            ),
-            itemCount: TextStyleController.predefinedColors.length,
-            itemBuilder: (context, index) {
-              final color = TextStyleController.predefinedColors[index];
-              final isSelected = color == controller.strokeColor.value;
-
-              return GestureDetector(
-                onTap: () {
-                  controller.strokeColor.value = color;
-                  controller.updateTextItem();
-                  controller.update(['template_properties']);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.branding
-                          : AppColors.highlight.withOpacity(0.3),
-                      width: isSelected ? 3 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.branding.withOpacity(0.3),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                          size: 14,
-                        )
-                      : null,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShadowProperties(TextStyleController controller) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.highlight.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.branding.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Properties Header
-          Row(
-            children: [
-              Icon(Icons.blur_on, color: AppColors.branding, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Shadow Properties',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.branding,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Offset controls
-          Row(
-            children: [
-              Expanded(
-                child: _buildStrokeSlider(
-                  label: 'X Offset',
-                  value: controller.shadowOffset.value.dx,
-                  min: -10.0,
-                  max: 10.0,
-                  onChanged: (value) {
-                    controller.shadowOffset.value = Offset(
-                      value,
-                      controller.shadowOffset.value.dy,
-                    );
-                    controller.updateTextItem();
-                    controller.update(['template_properties']);
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStrokeSlider(
-                  label: 'Y Offset',
-                  value: controller.shadowOffset.value.dy,
-                  min: -10.0,
-                  max: 10.0,
-                  onChanged: (value) {
-                    controller.shadowOffset.value = Offset(
-                      controller.shadowOffset.value.dx,
-                      value,
-                    );
-                    controller.updateTextItem();
-                    controller.update(['template_properties']);
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Blur radius
-          _buildStrokeSlider(
-            label: 'Blur Radius',
-            value: controller.shadowBlurRadius.value,
-            min: 0.0,
-            max: 20.0,
-            onChanged: (value) {
-              controller.shadowBlurRadius.value = value;
-              controller.updateTextItem();
-              controller.update(['template_properties']);
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          // Shadow color section
-          Row(
-            children: [
-              Icon(Icons.palette, color: AppColors.branding, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                'Shadow Color',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.branding,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Color grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1,
-            ),
-            itemCount: TextStyleController.predefinedColors.length,
-            itemBuilder: (context, index) {
-              final color = TextStyleController.predefinedColors[index];
-              final isSelected = color == controller.shadowColor.value;
-
-              return GestureDetector(
-                onTap: () {
-                  controller.shadowColor.value = color;
-                  controller.updateTextItem();
-                  controller.update(['template_properties']);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.branding
-                          : AppColors.highlight.withOpacity(0.3),
-                      width: isSelected ? 3 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.branding.withOpacity(0.3),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                          size: 14,
-                        )
-                      : null,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStrokeSlider({
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.branding,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.branding.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                value.toStringAsFixed(1),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.branding,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        SliderTheme(
-          data: SliderTheme.of(Get.context!).copyWith(
-            activeTrackColor: AppColors.branding,
-            inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
-            thumbColor: AppColors.branding,
-            overlayColor: AppColors.branding.withOpacity(0.2),
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-            trackHeight: 4,
-          ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
-        ),
-      ],
-    );
-  }
-
   bool _isTemplateSelected(
     TextStyleController controller,
     EffectTemplate template,
@@ -2192,7 +1835,6 @@ class _EffectsTab extends StatelessWidget {
       return !controller.hasShadow.value && !controller.hasStroke.value;
     }
 
-    // Check shadow properties
     bool shadowMatches = true;
     if (template.hasShadow != controller.hasShadow.value) {
       shadowMatches = false;
@@ -2205,7 +1847,6 @@ class _EffectsTab extends StatelessWidget {
           (controller.shadowBlurRadius.value - template.shadowBlur).abs() < 0.1;
     }
 
-    // Check stroke properties
     bool strokeMatches = true;
     if (template.hasStroke != controller.hasStroke.value) {
       strokeMatches = false;
@@ -2218,7 +1859,936 @@ class _EffectsTab extends StatelessWidget {
   }
 }
 
-// Enhanced Effect Template Model
+class _TuneBottomSheet extends StatelessWidget {
+  final TextStyleController controller;
+
+  const _TuneBottomSheet({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.5,
+      width: Get.width,
+      decoration: BoxDecoration(
+        // color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.black.withOpacity(0.2),
+        //     blurRadius: 20,
+        //     offset: const Offset(0, -5),
+        //   ),
+        // ],
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+            child: Row(
+              children: [
+                Text(
+                  'Effect Settings',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close, color: Colors.grey.shade600),
+                  onPressed: () => Navigator.pop(context),
+                  splashRadius: 20,
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, thickness: 1),
+
+          // Content
+          Expanded(
+            child: GetBuilder<TextStyleController>(
+              builder: (controller) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    // horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stroke Section
+                      if (controller.hasStroke.value) ...[
+                        _buildStrokeProperties(controller),
+                      ],
+
+                      // Shadow Section
+                      if (controller.hasShadow.value) ...[
+                        _buildShadowProperties(),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorSelector({
+    required String title,
+    required Color currentColor,
+    required Function(Color?) onColorSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 8,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 6,
+          ),
+          itemCount: TextStyleController.predefinedColors.length,
+          itemBuilder: (context, index) {
+            final color = TextStyleController.predefinedColors[index];
+            final isSelected = color == currentColor;
+
+            return GestureDetector(
+              onTap: () => onColorSelected(color),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.branding : Colors.transparent,
+                    width: isSelected ? 2 : 0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: isSelected
+                    ? Center(
+                        child: Icon(
+                          Icons.check,
+                          size: 14,
+                          color: color.computeLuminance() > 0.5
+                              ? Colors.black
+                              : Colors.white,
+                        ),
+                      )
+                    : null,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStrokeProperties(TextStyleController controller) {
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            CompactSlider(
+              icon: Icons.line_weight,
+              label: 'Stroke Width',
+              value: controller.strokeWidth.value,
+              min: 0.0,
+              max: 10.0,
+              onChanged: (value) {
+                controller.strokeWidth.value = value;
+                controller.updateTextItem();
+                controller.update(['template_properties']);
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Stroke Color',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                // _MiniColorButton(
+                //   color: controller.strokeColor.value,
+                //   onTap: () => _showColorPicker(
+                //     Get.context!,
+                //     'Stroke',
+                //     controller.strokeColor.value,
+                //     (color) {
+                //       if (color != null) {
+                //         controller.strokeColor.value = color;
+                //         controller.updateTextItem();
+                //         controller.update(['template_properties']);
+                //       }
+                //     },
+                //   ),
+                // ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShadowProperties() {
+    return GetBuilder<TextStyleController>(
+      id: 'shadow_properties',
+      builder: (controller) {
+        if (!controller.hasShadow.value) {
+          return SizedBox();
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              CompactSlider(
+                icon: Icons.blur_on,
+                label: 'Blur Radius',
+                value: controller.shadowBlurRadius.value,
+                min: 0.0,
+                max: 20.0,
+                onChanged: (value) {
+                  controller.shadowBlurRadius.value = value;
+                  controller.updateTextItem();
+                  controller.update(['shadow_properties']);
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildColorSelector(
+                title: 'Shadow Color',
+                currentColor: controller.shadowColor.value,
+                onColorSelected: (color) {
+                  if (color != null) {
+                    controller.shadowColor.value = color;
+                    controller.updateTextItem();
+                    controller.update(['shadow_properties']);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+/*
+
+class _EffectsTab extends StatelessWidget {
+  static const List<EffectTemplate> effectTemplates = [
+    EffectTemplate(
+      id: 'none',
+      name: 'None',
+      icon: Icons.format_clear,
+      hasShadow: false,
+      hasStroke: false,
+      fontSize: 16.0,
+    ),
+    EffectTemplate(
+      id: 'basic_stroke',
+      name: 'Basic Stroke',
+      icon: Icons.border_color,
+      hasShadow: true,
+      hasStroke: true,
+      strokeWidth: 2.0,
+      strokeColor: Colors.black,
+      textColor: Colors.white,
+      fontSize: 44.0,
+    ),
+    EffectTemplate(
+      id: 'thick_stroke',
+      name: 'Thick Stroke',
+      icon: Icons.format_paint,
+      hasShadow: false,
+      hasStroke: true,
+      strokeWidth: 4.0,
+      strokeColor: Colors.blue,
+      fontSize: 16.0,
+    ),
+    EffectTemplate(
+      id: 'colored_stroke',
+      name: 'Color Stroke',
+      icon: Icons.palette,
+      hasShadow: false,
+      hasStroke: true,
+      strokeWidth: 3.0,
+      strokeColor: Color(0xFFFF5722),
+      fontSize: 16.0,
+    ),
+    EffectTemplate(
+      id: 'neon_stroke',
+      name: 'Neon Stroke',
+      icon: Icons.flash_on,
+      hasShadow: false,
+      shadowOffset: Offset(0, 0),
+      shadowBlur: 10.0,
+      shadowColor: Color(0xFF00E676),
+      hasStroke: true,
+      strokeWidth: 1.0,
+      strokeColor: Color(0xFF00E676),
+      fontSize: 33.0,
+    ),
+  ];
+
+  final TextStyleController controller;
+  const _EffectsTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildSectionHeader('Text Effects'),
+        const SizedBox(height: 12),
+        _buildPresetCards(),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetCards() {
+    return SizedBox(
+      height: 112,
+      child: GetBuilder<TextStyleController>(
+        id: 'effect_templates',
+        builder: (controller) {
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: effectTemplates.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final template = effectTemplates[index];
+              final isSelected = _isTemplateSelected(controller, template);
+
+              return _buildTemplateCard(
+                template: template,
+                isSelected: isSelected,
+                onTap: () => _applyTemplate(controller, template),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTemplateCard({
+    required EffectTemplate template,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 88,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.branding.withOpacity(0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? AppColors.branding 
+                : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 56,
+              width: 56,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.grey.shade200,
+                  width: 0.5,
+                ),
+              ),
+              child: Center(
+                child: StrokeText(
+                  text: "Aa",
+                  strokeColor: template.strokeColor,
+                  strokeWidth: template.strokeWidth,
+                  textStyle: TextStyle(
+                    fontSize: 24,
+                    color: template.textColor ?? Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              template.name,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? AppColors.branding : Colors.grey.shade800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTuneBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      builder: (context) => _TuneBottomSheet(controller: controller),
+    );
+  }
+
+  void _applyTemplate(TextStyleController controller, EffectTemplate template) {
+    if (template.textColor != null) controller.textColor(template.textColor);
+    controller.fontSize.value = template.fontSize;
+
+    controller.hasShadow.value = template.hasShadow;
+    if (template.hasShadow) {
+      controller.shadowOffset.value = template.shadowOffset;
+      controller.shadowBlurRadius.value = template.shadowBlur;
+      controller.shadowColor.value = template.shadowColor;
+    }
+
+    controller.hasStroke.value = template.hasStroke;
+    if (template.hasStroke) {
+      controller.strokeWidth.value = template.strokeWidth;
+      controller.strokeColor.value = template.strokeColor;
+    }
+
+    controller.updateTextItem();
+    controller.update(['effect_templates', 'template_properties']);
+  }
+
+  bool _isTemplateSelected(
+    TextStyleController controller,
+    EffectTemplate template,
+  ) {
+    if (template.id == 'none') {
+      return !controller.hasShadow.value && !controller.hasStroke.value;
+    }
+
+    bool shadowMatches = true;
+    if (template.hasShadow != controller.hasShadow.value) {
+      shadowMatches = false;
+    } else if (template.hasShadow && controller.hasShadow.value) {
+      shadowMatches =
+          (controller.shadowOffset.value.dx - template.shadowOffset.dx).abs() <
+              0.1 &&
+          (controller.shadowOffset.value.dy - template.shadowOffset.dy).abs() <
+              0.1 &&
+          (controller.shadowBlurRadius.value - template.shadowBlur).abs() < 0.1;
+    }
+
+    bool strokeMatches = true;
+    if (template.hasStroke != controller.hasStroke.value) {
+      strokeMatches = false;
+    } else if (template.hasStroke && controller.hasStroke.value) {
+      strokeMatches =
+          (controller.strokeWidth.value - template.strokeWidth).abs() < 0.1;
+    }
+
+    return shadowMatches && strokeMatches;
+  }
+}
+
+class _TuneBottomSheet extends StatelessWidget {
+  final TextStyleController controller;
+
+  const _TuneBottomSheet({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.65,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+            child: Row(
+              children: [
+                Text(
+                  'Effect Settings',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.close, color: Colors.grey.shade600),
+                  onPressed: () => Navigator.pop(context),
+                  splashRadius: 20,
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, thickness: 1),
+
+          // Content
+          Expanded(
+            child: GetBuilder<TextStyleController>(
+              builder: (controller) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stroke Section
+                      if (controller.hasStroke.value) ...[
+                        _buildSectionHeader('Stroke Settings', Icons.border_outer),
+                        const SizedBox(height: 16),
+                        _buildStrokeControls(),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1, thickness: 1),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Shadow Section
+                      if (controller.hasShadow.value) ...[
+                        _buildSectionHeader('Shadow Settings', Icons.shadow),
+                        const SizedBox(height: 16),
+                        _buildShadowControls(),
+                        const SizedBox(height: 24),
+                        const Divider(height: 1, thickness: 1),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Empty state if no effects
+                      if (!controller.hasStroke.value && !controller.hasShadow.value)
+                        _buildEmptyEffectsState(),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.branding.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.branding, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStrokeControls() {
+    return GetBuilder<TextStyleController>(
+      builder: (controller) {
+        return Column(
+          children: [
+            // Stroke Width
+            _buildSliderControl(
+              label: 'Stroke Width',
+              value: controller.strokeWidth.value,
+              min: 0.0,
+              max: 10.0,
+              divisions: 20,
+              unit: 'px',
+              onChanged: (value) {
+                controller.strokeWidth.value = value;
+                controller.updateTextItem();
+                controller.update();
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // Stroke Color
+            _buildColorPicker(
+              title: 'Stroke Color',
+              currentColor: controller.strokeColor.value,
+              onColorChanged: (color) {
+                controller.strokeColor.value = color;
+                controller.updateTextItem();
+                controller.update();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildShadowControls() {
+    return GetBuilder<TextStyleController>(
+      builder: (controller) {
+        return Column(
+          children: [
+            // Blur Radius
+            _buildSliderControl(
+              label: 'Shadow Blur',
+              value: controller.shadowBlurRadius.value,
+              min: 0.0,
+              max: 20.0,
+              divisions: 20,
+              unit: 'px',
+              onChanged: (value) {
+                controller.shadowBlurRadius.value = value;
+                controller.updateTextItem();
+                controller.update();
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // Shadow Color
+            _buildColorPicker(
+              title: 'Shadow Color',
+              currentColor: controller.shadowColor.value,
+              onColorChanged: (color) {
+                controller.shadowColor.value = color;
+                controller.updateTextItem();
+                controller.update();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSliderControl({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required String unit,
+    required int divisions,
+    required Function(double) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${value.toStringAsFixed(1)}$unit',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SliderTheme(
+          data: SliderTheme.of(Get.context!).copyWith(
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+            activeTrackColor: AppColors.branding,
+            inactiveTrackColor: Colors.grey.shade200,
+            thumbColor: Colors.white,
+            activeTickMarkColor: Colors.transparent,
+            inactiveTickMarkColor: Colors.transparent,
+            overlayColor: AppColors.branding.withOpacity(0.1),
+          ),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColorPicker({
+    required String title,
+    required Color currentColor,
+    required Function(Color) onColorChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 48,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: TextStyleController.predefinedColors.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final color = TextStyleController.predefinedColors[index];
+              final isSelected = color.value == currentColor.value;
+
+              return GestureDetector(
+                onTap: () => onColorChanged(color),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected 
+                          ? AppColors.branding 
+                          : Colors.grey.shade300,
+                      width: isSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: [
+                      if (isSelected)
+                        BoxShadow(
+                          color: AppColors.branding.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
+                  ),
+                  child: isSelected
+                      ? Center(
+                          child: Icon(
+                            Icons.check,
+                            color: color.computeLuminance() > 0.5
+                                ? Colors.black
+                                : Colors.white,
+                            size: 18,
+                          ),
+                        )
+                      : null,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyEffectsState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.auto_awesome_mosaic,
+            size: 48,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Effects Active',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Select an effect template from above to customize its settings',
+              style: TextStyle(
+                fontSize: 14, 
+                color: Colors.grey.shade500,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}*/
+
+class _MiniColorButton extends StatelessWidget {
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MiniColorButton({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class EffectTemplate {
   final String id;
   final String name;
@@ -2249,246 +2819,6 @@ class EffectTemplate {
   });
 }
 
-/*
-// EFFECTS TAB - Compact shadow controls
-class _EffectsTab extends StatelessWidget {
-  final TextStyleController controller;
-  const _EffectsTab({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        children: [
-          // Shadow toggle
-          GetBuilder<TextStyleController>(
-            id: 'shadow_toggle',
-            builder: (controller) {
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.highlight.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.blur_on,
-                      color: controller.hasShadow.value
-                          ? AppColors.branding
-                          : AppColors.highlight,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Text Shadow',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Get.theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    Switch(
-                      value: controller.hasShadow.value,
-                      onChanged: (value) {
-                        controller.hasShadow.value = value;
-                        controller.updateTextItem();
-                        controller.update([
-                          'shadow_toggle',
-                          'shadow_properties',
-                        ]);
-                      },
-                      activeColor: AppColors.branding,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-
-          // Shadow properties
-          GetBuilder<TextStyleController>(
-            id: 'shadow_properties',
-            builder: (controller) {
-              if (!controller.hasShadow.value) return const SizedBox.shrink();
-
-              return Column(
-                children: [
-                  const SizedBox(height: 16),
-
-                  // Offset controls
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildShadowSlider(
-                          label: 'X Offset',
-                          value: controller.shadowOffset.value.dx,
-                          min: -10.0,
-                          max: 10.0,
-                          onChanged: (value) {
-                            controller.shadowOffset.value = Offset(
-                              value,
-                              controller.shadowOffset.value.dy,
-                            );
-                            controller.updateTextItem();
-                            controller.update(['shadow_properties']);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildShadowSlider(
-                          label: 'Y Offset',
-                          value: controller.shadowOffset.value.dy,
-                          min: -10.0,
-                          max: 10.0,
-                          onChanged: (value) {
-                            controller.shadowOffset.value = Offset(
-                              controller.shadowOffset.value.dx,
-                              value,
-                            );
-                            controller.updateTextItem();
-                            controller.update(['shadow_properties']);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Blur radius
-                  _buildShadowSlider(
-                    label: 'Blur Radius',
-                    value: controller.shadowBlurRadius.value,
-                    min: 0.0,
-                    max: 20.0,
-                    onChanged: (value) {
-                      controller.shadowBlurRadius.value = value;
-                      controller.updateTextItem();
-                      controller.update(['shadow_properties']);
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Shadow color
-                  const Text(
-                    'Shadow Color',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.highlight,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 8,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 6,
-                          childAspectRatio: 1,
-                        ),
-                    itemCount: TextStyleController.predefinedColors.length,
-                    itemBuilder: (context, index) {
-                      final color = TextStyleController.predefinedColors[index];
-                      final isSelected = color == controller.shadowColor.value;
-
-                      return GestureDetector(
-                        onTap: () {
-                          controller.shadowColor.value = color;
-                          controller.updateTextItem();
-                          controller.update(['shadow_properties']);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.branding
-                                  : AppColors.highlight.withOpacity(0.3),
-                              width: isSelected ? 3 : 1,
-                            ),
-                          ),
-                          child: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: color.computeLuminance() > 0.5
-                                      ? Colors.black
-                                      : Colors.white,
-                                  size: 12,
-                                )
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShadowSlider({
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.highlight,
-              ),
-            ),
-            Text(
-              value.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.branding,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 2),
-        SliderTheme(
-          data: SliderTheme.of(Get.context!).copyWith(
-            // activeTrackColor: AppColors.branding,
-            inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
-            // thumbColor: AppColors.branding,
-            overlayColor: AppColors.branding.withOpacity(0.2),
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-            trackHeight: 3,
-          ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
-        ),
-      ],
-    );
-  }
-}
-*/
-// Keep the existing circular tab implementations
 class _CircularTab extends StatelessWidget {
   final TextStyleController controller;
   final TabController tabController;

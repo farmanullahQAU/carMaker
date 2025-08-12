@@ -800,7 +800,7 @@ class _StickerPanel extends StatelessWidget {
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 labelColor: AppColors.branding,
-                unselectedLabelColor: Colors.grey[600],
+                // unselectedLabelColor: Colors.grey[600],
                 indicatorColor: AppColors.branding,
                 indicatorWeight: 3,
                 labelStyle: TextStyle(
