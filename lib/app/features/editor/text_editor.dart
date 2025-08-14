@@ -3,11 +3,14 @@ import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/ruler_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+enum DualToneDirection { horizontal, vertical, diagonal, radial }
 
 class StrokeText extends StatelessWidget {
   final String text;
@@ -254,23 +257,33 @@ class TextStyleController extends GetxController {
   final lineHeight = 1.2.obs;
   final textAlign = TextAlign.left.obs;
   final textColor = Colors.black.obs;
+  Color? textColorOld; //to keep track of textcolor when reset stroke effects
   final backgroundColor = Colors.transparent.obs;
   final fontWeight = FontWeight.normal.obs;
   final isItalic = false.obs;
   final isUnderlined = false.obs;
   final maskImage = Rx<String?>(null);
-  final maskColor = Rx<Color?>(null);
+
+  BlendMode? maskBlendMode;
+  var maskOpacity = (1.0).obs;
 
   // Effects - Shadow
   final hasShadow = false.obs;
   final shadowOffset = const Offset(2, 2).obs;
   final shadowBlurRadius = 4.0.obs;
   final shadowColor = Colors.black54.obs;
-
+  // Dual Tone properties (ADD THESE)
+  final hasDualTone = false.obs;
+  Color? dualToneColor1;
+  Color? dualToneColor2;
+  final dualToneDirection = DualToneDirection.horizontal.obs;
+  final dualTonePosition = 0.5.obs; // 0.0 to 1.0 for gradient position
   // Effects - Stroke (NEW)
   final hasStroke = false.obs;
   final strokeWidth = 2.0.obs;
   final strokeColor = Colors.black.obs;
+  String? selectedTemplateId;
+  String? selectedDualToneTemplateId;
 
   // Circular text
   final isCircular = false.obs;
@@ -299,22 +312,40 @@ class TextStyleController extends GetxController {
   ];
 
   static const predefinedColors = [
+    Colors.transparent,
     Colors.black,
     Colors.white,
+    Color(0xFF333333), // Dark grey
+    Color(0xFF666666), // Medium grey
+    Color(0xFF999999), // Light grey
+    Color(0xFFCCCCCC), // Very light grey
     Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
+    Color(0xFFFF6B6B), // Light red
+    Color(0xFF8B0000), // Dark red
     Colors.pink,
-    Colors.teal,
+    Color(0xFFFF69B4), // Hot pink
+    Colors.orange,
+    Color(0xFFFF8C00), // Dark orange
     Colors.amber,
-    Colors.cyan,
-    Colors.grey,
-    Colors.brown,
-    Colors.indigo,
+    Colors.yellow,
+    Color(0xFFFFD700), // Gold
     Colors.lime,
-    Colors.deepOrange,
+    Colors.green,
+    Color(0xFF00FF7F), // Spring green
+    Color(0xFF228B22), // Forest green
+    Colors.teal,
+    Color(0xFF00CED1), // Dark turquoise
+    Colors.cyan,
+    Color(0xFF87CEEB), // Sky blue
+    Colors.blue,
+    Color(0xFF4169E1), // Royal blue
+    Color(0xFF191970), // Midnight blue
+    Colors.indigo,
+    Colors.purple,
+    Color(0xFF9370DB), // Medium purple
+    Color(0xFF8A2BE2), // Blue violet
+    Colors.brown,
+    Color(0xFFD2691E), // Chocolate
   ];
 
   static const maskImages = [
@@ -341,14 +372,16 @@ class TextStyleController extends GetxController {
     lineHeight.value = textContent?.style?.height ?? 1.2;
     textAlign.value = textContent?.textAlign ?? TextAlign.left;
     textColor.value = textContent?.style?.color ?? Colors.black;
+    textColorOld = textContent?.style?.color;
     backgroundColor.value =
         textContent?.style?.backgroundColor ?? Colors.transparent;
     fontWeight.value = textContent?.style?.fontWeight ?? FontWeight.normal;
     isItalic.value = textContent?.style?.fontStyle == FontStyle.italic;
     isUnderlined.value =
         textContent?.style?.decoration == TextDecoration.underline;
+
+    // Only initialize image mask, ignore color mask
     maskImage.value = textContent?.maskImage;
-    maskColor.value = textContent?.maskColor;
 
     // Initialize shadow properties
     hasShadow.value = textContent?.style?.shadows?.isNotEmpty ?? false;
@@ -358,7 +391,7 @@ class TextStyleController extends GetxController {
       shadowColor.value = textContent.style!.shadows![0].color;
     }
 
-    // Initialize stroke properties from TextItemContent
+    // Initialize stroke properties
     hasStroke.value = textContent?.hasStroke ?? false;
     strokeWidth.value = textContent?.strokeWidth ?? 2.0;
     strokeColor.value = textContent?.strokeColor ?? Colors.black;
@@ -379,6 +412,14 @@ class TextStyleController extends GetxController {
     strokeWidthCircular.value = textContent?.strokeWidth ?? 0.0;
     backgroundPaintColor.value =
         textContent?.backgroundPaintColor ?? Colors.grey.shade200;
+
+    // Initialize dual tone properties (ADD THESE)
+    hasDualTone.value = textContent?.hasDualTone ?? false;
+    dualToneColor1 = textContent?.dualToneColor1 ?? Colors.red;
+    dualToneColor2 = textContent?.dualToneColor2 ?? Colors.blue;
+    dualToneDirection.value =
+        textContent?.dualToneDirection ?? DualToneDirection.horizontal;
+    dualTonePosition.value = textContent?.dualTonePosition ?? 0.5;
   }
 
   void updateTextItem() {
@@ -386,6 +427,13 @@ class TextStyleController extends GetxController {
     if (item == null) return;
 
     final updatedContent = item.content?.copyWith(
+      // Add dual tone properties
+      hasDualTone: hasDualTone.value,
+      dualToneColor1: dualToneColor1,
+      dualToneColor2: dualToneColor2,
+      dualToneDirection: dualToneDirection.value,
+      dualTonePosition: dualTonePosition.value,
+
       data: item.content?.data,
       googleFont: selectedFont.value,
       style: TextStyle(
@@ -393,9 +441,10 @@ class TextStyleController extends GetxController {
         fontSize: fontSize.value,
         letterSpacing: letterSpacing.value,
         height: lineHeight.value,
-        color: maskImage.value != null || maskColor.value != null
+        // Only make text transparent if image mask is applied
+        color: maskImage.value != null
             ? Colors.transparent
-            : textColor.value,
+            : textColor.value, //TODO check it
         backgroundColor: backgroundColor.value,
         fontWeight: fontWeight.value,
         fontStyle: isItalic.value ? FontStyle.italic : FontStyle.normal,
@@ -414,9 +463,8 @@ class TextStyleController extends GetxController {
       ),
       textAlign: textAlign.value,
       maskImage: maskImage.value,
-      maskColor: maskColor.value,
-
-      // Stroke properties (NEW)
+      maskColor: null, // Always null since we don't use color masks
+      // Stroke properties
       hasStroke: hasStroke.value,
       strokeWidth: strokeWidth.value,
       strokeColor: strokeColor.value,
@@ -488,6 +536,10 @@ class TextStyleController extends GetxController {
     }
   }
 
+  resetStrok() {
+    textColor(textColorOld);
+  }
+
   String weightToString(FontWeight weight) {
     switch (weight) {
       case FontWeight.w300:
@@ -525,27 +577,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
   final TextStyleController _controller = Get.put(TextStyleController());
 
   @override
-  void initState() {
-    super.initState();
-    _controller.initializeProperties(widget.textItem);
-
-    _circularSubTabController = TabController(length: 8, vsync: this);
-    _circularSubTabController.addListener(() {
-      _controller.circularSubTabIndex.value = _circularSubTabController.index;
-    });
-
-    _tabController = TabController(
-      length: 10,
-      vsync: this,
-      initialIndex: _controller.currentIndex.value,
-    );
-    _tabController.addListener(() {
-      _controller.currentIndex.value = _tabController.index;
-      _controller.update(['tab_view']);
-    });
-  }
-
-  @override
   void dispose() {
     _tabController.dispose();
     _circularSubTabController.dispose();
@@ -563,6 +594,27 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         children: [_buildTabBar(), _buildTabView()],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.initializeProperties(widget.textItem);
+
+    _circularSubTabController = TabController(length: 8, vsync: this);
+    _circularSubTabController.addListener(() {
+      _controller.circularSubTabIndex.value = _circularSubTabController.index;
+    });
+
+    _tabController = TabController(
+      length: 11, // CHANGE: from 10 to 11 to include dual tone tab
+      vsync: this,
+      initialIndex: _controller.currentIndex.value,
+    );
+    _tabController.addListener(() {
+      _controller.currentIndex.value = _tabController.index;
+      _controller.update(['tab_view']);
+    });
   }
 
   Widget _buildTabBar() {
@@ -586,16 +638,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         indicatorPadding: EdgeInsets.zero,
         labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         tabs: const [
-          // Tab(icon: Icon(Icons.format_size, size: 16)),
-          // Tab(icon: Icon(Icons.format_align_left, size: 16)),
-          // Tab(icon: Icon(Icons.palette, size: 16)),
-          // Tab(icon: Icon(Icons.format_color_fill, size: 16)),
-          // Tab(icon: Icon(Icons.format_bold, size: 16)),
-          // Tab(icon: Icon(Icons.tune, size: 16)),
-          // Tab(icon: Icon(Icons.font_download, size: 16)),
-          // Tab(icon: Icon(Icons.image, size: 16)),
-          // Tab(icon: Icon(Icons.blur_on, size: 16)),
-          // Tab(icon: Icon(Icons.circle, size: 16)),
           Tab(icon: Icon(Icons.format_size, size: 16), text: 'Size'),
           Tab(icon: Icon(Icons.format_align_left, size: 16), text: 'Align'),
           Tab(icon: Icon(Icons.palette, size: 16), text: 'Color'),
@@ -605,6 +647,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
           Tab(icon: Icon(Icons.font_download, size: 16), text: 'Font'),
           Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),
           Tab(icon: Icon(Icons.blur_on, size: 16), text: 'Effects'),
+          Tab(icon: Icon(Icons.gradient, size: 16), text: 'Dual'), // ADD THIS
           Tab(icon: Icon(Icons.circle, size: 16), text: 'Circular'),
         ],
       ),
@@ -632,6 +675,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 _FontTab(controller: controller),
                 _MaskTab(controller: controller),
                 _EffectsTab(controller: controller),
+                _DualToneTuneTab(controller: controller), // ADD THIS
                 _CircularTab(
                   controller: controller,
                   tabController: _circularSubTabController,
@@ -651,20 +695,22 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       case 1: // Align
         return 80;
       case 2: // Color
-        return 100;
+        return 80;
       case 3: // Background
         return 100;
       case 4: // Style
-        return 120;
+        return 100;
       case 5: // Spacing
-        return 140;
+        return 120;
       case 6: // Font
         return 160;
       case 7: // Mask
-        return 200;
+        return 120;
       case 8: // Effects
-        return 240;
-      case 9: // Circular
+        return 120;
+      case 9: // Dual Tone - ADD THIS CASE
+        return 120;
+      case 10: // Circular - CHANGE: was case 9, now case 10
         return 250;
       default:
         return 120;
@@ -813,55 +859,22 @@ class _ColorTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return Center(
       child: GetBuilder<TextStyleController>(
         id: 'text_color',
         builder: (controller) {
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-              childAspectRatio: 1,
-            ),
-            itemCount: TextStyleController.predefinedColors.length,
-            itemBuilder: (context, index) {
-              final color = TextStyleController.predefinedColors[index];
-              final isSelected = color == controller.textColor.value;
-
-              return GestureDetector(
-                onTap: () {
-                  controller.textColor.value = color;
-                  controller.maskImage.value = null;
-                  controller.maskColor.value = null;
-                  controller.updateTextItem();
-                  controller.update(['text_color', 'mask']);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.accent
-                          : AppColors.highlight.withOpacity(0.3),
-                      width: isSelected ? 3 : 1,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                          size: 14,
-                        )
-                      : null,
-                ),
-              );
+          return ColorSelector(
+            title: "Text Color",
+            showTitle: false,
+            paddingx: 16,
+            colors: TextStyleController.predefinedColors,
+            currentColor: controller.textColor.value,
+            onColorSelected: (color) {
+              controller.textColor.value = color;
+              controller.textColorOld = color;
+              controller.maskImage.value = null;
+              controller.updateTextItem();
+              controller.update(['text_color', 'mask']);
             },
           );
         },
@@ -882,84 +895,98 @@ class _BackgroundTab extends StatelessWidget {
       child: GetBuilder<TextStyleController>(
         id: 'background_color',
         builder: (controller) {
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 8,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-              childAspectRatio: 1,
-            ),
-            itemCount:
-                TextStyleController.predefinedColors.length +
-                1, // +1 for clear option
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                // Clear/Transparent option
-                final isSelected =
-                    controller.backgroundColor.value == Colors.transparent;
-                return GestureDetector(
-                  onTap: () {
-                    controller.backgroundColor.value = Colors.transparent;
-                    controller.updateTextItem();
-                    controller.update(['background_color']);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.accent
-                            : AppColors.highlight.withOpacity(0.3),
-                        width: isSelected ? 3 : 1,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.clear,
-                      color: isSelected
-                          ? AppColors.accent
-                          : AppColors.highlight.withOpacity(0.6),
-                      size: 14,
-                    ),
-                  ),
-                );
-              }
+          return ColorSelector(
+            title: "Stroke Color",
+            showTitle: false,
 
-              final color = TextStyleController.predefinedColors[index - 1];
-              final isSelected = color == controller.backgroundColor.value;
-
-              return GestureDetector(
-                onTap: () {
-                  controller.backgroundColor.value = color;
-                  controller.updateTextItem();
-                  controller.update(['background_color']);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.accent
-                          : AppColors.highlight.withOpacity(0.3),
-                      width: isSelected ? 3 : 1,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: color.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                          size: 14,
-                        )
-                      : null,
-                ),
-              );
+            colors: TextStyleController.predefinedColors,
+            currentColor: controller.backgroundColor.value,
+            onColorSelected: (color) {
+              controller.backgroundColor.value = color;
+              controller.updateTextItem();
+              controller.update(['background_color']);
             },
+            selectedBorderColor: AppColors.background,
+            itemSize: 35,
           );
+          // return GridView.builder(
+          //   shrinkWrap: true,
+          //   physics: const NeverScrollableScrollPhysics(),
+          //   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          //     crossAxisCount: 8,
+          //     crossAxisSpacing: 6,
+          //     mainAxisSpacing: 6,
+          //     childAspectRatio: 1,
+          //   ),
+          //   itemCount:
+          //       TextStyleController.predefinedColors.length +
+          //       1, // +1 for clear option
+          //   itemBuilder: (context, index) {
+          //     if (index == 0) {
+          //       // Clear/Transparent option
+          //       final isSelected =
+          //           controller.backgroundColor.value == Colors.transparent;
+          //       return GestureDetector(
+          //         onTap: () {
+          //           controller.backgroundColor.value = Colors.transparent;
+          //           controller.updateTextItem();
+          //           controller.update(['background_color']);
+          //         },
+          //         child: Container(
+          //           decoration: BoxDecoration(
+          //             color: Colors.white,
+          //             shape: BoxShape.circle,
+          //             border: Border.all(
+          //               color: isSelected
+          //                   ? AppColors.accent
+          //                   : AppColors.highlight.withOpacity(0.3),
+          //               width: isSelected ? 3 : 1,
+          //             ),
+          //           ),
+          //           child: Icon(
+          //             Icons.clear,
+          //             color: isSelected
+          //                 ? AppColors.accent
+          //                 : AppColors.highlight.withOpacity(0.6),
+          //             size: 14,
+          //           ),
+          //         ),
+          //       );
+          //     }
+
+          //     final color = TextStyleController.predefinedColors[index - 1];
+          //     final isSelected = color == controller.backgroundColor.value;
+
+          //     return GestureDetector(
+          //       onTap: () {
+          //         controller.backgroundColor.value = color;
+          //         controller.updateTextItem();
+          //         controller.update(['background_color']);
+          //       },
+          //       child: Container(
+          //         decoration: BoxDecoration(
+          //           color: color,
+          //           shape: BoxShape.circle,
+          //           border: Border.all(
+          //             color: isSelected
+          //                 ? AppColors.accent
+          //                 : AppColors.highlight.withOpacity(0.3),
+          //             width: isSelected ? 3 : 1,
+          //           ),
+          //         ),
+          //         child: isSelected
+          //             ? Icon(
+          //                 Icons.check,
+          //                 color: color.computeLuminance() > 0.5
+          //                     ? Colors.black
+          //                     : Colors.white,
+          //                 size: 14,
+          //               )
+          //             : null,
+          //       ),
+          //     );
+          //   },
+          // );
         },
       ),
     );
@@ -1124,114 +1151,207 @@ class _StyleTab extends StatelessWidget {
 }
 
 // SPACING TAB - Compact sliders
+
 class _SpacingTab extends StatelessWidget {
+  // Spacing constants
+  static const double _sectionSpacing = 16.0;
+  static const double _cardPaddingH = 16.0;
+  static const double _cardPaddingV = 12.0;
+  static const double _cardBorderRadius = 12.0;
+
   final TextStyleController controller;
+
   const _SpacingTab({required this.controller});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildSpacingSlider(
-            label: 'Letter Spacing',
-            value: controller.letterSpacing.value,
-            min: 0.0,
-            max: 32.0,
-            onChanged: (value) {
-              controller.letterSpacing.value = value;
-              controller.updateTextItem();
-              controller.update(['letter_spacing']);
+          GetBuilder<TextStyleController>(
+            id: 'letter_spacing',
+
+            builder: (context) {
+              return CompactSlider(
+                icon: Icons.space_bar_rounded,
+                label: 'Letter Spacing',
+                value: controller.letterSpacing.value,
+                min: 0.0,
+                max: 32.0,
+
+                onChanged: (value) {
+                  controller.letterSpacing.value = value;
+                  controller.updateTextItem();
+                  controller.update(['letter_spacing']);
+                },
+              );
             },
-            formatValue: (value) => "${value.toStringAsFixed(1)}px",
           ),
-          const SizedBox(height: 12),
-          _buildSpacingSlider(
-            label: 'Line Height',
-            value: controller.lineHeight.value,
-            min: 0.8,
-            max: 3.0,
-            onChanged: (value) {
-              controller.lineHeight.value = value;
-              controller.updateTextItem();
-              controller.update(['line_height']);
+
+          const SizedBox(height: _sectionSpacing),
+          GetBuilder<TextStyleController>(
+            id: 'line_height',
+
+            builder: (context) {
+              return CompactSlider(
+                icon: Icons.height_rounded,
+                label: 'Line Height',
+                value: controller.lineHeight.value,
+                min: 0.8,
+                max: 3.0,
+
+                onChanged: (value) {
+                  controller.lineHeight.value = value;
+                  controller.updateTextItem();
+                  controller.update(['line_height']);
+                },
+              );
             },
-            formatValue: (value) => "${value.toStringAsFixed(1)}x",
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSpacingSlider({
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-    required String Function(double) formatValue,
+  Widget _buildSliderCard({
+    required BuildContext context,
+    required Widget child,
   }) {
-    return GetBuilder<TextStyleController>(
-      id: 'spacing_${label.toLowerCase().replaceAll(' ', '_')}',
-      builder: (controller) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.highlight,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.branding.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    formatValue(value),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.branding,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            SliderTheme(
-              data: SliderTheme.of(Get.context!).copyWith(
-                activeTrackColor: AppColors.branding,
-                inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
-                thumbColor: AppColors.branding,
-                overlayColor: AppColors.branding.withOpacity(0.2),
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                trackHeight: 4,
-              ),
-              child: Slider(
-                value: value,
-                min: min,
-                max: max,
-                onChanged: onChanged,
-              ),
-            ),
-          ],
-        );
-      },
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _cardPaddingH,
+        vertical: _cardPaddingV,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(_cardBorderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 6.0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
+// class _SpacingTab extends StatelessWidget {
+//   final TextStyleController controller;
+//   const _SpacingTab({required this.controller});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//       child: Column(
+//         children: [
+//           _buildSpacingSlider(
+//             label: 'Letter Spacing',
+//             value: controller.letterSpacing.value,
+//             min: 0.0,
+//             max: 32.0,
+//             onChanged: (value) {
+//               controller.letterSpacing.value = value;
+//               controller.updateTextItem();
+//               controller.update(['letter_spacing']);
+//             },
+//             formatValue: (value) => "${value.toStringAsFixed(1)}px",
+//           ),
+//           const SizedBox(height: 12),
+//           _buildSpacingSlider(
+//             label: 'Line Height',
+//             value: controller.lineHeight.value,
+//             min: 0.8,
+//             max: 3.0,
+//             onChanged: (value) {
+//               controller.lineHeight.value = value;
+//               controller.updateTextItem();
+//               controller.update(['line_height']);
+//             },
+//             formatValue: (value) => "${value.toStringAsFixed(1)}x",
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildSpacingSlider({
+//     required String label,
+//     required double value,
+//     required double min,
+//     required double max,
+//     required ValueChanged<double> onChanged,
+//     required String Function(double) formatValue,
+//   }) {
+//     return GetBuilder<TextStyleController>(
+//       id: 'spacing_${label.toLowerCase().replaceAll(' ', '_')}',
+//       builder: (controller) {
+//         return Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Text(
+//                   label,
+//                   style: const TextStyle(
+//                     fontSize: 12,
+//                     fontWeight: FontWeight.w500,
+//                     color: AppColors.highlight,
+//                   ),
+//                 ),
+//                 Container(
+//                   padding: const EdgeInsets.symmetric(
+//                     horizontal: 8,
+//                     vertical: 2,
+//                   ),
+//                   decoration: BoxDecoration(
+//                     color: AppColors.branding.withOpacity(0.1),
+//                     borderRadius: BorderRadius.circular(4),
+//                   ),
+//                   child: Text(
+//                     formatValue(value),
+//                     style: TextStyle(
+//                       fontSize: 10,
+//                       fontWeight: FontWeight.w600,
+//                       color: AppColors.branding,
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 4),
+//             SliderTheme(
+//               data: SliderTheme.of(Get.context!).copyWith(
+//                 activeTrackColor: AppColors.branding,
+//                 inactiveTrackColor: AppColors.highlight.withOpacity(0.15),
+//                 thumbColor: AppColors.branding,
+//                 overlayColor: AppColors.branding.withOpacity(0.2),
+//                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+//                 trackHeight: 4,
+//               ),
+//               child: Slider(
+//                 value: value,
+//                 min: min,
+//                 max: max,
+//                 onChanged: onChanged,
+//               ),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+// }
 
 // FONT TAB - Compact chip layout
 class _FontTab extends StatelessWidget {
@@ -1286,286 +1406,229 @@ class _FontTab extends StatelessWidget {
 }
 
 // MASK TAB - Fixed implementation with proper organization
+
 class _MaskTab extends StatelessWidget {
   final TextStyleController controller;
   const _MaskTab({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Current mask status
-          GetBuilder<TextStyleController>(
-            id: 'mask_status',
-            builder: (controller) {
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.highlight.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: AppColors.highlight.withOpacity(0.7),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _getMaskStatusText(controller),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.highlight.withOpacity(0.8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Mask presets in a horizontal list (including "None" option)
+        _buildMaskPresets(),
+      ],
+    );
+  }
+
+  Widget _buildMaskPresets() {
+    return SizedBox(
+      height: 100,
+      child: GetBuilder<TextStyleController>(
+        id: 'mask_presets',
+        builder: (controller) {
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount:
+                TextStyleController.maskImages.length + 1, // +1 for "None"
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildNoMaskOption();
+              }
+              final image = TextStyleController.maskImages[index - 1];
+              return _buildMaskOption(image);
             },
-          ),
-
-          // Clear mask option
-          GetBuilder<TextStyleController>(
-            id: 'mask_clear',
-            builder: (controller) {
-              final hasAnyMask =
-                  controller.maskImage.value != null ||
-                  controller.maskColor.value != null;
-              return GestureDetector(
-                onTap: () {
-                  controller.maskImage.value = null;
-                  controller.maskColor.value = null;
-                  controller.updateTextItem();
-                  controller.update([
-                    'mask_clear',
-                    'mask_status',
-                    'mask_image',
-                    'mask_color',
-                  ]);
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 44,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: !hasAnyMask
-                        ? AppColors.branding
-                        : AppColors.highlight.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: !hasAnyMask
-                          ? AppColors.branding
-                          : AppColors.highlight.withOpacity(0.3),
-                      width: !hasAnyMask ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.clear,
-                        color: !hasAnyMask ? Colors.white : AppColors.highlight,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'No Mask',
-                        style: TextStyle(
-                          color: !hasAnyMask
-                              ? Colors.white
-                              : AppColors.highlight,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Image masks
-          const Text(
-            'Image Masks',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.highlight,
-            ),
-          ),
-          const SizedBox(height: 8),
-          GetBuilder<TextStyleController>(
-            id: 'mask_image',
-            builder: (controller) {
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 1,
-                ),
-                itemCount: TextStyleController.maskImages.length,
-                itemBuilder: (context, index) {
-                  final image = TextStyleController.maskImages[index];
-                  final isSelected = image == controller.maskImage.value;
-
-                  return GestureDetector(
-                    onTap: () {
-                      controller.maskImage.value = image;
-                      controller.maskColor.value = null; // Clear color mask
-                      controller.updateTextItem();
-                      controller.update([
-                        'mask_image',
-                        'mask_color',
-                        'mask_status',
-                        'mask_clear',
-                      ]);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.branding
-                              : AppColors.highlight.withOpacity(0.3),
-                          width: isSelected ? 3 : 1,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Stack(
-                          children: [
-                            Image.asset(
-                              image,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: AppColors.highlight.withOpacity(0.1),
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    color: AppColors.highlight.withOpacity(0.5),
-                                    size: 20,
-                                  ),
-                                );
-                              },
-                            ),
-                            if (isSelected)
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.branding.withOpacity(0.8),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.check,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Color masks
-          const Text(
-            'Color Masks',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.highlight,
-            ),
-          ),
-          const SizedBox(height: 8),
-          GetBuilder<TextStyleController>(
-            id: 'mask_color',
-            builder: (controller) {
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                  crossAxisSpacing: 6,
-                  mainAxisSpacing: 6,
-                  childAspectRatio: 1,
-                ),
-                itemCount: TextStyleController.predefinedColors.length,
-                itemBuilder: (context, index) {
-                  final color = TextStyleController.predefinedColors[index];
-                  final isSelected =
-                      color.value == controller.maskColor.value?.value;
-
-                  return GestureDetector(
-                    onTap: () {
-                      controller.maskColor.value = color;
-                      controller.maskImage.value = null; // Clear image mask
-                      controller.updateTextItem();
-                      controller.update([
-                        'mask_color',
-                        'mask_image',
-                        'mask_status',
-                        'mask_clear',
-                      ]);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.branding
-                              : AppColors.highlight.withOpacity(0.3),
-                          width: isSelected ? 3 : 1,
-                        ),
-                      ),
-                      child: isSelected
-                          ? Icon(
-                              Icons.check,
-                              color: color.computeLuminance() > 0.5
-                                  ? Colors.black
-                                  : Colors.white,
-                              size: 12,
-                            )
-                          : null,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  String _getMaskStatusText(TextStyleController controller) {
-    if (controller.maskImage.value != null) {
-      return 'Image mask applied: ${controller.maskImage.value!.split('/').last}';
-    } else if (controller.maskColor.value != null) {
-      return 'Color mask applied';
-    } else {
-      return 'No mask applied - text uses normal color';
-    }
+  Widget _buildNoMaskOption() {
+    final isSelected = controller.maskImage.value == null;
+    return GestureDetector(
+      onTap: () => _clearMask(controller),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 80,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.1)
+              : Get.theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.branding
+                : Get.theme.colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.layers_clear,
+              size: 28,
+              color: isSelected
+                  ? AppColors.branding
+                  : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'None',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isSelected
+                    ? AppColors.branding
+                    : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaskOption(String image) {
+    final isSelected = image == controller.maskImage.value;
+    return GestureDetector(
+      onTap: () => _selectImageMask(controller, image),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 80,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.1)
+              : Get.theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.branding
+                : Get.theme.colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(11),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(image, fit: BoxFit.cover),
+              if (isSelected)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.branding,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaskSettings() {
+    return GetBuilder<TextStyleController>(
+      id: 'mask_settings',
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              // Example setting - Mask Opacity
+              CompactSlider(
+                icon: Icons.opacity,
+                label: 'Mask Opacity',
+                value: controller.maskOpacity.value,
+                min: 0.1,
+                max: 1.0,
+                onChanged: (value) {
+                  controller.maskOpacity.value = value;
+                  controller.updateTextItem();
+                  controller.update(['mask_settings']);
+                },
+              ),
+
+              // Example setting - Blend Mode (simplified)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.mode,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                  size: 20,
+                ),
+                title: Text(
+                  'Blend Mode',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Get.theme.colorScheme.onSurface,
+                  ),
+                ),
+                trailing: DropdownButton<BlendMode>(
+                  value: controller.maskBlendMode,
+                  items: [
+                    DropdownMenuItem(
+                      value: BlendMode.srcATop,
+                      child: Text('Normal', style: TextStyle(fontSize: 12)),
+                    ),
+                    DropdownMenuItem(
+                      value: BlendMode.multiply,
+                      child: Text('Multiply', style: TextStyle(fontSize: 12)),
+                    ),
+                    DropdownMenuItem(
+                      value: BlendMode.screen,
+                      child: Text('Screen', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.maskBlendMode = value;
+                      controller.updateTextItem();
+                      controller.update(['mask_settings']);
+                    }
+                  },
+                  underline: Container(),
+                  style: TextStyle(
+                    color: Get.theme.colorScheme.onSurface,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _clearMask(TextStyleController controller) {
+    controller.maskImage.value = null;
+    controller.updateTextItem();
+    controller.update(['mask_presets', 'mask_settings']);
+  }
+
+  void _selectImageMask(TextStyleController controller, String image) {
+    controller.maskImage.value = image;
+    controller.updateTextItem();
+    controller.update(['mask_presets', 'mask_settings']);
   }
 }
 
@@ -1598,6 +1661,8 @@ class _EffectsTab extends StatelessWidget {
       hasStroke: true,
       strokeWidth: 4.0,
       strokeColor: Colors.blue,
+      textColor: Colors.white,
+
       fontSize: 16.0,
     ),
     EffectTemplate(
@@ -1608,6 +1673,7 @@ class _EffectsTab extends StatelessWidget {
       hasStroke: true,
       strokeWidth: 3.0,
       strokeColor: Color(0xFFFF5722),
+      textColor: Colors.white,
       fontSize: 16.0,
     ),
     EffectTemplate(
@@ -1621,6 +1687,7 @@ class _EffectsTab extends StatelessWidget {
       hasStroke: true,
       strokeWidth: 1.0,
       strokeColor: Color(0xFF00E676),
+      textColor: Colors.blue,
       fontSize: 33.0,
     ),
   ];
@@ -1631,9 +1698,8 @@ class _EffectsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(height: 8),
-
           _buildPresetCards(),
 
           /* stunning tabbar
@@ -1670,7 +1736,7 @@ class _EffectsTab extends StatelessWidget {
 
   Widget _buildPresetCards() {
     return SizedBox(
-      height: 112,
+      height: 100,
       child: GetBuilder<TextStyleController>(
         id: 'effect_templates',
         builder: (controller) {
@@ -1686,7 +1752,7 @@ class _EffectsTab extends StatelessWidget {
               return _buildTemplateCard(
                 template: template,
                 isSelected: isSelected,
-                onTap: () => _applyTemplate(controller, template),
+                onTap: () => _applyTemplate(template),
               );
             },
           );
@@ -1701,7 +1767,7 @@ class _EffectsTab extends StatelessWidget {
       isScrollControlled: true,
       barrierColor: null,
       elevation: 0,
-      builder: (context) => _TuneBottomSheet(controller: controller),
+      builder: (context) => TuneBottomSheet(controller: controller),
     );
   }
 
@@ -1710,7 +1776,10 @@ class _EffectsTab extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final isNoneTemplate = template.id == 'none';
+
     return Stack(
+      alignment: Alignment.center,
       children: [
         GestureDetector(
           onTap: onTap,
@@ -1720,43 +1789,80 @@ class _EffectsTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.branding.withOpacity(0.08)
-                  : Colors.white,
+                  : Get.theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.branding : Colors.grey.shade200,
-                width: isSelected ? 1.5 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: isSelected
+                  ? Border.all(color: AppColors.branding, width: 0.4)
+                  : null,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  height: 56,
-                  width: 56,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200, width: 0.5),
-                  ),
-                  child: Center(
-                    child: StrokeText(
-                      text: "Aa",
-                      strokeColor: template.strokeColor,
-                      strokeWidth: template.strokeWidth,
-                      textStyle: TextStyle(
-                        fontSize: 24,
-                        color: template.textColor ?? Colors.black,
-                        fontWeight: FontWeight.w600,
+                Stack(
+                  alignment: Alignment.center,
+
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        color: Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: isNoneTemplate
+                            ? Text(
+                                "Aa",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: controller.textColorOld,
+                                ),
+                              )
+                            : StrokeText(
+                                text: "Aa",
+                                strokeColor: template.strokeColor,
+                                strokeWidth: template.strokeWidth,
+                                textStyle: TextStyle(
+                                  fontSize: 24,
+                                  color: template.textColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
-                  ),
+
+                    if (isSelected && !isNoneTemplate)
+                      Container(
+                        child: GestureDetector(
+                          onTap: () {
+                            _showTuneBottomSheet(Get.context!);
+                          },
+                          child: Container(
+                            height: 56,
+                            width: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              // boxShadow: [
+                              //   BoxShadow(
+                              //     color: AppColors.branding.withOpacity(0.3),
+                              //     blurRadius: 8,
+                              //     offset: const Offset(0, 2),
+                              //   ),
+                              // ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 0),
+                              child: const Icon(
+                                Icons.tune,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1775,39 +1881,20 @@ class _EffectsTab extends StatelessWidget {
             ),
           ),
         ),
-
-        if (isSelected)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: GestureDetector(
-              onTap: () {
-                _showTuneBottomSheet(Get.context!);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.branding,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.branding.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.tune, color: Colors.white, size: 16),
-              ),
-            ),
-          ),
       ],
     );
   }
 
   // Keep all other existing methods exactly as they were
-  void _applyTemplate(TextStyleController controller, EffectTemplate template) {
-    if (template.textColor != null) controller.textColor(template.textColor);
+  void _applyTemplate(EffectTemplate template) {
+    if (template.id == "none") {
+      controller.resetStrok();
+    } else {
+      if (template.textColor != null) {
+        controller.textColor(template.textColor);
+      }
+    }
+
     controller.fontSize.value = template.fontSize;
 
     controller.hasShadow.value = template.hasShadow;
@@ -1824,6 +1911,7 @@ class _EffectsTab extends StatelessWidget {
     }
 
     controller.updateTextItem();
+    controller.selectedTemplateId = template.id;
     controller.update(['effect_templates', 'template_properties']);
   }
 
@@ -1831,120 +1919,56 @@ class _EffectsTab extends StatelessWidget {
     TextStyleController controller,
     EffectTemplate template,
   ) {
+    // Use stored template ID for better tracking
+    if (controller.selectedTemplateId != null) {
+      return controller.selectedTemplateId == template.id;
+    }
+
+    // Fallback: Check basic structure match (not exact values)
     if (template.id == 'none') {
       return !controller.hasShadow.value && !controller.hasStroke.value;
     }
 
-    bool shadowMatches = true;
-    if (template.hasShadow != controller.hasShadow.value) {
-      shadowMatches = false;
-    } else if (template.hasShadow && controller.hasShadow.value) {
-      shadowMatches =
-          (controller.shadowOffset.value.dx - template.shadowOffset.dx).abs() <
-              0.1 &&
-          (controller.shadowOffset.value.dy - template.shadowOffset.dy).abs() <
-              0.1 &&
-          (controller.shadowBlurRadius.value - template.shadowBlur).abs() < 0.1;
-    }
-
-    bool strokeMatches = true;
-    if (template.hasStroke != controller.hasStroke.value) {
-      strokeMatches = false;
-    } else if (template.hasStroke && controller.hasStroke.value) {
-      strokeMatches =
-          (controller.strokeWidth.value - template.strokeWidth).abs() < 0.1;
-    }
-
-    return shadowMatches && strokeMatches;
+    return false;
   }
 }
 
-class _TuneBottomSheet extends StatelessWidget {
+class TuneBottomSheet extends StatelessWidget {
   final TextStyleController controller;
 
-  const _TuneBottomSheet({required this.controller});
+  const TuneBottomSheet({required this.controller, super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      height: MediaQuery.of(context).size.height * 0.5,
+      // height: MediaQuery.of(context).size.height * 0.55,
       width: Get.width,
       decoration: BoxDecoration(
-        // color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: Colors.black.withOpacity(0.2),
-        //     blurRadius: 20,
-        //     offset: const Offset(0, -5),
-        //   ),
-        // ],
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
+          _buildHandleBar(),
 
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-            child: Row(
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Effect Settings',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.close, color: Colors.grey.shade600),
-                  onPressed: () => Navigator.pop(context),
-                  splashRadius: 20,
-                ),
+                if (controller.hasStroke.value) ...[
+                  // const SizedBox(height: 12),
+                  _buildStrokeProperties(),
+                ],
+                if (controller.hasShadow.value) ...[
+                  const SizedBox(height: 12),
+                  _buildShadowProperties(),
+                ],
               ],
-            ),
-          ),
-
-          const Divider(height: 1, thickness: 1),
-
-          // Content
-          Expanded(
-            child: GetBuilder<TextStyleController>(
-              builder: (controller) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    // horizontal: 24,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Stroke Section
-                      if (controller.hasStroke.value) ...[
-                        _buildStrokeProperties(controller),
-                      ],
-
-                      // Shadow Section
-                      if (controller.hasShadow.value) ...[
-                        _buildShadowProperties(),
-                      ],
-                    ],
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -1952,136 +1976,68 @@ class _TuneBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildColorSelector({
-    required String title,
-    required Color currentColor,
-    required Function(Color?) onColorSelected,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 8,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-          ),
-          itemCount: TextStyleController.predefinedColors.length,
-          itemBuilder: (context, index) {
-            final color = TextStyleController.predefinedColors[index];
-            final isSelected = color == currentColor;
-
-            return GestureDetector(
-              onTap: () => onColorSelected(color),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? AppColors.branding : Colors.transparent,
-                    width: isSelected ? 2 : 0,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: isSelected
-                    ? Center(
-                        child: Icon(
-                          Icons.check,
-                          size: 14,
-                          color: color.computeLuminance() > 0.5
-                              ? Colors.black
-                              : Colors.white,
-                        ),
-                      )
-                    : null,
-              ),
-            );
-          },
-        ),
-      ],
+  Widget _buildHandleBar() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      height: 5,
+      width: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade400,
+        borderRadius: BorderRadius.circular(4),
+      ),
     );
   }
 
-  Widget _buildStrokeProperties(TextStyleController controller) {
-    return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            CompactSlider(
-              icon: Icons.line_weight,
-              label: 'Stroke Width',
-              value: controller.strokeWidth.value,
-              min: 0.0,
-              max: 10.0,
-              onChanged: (value) {
-                controller.strokeWidth.value = value;
-                controller.updateTextItem();
-                controller.update(['template_properties']);
-              },
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Stroke Color',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                // _MiniColorButton(
-                //   color: controller.strokeColor.value,
-                //   onTap: () => _showColorPicker(
-                //     Get.context!,
-                //     'Stroke',
-                //     controller.strokeColor.value,
-                //     (color) {
-                //       if (color != null) {
-                //         controller.strokeColor.value = color;
-                //         controller.updateTextItem();
-                //         controller.update(['template_properties']);
-                //       }
-                //     },
-                //   ),
-                // ),
-              ],
-            ),
-          ],
-        ),
-      ),
+  Widget _buildStrokeProperties() {
+    return GetBuilder<TextStyleController>(
+      id: "stroke_properties",
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              CompactSlider(
+                icon: Icons.line_weight,
+                label: 'Stroke Width',
+                value: controller.strokeWidth.value,
+                min: 0.0,
+                max: 10.0,
+                onChanged: (value) {
+                  controller.strokeWidth.value = value;
+
+                  controller.updateTextItem();
+                  controller.update(['stroke_properties']);
+                },
+              ),
+
+              ColorSelector(
+                title: "Stroke Color",
+
+                colors: TextStyleController.predefinedColors,
+                currentColor: controller.strokeColor.value,
+                onColorSelected: (color) {
+                  controller.strokeColor.value = color;
+                  controller.updateTextItem();
+                  controller.update(['stroke_properties']);
+                },
+                selectedBorderColor: AppColors.background,
+                itemSize: 25,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -2089,12 +2045,20 @@ class _TuneBottomSheet extends StatelessWidget {
     return GetBuilder<TextStyleController>(
       id: 'shadow_properties',
       builder: (controller) {
-        if (!controller.hasShadow.value) {
-          return SizedBox();
-        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             children: [
               CompactSlider(
@@ -2109,682 +2073,24 @@ class _TuneBottomSheet extends StatelessWidget {
                   controller.update(['shadow_properties']);
                 },
               ),
-              const SizedBox(height: 16),
-              _buildColorSelector(
-                title: 'Shadow Color',
+
+              ColorSelector(
+                title: "Shadow Color",
+                colors: TextStyleController.predefinedColors,
                 currentColor: controller.shadowColor.value,
                 onColorSelected: (color) {
-                  if (color != null) {
-                    controller.shadowColor.value = color;
-                    controller.updateTextItem();
-                    controller.update(['shadow_properties']);
-                  }
+                  controller.shadowColor.value = color;
+                  controller.updateTextItem();
+                  controller.update(['shadow_properties']);
                 },
+                selectedBorderColor: AppColors.background,
+
+                itemSize: 25,
               ),
             ],
           ),
         );
       },
-    );
-  }
-}
-/*
-
-class _EffectsTab extends StatelessWidget {
-  static const List<EffectTemplate> effectTemplates = [
-    EffectTemplate(
-      id: 'none',
-      name: 'None',
-      icon: Icons.format_clear,
-      hasShadow: false,
-      hasStroke: false,
-      fontSize: 16.0,
-    ),
-    EffectTemplate(
-      id: 'basic_stroke',
-      name: 'Basic Stroke',
-      icon: Icons.border_color,
-      hasShadow: true,
-      hasStroke: true,
-      strokeWidth: 2.0,
-      strokeColor: Colors.black,
-      textColor: Colors.white,
-      fontSize: 44.0,
-    ),
-    EffectTemplate(
-      id: 'thick_stroke',
-      name: 'Thick Stroke',
-      icon: Icons.format_paint,
-      hasShadow: false,
-      hasStroke: true,
-      strokeWidth: 4.0,
-      strokeColor: Colors.blue,
-      fontSize: 16.0,
-    ),
-    EffectTemplate(
-      id: 'colored_stroke',
-      name: 'Color Stroke',
-      icon: Icons.palette,
-      hasShadow: false,
-      hasStroke: true,
-      strokeWidth: 3.0,
-      strokeColor: Color(0xFFFF5722),
-      fontSize: 16.0,
-    ),
-    EffectTemplate(
-      id: 'neon_stroke',
-      name: 'Neon Stroke',
-      icon: Icons.flash_on,
-      hasShadow: false,
-      shadowOffset: Offset(0, 0),
-      shadowBlur: 10.0,
-      shadowColor: Color(0xFF00E676),
-      hasStroke: true,
-      strokeWidth: 1.0,
-      strokeColor: Color(0xFF00E676),
-      fontSize: 33.0,
-    ),
-  ];
-
-  final TextStyleController controller;
-  const _EffectsTab({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildSectionHeader('Text Effects'),
-        const SizedBox(height: 12),
-        _buildPresetCards(),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPresetCards() {
-    return SizedBox(
-      height: 112,
-      child: GetBuilder<TextStyleController>(
-        id: 'effect_templates',
-        builder: (controller) {
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: effectTemplates.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final template = effectTemplates[index];
-              final isSelected = _isTemplateSelected(controller, template);
-
-              return _buildTemplateCard(
-                template: template,
-                isSelected: isSelected,
-                onTap: () => _applyTemplate(controller, template),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildTemplateCard({
-    required EffectTemplate template,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 88,
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.branding.withOpacity(0.08) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected 
-                ? AppColors.branding 
-                : Colors.grey.shade200,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              height: 56,
-              width: 56,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                  width: 0.5,
-                ),
-              ),
-              child: Center(
-                child: StrokeText(
-                  text: "Aa",
-                  strokeColor: template.strokeColor,
-                  strokeWidth: template.strokeWidth,
-                  textStyle: TextStyle(
-                    fontSize: 24,
-                    color: template.textColor ?? Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              template.name,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.branding : Colors.grey.shade800,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showTuneBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      builder: (context) => _TuneBottomSheet(controller: controller),
-    );
-  }
-
-  void _applyTemplate(TextStyleController controller, EffectTemplate template) {
-    if (template.textColor != null) controller.textColor(template.textColor);
-    controller.fontSize.value = template.fontSize;
-
-    controller.hasShadow.value = template.hasShadow;
-    if (template.hasShadow) {
-      controller.shadowOffset.value = template.shadowOffset;
-      controller.shadowBlurRadius.value = template.shadowBlur;
-      controller.shadowColor.value = template.shadowColor;
-    }
-
-    controller.hasStroke.value = template.hasStroke;
-    if (template.hasStroke) {
-      controller.strokeWidth.value = template.strokeWidth;
-      controller.strokeColor.value = template.strokeColor;
-    }
-
-    controller.updateTextItem();
-    controller.update(['effect_templates', 'template_properties']);
-  }
-
-  bool _isTemplateSelected(
-    TextStyleController controller,
-    EffectTemplate template,
-  ) {
-    if (template.id == 'none') {
-      return !controller.hasShadow.value && !controller.hasStroke.value;
-    }
-
-    bool shadowMatches = true;
-    if (template.hasShadow != controller.hasShadow.value) {
-      shadowMatches = false;
-    } else if (template.hasShadow && controller.hasShadow.value) {
-      shadowMatches =
-          (controller.shadowOffset.value.dx - template.shadowOffset.dx).abs() <
-              0.1 &&
-          (controller.shadowOffset.value.dy - template.shadowOffset.dy).abs() <
-              0.1 &&
-          (controller.shadowBlurRadius.value - template.shadowBlur).abs() < 0.1;
-    }
-
-    bool strokeMatches = true;
-    if (template.hasStroke != controller.hasStroke.value) {
-      strokeMatches = false;
-    } else if (template.hasStroke && controller.hasStroke.value) {
-      strokeMatches =
-          (controller.strokeWidth.value - template.strokeWidth).abs() < 0.1;
-    }
-
-    return shadowMatches && strokeMatches;
-  }
-}
-
-class _TuneBottomSheet extends StatelessWidget {
-  final TextStyleController controller;
-
-  const _TuneBottomSheet({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.65,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-            child: Row(
-              children: [
-                Text(
-                  'Effect Settings',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(Icons.close, color: Colors.grey.shade600),
-                  onPressed: () => Navigator.pop(context),
-                  splashRadius: 20,
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 1, thickness: 1),
-
-          // Content
-          Expanded(
-            child: GetBuilder<TextStyleController>(
-              builder: (controller) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Stroke Section
-                      if (controller.hasStroke.value) ...[
-                        _buildSectionHeader('Stroke Settings', Icons.border_outer),
-                        const SizedBox(height: 16),
-                        _buildStrokeControls(),
-                        const SizedBox(height: 24),
-                        const Divider(height: 1, thickness: 1),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Shadow Section
-                      if (controller.hasShadow.value) ...[
-                        _buildSectionHeader('Shadow Settings', Icons.shadow),
-                        const SizedBox(height: 16),
-                        _buildShadowControls(),
-                        const SizedBox(height: 24),
-                        const Divider(height: 1, thickness: 1),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Empty state if no effects
-                      if (!controller.hasStroke.value && !controller.hasShadow.value)
-                        _buildEmptyEffectsState(),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppColors.branding.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: AppColors.branding, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStrokeControls() {
-    return GetBuilder<TextStyleController>(
-      builder: (controller) {
-        return Column(
-          children: [
-            // Stroke Width
-            _buildSliderControl(
-              label: 'Stroke Width',
-              value: controller.strokeWidth.value,
-              min: 0.0,
-              max: 10.0,
-              divisions: 20,
-              unit: 'px',
-              onChanged: (value) {
-                controller.strokeWidth.value = value;
-                controller.updateTextItem();
-                controller.update();
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Stroke Color
-            _buildColorPicker(
-              title: 'Stroke Color',
-              currentColor: controller.strokeColor.value,
-              onColorChanged: (color) {
-                controller.strokeColor.value = color;
-                controller.updateTextItem();
-                controller.update();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildShadowControls() {
-    return GetBuilder<TextStyleController>(
-      builder: (controller) {
-        return Column(
-          children: [
-            // Blur Radius
-            _buildSliderControl(
-              label: 'Shadow Blur',
-              value: controller.shadowBlurRadius.value,
-              min: 0.0,
-              max: 20.0,
-              divisions: 20,
-              unit: 'px',
-              onChanged: (value) {
-                controller.shadowBlurRadius.value = value;
-                controller.updateTextItem();
-                controller.update();
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Shadow Color
-            _buildColorPicker(
-              title: 'Shadow Color',
-              currentColor: controller.shadowColor.value,
-              onColorChanged: (color) {
-                controller.shadowColor.value = color;
-                controller.updateTextItem();
-                controller.update();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSliderControl({
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required String unit,
-    required int divisions,
-    required Function(double) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${value.toStringAsFixed(1)}$unit',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SliderTheme(
-          data: SliderTheme.of(Get.context!).copyWith(
-            trackHeight: 3,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-            activeTrackColor: AppColors.branding,
-            inactiveTrackColor: Colors.grey.shade200,
-            thumbColor: Colors.white,
-            activeTickMarkColor: Colors.transparent,
-            inactiveTickMarkColor: Colors.transparent,
-            overlayColor: AppColors.branding.withOpacity(0.1),
-          ),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            divisions: divisions,
-            onChanged: onChanged,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildColorPicker({
-    required String title,
-    required Color currentColor,
-    required Function(Color) onColorChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: TextStyleController.predefinedColors.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final color = TextStyleController.predefinedColors[index];
-              final isSelected = color.value == currentColor.value;
-
-              return GestureDetector(
-                onTap: () => onColorChanged(color),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected 
-                          ? AppColors.branding 
-                          : Colors.grey.shade300,
-                      width: isSelected ? 2.5 : 1,
-                    ),
-                    boxShadow: [
-                      if (isSelected)
-                        BoxShadow(
-                          color: AppColors.branding.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                    ],
-                  ),
-                  child: isSelected
-                      ? Center(
-                          child: Icon(
-                            Icons.check,
-                            color: color.computeLuminance() > 0.5
-                                ? Colors.black
-                                : Colors.white,
-                            size: 18,
-                          ),
-                        )
-                      : null,
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyEffectsState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.auto_awesome_mosaic,
-            size: 48,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Effects Active',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              'Select an effect template from above to customize its settings',
-              style: TextStyle(
-                fontSize: 14, 
-                color: Colors.grey.shade500,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}*/
-
-class _MiniColorButton extends StatelessWidget {
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MiniColorButton({required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: Colors.grey.shade300, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -2818,6 +2124,655 @@ class EffectTemplate {
     this.fontSize = 16.0, // Default font size
   });
 }
+
+// Create a new DualToneText widget
+class DualToneText extends StatelessWidget {
+  final String text;
+  final Color color1;
+  final Color color2;
+  final DualToneDirection direction;
+  final double position;
+  final TextStyle? textStyle;
+  final TextAlign? textAlign;
+  final TextDirection? textDirection;
+  final TextScaler? textScaler;
+  final TextOverflow? overflow;
+  final int? maxLines;
+
+  const DualToneText({
+    super.key,
+    required this.text,
+    required this.color1,
+    required this.color2,
+    this.direction = DualToneDirection.horizontal,
+    this.position = 0.5,
+    this.textStyle,
+    this.textAlign,
+    this.textDirection,
+    this.textScaler,
+    this.overflow,
+    this.maxLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (bounds) {
+        return _createGradient().createShader(bounds);
+      },
+      blendMode: BlendMode.srcIn,
+      child: Text(
+        text,
+        style: textStyle?.copyWith(color: Colors.white),
+        textAlign: textAlign,
+        textDirection: textDirection,
+        textScaler: textScaler,
+        overflow: overflow,
+        maxLines: maxLines,
+      ),
+    );
+  }
+
+  Gradient _createGradient() {
+    switch (direction) {
+      case DualToneDirection.horizontal:
+        return LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [color1, color2],
+          stops: [position, position],
+        );
+      case DualToneDirection.vertical:
+        return LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color1, color2],
+          stops: [position, position],
+        );
+      case DualToneDirection.diagonal:
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color1, color2],
+          stops: [position, position],
+        );
+      case DualToneDirection.radial:
+        return RadialGradient(
+          center: Alignment.center,
+          colors: [color1, color2],
+          stops: [position, position],
+        );
+    }
+  }
+}
+
+// Add a new tab for Dual Tone in your TextStylingEditor
+
+class _DualToneTuneTab extends StatelessWidget {
+  final TextStyleController controller;
+  const _DualToneTuneTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [_buildDualTonePresetCards()],
+      ),
+    );
+  }
+
+  Widget _buildDualTonePresetCards() {
+    return SizedBox(
+      height: 100,
+      child: GetBuilder<TextStyleController>(
+        id: 'dual_tone_templates',
+        builder: (controller) {
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: dualToneTemplates.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final template = dualToneTemplates[index];
+              final isSelected = _isDualToneTemplateSelected(
+                controller,
+                template,
+              );
+
+              return _buildDualToneTemplateCard(
+                template: template,
+                isSelected: isSelected,
+                onTap: () => _applyDualToneTemplate(controller, template),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDualToneTuneBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: null,
+      elevation: 0,
+      builder: (context) => DualToneTuneBottomSheet(controller: controller),
+    );
+  }
+
+  Widget _buildDualToneTemplateCard({
+    required DualToneTemplate template,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isNoneTemplate = template.id == 'none';
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 88,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.branding.withOpacity(0.08)
+                  : Get.theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(color: AppColors.branding, width: 0.4)
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        color: Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: isNoneTemplate
+                            ? Text(
+                                "Aa",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: controller.textColor.value,
+                                ),
+                              )
+                            : DualToneText(
+                                text: "Aa",
+                                color1: template.color1,
+                                color2: template.color2,
+                                direction: template.direction,
+                                position: template.position,
+                                textStyle: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    if (isSelected && !isNoneTemplate)
+                      Container(
+                        child: GestureDetector(
+                          onTap: () {
+                            _showDualToneTuneBottomSheet(Get.context!);
+                          },
+                          child: Container(
+                            height: 56,
+                            width: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 0),
+                              child: const Icon(
+                                Icons.tune,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  template.name,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.branding
+                        : Colors.grey.shade800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _applyDualToneTemplate(
+    TextStyleController controller,
+    DualToneTemplate template,
+  ) {
+    if (template.id == 'none') {
+      controller.hasDualTone.value = false;
+    } else {
+      controller.hasDualTone.value = true;
+      controller.dualToneColor1 = template.color1;
+      controller.dualToneColor2 = template.color2;
+      controller.dualToneDirection.value = template.direction;
+      controller.dualTonePosition.value = template.position;
+    }
+
+    controller.updateTextItem();
+    controller.selectedDualToneTemplateId = template.id;
+    controller.update(['dual_tone_templates', 'dual_tone_properties']);
+  }
+
+  bool _isDualToneTemplateSelected(
+    TextStyleController controller,
+    DualToneTemplate template,
+  ) {
+    if (controller.selectedDualToneTemplateId != null) {
+      return controller.selectedDualToneTemplateId == template.id;
+    }
+
+    // If no template is selected yet, "None" is selected when hasDualTone is false
+    if (template.id == 'none') {
+      return !controller.hasDualTone.value;
+    }
+
+    return false;
+  }
+}
+
+class DualToneTuneBottomSheet extends StatelessWidget {
+  final TextStyleController controller;
+
+  const DualToneTuneBottomSheet({required this.controller, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: Get.width,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHandleBar(),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildColorProperties(),
+                const SizedBox(height: 12),
+                _buildDirectionProperties(),
+                const SizedBox(height: 12),
+                _buildPositionSlider(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandleBar() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      height: 5,
+      width: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade400,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _buildColorProperties() {
+    return GetBuilder<TextStyleController>(
+      id: "dual_tone_colors",
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Color 1', style: Get.theme.textTheme.labelMedium),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () => _showColorPicker(
+                            Get.context!,
+                            controller.dualToneColor1!,
+                            (color) {
+                              controller.dualToneColor1 = color;
+                              controller.updateTextItem();
+                              controller.update(['dual_tone_colors']);
+                            },
+                          ),
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: controller.dualToneColor1,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.highlight.withOpacity(0.3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Color 2', style: Get.theme.textTheme.labelMedium),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () => _showColorPicker(
+                            Get.context!,
+                            controller.dualToneColor2!,
+                            (color) {
+                              controller.dualToneColor2 = color;
+                              controller.updateTextItem();
+                              controller.update(['dual_tone_colors']);
+                            },
+                          ),
+                          child: Container(
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: controller.dualToneColor2,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.highlight.withOpacity(0.3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDirectionProperties() {
+    return GetBuilder<TextStyleController>(
+      id: 'dual_tone_direction',
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Direction', style: Get.theme.textTheme.labelMedium),
+              const SizedBox(height: 8),
+              Row(
+                children: DualToneDirection.values.map((direction) {
+                  final isSelected =
+                      controller.dualToneDirection.value == direction;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        controller.dualToneDirection.value = direction;
+                        controller.updateTextItem();
+                        controller.update(['dual_tone_direction']);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 4),
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.branding
+                              : AppColors.highlight.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.branding
+                                : AppColors.highlight.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            _getDirectionIcon(direction),
+                            size: 16,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.highlight,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPositionSlider() {
+    return GetBuilder<TextStyleController>(
+      id: 'dual_tone_position',
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Position: ${(controller.dualTonePosition.value * 100).toInt()}%',
+                style: Get.theme.textTheme.labelMedium,
+              ),
+              const SizedBox(height: 8),
+              Slider(
+                value: controller.dualTonePosition.value,
+                onChanged: (value) {
+                  controller.dualTonePosition.value = value;
+                  controller.updateTextItem();
+                  controller.update(['dual_tone_position']);
+                },
+                activeColor: AppColors.branding,
+                inactiveColor: AppColors.highlight.withOpacity(0.3),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getDirectionIcon(DualToneDirection direction) {
+    switch (direction) {
+      case DualToneDirection.horizontal:
+        return Icons.swap_horiz;
+      case DualToneDirection.vertical:
+        return Icons.swap_vert;
+      case DualToneDirection.diagonal:
+        return Icons.trending_up;
+      case DualToneDirection.radial:
+        return Icons.radio_button_unchecked;
+    }
+  }
+
+  void _showColorPicker(
+    BuildContext context,
+    Color currentColor,
+    Function(Color) onColorChanged,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Color'),
+        content: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: TextStyleController.predefinedColors.map((color) {
+            return GestureDetector(
+              onTap: () {
+                onColorChanged(color);
+                Navigator.pop(context);
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: color == currentColor
+                        ? AppColors.branding
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+class DualToneTemplate {
+  final String id;
+  final String name;
+  final Color color1;
+  final Color color2;
+  final DualToneDirection direction;
+  final double position;
+
+  const DualToneTemplate({
+    required this.id,
+    required this.name,
+    required this.color1,
+    required this.color2,
+    this.direction = DualToneDirection.horizontal,
+    this.position = 0.5,
+  });
+}
+
+const List<DualToneTemplate> dualToneTemplates = [
+  DualToneTemplate(
+    id: 'none',
+    name: 'None',
+    color1: Colors.transparent,
+    color2: Colors.transparent,
+    direction: DualToneDirection.horizontal,
+  ),
+  DualToneTemplate(
+    id: 'red_blue',
+    name: 'Red/Blue',
+    color1: Colors.red,
+    color2: Colors.blue,
+    direction: DualToneDirection.horizontal,
+  ),
+  DualToneTemplate(
+    id: 'purple_pink',
+    name: 'Purple/Pink',
+    color1: Colors.purple,
+    color2: Colors.pink,
+    direction: DualToneDirection.vertical,
+  ),
+  DualToneTemplate(
+    id: 'green_yellow',
+    name: 'Green/Yellow',
+    color1: Colors.green,
+    color2: Colors.yellow,
+    direction: DualToneDirection.diagonal,
+  ),
+  DualToneTemplate(
+    id: 'orange_teal',
+    name: 'Orange/Teal',
+    color1: Colors.orange,
+    color2: Colors.teal,
+    direction: DualToneDirection.radial,
+    position: 0.7,
+  ),
+  DualToneTemplate(
+    id: 'black_white',
+    name: 'Black/White',
+    color1: Colors.black,
+    color2: Colors.white,
+    direction: DualToneDirection.horizontal,
+    position: 0.3,
+  ),
+];
 
 class _CircularTab extends StatelessWidget {
   final TextStyleController controller;

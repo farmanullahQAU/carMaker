@@ -65,7 +65,7 @@ class CompactSlider extends StatelessWidget {
           Text(
             value.round().toString(),
             style: const TextStyle(
-              color: AppColors.accent,
+              color: AppColors.branding,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),

@@ -61,210 +61,223 @@ class EditorPage extends GetView<EditorController> {
   }) {
     return GetBuilder<EditorController>(
       id: 'canvas_stack',
-      builder: (controller) => Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background image
-          IgnorePointer(
-            ignoring: true,
-            child: SizedBox(
-              width: scaledCanvasWidth.value,
-              height: scaledCanvasHeight.value,
-              child: controller.selectedBackground.value.isNotEmpty
-                  ? ColorFiltered(
-                      colorFilter: ColorFilter.matrix(
-                        _hueMatrix(controller.backgroundHue.value),
-                      ),
-                      child: Image.asset(
-                        controller.selectedBackground.value,
-                        width: scaledCanvasWidth.value,
-                        height: scaledCanvasHeight.value,
-                        fit: BoxFit.contain,
-                      ),
-                    )
-                  : Container(color: Colors.grey[200]),
-            ),
-          ),
+      builder: (controller) {
+        print("Built");
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Background image
+            // IgnorePointer(
+            //   ignoring: true,
+            //   child: SizedBox(
+            //     width: scaledCanvasWidth.value,
+            //     height: scaledCanvasHeight.value,
+            //     child: controller.selectedBackground.value.isNotEmpty
+            //         ? ColorFiltered(
+            //             colorFilter: ColorFilter.matrix(
+            //               _hueMatrix(controller.backgroundHue.value),
+            //             ),
+            //             child: Image.asset(
+            //               controller.selectedBackground.value,
+            //               width: scaledCanvasWidth.value,
+            //               height: scaledCanvasHeight.value,
+            //               fit: BoxFit.contain,
+            //             ),
+            //           )
+            //         : Container(color: Colors.grey[200]),
+            //   ),
+            // ),
 
-          // Dynamic PhotoView for each profile image
-          ...controller.profileImageItems.map(
-            (profileItem) => Positioned(
-              left: profileItem.offset.dx * canvasScale.value,
-              top: profileItem.offset.dy * canvasScale.value,
-              child: ClipRect(
-                child: SizedBox(
-                  width: profileItem.size.width * canvasScale.value,
-                  height: profileItem.size.height * canvasScale.value,
-                  child: PhotoView(
-                    imageProvider: AssetImage(
-                      profileItem.content?.assetName ?? "",
-                    ),
-                    minScale: PhotoViewComputedScale.contained * 0.4,
-                    maxScale: PhotoViewComputedScale.covered * 3.0,
-                    initialScale: PhotoViewComputedScale.contained,
-                    basePosition: Alignment.center,
-                    enablePanAlways: true,
-                    filterQuality: FilterQuality.high,
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.transparent,
+            // Dynamic PhotoView for each profile image
+            ...controller.profileImageItems.map(
+              (profileItem) => Positioned(
+                left: profileItem.offset.dx * canvasScale.value,
+                top: profileItem.offset.dy * canvasScale.value,
+                child: ClipRect(
+                  child: SizedBox(
+                    width: profileItem.size.width * canvasScale.value,
+                    height: profileItem.size.height * canvasScale.value,
+                    child: PhotoView(
+                      imageProvider: AssetImage(
+                        profileItem.content?.assetName ?? "",
+                      ),
+                      minScale: PhotoViewComputedScale.contained * 0.4,
+                      maxScale: PhotoViewComputedScale.covered * 3.0,
+                      initialScale: PhotoViewComputedScale.contained,
+                      basePosition: Alignment.center,
+                      enablePanAlways: true,
+                      filterQuality: FilterQuality.high,
+                      backgroundDecoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Foreground image with transparent hole
-          if (controller.initialTemplate?.backgroundImage.isNotEmpty ?? false)
-            IgnorePointer(
-              ignoring: true,
-              child: SizedBox(
-                width: scaledCanvasWidth.value,
-                height: scaledCanvasHeight.value,
-                child: Image.asset(
-                  controller.initialTemplate?.backgroundImage ?? "",
-                  fit: BoxFit.contain,
+            // Foreground image with transparent hole
+            if (controller.initialTemplate?.backgroundImage.isNotEmpty ?? false)
+              IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.matrix(
+                      _hueMatrix(controller.backgroundHue.value),
+                    ),
+                    child: Image.asset(
+                      controller.initialTemplate?.backgroundImage ?? "",
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          // StackBoard with touch handling
-          SizedBox(
-            width: scaledCanvasWidth.value,
-            height: scaledCanvasHeight.value,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: showGrid
-                  ? (event) {
-                      final localPos = event.localPosition;
-                      final scale = canvasScale.value;
-                      StackImageItem? tappedItem = controller.profileImageItems
-                          .firstWhereOrNull((item) {
-                            final hole = Rect.fromLTWH(
-                              item.offset.dx * scale,
-                              item.offset.dy * scale,
-                              item.size.width * scale,
-                              item.size.height * scale,
-                            );
-                            return hole.contains(localPos);
-                          });
-                      if (tappedItem != null) {
-                        print(
-                          "Touched inside ${tappedItem.id}, activating PhotoView.",
-                        );
-                        activePhotoItem.value = tappedItem;
-                        allowTouch.value = true;
-                        controller.update(['stack_board']);
-                      } else {
-                        activePhotoItem.value = null;
-                        allowTouch.value = false;
-                        controller.activeItem.value = null;
-                        activePanel.value = PanelType.none;
-                        controller.update(['stack_board']);
+            // StackBoard with touch handling
+            SizedBox(
+              width: scaledCanvasWidth.value,
+              height: scaledCanvasHeight.value,
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: showGrid
+                    ? (event) {
+                        final localPos = event.localPosition;
+                        final scale = canvasScale.value;
+                        StackImageItem? tappedItem = controller
+                            .profileImageItems
+                            .firstWhereOrNull((item) {
+                              final hole = Rect.fromLTWH(
+                                item.offset.dx * scale,
+                                item.offset.dy * scale,
+                                item.size.width * scale,
+                                item.size.height * scale,
+                              );
+                              return hole.contains(localPos);
+                            });
+                        if (tappedItem != null) {
+                          print(
+                            "Touched inside ${tappedItem.id}, activating PhotoView.",
+                          );
+                          activePhotoItem.value = tappedItem;
+                          allowTouch.value = true;
+                          controller.update(['stack_board']);
+                        } else {
+                          if (allowTouch.value != false) {
+                            //to overcome unncessary rebuilds
+                            allowTouch.value = false;
+                            activePhotoItem.value = null;
+                          }
+                          controller.activeItem.value = null;
+                          activePanel.value = PanelType.none;
+                          controller.update(['stack_board']);
+                        }
                       }
-                    }
-                  : null,
-              child: GetBuilder<EditorController>(
-                id: 'stack_board',
-                builder: (controller) => IgnorePointer(
-                  ignoring: allowTouch.value,
-                  child: StackBoard(
-                    key: stackBoardKey,
-                    controller: controller.boardController,
-                    customBuilder: (StackItem<StackItemContent> item) {
-                      return (item is StackTextItem && item.content != null)
-                          ? StackTextCase(item: item, isFitted: true)
-                          : (item is StackImageItem && item.content != null)
-                          ? StackImageCase(item: item)
-                          : (item is ColorStackItem1 && item.content != null)
-                          ? Container(
-                              width: item.size.width,
-                              height: item.size.height,
-                              color: item.content!.color,
-                            )
-                          : const SizedBox.shrink();
-                    },
-                    borderBuilder: showBorders
-                        ? (status, item) {
-                            final CaseStyle style = CaseStyle();
-                            final double leftRight =
-                                status == StackItemStatus.idle
-                                ? 0
-                                : -(style.buttonSize) / 2;
-                            final double topBottom =
-                                status == StackItemStatus.idle
-                                ? 0
-                                : -(style.buttonSize) * 1.5;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 500),
-                              child: Positioned(
-                                left: -leftRight,
-                                top: -topBottom,
-                                right: -leftRight,
-                                bottom: -topBottom,
-                                child: IgnorePointer(
-                                  ignoring: true,
-                                  child: CustomPaint(
-                                    painter: BorderPainter(
-                                      dotted: status == StackItemStatus.idle,
+                    : null,
+                child: GetBuilder<EditorController>(
+                  id: 'stack_board',
+                  builder: (controller) => IgnorePointer(
+                    ignoring: allowTouch.value,
+                    child: StackBoard(
+                      key: stackBoardKey,
+                      controller: controller.boardController,
+                      customBuilder: (StackItem<StackItemContent> item) {
+                        return (item is StackTextItem && item.content != null)
+                            ? StackTextCase(item: item, isFitted: true)
+                            : (item is StackImageItem && item.content != null)
+                            ? StackImageCase(item: item)
+                            : (item is ColorStackItem1 && item.content != null)
+                            ? Container(
+                                width: item.size.width,
+                                height: item.size.height,
+                                color: item.content!.color,
+                              )
+                            : const SizedBox.shrink();
+                      },
+                      borderBuilder: showBorders
+                          ? (status, item) {
+                              final CaseStyle style = CaseStyle();
+                              final double leftRight =
+                                  status == StackItemStatus.idle
+                                  ? 0
+                                  : -(style.buttonSize) / 2;
+                              final double topBottom =
+                                  status == StackItemStatus.idle
+                                  ? 0
+                                  : -(style.buttonSize) * 1.5;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 500),
+                                child: Positioned(
+                                  left: -leftRight,
+                                  top: -topBottom,
+                                  right: -leftRight,
+                                  bottom: -topBottom,
+                                  child: IgnorePointer(
+                                    ignoring: true,
+                                    child: CustomPaint(
+                                      painter: BorderPainter(
+                                        dotted: status == StackItemStatus.idle,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
+                              );
+                            }
+                          : (status, item) => const SizedBox.shrink(),
+                      onDel: (item) =>
+                          controller.boardController.removeById(item.id),
+                      onStatusChanged: (item, status) {
+                        if (status == StackItemStatus.selected) {
+                          controller.activeItem.value = controller
+                              .boardController
+                              .getById(item.id);
+                          if (item is StackTextItem) {
+                            activePanel.value = PanelType.text;
+                          } else if (item is StackImageItem) {
+                            activePanel.value = PanelType.advancedImage;
+                          } else {
+                            activePanel.value = PanelType.none;
                           }
-                        : (status, item) => const SizedBox.shrink(),
-                    onDel: (item) =>
-                        controller.boardController.removeById(item.id),
-                    onStatusChanged: (item, status) {
-                      if (status == StackItemStatus.selected) {
-                        controller.activeItem.value = controller.boardController
-                            .getById(item.id);
-                        if (item is StackTextItem) {
-                          activePanel.value = PanelType.text;
-                        } else if (item is StackImageItem) {
-                          activePanel.value = PanelType.advancedImage;
-                        } else {
-                          activePanel.value = PanelType.none;
-                        }
-                        controller.draggedItem.value = null;
-                      } else if (status == StackItemStatus.moving) {
-                        activePanel.value = PanelType.none;
-                        controller.draggedItem.value = item;
-                      } else if (status == StackItemStatus.idle) {
-                        activePanel.value = PanelType.none;
-                        if (controller.draggedItem.value?.id == item.id) {
                           controller.draggedItem.value = null;
+                        } else if (status == StackItemStatus.moving) {
+                          activePanel.value = PanelType.none;
+                          controller.draggedItem.value = item;
+                        } else if (status == StackItemStatus.idle) {
+                          activePanel.value = PanelType.none;
+                          if (controller.draggedItem.value?.id == item.id) {
+                            controller.draggedItem.value = null;
+                          }
                         }
-                      }
-                      controller.update(['canvas_stack', 'bottom_sheet']);
-                      return true;
-                    },
+                        controller.update(['canvas_stack', 'bottom_sheet']);
+                        return true;
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Alignment guides
-          if (showGrid)
-            IgnorePointer(
-              ignoring: true,
-              child: CustomPaint(
-                size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-                painter: AlignmentGuidePainter(
-                  draggedItem: controller.draggedItem.value,
-                  stackBoardSize: Size(
-                    scaledCanvasWidth.value,
-                    scaledCanvasHeight.value,
+            // Alignment guides
+            if (showGrid)
+              IgnorePointer(
+                ignoring: true,
+                child: CustomPaint(
+                  size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+                  painter: AlignmentGuidePainter(
+                    draggedItem: controller.draggedItem.value,
+                    stackBoardSize: Size(
+                      scaledCanvasWidth.value,
+                      scaledCanvasHeight.value,
+                    ),
+                    showGrid: controller.showGrid.isTrue,
+                    gridSize: 50.0,
+                    guideColor: Colors.blue.withOpacity(0.5),
+                    criticalGuideColor: Colors.red,
+                    centerGuideColor: Colors.green,
                   ),
-                  showGrid: controller.showGrid.isTrue,
-                  gridSize: 50.0,
-                  guideColor: Colors.blue.withOpacity(0.5),
-                  criticalGuideColor: Colors.red,
-                  centerGuideColor: Colors.green,
                 ),
               ),
-            ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 

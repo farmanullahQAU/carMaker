@@ -173,6 +173,8 @@ class _AdjustPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+
       children: [
         SizedBox(height: 8),
 
@@ -188,14 +190,11 @@ class _AdjustPage extends StatelessWidget {
 
         // Adjustment tools
         Expanded(
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: _AdjustmentToolsRow(
-              imageEditorController: imageEditorController,
-              onSelectionChanged: (String adjustment) {
-                imageEditorController.setSelectedAdjustment(adjustment);
-              },
-            ),
+          child: _AdjustmentToolsRow(
+            imageEditorController: imageEditorController,
+            onSelectionChanged: (String adjustment) {
+              imageEditorController.setSelectedAdjustment(adjustment);
+            },
           ),
         ),
       ],
