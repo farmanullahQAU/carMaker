@@ -24,6 +24,9 @@ class CardMakerTheme {
         // seedColor: Colors.pink,
         seedColor: AppColors.branding,
         primary: AppColors.branding,
+        surface: Color(0xff180A0A),
+
+        // Dark surface color
         // tertiary: Colors.white,
 
         // secondary: AppColors.secondary

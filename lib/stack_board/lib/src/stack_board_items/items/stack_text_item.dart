@@ -96,9 +96,12 @@ class TextItemContent implements StackItemContent {
     this.selectionColor,
     this.googleFont,
     this.maskImage,
+
+    this.maskBlendMode = BlendMode.dstATop,
     // Stroke properties (NEW)
     this.hasStroke = false,
     this.strokeWidth = 2.0,
+
     this.strokeColor = Colors.black,
     // Circular text properties
     this.isCircular = false,
@@ -172,9 +175,19 @@ class TextItemContent implements StackItemContent {
       googleFont: data['googleFont'],
       maskImage: data['maskImage'],
 
+      // New mask properties with defaults
+      maskBlendMode: data['maskBlendMode'] == null
+          ? BlendMode.dstATop
+          : ExEnum.tryParse<BlendMode>(
+                  BlendMode.values,
+                  asT<String>(data['maskBlendMode']),
+                ) ??
+                BlendMode.dstATop,
+
       // Stroke properties (NEW)
       hasStroke: asT<bool>(data['hasStroke'], false),
       strokeWidth: asT<double>(data['strokeWidth'], 2.0),
+
       strokeColor: data['strokeColor'] == null
           ? Colors.black
           : Color(asT<int>(data['strokeColor'])),
@@ -243,7 +256,9 @@ class TextItemContent implements StackItemContent {
   Color? selectionColor;
   String? googleFont;
   String? maskImage;
-  Color? maskColor;
+  // New mask properties
+
+  BlendMode maskBlendMode;
 
   // Stroke properties (NEW)
   bool hasStroke;
@@ -283,8 +298,15 @@ class TextItemContent implements StackItemContent {
     TextHeightBehavior? textHeightBehavior,
     Color? selectionColor,
     String? googleFont,
+    //mask properties
     String? maskImage,
-    Color? maskColor,
+    BlendMode? maskBlendMode,
+
+    double? maskOpacity,
+    double? maskScale,
+    double? maskRotation,
+    double? maskPositionX,
+    double? maskPositionY,
     // Stroke properties (NEW)
     bool? hasStroke,
     double? strokeWidth,
@@ -325,10 +347,15 @@ class TextItemContent implements StackItemContent {
       textHeightBehavior: textHeightBehavior ?? this.textHeightBehavior,
       selectionColor: selectionColor ?? this.selectionColor,
       googleFont: googleFont ?? this.googleFont,
+      //mask properties
       maskImage: maskImage ?? this.maskImage,
+
+      maskBlendMode: maskBlendMode ?? this.maskBlendMode,
+
       // Stroke properties (NEW)
       hasStroke: hasStroke ?? this.hasStroke,
       strokeWidth: strokeWidth ?? this.strokeWidth,
+
       strokeColor: strokeColor ?? this.strokeColor,
       // Circular text properties
       isCircular: isCircular ?? this.isCircular,
@@ -370,7 +397,8 @@ class TextItemContent implements StackItemContent {
       if (selectionColor != null) 'selectionColor': selectionColor?.toARGB32(),
       if (googleFont != null) 'googleFont': googleFont,
       if (maskImage != null) 'maskImage': maskImage,
-      if (maskColor != null) 'maskColor': maskColor?.toARGB32(),
+
+      'maskBlendMode': maskBlendMode.toString(),
 
       // Stroke properties (NEW)
       'hasStroke': hasStroke,
@@ -390,6 +418,7 @@ class TextItemContent implements StackItemContent {
       if (showStroke != null) 'showStroke': showStroke,
       if (backgroundPaintColor != null)
         'backgroundPaintColor': backgroundPaintColor?.toARGB32(),
+      'strokeWidth': strokeWidth,
 
       // Add dual tone properties
       'hasDualTone': hasDualTone,

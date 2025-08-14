@@ -9,6 +9,7 @@ import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:get/get.dart';
@@ -884,136 +885,85 @@ class _HueAdjustmentPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Background Color',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
+          Row(
+            children: [
+              Icon(Icons.colorize, size: 20, color: AppColors.branding),
+              const SizedBox(width: 8),
+              Text(
+                'Hue Adjustment',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Obx(
-            () => Row(
+            () => Column(
               children: [
+                // Compact Hue Slider
+                CompactSlider(
+                  icon: Icons.palette,
+                  label: 'Hue',
+                  value: controller.backgroundHue.value,
+                  min: 0.0,
+                  max: 360.0,
+                  onChanged: (value) {
+                    controller.updateBackgroundHue(value);
+                  },
+                ),
+                // Current Hue Preview
                 Container(
-                  width: 40,
-                  height: 40,
+                  height: 24,
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
                     gradient: LinearGradient(
                       colors: [
-                        Colors.red,
-                        Colors.yellow,
-                        Colors.green,
-                        Colors.blue,
-                        Colors.purple,
-                        Colors.red,
+                        HSLColor.fromAHSL(
+                          1,
+                          controller.backgroundHue.value,
+                          1,
+                          0.5,
+                        ).toColor(),
+                        HSLColor.fromAHSL(
+                          1,
+                          controller.backgroundHue.value,
+                          0.8,
+                          0.7,
+                        ).toColor(),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hue: ${controller.backgroundHue.value.round()}°',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppColors.branding,
-                          inactiveTrackColor: Colors.grey.shade300,
-                          thumbColor: AppColors.branding,
-                          overlayColor: AppColors.branding.withOpacity(0.2),
-                          trackHeight: 6,
-                          thumbShape: RoundSliderThumbShape(
-                            enabledThumbRadius: 8,
+                  child: Center(
+                    child: Text(
+                      '${controller.backgroundHue.value.round()}°',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
                           ),
-                        ),
-                        child: Slider(
-                          value: controller.backgroundHue.value,
-                          min: 0.0,
-                          max: 360.0,
-                          onChanged: (value) {
-                            controller.updateBackgroundHue(value);
-                          },
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: IconButton(
-                    icon: Icon(Icons.refresh, color: Colors.grey[600]),
-                    onPressed: () {
-                      controller.updateBackgroundHue(0.0);
-                    },
-                    tooltip: 'Reset',
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          SizedBox(height: 16),
-          // Color Presets
-          Text(
-            'Presets',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              _ColorPreset(color: Colors.red, hue: 0, controller: controller),
-              _ColorPreset(
-                color: Colors.orange,
-                hue: 30,
-                controller: controller,
-              ),
-              _ColorPreset(
-                color: Colors.yellow,
-                hue: 60,
-                controller: controller,
-              ),
-              _ColorPreset(
-                color: Colors.green,
-                hue: 120,
-                controller: controller,
-              ),
-              _ColorPreset(
-                color: Colors.blue,
-                hue: 240,
-                controller: controller,
-              ),
-              _ColorPreset(
-                color: Colors.purple,
-                hue: 270,
-                controller: controller,
-              ),
-            ],
           ),
         ],
       ),
@@ -1021,7 +971,6 @@ class _HueAdjustmentPanel extends StatelessWidget {
   }
 }
 
-// Color Preset Widget
 class _ColorPreset extends StatelessWidget {
   final Color color;
   final double hue;
@@ -1035,27 +984,44 @@ class _ColorPreset extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
+    return Obx(() {
+      final isSelected =
+          (controller.backgroundHue.value - hue).abs() < 5; // 5° tolerance
+      return GestureDetector(
         onTap: () => controller.updateBackgroundHue(hue),
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          height: 40,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white, width: 2),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isSelected ? Colors.white : Colors.transparent,
+              width: isSelected ? 3 : 0,
+            ),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
+              if (isSelected)
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
             ],
           ),
+          child: isSelected
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check, size: 12, color: color),
+                  ),
+                )
+              : null,
         ),
-      ),
-    );
+      );
+    });
   }
 }
 

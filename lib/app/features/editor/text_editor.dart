@@ -264,8 +264,27 @@ class TextStyleController extends GetxController {
   final isUnderlined = false.obs;
   final maskImage = Rx<String?>(null);
 
-  BlendMode? maskBlendMode;
   var maskOpacity = (1.0).obs;
+
+  // New mask properties for advanced settings
+  final maskScale = 1.0.obs;
+  final maskRotation = 0.0.obs;
+  final maskPositionX = 0.0.obs;
+  final maskPositionY = 0.0.obs;
+  final maskBlendMode = BlendMode.dstATop.obs;
+  final maskTileMode = TileMode.clamp.obs;
+
+  // Add this method to reset mask settings
+  void resetMaskSettings() {
+    maskOpacity.value = 1.0;
+    maskScale.value = 1.0;
+    maskRotation.value = 0.0;
+    maskPositionX.value = 0.0;
+    maskPositionY.value = 0.0;
+    maskBlendMode.value = BlendMode.dstATop;
+    maskTileMode.value = TileMode.clamp;
+    updateTextItem();
+  }
 
   // Effects - Shadow
   final hasShadow = false.obs;
@@ -281,13 +300,14 @@ class TextStyleController extends GetxController {
   // Effects - Stroke (NEW)
   final hasStroke = false.obs;
   final strokeWidth = 2.0.obs;
+
   final strokeColor = Colors.black.obs;
   String? selectedTemplateId;
   String? selectedDualToneTemplateId;
 
   // Circular text
   final isCircular = false.obs;
-  final radius = 50.0.obs;
+  final radius = 0.0.obs;
   final space = 10.0.obs;
   final startAngle = 0.0.obs;
   final startAngleAlignment = StartAngleAlignment.start.obs;
@@ -295,7 +315,6 @@ class TextStyleController extends GetxController {
   final direction = CircularTextDirection.clockwise.obs;
   final showBackground = true.obs;
   final showStroke = false.obs;
-  final strokeWidthCircular = 0.0.obs; // Separate from text stroke
   final backgroundPaintColor = Colors.grey.shade200.obs;
 
   static const popularFonts = [
@@ -349,10 +368,10 @@ class TextStyleController extends GetxController {
   ];
 
   static const maskImages = [
-    'assets/card1.png',
-    'assets/birthday_1.png',
-    'assets/Farman.png',
-    'assets/Farman.png',
+    'assets/gliter1.jpeg',
+    'assets/gliter2.jpeg',
+    'assets/gliter3.jpeg',
+    'assets/gliter4.jpeg',
   ];
 
   @override
@@ -400,7 +419,7 @@ class TextStyleController extends GetxController {
     isCircular.value = textContent?.isCircular ?? false;
     radius.value = (textContent?.radius ?? 0) >= 50
         ? textContent!.radius!
-        : 50.0;
+        : 100.0;
     space.value = textContent?.space ?? 10.0;
     startAngle.value = textContent?.startAngle ?? 0.0;
     startAngleAlignment.value =
@@ -409,17 +428,17 @@ class TextStyleController extends GetxController {
     direction.value = textContent?.direction ?? CircularTextDirection.clockwise;
     showBackground.value = textContent?.showBackground ?? true;
     showStroke.value = textContent?.showStroke ?? false;
-    strokeWidthCircular.value = textContent?.strokeWidth ?? 0.0;
+    strokeWidth.value = textContent!.strokeWidth;
     backgroundPaintColor.value =
-        textContent?.backgroundPaintColor ?? Colors.grey.shade200;
+        textContent.backgroundPaintColor ?? Colors.grey.shade200;
 
     // Initialize dual tone properties (ADD THESE)
-    hasDualTone.value = textContent?.hasDualTone ?? false;
-    dualToneColor1 = textContent?.dualToneColor1 ?? Colors.red;
-    dualToneColor2 = textContent?.dualToneColor2 ?? Colors.blue;
+    hasDualTone.value = textContent.hasDualTone ?? false;
+    dualToneColor1 = textContent.dualToneColor1 ?? Colors.red;
+    dualToneColor2 = textContent.dualToneColor2 ?? Colors.blue;
     dualToneDirection.value =
-        textContent?.dualToneDirection ?? DualToneDirection.horizontal;
-    dualTonePosition.value = textContent?.dualTonePosition ?? 0.5;
+        textContent.dualToneDirection ?? DualToneDirection.horizontal;
+    dualTonePosition.value = textContent.dualTonePosition ?? 0.5;
   }
 
   void updateTextItem() {
@@ -442,9 +461,7 @@ class TextStyleController extends GetxController {
         letterSpacing: letterSpacing.value,
         height: lineHeight.value,
         // Only make text transparent if image mask is applied
-        color: maskImage.value != null
-            ? Colors.transparent
-            : textColor.value, //TODO check it
+        color: textColor.value,
         backgroundColor: backgroundColor.value,
         fontWeight: fontWeight.value,
         fontStyle: isItalic.value ? FontStyle.italic : FontStyle.normal,
@@ -463,7 +480,7 @@ class TextStyleController extends GetxController {
       ),
       textAlign: textAlign.value,
       maskImage: maskImage.value,
-      maskColor: null, // Always null since we don't use color masks
+      maskBlendMode: maskBlendMode.value,
       // Stroke properties
       hasStroke: hasStroke.value,
       strokeWidth: strokeWidth.value,
@@ -1406,7 +1423,6 @@ class _FontTab extends StatelessWidget {
 }
 
 // MASK TAB - Fixed implementation with proper organization
-
 class _MaskTab extends StatelessWidget {
   final TextStyleController controller;
   const _MaskTab({required this.controller});
@@ -1431,6 +1447,7 @@ class _MaskTab extends StatelessWidget {
         builder: (controller) {
           return ListView.separated(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount:
                 TextStyleController.maskImages.length + 1, // +1 for "None"
             separatorBuilder: (context, index) => const SizedBox(width: 12),
@@ -1453,38 +1470,44 @@ class _MaskTab extends StatelessWidget {
       onTap: () => _clearMask(controller),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 80,
+        width: 88,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
-              : Get.theme.colorScheme.surfaceContainerLow,
+              ? AppColors.branding.withOpacity(0.08)
+              : Get.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.branding
-                : Get.theme.colorScheme.outline.withOpacity(0.1),
-          ),
+          border: isSelected
+              ? Border.all(color: AppColors.branding, width: 0.4)
+              : null,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.layers_clear,
-              size: 28,
-              color: isSelected
-                  ? AppColors.branding
-                  : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+            Container(
+              height: 56,
+              width: 56,
+              decoration: BoxDecoration(
+                color: Get.theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.layers_clear,
+                size: 28,
+                color: isSelected
+                    ? AppColors.branding
+                    : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'None',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: isSelected
-                    ? AppColors.branding
-                    : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                color: isSelected ? AppColors.branding : Colors.grey.shade800,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1494,128 +1517,98 @@ class _MaskTab extends StatelessWidget {
 
   Widget _buildMaskOption(String image) {
     final isSelected = image == controller.maskImage.value;
-    return GestureDetector(
-      onTap: () => _selectImageMask(controller, image),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 80,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
-              : Get.theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.branding
-                : Get.theme.colorScheme.outline.withOpacity(0.1),
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(11),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset(image, fit: BoxFit.cover),
-              if (isSelected)
-                Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        GestureDetector(
+          onTap: () => _selectImageMask(controller, image),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 88,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.branding.withOpacity(0.08)
+                  : Get.theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(color: AppColors.branding, width: 0.4)
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
                       decoration: BoxDecoration(
-                        color: AppColors.branding,
-                        shape: BoxShape.circle,
+                        color: Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.image_not_supported,
+                              color: Colors.grey.shade600,
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
+
+                    if (isSelected)
+                      Container(
+                        child: GestureDetector(
+                          onTap: () {
+                            _showMaskTuneBottomSheet(Get.context!);
+                          },
+                          child: Container(
+                            height: 56,
+                            width: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.tune, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Mask ${TextStyleController.maskImages.indexOf(image) + 1}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.branding
+                        : Colors.grey.shade800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildMaskSettings() {
-    return GetBuilder<TextStyleController>(
-      id: 'mask_settings',
-      builder: (controller) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Get.theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              // Example setting - Mask Opacity
-              CompactSlider(
-                icon: Icons.opacity,
-                label: 'Mask Opacity',
-                value: controller.maskOpacity.value,
-                min: 0.1,
-                max: 1.0,
-                onChanged: (value) {
-                  controller.maskOpacity.value = value;
-                  controller.updateTextItem();
-                  controller.update(['mask_settings']);
-                },
-              ),
-
-              // Example setting - Blend Mode (simplified)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  Icons.mode,
-                  color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
-                  size: 20,
-                ),
-                title: Text(
-                  'Blend Mode',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Get.theme.colorScheme.onSurface,
-                  ),
-                ),
-                trailing: DropdownButton<BlendMode>(
-                  value: controller.maskBlendMode,
-                  items: [
-                    DropdownMenuItem(
-                      value: BlendMode.srcATop,
-                      child: Text('Normal', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: BlendMode.multiply,
-                      child: Text('Multiply', style: TextStyle(fontSize: 12)),
-                    ),
-                    DropdownMenuItem(
-                      value: BlendMode.screen,
-                      child: Text('Screen', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.maskBlendMode = value;
-                      controller.updateTextItem();
-                      controller.update(['mask_settings']);
-                    }
-                  },
-                  underline: Container(),
-                  style: TextStyle(
-                    color: Get.theme.colorScheme.onSurface,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showMaskTuneBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: null,
+      elevation: 0,
+      builder: (context) => MaskTuneBottomSheet(controller: controller),
     );
   }
 
@@ -1632,6 +1625,472 @@ class _MaskTab extends StatelessWidget {
   }
 }
 
+class MaskTuneBottomSheet extends StatelessWidget {
+  final TextStyleController controller;
+
+  const MaskTuneBottomSheet({required this.controller, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: Get.width,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHandleBar(),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [_buildMaskProperties()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandleBar() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      height: 5,
+      width: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade400,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Widget _buildMaskProperties() {
+    return GetBuilder<TextStyleController>(
+      id: "mask_properties",
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Blend Mode Radio Buttons
+              _buildBlendModeSelector(),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBlendModeSelector() {
+    final blendModes = [
+      {'mode': BlendMode.srcATop, 'name': 'Src A Top'},
+      {'mode': BlendMode.dstATop, 'name': 'Dst A Top'},
+    ];
+
+    return GetBuilder<TextStyleController>(
+      id: 'mask_blend_mode',
+      builder: (controller) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.layers,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Blend Mode',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Get.theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: blendModes.map((blendModeData) {
+                final mode = blendModeData['mode'] as BlendMode;
+                final name = blendModeData['name'] as String;
+                final isSelected = controller.maskBlendMode.value == mode;
+
+                return GestureDetector(
+                  onTap: () {
+                    controller.maskBlendMode.value = mode;
+                    controller.updateTextItem();
+                    controller.update(['mask_properties', 'mask_blend_mode']);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.branding.withOpacity(0.1)
+                          : Get.theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.branding
+                            : Get.theme.colorScheme.outline.withOpacity(0.3),
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.branding
+                                  : Get.theme.colorScheme.outline.withOpacity(
+                                      0.5,
+                                    ),
+                              width: 2,
+                            ),
+                          ),
+                          child: isSelected
+                              ? Center(
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.branding,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isSelected
+                                ? AppColors.branding
+                                : Get.theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/*
+class _MaskTab extends StatelessWidget {
+  static const List<MaskTemplate> maskTemplates = [
+    MaskTemplate(id: 'none', name: 'None', icon: Icons.layers_clear),
+    MaskTemplate(
+      id: 'card1',
+      name: 'Card 1',
+      image: 'assets/gliter1.jpeg',
+      blendMode: BlendMode.srcATop,
+      opacity: 1.0,
+    ),
+    MaskTemplate(
+      id: 'birthday',
+      name: 'Birthday',
+      image: 'assets/gliter2.jpeg',
+
+      blendMode: BlendMode.multiply,
+      opacity: 0.9,
+    ),
+    MaskTemplate(
+      id: 'farman',
+      name: 'Farman',
+      image: 'assets/gliter3.jpeg',
+
+      blendMode: BlendMode.screen,
+      opacity: 0.8,
+    ),
+  ];
+
+  final TextStyleController controller;
+  _MaskTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildMaskPresets(),
+        const SizedBox(height: 16),
+        if (controller.maskImage.value != null) _buildMaskSettings(),
+      ],
+    );
+  }
+
+  Widget _buildMaskPresets() {
+    return SizedBox(
+      height: 100,
+      child: GetBuilder<TextStyleController>(
+        id: 'mask_templates',
+        builder: (controller) {
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            scrollDirection: Axis.horizontal,
+            itemCount: maskTemplates.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final template = maskTemplates[index];
+              final isSelected = _isTemplateSelected(controller, template);
+
+              return _buildTemplateCard(
+                template: template,
+                isSelected: isSelected,
+                onTap: () => _applyTemplate(controller, template),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTemplateCard({
+    required MaskTemplate template,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isNoneTemplate = template.id == 'none';
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 88,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.08)
+              : Get.theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border.all(color: AppColors.branding, width: 0.4)
+              : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 56,
+              width: 56,
+              decoration: BoxDecoration(
+                color: Get.theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: isNoneTemplate
+                    ? Icon(
+                        Icons.layers_clear,
+                        size: 24,
+                        color: Get.theme.colorScheme.onSurface,
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset(template.image!, fit: BoxFit.cover),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              template.name,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? AppColors.branding : Colors.grey.shade800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMaskSettings() {
+    return GetBuilder<TextStyleController>(
+      id: 'mask_settings',
+      builder: (controller) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              CompactSlider(
+                icon: Icons.opacity,
+                label: 'Mask Opacity',
+                value: controller.maskOpacity.value,
+                min: 0.1,
+                max: 1.0,
+                onChanged: (value) {
+                  controller.maskOpacity.value = value;
+                  controller.updateTextItem();
+                  controller.update(['mask_settings']);
+                },
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.mode,
+                  size: 20,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                title: Text(
+                  'Blend Mode',
+                  style: Get.theme.textTheme.labelMedium,
+                ),
+                trailing: DropdownButton<BlendMode>(
+                  value: controller.maskBlendMode,
+                  items: BlendMode.values
+                      .where((mode) => _supportedBlendModes.contains(mode))
+                      .map(
+                        (mode) => DropdownMenuItem(
+                          value: mode,
+                          child: Text(
+                            _getBlendModeName(mode),
+                            style: Get.theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.maskBlendMode = value;
+                      controller.updateTextItem();
+                      controller.update(['mask_settings']);
+                    }
+                  },
+                  underline: Container(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _applyTemplate(TextStyleController controller, MaskTemplate template) {
+    if (template.id == 'none') {
+      controller.maskImage.value = null;
+    } else {
+      controller.maskImage.value = template.image;
+      controller.maskBlendMode = template.blendMode;
+      controller.maskOpacity.value = template.opacity;
+    }
+    controller.updateTextItem();
+    controller.update(['mask_templates', 'mask_settings']);
+  }
+
+  bool _isTemplateSelected(
+    TextStyleController controller,
+    MaskTemplate template,
+  ) {
+    if (template.id == 'none') {
+      return controller.maskImage.value == null;
+    }
+    return controller.maskImage.value == template.image;
+  }
+
+  final List<BlendMode> _supportedBlendModes = [
+    BlendMode.srcATop,
+    BlendMode.multiply,
+    BlendMode.screen,
+    BlendMode.overlay,
+    BlendMode.darken,
+    BlendMode.lighten,
+  ];
+
+  String _getBlendModeName(BlendMode mode) {
+    switch (mode) {
+      case BlendMode.srcATop:
+        return 'Normal';
+      case BlendMode.multiply:
+        return 'Multiply';
+      case BlendMode.screen:
+        return 'Screen';
+      case BlendMode.overlay:
+        return 'Overlay';
+      case BlendMode.darken:
+        return 'Darken';
+      case BlendMode.lighten:
+        return 'Lighten';
+      default:
+        return 'Normal';
+    }
+  }
+}
+
+class MaskTemplate {
+  final String id;
+  final String name;
+  final IconData? icon;
+  final String? image;
+  final BlendMode blendMode;
+  final double opacity;
+
+  const MaskTemplate({
+    required this.id,
+    required this.name,
+    this.icon,
+    this.image,
+    this.blendMode = BlendMode.srcATop,
+    this.opacity = 1.0,
+  });
+}
+
+*/
 class _EffectsTab extends StatelessWidget {
   static const List<EffectTemplate> effectTemplates = [
     EffectTemplate(
@@ -2217,37 +2676,36 @@ class _DualToneTuneTab extends StatelessWidget {
     return Container(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [_buildDualTonePresetCards()],
-      ),
-    );
-  }
+        children: [
+          SizedBox(
+            height: 100,
+            child: GetBuilder<TextStyleController>(
+              id: 'dual_tone_templates',
+              builder: (controller) {
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: dualToneTemplates.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final template = dualToneTemplates[index];
+                    final isSelected = _isDualToneTemplateSelected(
+                      controller,
+                      template,
+                    );
 
-  Widget _buildDualTonePresetCards() {
-    return SizedBox(
-      height: 100,
-      child: GetBuilder<TextStyleController>(
-        id: 'dual_tone_templates',
-        builder: (controller) {
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            itemCount: dualToneTemplates.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final template = dualToneTemplates[index];
-              final isSelected = _isDualToneTemplateSelected(
-                controller,
-                template,
-              );
-
-              return _buildDualToneTemplateCard(
-                template: template,
-                isSelected: isSelected,
-                onTap: () => _applyDualToneTemplate(controller, template),
-              );
-            },
-          );
-        },
+                    return _buildDualToneTemplateCard(
+                      template: template,
+                      isSelected: isSelected,
+                      onTap: () => _applyDualToneTemplate(controller, template),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2256,7 +2714,8 @@ class _DualToneTuneTab extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      barrierColor: null,
+      backgroundColor: null,
+      barrierColor: Colors.transparent,
       elevation: 0,
       builder: (context) => DualToneTuneBottomSheet(controller: controller),
     );
@@ -2412,29 +2871,27 @@ class DualToneTuneBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
       width: Get.width,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        // color: Get.theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHandleBar(),
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildColorProperties(),
-                const SizedBox(height: 12),
-                _buildDirectionProperties(),
-                const SizedBox(height: 12),
+                _buildColorSection(),
+                const SizedBox(height: 8),
+                _buildDirectionSection(),
+                const SizedBox(height: 8),
                 _buildPositionSlider(),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -2445,28 +2902,28 @@ class DualToneTuneBottomSheet extends StatelessWidget {
 
   Widget _buildHandleBar() {
     return Container(
-      margin: const EdgeInsets.only(top: 10),
-      height: 5,
-      width: 50,
+      margin: const EdgeInsets.only(top: 8, bottom: 4),
+      height: 4,
+      width: 40,
       decoration: BoxDecoration(
         color: Colors.grey.shade400,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
-  Widget _buildColorProperties() {
+  Widget _buildColorSection() {
     return GetBuilder<TextStyleController>(
-      id: "dual_tone_colors",
+      id: 'dual_tone_colors',
       builder: (controller) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: Get.theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Get.theme.shadowColor.withOpacity(0.05),
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -2476,32 +2933,37 @@ class DualToneTuneBottomSheet extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  const Icon(Icons.color_lens, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Colors',
+                    style: Get.theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Color 1', style: Get.theme.textTheme.labelMedium),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => _showColorPicker(
-                            Get.context!,
-                            controller.dualToneColor1!,
-                            (color) {
-                              controller.dualToneColor1 = color;
-                              controller.updateTextItem();
-                              controller.update(['dual_tone_colors']);
-                            },
-                          ),
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: controller.dualToneColor1,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.highlight.withOpacity(0.3),
-                              ),
-                            ),
-                          ),
+                        ColorSelector(
+                          title: "Color 1",
+                          colors: TextStyleController.predefinedColors,
+                          currentColor: controller.dualToneColor1 ?? Colors.red,
+                          onColorSelected: (color) {
+                            controller.dualToneColor1 = color;
+                            controller.updateTextItem();
+                            controller.update(['dual_tone_colors']);
+                          },
+                          selectedBorderColor: AppColors.branding,
+                          itemSize: 28,
+                          spacing: 6,
+                          paddingx: 0,
+                          showTitle: true,
                         ),
                       ],
                     ),
@@ -2511,28 +2973,22 @@ class DualToneTuneBottomSheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Color 2', style: Get.theme.textTheme.labelMedium),
-                        const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => _showColorPicker(
-                            Get.context!,
-                            controller.dualToneColor2!,
-                            (color) {
-                              controller.dualToneColor2 = color;
-                              controller.updateTextItem();
-                              controller.update(['dual_tone_colors']);
-                            },
-                          ),
-                          child: Container(
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: controller.dualToneColor2,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.highlight.withOpacity(0.3),
-                              ),
-                            ),
-                          ),
+                        ColorSelector(
+                          title: "Color 2",
+
+                          colors: TextStyleController.predefinedColors,
+                          currentColor:
+                              controller.dualToneColor2 ?? Colors.blue,
+                          onColorSelected: (color) {
+                            controller.dualToneColor2 = color;
+                            controller.updateTextItem();
+                            controller.update(['dual_tone_colors']);
+                          },
+                          selectedBorderColor: AppColors.branding,
+                          itemSize: 28,
+                          spacing: 6,
+                          paddingx: 0,
+                          showTitle: true,
                         ),
                       ],
                     ),
@@ -2546,60 +3002,71 @@ class DualToneTuneBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildDirectionProperties() {
+  Widget _buildDirectionSection() {
     return GetBuilder<TextStyleController>(
       id: 'dual_tone_direction',
       builder: (controller) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: Get.theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.05),
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Direction', style: Get.theme.textTheme.labelMedium),
-              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.directions, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Direction',
+                    style: Get.theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: DualToneDirection.values.map((direction) {
                   final isSelected =
                       controller.dualToneDirection.value == direction;
                   return Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        controller.dualToneDirection.value = direction;
-                        controller.updateTextItem();
-                        controller.update(['dual_tone_direction']);
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 4),
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.branding
-                              : AppColors.highlight.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.branding
-                                : AppColors.highlight.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            _getDirectionIcon(direction),
-                            size: 16,
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.highlight,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Material(
+                        color: isSelected
+                            ? AppColors.branding.withOpacity(0.2)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            controller.dualToneDirection.value = direction;
+                            controller.updateTextItem();
+                            controller.update(['dual_tone_direction']);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  _getDirectionIcon(direction),
+                                  size: 20,
+                                  color: isSelected
+                                      ? AppColors.branding
+                                      : Get.theme.colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -2619,41 +3086,71 @@ class DualToneTuneBottomSheet extends StatelessWidget {
       id: 'dual_tone_position',
       builder: (controller) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: Get.theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.05),
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Position: ${(controller.dualTonePosition.value * 100).toInt()}%',
-                style: Get.theme.textTheme.labelMedium,
+              Row(
+                children: [
+                  const Icon(Icons.tune, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Position',
+                    style: Get.theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${(controller.dualTonePosition.value * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.branding,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Slider(
+              const SizedBox(height: 12),
+              CompactSlider(
+                icon: Icons.horizontal_rule,
                 value: controller.dualTonePosition.value,
+                min: 0.0,
+                max: 1.0,
                 onChanged: (value) {
                   controller.dualTonePosition.value = value;
                   controller.updateTextItem();
                   controller.update(['dual_tone_position']);
                 },
-                activeColor: AppColors.branding,
-                inactiveColor: AppColors.highlight.withOpacity(0.3),
               ),
             ],
           ),
         );
       },
     );
+  }
+
+  String _getDirectionName(DualToneDirection direction) {
+    switch (direction) {
+      case DualToneDirection.horizontal:
+        return 'Horizontal';
+      case DualToneDirection.vertical:
+        return 'Vertical';
+      case DualToneDirection.diagonal:
+        return 'Diagonal';
+      case DualToneDirection.radial:
+        return 'Radial';
+    }
   }
 
   IconData _getDirectionIcon(DualToneDirection direction) {
@@ -2667,45 +3164,6 @@ class DualToneTuneBottomSheet extends StatelessWidget {
       case DualToneDirection.radial:
         return Icons.radio_button_unchecked;
     }
-  }
-
-  void _showColorPicker(
-    BuildContext context,
-    Color currentColor,
-    Function(Color) onColorChanged,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Color'),
-        content: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: TextStyleController.predefinedColors.map((color) {
-            return GestureDetector(
-              onTap: () {
-                onColorChanged(color);
-                Navigator.pop(context);
-              },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: color == currentColor
-                        ? AppColors.branding
-                        : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
   }
 }
 
@@ -2793,7 +3251,7 @@ class _CircularTab extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 decoration: BoxDecoration(
-                  color: Get.theme.colorScheme.surfaceContainer,
+                  color: Get.theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: AppColors.highlight.withOpacity(0.1),
@@ -2885,7 +3343,7 @@ class _CircularTab extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.highlight.withOpacity(0.05),
+                      color: Get.theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: TabBar(
@@ -3203,7 +3661,7 @@ class _StrokeWidthSubTab extends StatelessWidget {
             child: _buildCompactSlider(
               value: controller.strokeWidth.value,
               min: 0.0,
-              max: 10.0,
+              max: 100.0,
               label: '${controller.strokeWidth.value.toStringAsFixed(1)}px',
               onChanged: (value) {
                 controller.strokeWidth.value = value;
@@ -3234,8 +3692,11 @@ class _ColorsSubTab extends StatelessWidget {
             title: 'Background Color',
             subtitle: 'Choose the background color',
             icon: Icons.color_lens_outlined,
-            child: _buildCompactColorPicker(
-              selectedColor: controller.backgroundPaintColor.value,
+            child: ColorSelector(
+              colors: TextStyleController.predefinedColors,
+              title: "colors",
+              showTitle: false,
+              currentColor: controller.backgroundPaintColor.value,
               onColorSelected: (color) {
                 controller.backgroundPaintColor.value = color;
                 controller.updateTextItem();
@@ -3259,12 +3720,16 @@ Widget _buildCompactSection({
 }) {
   return Container(
     decoration: BoxDecoration(
-      color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.3),
+      color: Get.theme.colorScheme.surface,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: AppColors.highlight.withOpacity(0.08),
-        width: 1,
-      ),
+
+      boxShadow: [
+        BoxShadow(
+          color: Get.theme.shadowColor.withValues(alpha: 0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
     ),
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

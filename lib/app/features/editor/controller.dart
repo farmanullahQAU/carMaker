@@ -431,36 +431,9 @@ class EditorController extends GetxController {
       if (type == 'StackTextItem') {
         exportedItem['content'] = itemJson['content'];
       } else if (type == 'StackImageItem') {
-        exportedItem['content'] = {
-          'assetName': itemJson['content']['assetName'],
-        };
-      } else if (type == 'RowStackItem') {
-        exportedItem['content'] = {
-          'items': (itemJson['content']['items'] as List).map((subItemJson) {
-            final subItemType = subItemJson['type'];
-            final Map<String, dynamic> subItem = {
-              'type': subItemType,
-              'id': subItemJson['id'],
-              'status': subItemJson['status'] ?? 0,
-              'size': {
-                'width': subItemJson['size']['width'],
-                'height': subItemJson['size']['height'],
-              },
-              'offset': {
-                'dx': subItemJson['offset']['dx'],
-                'dy': subItemJson['offset']['dy'],
-              },
-              'isCentered': subItemJson['isCentered'] ?? false,
-              'isProfileImage': false,
-            };
-            if (subItemType == 'StackTextItem') {
-              subItem['content'] = subItemJson['content'];
-            } else {
-              throw Exception('Unsupported sub-item type: $subItemType');
-            }
-            return subItem;
-          }).toList(),
-        };
+        exportedItem['content'] = StackImageItem.fromJson(
+          itemJson,
+        ).content?.toJson();
       }
 
       exportedItems.add(exportedItem);

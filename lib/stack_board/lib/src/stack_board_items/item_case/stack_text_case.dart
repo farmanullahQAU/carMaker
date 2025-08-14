@@ -58,171 +58,15 @@ class StackTextCase extends StatelessWidget {
     return _buildNormal(context);
   }
 
-  /* without doual tune
   Widget _buildNormal(BuildContext context) {
     final textStyle = content?.style?.copyWith(
       fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
       height: content?.style?.height,
     );
 
-    // Choose between stroke text and regular text
-    Widget textWidget;
-
-    if (content?.hasStroke == true) {
-      // Use StrokeText for stroke effect
-      textWidget = ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: 10,
-          minHeight: 10,
-          maxWidth: 800,
-          maxHeight: 600,
-        ),
-        child: StrokeText(
-          text: content?.data ?? "",
-          strokeColor: content?.strokeColor ?? Colors.black,
-          strokeWidth: content?.strokeWidth ?? 2.0,
-          textStyle: textStyle,
-          textAlign: content?.textAlign ?? TextAlign.center,
-          textDirection: content?.textDirection,
-          textScaler: content?.textScaleFactor != null
-              ? TextScaler.linear(content!.textScaleFactor!)
-              : TextScaler.noScaling,
-          maxLines: content?.maxLines ?? 5,
-          overflow: TextOverflow.visible,
-        ),
-      );
-    } else {
-      // Use regular Text widget
-      textWidget = Text(
-        content?.data ?? "",
-        style: textStyle,
-        strutStyle: content?.strutStyle?.style,
-        textAlign: content?.textAlign ?? TextAlign.center,
-        textDirection: content?.textDirection,
-        locale: content?.locale,
-        softWrap: true,
-        overflow: TextOverflow.visible,
-        textScaler: content?.textScaleFactor != null
-            ? TextScaler.linear(content!.textScaleFactor!)
-            : TextScaler.noScaling,
-        maxLines: content?.maxLines ?? 5,
-        semanticsLabel: content?.semanticsLabel,
-        textWidthBasis: content?.textWidthBasis,
-        textHeightBehavior: content?.textHeightBehavior,
-        selectionColor: content?.selectionColor,
-      );
-    }
-
-    Widget wrappedWidget;
-
-    // Apply image mask effects only (removed color mask support)
-    if (content?.maskImage != null) {
-      wrappedWidget = FutureBuilder<ui.Image>(
-        future: _loadImage(content!.maskImage!),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return textWidget; // Fallback to text during loading
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return textWidget; // Fallback to text without mask
-          }
-
-          Widget maskedWidget;
-
-          // Apply image mask to stroke text or regular text
-          if (content?.hasStroke == true) {
-            maskedWidget = ClipRect(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return ImageShader(
-                    snapshot.data!,
-                    TileMode.clamp,
-                    TileMode.clamp,
-                    Matrix4.identity().storage,
-                  );
-                },
-                blendMode: BlendMode.srcATop,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: 10,
-                    minHeight: 10,
-                    maxWidth: 800,
-                    maxHeight: 600,
-                  ),
-                  child: StrokeText(
-                    text: content!.data!,
-                    strokeColor: content!.strokeColor ?? Colors.black,
-                    strokeWidth: content!.strokeWidth ?? 2.0,
-                    textStyle: textStyle?.copyWith(color: Colors.black),
-                    textAlign: content!.textAlign ?? TextAlign.center,
-                    textDirection: content!.textDirection,
-                    textScaler: content!.textScaleFactor != null
-                        ? TextScaler.linear(content!.textScaleFactor!)
-                        : TextScaler.noScaling,
-                    maxLines: content!.maxLines ?? 5,
-                    overflow: TextOverflow.visible,
-                  ),
-                ),
-              ),
-            );
-          } else {
-            maskedWidget = ClipRect(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return ImageShader(
-                    snapshot.data!,
-                    TileMode.clamp,
-                    TileMode.clamp,
-                    Matrix4.identity().storage,
-                  );
-                },
-                blendMode: BlendMode.srcATop,
-                child: Text(
-                  content!.data!,
-                  style: textStyle?.copyWith(color: Colors.black),
-                  strutStyle: content!.strutStyle?.style,
-                  textAlign: content!.textAlign ?? TextAlign.center,
-                  textDirection: content!.textDirection,
-                  locale: content!.locale,
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                  textScaler: content!.textScaleFactor != null
-                      ? TextScaler.linear(content!.textScaleFactor!)
-                      : TextScaler.noScaling,
-                  maxLines: content!.maxLines ?? 5,
-                  semanticsLabel: content!.semanticsLabel,
-                  textWidthBasis: content!.textWidthBasis,
-                  textHeightBehavior: content!.textHeightBehavior,
-                  selectionColor: content!.selectionColor,
-                ),
-              ),
-            );
-          }
-
-          return maskedWidget;
-        },
-      );
-    } else {
-      // No mask applied, use regular text
-      wrappedWidget = textWidget;
-    }
-
-    // Dynamically wrap with FittedBox if useFittedBox is true
-    return isFitted == true ? FittedBox(child: wrappedWidget) : wrappedWidget;
-  }
-*/
-
-  Widget _buildNormal(BuildContext context) {
-    final textStyle = content?.style?.copyWith(
-      fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
-      height: content?.style?.height,
-    );
-
-    // Choose between dual tone, stroke text, and regular text
     Widget textWidget;
 
     if (content?.hasDualTone == true) {
-      // Use DualToneText for dual tone effect
       textWidget = ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 10,
@@ -293,7 +137,8 @@ class StackTextCase extends StatelessWidget {
 
     Widget wrappedWidget;
 
-    // Apply image mask effects only (for dual tone, we skip masking to preserve the gradient)
+    // Update the mask implementation in your StackTextCase _buildNormal method
+
     if (content?.maskImage != null && content?.hasDualTone != true) {
       wrappedWidget = FutureBuilder<ui.Image>(
         future: _loadImage(content!.maskImage!),
@@ -305,58 +150,26 @@ class StackTextCase extends StatelessWidget {
             return textWidget;
           }
 
-          Widget maskedWidget;
+          // Create transformation matrix with new properties
+          final matrix = Matrix4.identity();
 
-          if (content?.hasStroke == true) {
-            maskedWidget = ClipRect(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return ImageShader(
-                    snapshot.data!,
-                    TileMode.clamp,
-                    TileMode.clamp,
-                    Matrix4.identity().storage,
-                  );
-                },
-                blendMode: BlendMode.srcATop,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minWidth: 10,
-                    minHeight: 10,
-                    maxWidth: 800,
-                    maxHeight: 600,
-                  ),
-                  child: StrokeText(
-                    text: content!.data!,
-                    strokeColor: content!.strokeColor ?? Colors.black,
-                    strokeWidth: content!.strokeWidth ?? 2.0,
-                    textStyle: textStyle?.copyWith(color: Colors.black),
-                    textAlign: content!.textAlign ?? TextAlign.center,
-                    textDirection: content!.textDirection,
-                    textScaler: content!.textScaleFactor != null
-                        ? TextScaler.linear(content!.textScaleFactor!)
-                        : TextScaler.noScaling,
-                    maxLines: content!.maxLines ?? 5,
-                    overflow: TextOverflow.visible,
-                  ),
-                ),
-              ),
-            );
-          } else {
-            maskedWidget = ClipRect(
-              child: ShaderMask(
-                shaderCallback: (rect) {
-                  return ImageShader(
-                    snapshot.data!,
-                    TileMode.clamp,
-                    TileMode.clamp,
-                    Matrix4.identity().storage,
-                  );
-                },
-                blendMode: BlendMode.srcATop,
+          Widget maskedWidget = ClipRect(
+            child: ShaderMask(
+              shaderCallback: (rect) {
+                return ImageShader(
+                  snapshot.data!,
+                  TileMode.clamp,
+                  TileMode.clamp,
+
+                  matrix.storage,
+                  filterQuality: FilterQuality.high,
+                );
+              },
+              blendMode: content!.maskBlendMode,
+              child: Container(
                 child: Text(
                   content!.data!,
-                  style: textStyle?.copyWith(color: Colors.black),
+                  style: textStyle,
                   strutStyle: content!.strutStyle?.style,
                   textAlign: content!.textAlign ?? TextAlign.center,
                   textDirection: content!.textDirection,
@@ -373,8 +186,8 @@ class StackTextCase extends StatelessWidget {
                   selectionColor: content!.selectionColor,
                 ),
               ),
-            );
-          }
+            ),
+          );
 
           return maskedWidget;
         },
