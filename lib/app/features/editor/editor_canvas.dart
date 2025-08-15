@@ -971,60 +971,6 @@ class _HueAdjustmentPanel extends StatelessWidget {
   }
 }
 
-class _ColorPreset extends StatelessWidget {
-  final Color color;
-  final double hue;
-  final EditorController controller;
-
-  const _ColorPreset({
-    required this.color,
-    required this.hue,
-    required this.controller,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final isSelected =
-          (controller.backgroundHue.value - hue).abs() < 5; // 5° tolerance
-      return GestureDetector(
-        onTap: () => controller.updateBackgroundHue(hue),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isSelected ? Colors.white : Colors.transparent,
-              width: isSelected ? 3 : 0,
-            ),
-            boxShadow: [
-              if (isSelected)
-                BoxShadow(
-                  color: color.withOpacity(0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-            ],
-          ),
-          child: isSelected
-              ? Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check, size: 12, color: color),
-                  ),
-                )
-              : null,
-        ),
-      );
-    });
-  }
-}
-
 class BorderPainter extends CustomPainter {
   final bool dotted;
   final double stroke = 0.5;

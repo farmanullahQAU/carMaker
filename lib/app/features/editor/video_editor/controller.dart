@@ -33,6 +33,14 @@ class ImageEditorController extends GetxController {
   final RxDouble _shadowBlur = 0.0.obs;
   final Rx<Color?> _shadowColor = Rx<Color?>(null);
 
+  // Add shadow offset state
+  final Rx<Offset> _shadowOffset = const Offset(0, 0).obs;
+
+  // Getter for shadow offset
+  Offset get shadowOffset => _shadowOffset.value;
+
+  // Getter for noise intensity
+
   bool? showOverlayControls;
   bool? showVignetteControls;
 
@@ -40,7 +48,15 @@ class ImageEditorController extends GetxController {
   final RxDouble _rotationAngle = 0.0.obs;
   final RxBool _flipHorizontal = false.obs;
   final RxBool _flipVertical = false.obs;
+  // Shape border properties
+  final RxDouble _shapeBorderWidth = 0.0.obs;
+  final RxDouble _shapeBorderRadius = 0.0.obs;
+  final Rx<Color?> _shapeBorderColor = Rx<Color?>(null);
 
+  // Getters
+  double get shapeBorderWidth => _shapeBorderWidth.value;
+  double get shapeBorderRadius => _shapeBorderRadius.value;
+  Color? get shapeBorderColor => _shapeBorderColor.value;
   // Panel state
   final RxBool _isExpanded = true.obs;
   final RxBool _isPanelVisible = false.obs;
@@ -259,6 +275,16 @@ class ImageEditorController extends GetxController {
     update(['border_page']);
   }
 
+  // Method to set shadow offset
+  void setShadowOffset(Offset offset) {
+    if (_selectedImageItem.value?.content == null) return;
+
+    _shadowOffset.value = offset;
+    _selectedImageItem.value!.content!.shadowOffset = offset;
+    _notifyImageUpdate();
+    update(['effects_page']);
+  }
+
   // Transform methods
   void setRotationAngle(double angle) {
     if (_selectedImageItem.value?.content == null) return;
@@ -375,11 +401,43 @@ class ImageEditorController extends GetxController {
     update(['effects_page']);
   }
 
+  // Methods to update shape borders
+  void setShapeBorderWidth(double width) {
+    if (_selectedImageItem.value?.content == null) return;
+
+    _shapeBorderWidth.value = width;
+    _selectedImageItem.value!.content!.shapeBorderWidth = width;
+    _notifyImageUpdate();
+    update(['shape_border_width']);
+  }
+
+  void setShapeBorderRadius(double radius) {
+    if (_selectedImageItem.value?.content == null) return;
+
+    _shapeBorderRadius.value = radius;
+    _selectedImageItem.value!.content!.shapeBorderRadius = radius;
+    _notifyImageUpdate();
+    update(['shape_border_radius']);
+  }
+
+  void setShapeBorderColor(Color? color) {
+    if (_selectedImageItem.value?.content == null) return;
+
+    _shapeBorderColor.value = color;
+    _selectedImageItem.value!.content!.shapeBorderColor = color;
+    _notifyImageUpdate();
+    update(['shape_border_color']);
+  }
+
   // Private helper methods
   void _loadImageProperties(StackImageItem? item) {
     if (item?.content == null) return;
 
     final content = item!.content!;
+    // Load shape border values
+    _shapeBorderWidth.value = content.shapeBorderWidth;
+    _shapeBorderRadius.value = content.shapeBorderRadius;
+    _shapeBorderColor.value = content.shapeBorderColor;
 
     // Load current values
     _activeFilter.value = content.activeFilter ?? 'none';

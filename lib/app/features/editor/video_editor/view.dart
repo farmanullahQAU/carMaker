@@ -1,7 +1,9 @@
+import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +74,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
-        height: _tabController.index < 4 ? 160 : 180,
+        height: _tabController.index < 4 ? 180 : 180,
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
@@ -146,6 +148,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                     imageEditorController: controller,
                     onUpdate: _updateImage,
                   ),
+
                   _TransformPage(
                     imageEditorController: controller,
                     onUpdate: _updateImage,
@@ -677,6 +680,114 @@ class _FilterThumbnail extends StatelessWidget {
   }
 }
 
+class _ShapeBorderPage extends StatelessWidget {
+  final ImageEditorController imageEditorController;
+  final VoidCallback onUpdate;
+
+  const _ShapeBorderPage({
+    required this.imageEditorController,
+    required this.onUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<ImageEditorController>(
+      id: 'shape_border_controls',
+      builder: (controller) {
+        // Only show controls when a shape is selected
+        if (controller.selectedMaskShape == ImageMaskShape.none) {
+          return const Center(
+            child: Text(
+              'Select a shape to customize its border',
+              style: TextStyle(color: Colors.white54),
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                // Border Width
+                CompactSlider(
+                  icon: Icons.border_outer,
+                  label: 'Border Width',
+                  value: controller.shapeBorderWidth,
+                  min: 0.0,
+                  max: 20.0,
+                  onChanged: (value) {
+                    controller.setShapeBorderWidth(value);
+                    onUpdate();
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Border Color
+                Row(
+                  children: [
+                    const Text(
+                      'Border Color',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const Spacer(),
+                    _MiniColorButton(
+                      color: controller.shapeBorderColor,
+                      onTap: () => _showColorPicker(
+                        context,
+                        'Shape Border',
+                        controller.shapeBorderColor,
+                        (color) {
+                          controller.setShapeBorderColor(color);
+                          onUpdate();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Border Radius (only for rounded rectangle)
+                if (controller.selectedMaskShape ==
+                    ImageMaskShape.roundedRectangle) ...[
+                  const SizedBox(height: 12),
+                  CompactSlider(
+                    icon: Icons.rounded_corner,
+                    label: 'Corner Radius',
+                    value: controller.shapeBorderRadius,
+                    min: 0.0,
+                    max: 100.0,
+                    onChanged: (value) {
+                      controller.setShapeBorderRadius(value);
+                      onUpdate();
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showColorPicker(
+    BuildContext context,
+    String title,
+    Color? currentColor,
+    Function(Color?) onChanged,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => QuickColorPicker(
+        title: title,
+        currentColor: currentColor,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
 class _EffectsPage extends StatelessWidget {
   final ImageEditorController imageEditorController;
   final VoidCallback onUpdate;
@@ -693,119 +804,372 @@ class _EffectsPage extends StatelessWidget {
       children: [
         const SizedBox(height: 12),
         // Mask Shapes
-        Expanded(
-          flex: 2,
-          child: GetBuilder<ImageEditorController>(
-            id: 'mask_shapes',
-            builder: (controller) {
-              return ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: ImageMaskShape.values.length,
-                itemBuilder: (context, index) {
-                  final shape = ImageMaskShape.values[index];
-                  return _MaskButton(
-                    shape: shape,
-                    isActive: controller.selectedMaskShape == shape,
-                    onTap: () {
-                      controller.setMaskShape(shape);
-                      onUpdate();
-                    },
-                  );
-                },
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
-              );
-            },
-          ),
-        ),
-
-        /*
-          // Noise Effect
-          const SizedBox(height: 8),
-          Text(
-            'Noise',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Slider(
-            value: controller.selectedImageItem?.content?.noiseIntensity ?? 0.0,
-            min: 0.0,
-            max: 1.0,
-            divisions: 100,
-            onChanged: (value) {
-              if (controller.selectedImageItem?.content != null) {
-                controller.selectedImageItem!.content!.noiseIntensity = value;
-                controller.update(['effects_page']);
-                onUpdate();
-              }
-            },
-          ),
-
-          */
+        _buildMaskPresets(),
 
         // Vignette Effect
         const SizedBox(height: 8),
-        Expanded(
-          child: GetBuilder<ImageEditorController>(
-            id: 'vignette_slider',
-            builder: (controller) {
-              return Container(
-                margin: EdgeInsets.symmetric(horizontal: Get.width * 0.19),
-                child: LayoutBuilder(
-                  builder: (context, constraint) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Modern slider with built-in label
-                        SizedBox(
-                          child: SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              trackHeight: 16,
-                              inactiveTrackColor:
-                                  Get.theme.colorScheme.surfaceContainerLow,
-                              thumbColor: Get.theme.colorScheme.secondary,
-                              thumbShape: const RoundSliderThumbShape(
-                                enabledThumbRadius: 6,
-                                // disabledThumbRadius: 6,
-                                elevation: 0,
-                              ),
-                              overlayColor: AppColors.brandingLight,
-                              overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 8,
-                              ),
-                              valueIndicatorTextStyle: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              showValueIndicator: ShowValueIndicator.always,
-                            ),
-                            child: Slider(
-                              value:
-                                  controller
-                                      .selectedImageItem
-                                      ?.content
-                                      ?.vignette ??
-                                  0.0,
-                              min: 0.0,
-                              max: 1.0,
-                              divisions: 100,
-                              onChanged: controller.setVignette,
-                            ),
-                          ),
-                        ),
-                      ],
+        _buildVignetteSlider(),
+      ],
+    );
+  }
+
+  Widget _buildMaskPresets() {
+    return SizedBox(
+      height: 100,
+      child: GetBuilder<ImageEditorController>(
+        id: 'mask_presets',
+        builder: (controller) {
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: ImageMaskShape.values.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final shape = ImageMaskShape.values[index];
+              return _buildShapeOption(shape);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShapeOption(ImageMaskShape shape) {
+    return GetBuilder<ImageEditorController>(
+      id: 'shape_option_${shape.name}',
+      builder: (controller) {
+        final isSelected = controller.selectedMaskShape == shape;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () {
+                controller.setMaskShape(shape);
+                onUpdate();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 88,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.branding.withOpacity(0.08)
+                      : Get.theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isSelected
+                      ? Border.all(color: AppColors.branding, width: 0.4)
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 56,
+                      width: 56,
+                      decoration: BoxDecoration(
+                        color: Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: shape == ImageMaskShape.roundedRectangle
+                            ? BorderRadius.circular(12)
+                            : null,
+                      ),
+                      child: Center(child: _getShapeIcon(shape, isSelected)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getShapeName(shape),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.branding
+                            : Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            if (isSelected && shape != ImageMaskShape.none)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => _showShapeSettingsBottomSheet(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.tune, color: Colors.white, size: 24),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showShapeSettingsBottomSheet() {
+    showModalBottomSheet(
+      context: Get.context!,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surfaceContainer,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ShapeSettingsBottomSheet(
+          controller: imageEditorController,
+          onUpdate: onUpdate,
+        ),
+      ),
+    );
+  }
+
+  Widget _getShapeIcon(ImageMaskShape shape, bool isSelected) {
+    switch (shape) {
+      case ImageMaskShape.circle:
+        return Icon(
+          Icons.circle,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.roundedRectangle:
+        return Icon(
+          Icons.crop_square_rounded,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.star:
+        return Icon(
+          Icons.star,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.heart:
+        return Icon(
+          Icons.favorite,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.hexagon:
+        return Icon(
+          Icons.hexagon,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.none:
+      default:
+        return Icon(
+          Icons.layers_clear,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+    }
+  }
+
+  String _getShapeName(ImageMaskShape shape) {
+    switch (shape) {
+      case ImageMaskShape.circle:
+        return 'Circle';
+      case ImageMaskShape.roundedRectangle:
+        return 'Rounded';
+      case ImageMaskShape.star:
+        return 'Star';
+      case ImageMaskShape.heart:
+        return 'Heart';
+      case ImageMaskShape.hexagon:
+        return 'Hexagon';
+      case ImageMaskShape.none:
+        return 'None';
+    }
+  }
+
+  Widget _buildVignetteSlider() {
+    return GetBuilder<ImageEditorController>(
+      id: 'vignette_slider',
+      builder: (controller) {
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: Get.width * 0.19),
+          child: SliderTheme(
+            data: SliderTheme.of(Get.context!).copyWith(
+              trackHeight: 16,
+              thumbColor: AppColors.branding,
+              activeTrackColor: AppColors.branding,
+              inactiveTrackColor: Get.theme.colorScheme.outline.withOpacity(
+                0.3,
+              ),
+            ),
+            child: Slider(
+              value: controller.selectedImageItem?.content?.vignette ?? 0.0,
+              min: 0.0,
+              max: 1.0,
+              onChanged: controller.setVignette,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class ShapeSettingsBottomSheet extends StatelessWidget {
+  final ImageEditorController controller;
+  final VoidCallback onUpdate;
+
+  const ShapeSettingsBottomSheet({
+    required this.controller,
+    required this.onUpdate,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHandleBar(),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Get.theme.shadowColor.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Border Width
+                GetBuilder<ImageEditorController>(
+                  id: 'shape_border_width',
+                  builder: (controller) {
+                    return CompactSlider(
+                      label: "Border Width",
+                      icon: Icons.border_outer,
+                      value: controller.shapeBorderWidth,
+                      min: 0.0,
+                      max: 20.0,
+                      onChanged: (value) {
+                        controller.setShapeBorderWidth(value);
+                      },
                     );
                   },
                 ),
-              );
-            },
+
+                // Border Radius (only for rounded rectangle)
+                if (controller.selectedMaskShape ==
+                    ImageMaskShape.roundedRectangle) ...[
+                  const SizedBox(height: 16),
+                  GetBuilder<ImageEditorController>(
+                    id: 'shape_border_radius',
+                    builder: (controller) {
+                      return CompactSlider(
+                        label: "Border Radius",
+                        icon: Icons.rounded_corner,
+                        value: controller.shapeBorderRadius,
+                        min: 0.0,
+                        max: 100.0,
+                        onChanged: (value) {
+                          controller.setShapeBorderRadius(value);
+                          onUpdate();
+                        },
+                      );
+                    },
+                  ),
+                ],
+
+                // Border Color
+                GetBuilder<ImageEditorController>(
+                  id: 'shape_border_color',
+
+                  builder: (controller) {
+                    return ColorSelector(
+                      title: 'Border Color',
+                      colors: TextStyleController.predefinedColors,
+                      currentColor:
+                          controller.shapeBorderColor ?? Colors.transparent,
+                      onColorSelected: (color) {
+                        controller.setShapeBorderColor(color);
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandleBar() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+
+  void _showColorPicker(
+    BuildContext context,
+    String title,
+    Color? currentColor,
+    Function(Color?) onChanged,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => QuickColorPicker(
+        title: title,
+        currentColor: currentColor,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _MiniColorButton extends StatelessWidget {
+  final Color? color;
+  final VoidCallback onTap;
+
+  const _MiniColorButton({required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color ?? Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: color != null
+                ? Colors.white.withOpacity(0.3)
+                : Colors.white.withOpacity(0.7),
+            width: 1,
           ),
         ),
-      ],
+        child: color == null
+            ? const Center(child: Icon(Icons.colorize, size: 16))
+            : null,
+      ),
     );
   }
 }
@@ -1036,6 +1400,72 @@ class _BorderPage extends StatelessWidget {
                         },
                       ),
                     ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: CompactSlider(
+                      icon: Icons.open_with,
+                      label: 'Shadow Offset X',
+                      value:
+                          controller
+                              .selectedImageItem
+                              ?.content
+                              ?.shadowOffset
+                              .dx ??
+                          0.0,
+                      min: -20.0,
+                      max: 20.0,
+                      onChanged: (v) {
+                        controller.setShadowOffset(
+                          Offset(
+                            v,
+                            controller
+                                    .selectedImageItem
+                                    ?.content
+                                    ?.shadowOffset
+                                    .dy ??
+                                0.0,
+                          ),
+                        );
+                        onUpdate();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CompactSlider(
+                      icon: Icons.open_with,
+                      label: 'Shadow Offset Y',
+                      value:
+                          controller
+                              .selectedImageItem
+                              ?.content
+                              ?.shadowOffset
+                              .dy ??
+                          0.0,
+                      min: -20.0,
+                      max: 20.0,
+                      onChanged: (v) {
+                        controller.setShadowOffset(
+                          Offset(
+                            controller
+                                    .selectedImageItem
+                                    ?.content
+                                    ?.shadowOffset
+                                    .dx ??
+                                0.0,
+                            v,
+                          ),
+                        );
+                        onUpdate();
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -1353,35 +1783,5 @@ class _MaskButton extends StatelessWidget {
       case ImageMaskShape.hexagon:
         return Icons.hexagon_outlined;
     }
-  }
-}
-
-class _MiniColorButton extends StatelessWidget {
-  final Color? color;
-  final VoidCallback onTap;
-
-  const _MiniColorButton({required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 20,
-        height: 20,
-        decoration: BoxDecoration(
-          color: color ?? Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppColors.branding, width: 1),
-        ),
-        child: color == null
-            ? Icon(
-                Icons.colorize,
-                size: 12,
-                // color: Colors.white.withOpacity(0.6),
-              )
-            : null,
-      ),
-    );
   }
 }
