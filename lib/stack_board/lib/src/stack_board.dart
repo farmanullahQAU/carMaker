@@ -40,6 +40,7 @@ class StackBoard extends StatelessWidget {
     this.caseStyle,
     this.customBuilder,
     this.onDel,
+    this.onEdit,
     this.onTap,
     this.onSizeChanged,
     this.onOffsetChanged,
@@ -66,6 +67,7 @@ class StackBoard extends StatelessWidget {
   /// * 移除拦截
   /// * delete intercept
   final void Function(StackItem<StackItemContent> item)? onDel;
+  final void Function(StackItem<StackItemContent> item)? onEdit;
 
   /// * 点击回调
   /// * onTap item
@@ -150,6 +152,7 @@ class StackBoard extends StatelessWidget {
       childBuilder: customBuilder,
       caseStyle: caseStyle,
       onDel: () => onDel?.call(item),
+      onEdit: () => onEdit?.call(item),
       onTap: () => onTap?.call(item),
       onSizeChanged: (Size size) => onSizeChanged?.call(item, size) ?? true,
       onOffsetChanged: (Offset offset) =>

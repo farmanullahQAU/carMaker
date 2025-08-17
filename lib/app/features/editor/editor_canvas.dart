@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/app/features/editor/edit_item/image_edit.dart';
+import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/app/features/editor/video_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
@@ -26,7 +28,6 @@ enum PanelType {
   stickers,
   color,
   text,
-  shapes,
   advancedImage, // Add this new panel type
 }
 
@@ -50,6 +51,185 @@ class EditorPage extends GetView<EditorController> {
     } else {
       throw Exception('Unsupported item type: $type');
     }
+  }
+
+  Future<void> exportAsPDF() async {
+    try {
+      isExporting = true;
+      controller.update(['export_button']);
+      controller.boardController.unSelectAll();
+      final exportKey = GlobalKey();
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          child: SizedBox(
+            width: controller.scaledCanvasWidth.value,
+            height: controller.scaledCanvasHeight.value,
+            key: exportKey,
+            child: Transform.scale(
+              scale: 0.95,
+              child: _buildCanvasStack(
+                showGrid: false,
+                showBorders: false,
+                stackBoardKey: GlobalKey(),
+                canvasScale: controller.canvasScale,
+                scaledCanvasWidth: controller.scaledCanvasWidth,
+                scaledCanvasHeight: controller.scaledCanvasHeight,
+              ),
+            ),
+          ),
+        ),
+        targetSize: Size(
+          controller.scaledCanvasWidth.value,
+          controller.scaledCanvasHeight.value,
+        ),
+        pixelRatio: 2,
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final imagePath = '${tempDir.path}/temp_invitation_card.png';
+      final imageFile = File(imagePath);
+      await imageFile.writeAsBytes(image);
+
+      final pdf = pw.Document();
+      final imageProvider = pw.MemoryImage(image);
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat(
+            controller.scaledCanvasWidth.value,
+            controller.scaledCanvasHeight.value,
+          ),
+          build: (pw.Context context) {
+            return pw.Center(child: pw.Image(imageProvider));
+          },
+        ),
+      );
+
+      final pdfPath = '${tempDir.path}/invitation_card.pdf';
+      final pdfFile = File(pdfPath);
+      await pdfFile.writeAsBytes(await pdf.save());
+
+      if (await pdfFile.exists()) {
+        Get.to(() => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath));
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to create PDF file',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Export PDF failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export PDF due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isExporting = false;
+      controller.update(['export_button']);
+    }
+  }
+
+  Future<void> exportAsImage() async {
+    try {
+      isExporting = true;
+      controller.update(['export_button']);
+      controller.boardController.unSelectAll();
+      final exportKey = GlobalKey();
+
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          child: SizedBox(
+            width: controller.scaledCanvasWidth.value,
+            height: controller.scaledCanvasHeight.value,
+            key: exportKey,
+            child: _buildCanvasStack(
+              showGrid: false,
+              showBorders: false,
+              stackBoardKey: GlobalKey(),
+              canvasScale: controller.canvasScale,
+              scaledCanvasWidth: controller.scaledCanvasWidth,
+              scaledCanvasHeight: controller.scaledCanvasHeight,
+            ),
+          ),
+        ),
+        targetSize: Size(
+          controller.scaledCanvasWidth.value,
+          controller.scaledCanvasHeight.value,
+        ),
+        pixelRatio: 2,
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/invitation_card.png");
+      await file.writeAsBytes(image);
+      Get.snackbar(
+        'Success',
+        'Image exported successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+      );
+      Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+    } catch (e, s) {
+      debugPrint('Export Image failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export image due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isExporting = false;
+      controller.update(['export_button']);
+    }
+  }
+
+  Widget buildPanelContent() {
+    return GetBuilder<EditorController>(
+      id: 'bottom_sheet',
+      builder: (controller) {
+        final item = controller.activeItem.value;
+
+        final panels = <Widget>[
+          _StickerPanel(controller: controller), // PanelType.stickers
+          _HueAdjustmentPanel(controller: controller), // PanelType.color
+          (item is StackTextItem)
+              ? _TextEditorPanel(
+                  key: ValueKey(item.id),
+                  controller: controller,
+                  textItem: item,
+                )
+              : const SizedBox.shrink(), // PanelType.text
+          _ShapePanel(controller: controller), // PanelType.shapes
+          (item is StackImageItem)
+              ? AdvancedImagePanel(
+                  key: ValueKey(item.id),
+                  imageItem: item,
+                  onUpdate: () {
+                    // Enhanced update callback for real-time changes
+                    // controller.update([
+                    //   'canvas_stack',
+                    //   'stack_board',
+                    //   'advanced_image_panel_${item.id}',
+                    // ]);
+                  },
+                )
+              : const SizedBox.shrink(), // PanelType.advancedImage
+        ];
+
+        return IndexedStack(
+          index: activePanel.value.index - 1,
+          alignment: Alignment.bottomCenter,
+          children: panels,
+        );
+      },
+    );
   }
 
   Widget _buildCanvasStack({
@@ -226,6 +406,15 @@ class EditorPage extends GetView<EditorController> {
                           : (status, item) => const SizedBox.shrink(),
                       onDel: (item) =>
                           controller.boardController.removeById(item.id),
+                      onEdit: (item) async {
+                        if (item is StackTextItem) {
+                          print(item.id);
+                          await Get.to(() => TextEditorPage(item: item));
+                        } else if (item is StackImageItem) {
+                          Get.to(() => ImageEditorPage(item: item));
+                        }
+                      },
+
                       onStatusChanged: (item, status) {
                         if (status == StackItemStatus.selected) {
                           controller.activeItem.value = controller
@@ -284,187 +473,6 @@ class EditorPage extends GetView<EditorController> {
 
   @override
   Widget build(BuildContext context) {
-    Future<void> exportAsPDF() async {
-      try {
-        isExporting = true;
-        controller.update(['export_button']);
-        controller.boardController.unSelectAll();
-        final exportKey = GlobalKey();
-        final image = await screenshotController.captureFromWidget(
-          Material(
-            child: SizedBox(
-              width: controller.scaledCanvasWidth.value,
-              height: controller.scaledCanvasHeight.value,
-              key: exportKey,
-              child: Transform.scale(
-                scale: 0.95,
-                child: _buildCanvasStack(
-                  showGrid: false,
-                  showBorders: false,
-                  stackBoardKey: GlobalKey(),
-                  canvasScale: controller.canvasScale,
-                  scaledCanvasWidth: controller.scaledCanvasWidth,
-                  scaledCanvasHeight: controller.scaledCanvasHeight,
-                ),
-              ),
-            ),
-          ),
-          targetSize: Size(
-            controller.scaledCanvasWidth.value,
-            controller.scaledCanvasHeight.value,
-          ),
-          pixelRatio: 2,
-        );
-
-        final tempDir = await getTemporaryDirectory();
-        final imagePath = '${tempDir.path}/temp_invitation_card.png';
-        final imageFile = File(imagePath);
-        await imageFile.writeAsBytes(image);
-
-        final pdf = pw.Document();
-        final imageProvider = pw.MemoryImage(image);
-        pdf.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat(
-              controller.scaledCanvasWidth.value,
-              controller.scaledCanvasHeight.value,
-            ),
-            build: (pw.Context context) {
-              return pw.Center(child: pw.Image(imageProvider));
-            },
-          ),
-        );
-
-        final pdfPath = '${tempDir.path}/invitation_card.pdf';
-        final pdfFile = File(pdfPath);
-        await pdfFile.writeAsBytes(await pdf.save());
-
-        if (await pdfFile.exists()) {
-          Get.to(
-            () => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath),
-          );
-        } else {
-          Get.snackbar(
-            'Error',
-            'Failed to create PDF file',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade100,
-            colorText: Colors.red.shade900,
-          );
-        }
-      } catch (e, s) {
-        debugPrint('Export PDF failed: $e\n$s');
-        Get.snackbar(
-          'Error',
-          'Failed to export PDF due to widget issue',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-        );
-      } finally {
-        isExporting = false;
-        controller.update(['export_button']);
-      }
-    }
-
-    Future<void> exportAsImage() async {
-      try {
-        isExporting = true;
-        controller.update(['export_button']);
-        controller.boardController.unSelectAll();
-        final exportKey = GlobalKey();
-
-        final image = await screenshotController.captureFromWidget(
-          Material(
-            child: SizedBox(
-              width: controller.scaledCanvasWidth.value,
-              height: controller.scaledCanvasHeight.value,
-              key: exportKey,
-              child: _buildCanvasStack(
-                showGrid: false,
-                showBorders: false,
-                stackBoardKey: GlobalKey(),
-                canvasScale: controller.canvasScale,
-                scaledCanvasWidth: controller.scaledCanvasWidth,
-                scaledCanvasHeight: controller.scaledCanvasHeight,
-              ),
-            ),
-          ),
-          targetSize: Size(
-            controller.scaledCanvasWidth.value,
-            controller.scaledCanvasHeight.value,
-          ),
-          pixelRatio: 2,
-        );
-
-        final output = await getTemporaryDirectory();
-        final file = File("${output.path}/invitation_card.png");
-        await file.writeAsBytes(image);
-        Get.snackbar(
-          'Success',
-          'Image exported successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-        );
-        Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
-      } catch (e, s) {
-        debugPrint('Export Image failed: $e\n$s');
-        Get.snackbar(
-          'Error',
-          'Failed to export image due to widget issue',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-        );
-      } finally {
-        isExporting = false;
-        controller.update(['export_button']);
-      }
-    }
-
-    Widget buildPanelContent() {
-      return GetBuilder<EditorController>(
-        id: 'bottom_sheet',
-        builder: (controller) {
-          final item = controller.activeItem.value;
-
-          final panels = <Widget>[
-            _StickerPanel(controller: controller), // PanelType.stickers
-            _HueAdjustmentPanel(controller: controller), // PanelType.color
-            (item is StackTextItem)
-                ? _TextEditorPanel(
-                    key: ValueKey(item.id),
-                    controller: controller,
-                    textItem: item,
-                  )
-                : const SizedBox.shrink(), // PanelType.text
-            _ShapePanel(controller: controller), // PanelType.shapes
-            (item is StackImageItem)
-                ? AdvancedImagePanel(
-                    key: ValueKey(item.id),
-                    imageItem: item,
-                    onUpdate: () {
-                      // Enhanced update callback for real-time changes
-                      // controller.update([
-                      //   'canvas_stack',
-                      //   'stack_board',
-                      //   'advanced_image_panel_${item.id}',
-                      // ]);
-                    },
-                  )
-                : const SizedBox.shrink(), // PanelType.advancedImage
-          ];
-
-          return IndexedStack(
-            index: activePanel.value.index - 1,
-            alignment: Alignment.bottomCenter,
-            children: panels,
-          );
-        },
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -517,104 +525,81 @@ class EditorPage extends GetView<EditorController> {
               ),
 
               SafeArea(
-                child: Container(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _ProfessionalToolbarButton(
-                          icon: Icons.emoji_emotions_outlined,
-                          activeIcon: Icons.emoji_emotions,
-                          label: 'Stickers',
-                          panelType: PanelType.stickers,
-                          activePanel: activePanel,
-                          onPressed: () {
-                            activePanel.value =
-                                activePanel.value == PanelType.stickers
-                                ? PanelType.none
-                                : PanelType.stickers;
-                            controller.update(['bottom_sheet']);
-                          },
-                        ),
-                        _ProfessionalToolbarButton(
-                          icon: Icons.palette_outlined,
-                          activeIcon: Icons.palette,
-                          label: 'Colors',
-                          panelType: PanelType.color,
-                          activePanel: activePanel,
-                          onPressed: () {
-                            activePanel.value =
-                                activePanel.value == PanelType.color
-                                ? PanelType.none
-                                : PanelType.color;
-                            controller.update(['bottom_sheet']);
-                          },
-                        ),
-                        _ProfessionalToolbarButton(
-                          icon: Icons.text_fields_outlined,
-                          activeIcon: Icons.text_fields,
-                          label: 'Text',
-                          panelType: PanelType.text,
-                          activePanel: activePanel,
-                          onPressed: () {
-                            if (activePanel.value == PanelType.text) {
-                              activePanel.value = PanelType.none;
-                            } else {
-                              if (controller.activeItem.value == null ||
-                                  controller.activeItem.value
-                                      is! StackTextItem) {
-                                controller.addText("Tap to edit text");
-                              }
-                              activePanel.value = PanelType.text;
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _ProfessionalToolbarButton(
+                        icon: Icons.emoji_emotions_outlined,
+                        activeIcon: Icons.emoji_emotions,
+                        label: 'Stickers',
+                        panelType: PanelType.stickers,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.stickers
+                              ? PanelType.none
+                              : PanelType.stickers;
+                          controller.update(['bottom_sheet']);
+                        },
+                      ),
+                      _ProfessionalToolbarButton(
+                        icon: Icons.palette_outlined,
+                        activeIcon: Icons.palette,
+                        label: 'Colors',
+                        panelType: PanelType.color,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          activePanel.value =
+                              activePanel.value == PanelType.color
+                              ? PanelType.none
+                              : PanelType.color;
+                          controller.update(['bottom_sheet']);
+                        },
+                      ),
+                      _ProfessionalToolbarButton(
+                        icon: Icons.text_fields_outlined,
+                        activeIcon: Icons.text_fields,
+                        label: 'Text',
+                        panelType: PanelType.text,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          if (activePanel.value == PanelType.text) {
+                            activePanel.value = PanelType.none;
+                          } else {
+                            if (controller.activeItem.value == null ||
+                                controller.activeItem.value is! StackTextItem) {
+                              // controller.addText("Tap to edit text");
+
+                              Get.to(() => TextEditorPage());
                             }
-                            controller.update(['bottom_sheet']);
-                          },
-                        ),
-                        _ProfessionalToolbarButton(
-                          icon: Icons.photo_filter_outlined,
-                          activeIcon: Icons.photo_filter,
-                          label: 'Image',
-                          panelType: PanelType.advancedImage,
-                          activePanel: activePanel,
-                          onPressed: () {
-                            if (activePanel.value == PanelType.advancedImage) {
-                              activePanel.value = PanelType.none;
+                            activePanel.value = PanelType.text;
+                          }
+                          controller.update(['bottom_sheet']);
+                        },
+                      ),
+                      _ProfessionalToolbarButton(
+                        icon: Icons.photo_filter_outlined,
+                        activeIcon: Icons.photo_filter,
+                        label: 'Image',
+                        panelType: PanelType.advancedImage,
+                        activePanel: activePanel,
+                        onPressed: () {
+                          if (activePanel.value == PanelType.advancedImage) {
+                            activePanel.value = PanelType.none;
+                          } else {
+                            if (controller.activeItem.value != null &&
+                                controller.activeItem.value is StackImageItem) {
+                              activePanel.value = PanelType.advancedImage;
                             } else {
-                              if (controller.activeItem.value != null &&
-                                  controller.activeItem.value
-                                      is StackImageItem) {
-                                activePanel.value = PanelType.advancedImage;
-                              } else {
-                                Get.snackbar(
-                                  'Select Image',
-                                  'Please select an image to edit its properties',
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  backgroundColor: Colors.orange.shade100,
-                                  colorText: Colors.orange.shade900,
-                                  duration: const Duration(seconds: 2),
-                                );
-                              }
+                              controller.pickAndAddImage();
                             }
-                            controller.update(['bottom_sheet']);
-                          },
-                        ),
-                        _ProfessionalToolbarButton(
-                          icon: Icons.outbond,
-                          activeIcon: Icons.outbond_outlined,
-                          label: 'Shapes',
-                          panelType: PanelType.shapes,
-                          activePanel: activePanel,
-                          onPressed: () {
-                            activePanel.value =
-                                activePanel.value == PanelType.shapes
-                                ? PanelType.none
-                                : PanelType.shapes;
-                            controller.update(['bottom_sheet']);
-                          },
-                        ),
-                      ],
-                    ),
+                          }
+                          controller.update(['bottom_sheet']);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -846,7 +831,7 @@ class _StickerPanel extends StatelessWidget {
                       final sticker = stickers[index];
                       return GestureDetector(
                         onTap: () {
-                          controller.addText(sticker);
+                          controller.addSticker(sticker);
                           // Haptic feedback
                           // HapticFeedback.lightImpact();
                         },

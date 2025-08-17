@@ -1,3 +1,4 @@
+import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
@@ -27,7 +28,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late ImageEditorController _imageEditorController;
-
+  final canvasController = Get.find<EditorController>();
   @override
   void initState() {
     super.initState();
@@ -59,13 +60,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
 
   ImageItemContent get content => widget.imageItem.content!;
 
-  void _updateImage() {
-    // Trigger local update
-    setState(() {});
-    widget.onUpdate();
-
-    // The ImageEditorController will handle notifying other controllers
-  }
+  void _updateImage() {}
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +69,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
-        height: _tabController.index < 4 ? 180 : 180,
+        height: _tabController.index < 4 ? 160 : 180,
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
@@ -85,38 +80,69 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                   bottom: BorderSide(color: AppColors.branding, width: 0.1),
                 ),
               ),
+              padding: EdgeInsets.symmetric(horizontal: 8),
               height: 50,
-              child: TabBar(
-                controller: _tabController,
-                dividerHeight: 0,
-                isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorWeight: 2,
-                indicator: BoxDecoration(),
-                labelStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-                tabs: const [
-                  Tab(icon: Icon(Icons.tune, size: 18), text: 'Adjust'),
-                  Tab(
-                    icon: Icon(Icons.filter_vintage, size: 18),
-                    text: 'Filters',
-                  ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  FloatingActionButton.small(
+                    onPressed: () {
+                      canvasController.replaceImageItem();
+                    },
 
-                  Tab(
-                    icon: Icon(Icons.auto_fix_high, size: 18),
-                    text: 'Effects',
+                    child: Icon(Icons.add_a_photo_outlined, size: 16),
                   ),
-                  //selepart tab for color overlay
-                  Tab(icon: Icon(Icons.color_lens, size: 18), text: 'Overlay'),
+                  Flexible(
+                    child: TabBar(
+                      controller: _tabController,
+                      dividerHeight: 0,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.center,
+                      indicatorWeight: 2,
+                      indicator: BoxDecoration(),
+                      labelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      tabs: const [
+                        Tab(icon: Icon(Icons.tune, size: 18), text: 'Adjust'),
+                        Tab(
+                          icon: Icon(Icons.filter_vintage, size: 18),
+                          text: 'Filters',
+                        ),
 
-                  Tab(icon: Icon(Icons.border_outer, size: 18), text: 'Border'),
-                  Tab(icon: Icon(Icons.transform, size: 18), text: 'Transform'),
+                        Tab(
+                          icon: Icon(Icons.auto_fix_high, size: 18),
+                          text: 'Effects',
+                        ),
+                        //selepart tab for color overlay
+                        Tab(
+                          icon: Icon(Icons.color_lens, size: 18),
+                          text: 'Overlay',
+                        ),
+
+                        Tab(
+                          icon: Icon(Icons.border_outer, size: 18),
+                          text: 'Border',
+                        ),
+                        Tab(
+                          icon: Icon(Icons.transform, size: 18),
+                          text: 'Transform',
+                        ),
+                      ],
+                    ),
+                  ),
+                  FloatingActionButton.small(
+                    onPressed: () {
+                      canvasController.duplicateItem();
+                    },
+
+                    child: Icon(Icons.control_point_duplicate, size: 16),
+                  ),
                 ],
               ),
             ),
@@ -801,21 +827,23 @@ class _EffectsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
+
       children: [
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+
         // Mask Shapes
         _buildMaskPresets(),
 
         // Vignette Effect
         const SizedBox(height: 8),
         _buildVignetteSlider(),
+        const SizedBox(height: 8),
       ],
     );
   }
 
   Widget _buildMaskPresets() {
-    return SizedBox(
-      height: 100,
+    return Expanded(
       child: GetBuilder<ImageEditorController>(
         id: 'mask_presets',
         builder: (controller) {
@@ -836,52 +864,48 @@ class _EffectsPage extends StatelessWidget {
 
   Widget _buildShapeOption(ImageMaskShape shape) {
     return GetBuilder<ImageEditorController>(
-      id: 'shape_option_${shape.name}',
+      id: 'shape_option',
       builder: (controller) {
         final isSelected = controller.selectedMaskShape == shape;
         return Stack(
           alignment: Alignment.center,
           children: [
-            GestureDetector(
+            InkWell(
               onTap: () {
                 controller.setMaskShape(shape);
-                onUpdate();
+
+                if (shape != ImageMaskShape.none &&
+                    controller.shapeBorderWidth == 0 &&
+                    controller.shapeBorderColor == null) {
+                  controller.setShapeBorderWidth(2);
+                  controller.setShapeBorderColor(Colors.black);
+                }
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 88,
+                width: 55,
+
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.branding.withOpacity(0.08)
+                      ? AppColors.branding.withOpacity(0.09)
                       : Get.theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: isSelected
-                      ? Border.all(color: AppColors.branding, width: 0.4)
+                      ? Border.all(color: AppColors.branding, width: 1)
                       : null,
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      height: 56,
-                      width: 56,
-                      decoration: BoxDecoration(
-                        color: Get.theme.colorScheme.surfaceContainerLow,
-                        borderRadius: shape == ImageMaskShape.roundedRectangle
-                            ? BorderRadius.circular(12)
-                            : null,
-                      ),
-                      child: Center(child: _getShapeIcon(shape, isSelected)),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getShapeName(shape),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isSelected
-                            ? AppColors.branding
-                            : Colors.grey.shade800,
+                    Expanded(
+                      child: Container(
+                        height: 56,
+                        // width: 56,
+                        decoration: BoxDecoration(
+                          color: Get.theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(child: _getShapeIcon(shape, isSelected)),
                       ),
                     ),
                   ],
@@ -933,58 +957,40 @@ class _EffectsPage extends StatelessWidget {
     switch (shape) {
       case ImageMaskShape.circle:
         return Icon(
-          Icons.circle,
-          size: 28,
-          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+          Icons.circle_outlined,
+          size: 30,
+          color: isSelected ? AppColors.branding : null,
         );
       case ImageMaskShape.roundedRectangle:
         return Icon(
           Icons.crop_square_rounded,
-          size: 28,
-          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+          size: 30,
+          color: isSelected ? AppColors.branding : null,
         );
       case ImageMaskShape.star:
         return Icon(
-          Icons.star,
-          size: 28,
-          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+          Icons.star_border,
+          size: 30,
+          color: isSelected ? AppColors.branding : null,
         );
       case ImageMaskShape.heart:
         return Icon(
-          Icons.favorite,
+          Icons.favorite_border,
           size: 28,
-          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+          color: isSelected ? AppColors.branding : null,
         );
       case ImageMaskShape.hexagon:
         return Icon(
-          Icons.hexagon,
+          Icons.hexagon_outlined,
           size: 28,
-          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+          color: isSelected ? AppColors.branding : null,
         );
       case ImageMaskShape.none:
-      default:
         return Icon(
-          Icons.layers_clear,
+          Icons.layers_clear_outlined,
           size: 28,
           color: isSelected ? AppColors.branding : Colors.grey.shade600,
         );
-    }
-  }
-
-  String _getShapeName(ImageMaskShape shape) {
-    switch (shape) {
-      case ImageMaskShape.circle:
-        return 'Circle';
-      case ImageMaskShape.roundedRectangle:
-        return 'Rounded';
-      case ImageMaskShape.star:
-        return 'Star';
-      case ImageMaskShape.heart:
-        return 'Heart';
-      case ImageMaskShape.hexagon:
-        return 'Hexagon';
-      case ImageMaskShape.none:
-        return 'None';
     }
   }
 
@@ -994,21 +1000,13 @@ class _EffectsPage extends StatelessWidget {
       builder: (controller) {
         return Container(
           margin: EdgeInsets.symmetric(horizontal: Get.width * 0.19),
-          child: SliderTheme(
-            data: SliderTheme.of(Get.context!).copyWith(
-              trackHeight: 16,
-              thumbColor: AppColors.branding,
-              activeTrackColor: AppColors.branding,
-              inactiveTrackColor: Get.theme.colorScheme.outline.withOpacity(
-                0.3,
-              ),
-            ),
-            child: Slider(
-              value: controller.selectedImageItem?.content?.vignette ?? 0.0,
-              min: 0.0,
-              max: 1.0,
-              onChanged: controller.setVignette,
-            ),
+          child: CompactSlider(
+            icon: Icons.vignette,
+            label: "Vignette",
+            value: controller.selectedImageItem?.content?.vignette ?? 0.0,
+            min: 0.0,
+            max: 1.0,
+            onChanged: controller.setVignette,
           ),
         );
       },

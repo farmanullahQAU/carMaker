@@ -16,6 +16,7 @@ class StackItemCase extends StatefulWidget {
     required this.childBuilder,
     this.caseStyle,
     this.onDel,
+    this.onEdit,
     this.onTap,
     this.onSizeChanged,
     this.onOffsetChanged,
@@ -29,6 +30,8 @@ class StackItemCase extends StatefulWidget {
   final Widget? Function(StackItem<StackItemContent> item)? childBuilder;
   final CaseStyle? caseStyle;
   final void Function()? onDel;
+  final void Function()? onEdit;
+
   final void Function()? onTap;
   final bool? Function(Size size)? onSizeChanged;
   final bool? Function(Offset offset)? onOffsetChanged;
@@ -582,9 +585,19 @@ class _StackItemCaseState extends State<StackItemCase> {
       right: 0,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: () => widget.onDel?.call(),
-          child: _toolCase(context, style, const Icon(Icons.delete)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => widget.onDel?.call(),
+              child: _toolCase(context, style, const Icon(Icons.delete)),
+            ),
+            SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => widget.onEdit?.call(),
+              child: _toolCase(context, style, const Icon(Icons.edit)),
+            ),
+          ],
         ),
       ),
     );

@@ -51,8 +51,109 @@ class ImageItemContent extends StackItemContent {
     this.noiseIntensity = 0.0,
     this.sharpen = 0.0,
     this.emboss = false,
+    // Shape-specific border properties
+    this.shapeBorderWidth = 0.0,
+    this.shapeBorderColor,
+    this.shapeBorderRadius = 0.0,
   }) {
     _init();
+  }
+  ImageItemContent copyWith({
+    String? url,
+    String? assetName,
+    String? semanticLabel,
+    bool? excludeFromSemantics,
+    double? width,
+    double? height,
+    Color? color,
+    BlendMode? colorBlendMode,
+    BoxFit? fit,
+    ImageRepeat? repeat,
+    bool? matchTextDirection,
+    bool? gaplessPlayback,
+    bool? isAntiAlias,
+    FilterQuality? filterQuality,
+    // Advanced properties
+    double? brightness,
+    double? contrast,
+    double? saturation,
+    double? hue,
+    double? opacity,
+    double? borderRadius,
+    double? borderWidth,
+    Color? borderColor,
+    double? shadowBlur,
+    Offset? shadowOffset,
+    Color? shadowColor,
+    double? rotationAngle,
+    bool? flipHorizontal,
+    bool? flipVertical,
+    // Filter system
+    String? activeFilter,
+    double? vignette,
+    Color? vignetteColor,
+    Color? overlayColor,
+    BlendMode? overlayBlendMode,
+    Rect? cropRect,
+    ImageMaskShape? maskShape,
+    Gradient? gradientOverlay,
+    ImagePattern? patternOverlay,
+    double? noiseIntensity,
+    double? sharpen,
+    bool? emboss,
+    // Shape border properties
+    double? shapeBorderWidth,
+    Color? shapeBorderColor,
+    double? shapeBorderRadius,
+  }) {
+    return ImageItemContent(
+      url: url ?? this.url,
+      assetName: assetName ?? this.assetName,
+      semanticLabel: semanticLabel ?? this.semanticLabel,
+      excludeFromSemantics: excludeFromSemantics ?? this.excludeFromSemantics,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      color: color ?? this.color,
+      colorBlendMode: colorBlendMode ?? this.colorBlendMode,
+      fit: fit ?? this.fit,
+      repeat: repeat ?? this.repeat,
+      matchTextDirection: matchTextDirection ?? this.matchTextDirection,
+      gaplessPlayback: gaplessPlayback ?? this.gaplessPlayback,
+      isAntiAlias: isAntiAlias ?? this.isAntiAlias,
+      filterQuality: filterQuality ?? this.filterQuality,
+      // Advanced properties
+      brightness: brightness ?? this.brightness,
+      contrast: contrast ?? this.contrast,
+      saturation: saturation ?? this.saturation,
+      hue: hue ?? this.hue,
+      opacity: opacity ?? this.opacity,
+      borderRadius: borderRadius ?? this.borderRadius,
+      borderWidth: borderWidth ?? this.borderWidth,
+      borderColor: borderColor ?? this.borderColor,
+      shadowBlur: shadowBlur ?? this.shadowBlur,
+      shadowOffset: shadowOffset ?? this.shadowOffset,
+      shadowColor: shadowColor ?? this.shadowColor,
+      rotationAngle: rotationAngle ?? this.rotationAngle,
+      flipHorizontal: flipHorizontal ?? this.flipHorizontal,
+      flipVertical: flipVertical ?? this.flipVertical,
+      // Filter system
+      activeFilter: activeFilter ?? this.activeFilter,
+      vignette: vignette ?? this.vignette,
+      vignetteColor: vignetteColor ?? this.vignetteColor,
+      overlayColor: overlayColor ?? this.overlayColor,
+      overlayBlendMode: overlayBlendMode ?? this.overlayBlendMode,
+      cropRect: cropRect ?? this.cropRect,
+      maskShape: maskShape ?? this.maskShape,
+      gradientOverlay: gradientOverlay ?? this.gradientOverlay,
+      patternOverlay: patternOverlay ?? this.patternOverlay,
+      noiseIntensity: noiseIntensity ?? this.noiseIntensity,
+      sharpen: sharpen ?? this.sharpen,
+      emboss: emboss ?? this.emboss,
+      // Shape border properties
+      shapeBorderWidth: shapeBorderWidth ?? this.shapeBorderWidth,
+      shapeBorderColor: shapeBorderColor ?? this.shapeBorderColor,
+      shapeBorderRadius: shapeBorderRadius ?? this.shapeBorderRadius,
+    );
   }
 
   factory ImageItemContent.fromJson(Map<String, dynamic> json) {
@@ -125,6 +226,12 @@ class ImageItemContent extends StackItemContent {
       noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
       sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
       emboss: asNullT<bool>(json['emboss']) ?? false,
+      // Shape border properties
+      shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
+      shapeBorderColor: json['shapeBorderColor'] != null
+          ? Color(asT<int>(json['shapeBorderColor']))
+          : null,
+      shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
     );
   }
 
@@ -257,7 +364,7 @@ class ImageItemContent extends StackItemContent {
       'excludeFromSemantics': excludeFromSemantics,
       if (width != null) 'width': width,
       if (height != null) 'height': height,
-      if (color != null) 'color': color?.value,
+      if (color != null) 'color': color,
       if (colorBlendMode != null) 'colorBlendMode': colorBlendMode?.index,
       'fit': fit.index,
       'repeat': repeat.index,
@@ -273,22 +380,28 @@ class ImageItemContent extends StackItemContent {
       'opacity': opacity,
       'borderRadius': borderRadius,
       'borderWidth': borderWidth,
-      if (borderColor != null) 'borderColor': borderColor?.value,
+      if (borderColor != null) 'borderColor': borderColor?.toARGB32,
       'shadowBlur': shadowBlur,
       'shadowOffset': {'dx': shadowOffset.dx, 'dy': shadowOffset.dy},
-      if (shadowColor != null) 'shadowColor': shadowColor?.value,
+      if (shadowColor != null) 'shadowColor': shadowColor?.toARGB32,
       'rotationAngle': rotationAngle,
       'flipHorizontal': flipHorizontal,
       'flipVertical': flipVertical,
       'activeFilter': activeFilter,
       'vignette': vignette,
-      if (vignetteColor != null) 'vignetteColor': vignetteColor?.value,
-      if (overlayColor != null) 'overlayColor': overlayColor?.value,
+      if (vignetteColor != null) 'vignetteColor': vignetteColor?.toARGB32(),
+      if (overlayColor != null) 'overlayColor': overlayColor?.toARGB32(),
       if (overlayBlendMode != null) 'overlayBlendMode': overlayBlendMode?.index,
       'maskShape': maskShape.index,
       'noiseIntensity': noiseIntensity,
       'sharpen': sharpen,
       'emboss': emboss,
+
+      // Shape border properties
+      'shapeBorderWidth': shapeBorderWidth,
+      if (shapeBorderColor != null)
+        'shapeBorderColor': shapeBorderColor?.toARGB32(),
+      'shapeBorderRadius': shapeBorderRadius,
     };
   }
 }

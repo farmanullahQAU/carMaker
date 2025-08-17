@@ -15,6 +15,8 @@ class StorageService {
   // Save a list of CardTemplates to storage
   static Future<void> saveTemplates(List<CardTemplate> templates) async {
     final jsonList = templates.map((template) => template.toJson()).toList();
+
+    print("jsonList : $jsonList");
     await _storage.write(_templatesKey, jsonEncode(jsonList));
   }
 

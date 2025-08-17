@@ -9,7 +9,7 @@ class ImageEditorController extends GetxController {
   final RxString _selectedAdjustment = 'brightness'.obs;
 
   // Currently selected image item
-  final Rx<StackImageItem?> _selectedImageItem = Rx<StackImageItem?>(null);
+  StackImageItem? _selectedImageItem;
 
   // Tab controller index for the image editor
   final RxInt _selectedTabIndex = 0.obs;
@@ -63,13 +63,13 @@ class ImageEditorController extends GetxController {
 
   // Getters
   String get selectedAdjustment => _selectedAdjustment.value;
-  StackImageItem? get selectedImageItem => _selectedImageItem.value;
   int get selectedTabIndex => _selectedTabIndex.value;
   String get activeFilter => _activeFilter.value;
   double get filterIntensity => _filterIntensity.value;
   ImageMaskShape get selectedMaskShape => _selectedMaskShape.value;
   Color? get overlayColor => _overlayColor.value;
   BlendMode get overlayBlendMode => _overlayBlendMode.value;
+  StackImageItem? get selectedImageItem => _selectedImageItem;
   double get borderWidth => _borderWidth.value;
   double get borderRadius => _borderRadius.value;
   Color? get borderColor => _borderColor.value;
@@ -88,8 +88,12 @@ class ImageEditorController extends GetxController {
   }
 
   void setSelectedImageItem(StackImageItem? item) {
-    if (item != _selectedImageItem.value) {
-      _selectedImageItem.value = item;
+    if (item != _selectedImageItem) {
+      if (_selectedImageItem == null) {
+        // No image is currently selected, set the new image as the active one
+        _selectedImageItem = item;
+      } else {}
+      _selectedImageItem = item;
       _loadImageProperties(item);
       update(['panel_container']);
     }
@@ -108,7 +112,7 @@ class ImageEditorController extends GetxController {
 
   void hideImageEditor() {
     _isPanelVisible.value = false;
-    _selectedImageItem.value = null;
+    _selectedImageItem = null;
     update(['panel_container']);
   }
 
@@ -119,9 +123,9 @@ class ImageEditorController extends GetxController {
 
   // Adjustment methods
   void updateAdjustment(String type, double value) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
-    final content = _selectedImageItem.value!.content!;
+    final content = _selectedImageItem!.content!;
     _adjustmentValues[type] = value;
 
     switch (type) {
@@ -147,9 +151,9 @@ class ImageEditorController extends GetxController {
   }
 
   double getAdjustmentValue(String type) {
-    if (_selectedImageItem.value?.content == null) return 0.0;
+    if (_selectedImageItem?.content == null) return 0.0;
 
-    final content = _selectedImageItem.value!.content!;
+    final content = _selectedImageItem!.content!;
     switch (type) {
       case 'brightness':
         return content.brightness * 100;
@@ -168,10 +172,10 @@ class ImageEditorController extends GetxController {
 
   // Filter methods
   void applyFilter(String filterKey) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _activeFilter.value = filterKey;
-    _selectedImageItem.value!.content!.applyFilter(filterKey);
+    _selectedImageItem!.content!.applyFilter(filterKey);
     _notifyImageUpdate();
     update(['filters_page']);
   }
@@ -185,50 +189,49 @@ class ImageEditorController extends GetxController {
 
   // Effects methods
   void setMaskShape(ImageMaskShape shape) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _selectedMaskShape.value = shape;
-    _selectedImageItem.value!.content!.maskShape = shape;
+    _selectedImageItem!.content!.maskShape = shape;
     _notifyImageUpdate();
-    update(['mask_shapes']);
+    update(['shape_option']);
   }
 
   void setOverlayColor(Color? color) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _overlayColor.value = color;
-    _selectedImageItem.value!.content!.overlayColor = color;
+    _selectedImageItem!.content!.overlayColor = color;
     if (color != null) {
-      _selectedImageItem.value!.content!.overlayBlendMode =
-          _overlayBlendMode.value;
+      _selectedImageItem!.content!.overlayBlendMode = _overlayBlendMode.value;
     }
     _notifyImageUpdate();
     update(['color_overlay_page']);
   }
 
   void setOverlayBlendMode(BlendMode blendMode) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _overlayBlendMode.value = blendMode;
-    _selectedImageItem.value!.content!.overlayBlendMode = blendMode;
+    _selectedImageItem!.content!.overlayBlendMode = blendMode;
     _notifyImageUpdate();
     update(['color_overlay_page']);
   }
 
   void setVignette(double value) {
-    // if (_selectedImageItem.value?.content == null) return;
+    // if (_selectedImageItem?.content == null) return;
 
-    _selectedImageItem.value!.content!.vignette = value;
+    _selectedImageItem!.content!.vignette = value;
     _notifyImageUpdate();
     update(['vignette_slider']);
   }
 
   // Border methods
   void setBorderWidth(double width) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _borderWidth.value = width;
-    _selectedImageItem.value!.content!.borderWidth = width;
+    _selectedImageItem!.content!.borderWidth = width;
     if (width > 0 && _borderColor.value == null) {
       setBorderColor(Colors.white);
     }
@@ -237,28 +240,28 @@ class ImageEditorController extends GetxController {
   }
 
   void setBorderRadius(double radius) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _borderRadius.value = radius;
-    _selectedImageItem.value!.content!.borderRadius = radius;
+    _selectedImageItem!.content!.borderRadius = radius;
     _notifyImageUpdate();
     update(['border_radius']);
   }
 
   void setBorderColor(Color? color) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _borderColor.value = color;
-    _selectedImageItem.value!.content!.borderColor = color;
+    _selectedImageItem!.content!.borderColor = color;
     _notifyImageUpdate();
     update(['border_page']);
   }
 
   void setShadowBlur(double blur) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shadowBlur.value = blur;
-    _selectedImageItem.value!.content!.shadowBlur = blur;
+    _selectedImageItem!.content!.shadowBlur = blur;
     if (blur > 0 && _shadowColor.value == null) {
       setShadowColor(Colors.black);
     }
@@ -267,30 +270,30 @@ class ImageEditorController extends GetxController {
   }
 
   void setShadowColor(Color? color) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shadowColor.value = color;
-    _selectedImageItem.value!.content!.shadowColor = color;
+    _selectedImageItem!.content!.shadowColor = color;
     _notifyImageUpdate();
     update(['border_page']);
   }
 
   // Method to set shadow offset
   void setShadowOffset(Offset offset) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shadowOffset.value = offset;
-    _selectedImageItem.value!.content!.shadowOffset = offset;
+    _selectedImageItem!.content!.shadowOffset = offset;
     _notifyImageUpdate();
     update(['effects_page']);
   }
 
   // Transform methods
   void setRotationAngle(double angle) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _rotationAngle.value = angle;
-    _selectedImageItem.value!.content!.rotationAngle = angle;
+    _selectedImageItem!.content!.rotationAngle = angle;
     _notifyImageUpdate();
     update(['rotation_slider']);
   }
@@ -302,39 +305,39 @@ class ImageEditorController extends GetxController {
   }
 
   void setFlipHorizontal(bool flip) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _flipHorizontal.value = flip;
-    _selectedImageItem.value!.content!.flipHorizontal = flip;
+    _selectedImageItem!.content!.flipHorizontal = flip;
     _notifyImageUpdate();
     update(['flip_buttons']);
   }
 
   void setFlipVertical(bool flip) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _flipVertical.value = flip;
-    _selectedImageItem.value!.content!.flipVertical = flip;
+    _selectedImageItem!.content!.flipVertical = flip;
     _notifyImageUpdate();
     update(['flip_buttons']);
   }
 
   // Reset methods
   void resetFilters() {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
-    _selectedImageItem.value!.content!.resetFilters();
+    _selectedImageItem!.content!.resetFilters();
     _activeFilter.value = 'none';
     _filterIntensity.value = 1.0;
-    _loadImageProperties(_selectedImageItem.value);
+    _loadImageProperties(_selectedImageItem);
     _notifyImageUpdate();
     update(['filters_page']);
   }
 
   void resetAdjustments() {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
-    final content = _selectedImageItem.value!.content!;
+    final content = _selectedImageItem!.content!;
     content.adjustBrightness(0.0);
     content.adjustContrast(1.0);
     content.adjustSaturation(1.0);
@@ -347,9 +350,9 @@ class ImageEditorController extends GetxController {
   }
 
   void resetTransforms() {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
-    final content = _selectedImageItem.value!.content!;
+    final content = _selectedImageItem!.content!;
     content.rotationAngle = 0.0;
     content.flipHorizontal = false;
     content.flipVertical = false;
@@ -363,9 +366,9 @@ class ImageEditorController extends GetxController {
   }
 
   void resetBorders() {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
-    final content = _selectedImageItem.value!.content!;
+    final content = _selectedImageItem!.content!;
     content.borderWidth = 0.0;
     content.borderRadius = 0.0;
     content.borderColor = null;
@@ -388,8 +391,8 @@ class ImageEditorController extends GetxController {
     resetTransforms();
     resetBorders();
 
-    if (_selectedImageItem.value?.content != null) {
-      final content = _selectedImageItem.value!.content!;
+    if (_selectedImageItem?.content != null) {
+      final content = _selectedImageItem!.content!;
       content.maskShape = ImageMaskShape.none;
       content.overlayColor = null;
 
@@ -403,28 +406,28 @@ class ImageEditorController extends GetxController {
 
   // Methods to update shape borders
   void setShapeBorderWidth(double width) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shapeBorderWidth.value = width;
-    _selectedImageItem.value!.content!.shapeBorderWidth = width;
+    _selectedImageItem!.content!.shapeBorderWidth = width;
     _notifyImageUpdate();
     update(['shape_border_width']);
   }
 
   void setShapeBorderRadius(double radius) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shapeBorderRadius.value = radius;
-    _selectedImageItem.value!.content!.shapeBorderRadius = radius;
+    _selectedImageItem!.content!.shapeBorderRadius = radius;
     _notifyImageUpdate();
     update(['shape_border_radius']);
   }
 
   void setShapeBorderColor(Color? color) {
-    if (_selectedImageItem.value?.content == null) return;
+    if (_selectedImageItem?.content == null) return;
 
     _shapeBorderColor.value = color;
-    _selectedImageItem.value!.content!.shapeBorderColor = color;
+    _selectedImageItem!.content!.shapeBorderColor = color;
     _notifyImageUpdate();
     update(['shape_border_color']);
   }
@@ -492,7 +495,7 @@ class ImageEditorController extends GetxController {
 
   @override
   void onClose() {
-    _selectedImageItem.value = null;
+    _selectedImageItem = null;
     _adjustmentValues.clear();
     super.onClose();
   }

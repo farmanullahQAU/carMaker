@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
-import 'package:cardmaker/app/features/home/home.dart' show getTextWidth;
-import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
@@ -10,6 +8,7 @@ import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditorController extends GetxController {
   final StackBoardController boardController = StackBoardController();
@@ -53,6 +52,8 @@ class EditorController extends GetxController {
   final RxBool showHueSlider = false.obs;
   final RxBool showStickerPanel = false.obs;
   final RxInt selectedToolIndex = 0.obs;
+  // image_picker
+  final ImagePicker _picker = ImagePicker();
 
   // Canvas scaling properties
   final GlobalKey stackBoardKey = GlobalKey();
@@ -239,34 +240,7 @@ class EditorController extends GetxController {
     update(['canvas_stack']); // Trigger rebuild of canvas stack
   }
 
-  void addSticker(String imagePath) {
-    final sticker = StackImageItem(
-      id: UniqueKey().toString(),
-      size: const Size(100, 100),
-      offset: getCenteredOffset(const Size(100, 100)),
-      content: ImageItemContent(assetName: imagePath),
-      isProfileImage: false,
-    );
-    boardController.addItem(sticker);
-    _undoStack.add(_ItemState(item: sticker, action: _ItemAction.add));
-    _redoStack.clear();
-    update(['canvas_stack']); // Trigger rebuild of canvas stack
-  }
-
-  void addText(String data) {
-    Offset offset;
-    Size size;
-    if (activeItem.value != null && activeItem.value is StackTextItem) {
-      offset = Offset(
-        activeItem.value!.offset.dx + 20,
-        activeItem.value!.offset.dy + 40,
-      );
-      size = activeItem.value!.size;
-    } else {
-      offset = Offset(100, 100);
-      size = const Size(200, 50);
-    }
-
+  void addSticker(String data) {
     final content = TextItemContent(
       data: data,
       googleFont: 'Roboto',
@@ -275,8 +249,8 @@ class EditorController extends GetxController {
     );
     final textItem = StackTextItem(
       id: UniqueKey().toString(),
-      size: getTextWidth(text: data, style: content.style!),
-      offset: offset,
+      size: Size(Get.width * 0.2, Get.width * 0.2),
+      offset: Offset(200, 250),
       content: content,
     );
     boardController.addItem(textItem);
@@ -290,19 +264,7 @@ class EditorController extends GetxController {
   }
 
   void updateBackgroundHue(double hue) {
-    final previousHue = backgroundHue.value;
-    _undoStack.add(
-      _ItemState(
-        item: ColorStackItem1(
-          id: 'background_hue',
-          size: Size.zero,
-          content: ColorContent(color: Colors.transparent),
-        ),
-        action: _ItemAction.hue,
-        previousHue: previousHue,
-      ),
-    );
-    _redoStack.clear();
+    // _redoStack.clear();
     backgroundHue.value = hue;
     update(['canvas_stack']); // This line should trigger the rebuild
   }
@@ -368,22 +330,29 @@ class EditorController extends GetxController {
       (json) => json['id'] == item.id,
       orElse: () => <String, dynamic>{},
     );
+
     if (currentItemJson.isNotEmpty) {
       final previousItem = _deserializeItem(currentItemJson);
       _undoStack.add(
         _ItemState(item: previousItem, action: _ItemAction.update),
       );
       _redoStack.clear();
+
+      // Preserve existing text data and merge with new style
+      final currentText = item.content?.data ?? '';
+      final updatedContent = (content as TextItemContent).copyWith(
+        data: currentText, // Keep existing text
+        style: content.style?.merge(item.content?.style), // Merge styles
+      );
+
       final updatedItem = item.copyWith(
-        content: content as TextItemContent,
+        content: updatedContent,
         size: newSize ?? item.size,
       );
+
       boardController.updateItem(updatedItem);
       activeItem.value = updatedItem;
-      update([
-        'canvas_stack',
-        'bottom_sheet',
-      ]); // Trigger rebuild of canvas and bottom sheet
+      update(['canvas_stack', 'bottom_sheet']);
     }
   }
 
@@ -547,6 +516,105 @@ class EditorController extends GetxController {
     boardController.dispose();
     super.onClose();
   }
+
+  void duplicateItem() {
+    if (activeItem.value == null) return;
+
+    final originalItem = activeItem.value!;
+    final newOffset = Offset(
+      originalItem.offset.dx + 20, // Offset by 20 pixels to the right
+      originalItem.offset.dy + 20, // Offset by 20 pixels down
+    );
+
+    StackItem newItem;
+
+    if (originalItem is StackTextItem) {
+      newItem = StackTextItem(
+        id: UniqueKey().toString(),
+        offset: newOffset,
+        size: originalItem.size,
+        content: originalItem.content,
+      );
+    } else if (originalItem is StackImageItem) {
+      newItem = StackImageItem(
+        id: UniqueKey().toString(),
+
+        offset: newOffset,
+        size: originalItem.size,
+        content: originalItem.content?.copyWith(),
+        angle: originalItem.angle,
+        isProfileImage: originalItem.isProfileImage,
+      );
+    } else {
+      return; // Unsupported item type
+    }
+
+    boardController.addItem(newItem);
+    // activeItem.value = newItem;
+
+    update(['canvas_stack', 'bottom_sheet']);
+  }
+
+  Future<void> replaceImageItem() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        var item = activeItem.value as StackImageItem;
+
+        final newItem = StackImageItem(
+          id: UniqueKey().toString(),
+
+          offset: item.offset,
+          size: item.size,
+          content: item.content?.copyWith(assetName: image.path),
+          angle: item.angle,
+          isProfileImage: item.isProfileImage,
+        );
+        boardController.removeById(item.id);
+        boardController.addItem(newItem);
+
+        activeItem.value = newItem;
+
+        update(['canvas_stack']);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to handle image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
+  }
+
+  Future<void> pickAndAddImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final newItem = StackImageItem(
+          id: UniqueKey().toString(),
+          offset: Offset(100, 100),
+          size: Size(Get.width * 0.3, Get.width * 0.3),
+
+          content: ImageItemContent(assetName: image.path),
+        );
+        boardController.addItem(newItem);
+
+        activeItem.value = newItem;
+
+        update(['canvas_stack']);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to handle image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
+  }
 }
 
 class _ItemState {
@@ -558,75 +626,3 @@ class _ItemState {
 }
 
 enum _ItemAction { add, update, hue }
-
-// Helper class for color stack items
-class ColorStackItem1 extends StackItem<ColorContent> {
-  ColorStackItem1({
-    required String super.id,
-    required super.size,
-    required ColorContent super.content,
-    Offset super.offset = Offset.zero,
-    double super.angle,
-    StackItemStatus super.status = StackItemStatus.idle,
-    bool super.lockZOrder,
-    bool super.isProfileImage,
-    super.isCentered,
-  });
-
-  @override
-  ColorStackItem1 copyWith({
-    String? id,
-    Offset? offset,
-    Size? size,
-    double? angle,
-    StackItemStatus? status,
-    ColorContent? content,
-    bool? lockZOrder,
-    bool? isProfileImage,
-    bool? isCentered,
-  }) {
-    return ColorStackItem1(
-      id: id ?? this.id,
-      offset: offset ?? this.offset,
-      size: size ?? this.size,
-      angle: angle ?? this.angle,
-      status: status ?? this.status,
-      content: content ?? this.content!,
-      lockZOrder: lockZOrder ?? this.lockZOrder,
-      isProfileImage: isProfileImage ?? this.isProfileImage,
-      isCentered: isCentered ?? this.isCentered,
-    );
-  }
-
-  @override
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': 'ColorStackItem1',
-      'offset': {'dx': offset.dx, 'dy': offset.dy},
-      'size': {'width': size.width, 'height': size.height},
-      'angle': angle,
-      'status': status.index,
-      'lockZOrder': lockZOrder,
-      'isProfileImage': isProfileImage,
-      'isCentered': isCentered,
-      'content': content?.toJson(),
-    };
-  }
-}
-
-class ColorContent extends StackItemContent {
-  final Color color;
-
-  ColorContent({required this.color});
-
-  @override
-  ColorContent copyWith({Color? color}) {
-    return ColorContent(color: color ?? this.color);
-  }
-
-  @override
-  Map<String, dynamic> toJson() {
-    return {'color': color.value};
-  }
-}

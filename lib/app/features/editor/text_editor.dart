@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/features/editor/circular_text/model.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/stack_board/lib/stack_items.dart';
@@ -243,12 +244,14 @@ class _TextPainterWithStroke extends CustomPainter {
 }
 
 class TextStyleController extends GetxController {
+  final editorController = Get.find<EditorController>();
+
   // Tab control
   final currentIndex = 0.obs;
   final circularSubTabIndex = 0.obs;
 
   // Text item reference
-  final textItem = Rx<StackTextItem?>(null);
+  StackTextItem? textItem;
 
   // Text properties
   final selectedFont = 'Roboto'.obs;
@@ -374,17 +377,10 @@ class TextStyleController extends GetxController {
     'assets/gliter4.jpeg',
   ];
 
-  @override
-  void onInit() {
-    super.onInit();
-    initializeProperties(textItem.value);
-  }
-
   void initializeProperties(StackTextItem? item) {
-    if (item == null) return;
-    textItem.value = item;
+    textItem = item;
 
-    final textContent = item.content;
+    final textContent = item?.content;
     selectedFont.value = textContent?.googleFont ?? 'Roboto';
     fontSize.value = textContent?.style?.fontSize ?? 16.0;
     letterSpacing.value = textContent?.style?.letterSpacing ?? 0.0;
@@ -442,10 +438,10 @@ class TextStyleController extends GetxController {
   }
 
   void updateTextItem() {
-    final item = textItem.value;
-    if (item == null) return;
+    // final item = textItem.value;
+    // if (item == null) return;
 
-    final updatedContent = item.content?.copyWith(
+    final updatedContent = textItem?.content?.copyWith(
       // Add dual tone properties
       hasDualTone: hasDualTone.value,
       dualToneColor1: dualToneColor1,
@@ -453,7 +449,7 @@ class TextStyleController extends GetxController {
       dualToneDirection: dualToneDirection.value,
       dualTonePosition: dualTonePosition.value,
 
-      data: item.content?.data,
+      data: textItem?.content?.data,
       googleFont: selectedFont.value,
       style: TextStyle(
         fontFamily: GoogleFonts.getFont(selectedFont.value).fontFamily,
@@ -501,15 +497,13 @@ class TextStyleController extends GetxController {
 
     if (updatedContent == null) return;
 
-    final editorController = Get.find<EditorController>();
-    final currentItem =
-        editorController.boardController.getById(item.id) ?? item;
-    final updatedItem = item.copyWith(
+    final currentItem = editorController.boardController.getById(textItem!.id);
+    final updatedItem = textItem?.copyWith(
       content: updatedContent,
-      offset: currentItem.offset,
+      offset: currentItem?.offset,
     );
 
-    editorController.boardController.updateItem(updatedItem);
+    editorController.boardController.updateItem(updatedItem!);
     editorController.boardController.updateBasic(
       updatedItem.id,
       status: StackItemStatus.idle,
@@ -534,7 +528,7 @@ class TextStyleController extends GetxController {
       painter.layout(maxWidth: maxWidth);
 
       final width = painter.width.clamp(50.0, maxWidth);
-      final height = painter.height.clamp(30.0, double.infinity);
+      final height = painter.height.clamp(25.0, double.infinity);
 
       editorController.boardController.updateBasic(
         updatedItem.id,
@@ -624,7 +618,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
     });
 
     _tabController = TabController(
-      length: 11, // CHANGE: from 10 to 11 to include dual tone tab
+      length: 12,
       vsync: this,
       initialIndex: _controller.currentIndex.value,
     );
@@ -643,29 +637,87 @@ class _TextStylingEditorState extends State<TextStylingEditor>
           bottom: BorderSide(color: AppColors.branding, width: 0.1),
         ),
       ),
-      child: TabBar(
-        controller: _tabController,
-        tabAlignment: TabAlignment.start,
-        isScrollable: true,
-        indicator: const BoxDecoration(),
-        dividerHeight: 0,
-        dividerColor: Colors.transparent,
-        indicatorColor: Colors.transparent,
-        padding: EdgeInsets.zero,
-        indicatorPadding: EdgeInsets.zero,
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        tabs: const [
-          Tab(icon: Icon(Icons.format_size, size: 16), text: 'Size'),
-          Tab(icon: Icon(Icons.format_align_left, size: 16), text: 'Align'),
-          Tab(icon: Icon(Icons.palette, size: 16), text: 'Color'),
-          Tab(icon: Icon(Icons.format_color_fill, size: 16), text: 'BG'),
-          Tab(icon: Icon(Icons.format_bold, size: 16), text: 'Style'),
-          Tab(icon: Icon(Icons.tune, size: 16), text: 'Spacing'),
-          Tab(icon: Icon(Icons.font_download, size: 16), text: 'Font'),
-          Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),
-          Tab(icon: Icon(Icons.blur_on, size: 16), text: 'Effects'),
-          Tab(icon: Icon(Icons.gradient, size: 16), text: 'Dual'), // ADD THIS
-          Tab(icon: Icon(Icons.circle, size: 16), text: 'Circular'),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              Get.to(() => TextEditorPage(item: _controller.textItem));
+            },
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 12),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.branding.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.branding.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.keyboard_alt,
+                color: AppColors.branding.withOpacity(0.7),
+                size: 20,
+              ),
+            ),
+          ),
+          Expanded(
+            child: TabBar(
+              controller: _tabController,
+              tabAlignment: TabAlignment.start,
+              isScrollable: true,
+              indicator: const BoxDecoration(),
+              dividerHeight: 0,
+              dividerColor: Colors.transparent,
+              indicatorColor: Colors.transparent,
+              padding: EdgeInsets.zero,
+              indicatorPadding: EdgeInsets.zero,
+              labelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+
+              tabs: [
+                const Tab(
+                  icon: Icon(Icons.format_size, size: 16),
+                  text: 'Size',
+                ),
+                const Tab(
+                  icon: Icon(Icons.format_align_left, size: 16),
+                  text: 'Align',
+                ),
+                const Tab(icon: Icon(Icons.palette, size: 16), text: 'Color'),
+                const Tab(
+                  icon: Icon(Icons.format_color_fill, size: 16),
+                  text: 'BG',
+                ),
+                const Tab(
+                  icon: Icon(Icons.format_bold, size: 16),
+                  text: 'Style',
+                ),
+                const Tab(icon: Icon(Icons.tune, size: 16), text: 'Spacing'),
+                const Tab(
+                  icon: Icon(Icons.font_download, size: 16),
+                  text: 'Font',
+                ),
+                const Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),
+                const Tab(icon: Icon(Icons.blur_on, size: 16), text: 'Effects'),
+                const Tab(
+                  icon: Icon(Icons.gradient, size: 16),
+                  text: 'Dual',
+                ), // ADD THIS
+                const Tab(icon: Icon(Icons.circle, size: 16), text: 'Circular'),
+                FloatingActionButton.small(
+                  onPressed: () {
+                    _controller.editorController.duplicateItem();
+                  },
+
+                  child: Icon(Icons.control_point_duplicate, size: 16),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -682,6 +734,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
             child: TabBarView(
               physics: const NeverScrollableScrollPhysics(),
               controller: _tabController,
+
               children: [
                 _SizeTab(controller: controller),
                 _AlignmentTab(controller: controller),
@@ -697,6 +750,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                   controller: controller,
                   tabController: _circularSubTabController,
                 ),
+                SizedBox(),
               ],
             ),
           ),
@@ -729,6 +783,8 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         return 120;
       case 10: // Circular - CHANGE: was case 9, now case 10
         return 250;
+      case 11:
+        return 1;
       default:
         return 120;
     }
@@ -747,35 +803,39 @@ class _SizeTab extends StatelessWidget {
       child: GetBuilder<TextStyleController>(
         id: 'font_size',
         builder: (controller) {
-          return RulerSlider(
-            minValue: 8.0,
-            maxValue: 72.0,
-            initialValue: controller.fontSize.value,
-            rulerHeight: 50.0,
-            selectedBarColor: AppColors.branding,
-            unselectedBarColor: AppColors.highlight.withOpacity(0.3),
-            tickSpacing: 8.0,
-            fixedBarColor: AppColors.branding,
-            labelBuilder: (value) => '${value.round()}px',
-            onChanged: (value) {
-              controller.fontSize.value = value;
-              controller.updateTextItem();
-              controller.update(['font_size']);
-            },
-            showFixedBar: true,
-            showFixedLabel: false,
-            scrollSensitivity: 0.9,
-            enableSnapping: false,
-            majorTickInterval: 10,
-            labelInterval: 10,
-            labelVerticalOffset: 16.0,
-            showBottomLabels: true,
-            labelTextStyle: Get.theme.textTheme.labelSmall!.copyWith(
-              fontSize: 10,
-              color: AppColors.highlight,
+          return SizedBox(
+            child: RulerSlider(
+              rulerHeight: 80.0,
+              minValue: 8.0,
+              maxValue: 72.0,
+              initialValue: controller.fontSize.value,
+
+              selectedBarColor: AppColors.brandingLight,
+              unselectedBarColor: AppColors.highlight.withOpacity(0.3),
+              // tickSpacing: 8.0,
+              fixedBarColor: AppColors.accent,
+              fixedLabelColor: AppColors.brandingLight,
+              labelBuilder: (value) => '${value.round()}px',
+              onChanged: (value) {
+                controller.fontSize.value = value;
+                controller.updateTextItem();
+                controller.update(['font_size']);
+              },
+              // showFixedBar: true,
+              // showFixedLabel: false,
+              // scrollSensitivity: 0.9,
+              // enableSnapping: false,
+              // majorTickInterval: 10,
+              // labelInterval: 10,
+              // labelVerticalOffset: 16.0,
+              // showBottomLabels: true,
+              // labelTextStyle: Get.theme.textTheme.labelSmall!.copyWith(
+              //   fontSize: 10,
+              //   color: AppColors.highlight,
+              // ),
+              majorTickHeight: 12.0,
+              // minorTickHeight: 6.0,
             ),
-            majorTickHeight: 12.0,
-            minorTickHeight: 6.0,
           );
         },
       ),
@@ -790,44 +850,43 @@ class _AlignmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: GetBuilder<TextStyleController>(
-        id: 'text_align',
-        builder: (controller) {
-          return Row(
+    return GetBuilder<TextStyleController>(
+      id: 'text_align',
+      builder: (controller) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          child: Row(
+            spacing: 10,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildAlignmentButton(
-                icon: Icons.format_align_left,
+                icon: Icons.format_align_left_rounded,
                 alignment: TextAlign.left,
                 isSelected: controller.textAlign.value == TextAlign.left,
                 controller: controller,
               ),
-              const SizedBox(width: 8),
               _buildAlignmentButton(
-                icon: Icons.format_align_center,
+                icon: Icons.format_align_center_rounded,
                 alignment: TextAlign.center,
                 isSelected: controller.textAlign.value == TextAlign.center,
                 controller: controller,
               ),
-              const SizedBox(width: 8),
               _buildAlignmentButton(
-                icon: Icons.format_align_right,
+                icon: Icons.format_align_right_rounded,
                 alignment: TextAlign.right,
                 isSelected: controller.textAlign.value == TextAlign.right,
                 controller: controller,
               ),
-              const SizedBox(width: 8),
               _buildAlignmentButton(
-                icon: Icons.format_align_justify,
+                icon: Icons.format_align_justify_rounded,
                 alignment: TextAlign.justify,
                 isSelected: controller.textAlign.value == TextAlign.justify,
                 controller: controller,
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -837,32 +896,30 @@ class _AlignmentTab extends StatelessWidget {
     required bool isSelected,
     required TextStyleController controller,
   }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          controller.textAlign.value = alignment;
-          controller.updateTextItem();
-          controller.update(['text_align']);
-        },
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () {
+        controller.textAlign.value = alignment;
+        controller.updateTextItem();
+        controller.update(['text_align']);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 40.0,
+        height: 40.0,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.branding : Colors.transparent,
+          borderRadius: BorderRadius.circular(6.0),
+          border: Border.all(
             color: isSelected
                 ? AppColors.branding
-                : AppColors.highlight.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.branding
-                  : AppColors.highlight.withOpacity(0.2),
-              width: isSelected ? 2 : 1,
-            ),
+                : AppColors.highlight.withOpacity(0.2),
+            width: 1.0,
           ),
-          child: Icon(
-            icon,
-            color: isSelected ? Colors.white : AppColors.highlight,
-            size: 20,
-          ),
+        ),
+        child: Icon(
+          icon,
+          size: 20.0,
+          color: isSelected ? Colors.white : AppColors.highlight,
         ),
       ),
     );
@@ -913,8 +970,8 @@ class _BackgroundTab extends StatelessWidget {
         id: 'background_color',
         builder: (controller) {
           return ColorSelector(
-            title: "Stroke Color",
-            showTitle: false,
+            title: "Bg Color",
+            showTitle: true,
 
             colors: TextStyleController.predefinedColors,
             currentColor: controller.backgroundColor.value,
@@ -1018,144 +1075,90 @@ class _StyleTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       child: GetBuilder<TextStyleController>(
         id: 'text_style',
         builder: (controller) {
           return Column(
             children: [
-              // Font weights
+              // Font weights - radio buttons
               Row(
-                children:
-                    [
-                      FontWeight.w300,
-                      FontWeight.normal,
-                      FontWeight.w500,
-                      FontWeight.bold,
-                    ].map((weight) {
-                      final isSelected = weight == controller.fontWeight.value;
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: GestureDetector(
-                            onTap: () {
-                              controller.fontWeight.value = weight;
-                              controller.updateTextItem();
-                              controller.update(['text_style']);
-                            },
+                spacing: 12,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _fontWeights.map((weight) {
+                  final isSelected = weight == controller.fontWeight.value;
+                  return GestureDetector(
+                    onTap: () {
+                      controller.fontWeight.value = weight;
+                      controller.updateTextItem();
+                      controller.update(['text_style']);
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.branding
+                                  : AppColors.highlight.withOpacity(0.5),
+                              width: 2,
+                            ),
+                          ),
+                          child: Center(
                             child: Container(
-                              height: 36,
+                              width: 12,
+                              height: 12,
                               decoration: BoxDecoration(
+                                shape: BoxShape.circle,
                                 color: isSelected
                                     ? AppColors.branding
-                                    : AppColors.highlight.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  controller.weightToString(weight),
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppColors.highlight,
-                                    fontWeight: weight,
-                                    fontSize: 11,
-                                  ),
-                                ),
+                                    : Colors.transparent,
                               ),
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getWeightLabel(weight),
+                          style: TextStyle(
+                            color: AppColors.highlight,
+                            fontWeight: weight,
+                            fontSize: 12.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 8),
-              // Italic and Underline
+              const SizedBox(height: 12.0),
+              // Style buttons (italic/underline)
               Row(
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        controller.isItalic.value = !controller.isItalic.value;
-                        controller.updateTextItem();
-                        controller.update(['text_style']);
-                      },
-                      child: Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: controller.isItalic.value
-                              ? AppColors.accent
-                              : AppColors.highlight.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.format_italic,
-                              color: controller.isItalic.value
-                                  ? Colors.white
-                                  : AppColors.highlight,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Italic',
-                              style: TextStyle(
-                                color: controller.isItalic.value
-                                    ? Colors.white
-                                    : AppColors.highlight,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  _buildStyleButton(
+                    icon: Icons.format_italic_rounded,
+                    label: 'Italic',
+                    isActive: controller.isItalic.value,
+                    onTap: () {
+                      controller.isItalic.value = !controller.isItalic.value;
+                      controller.updateTextItem();
+                      controller.update(['text_style']);
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        controller.isUnderlined.value =
-                            !controller.isUnderlined.value;
-                        controller.updateTextItem();
-                        controller.update(['text_style']);
-                      },
-                      child: Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: controller.isUnderlined.value
-                              ? AppColors.accent
-                              : AppColors.highlight.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.format_underline,
-                              color: controller.isUnderlined.value
-                                  ? Colors.white
-                                  : AppColors.highlight,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Underline',
-                              style: TextStyle(
-                                color: controller.isUnderlined.value
-                                    ? Colors.white
-                                    : AppColors.highlight,
-                                fontSize: 11,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  const SizedBox(width: 8.0),
+                  _buildStyleButton(
+                    icon: Icons.format_underline_rounded,
+                    label: 'Underline',
+                    isActive: controller.isUnderlined.value,
+                    onTap: () {
+                      controller.isUnderlined.value =
+                          !controller.isUnderlined.value;
+                      controller.updateTextItem();
+                      controller.update(['text_style']);
+                    },
                   ),
                 ],
               ),
@@ -1165,8 +1168,82 @@ class _StyleTab extends StatelessWidget {
       ),
     );
   }
-}
 
+  Widget _buildStyleButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 36.0,
+          decoration: BoxDecoration(
+            color: isActive
+                ? AppColors.accent
+                : AppColors.highlight.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(6.0),
+            border: Border.all(
+              color: isActive
+                  ? AppColors.accent
+                  : AppColors.highlight.withOpacity(0.1),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16.0,
+                color: isActive ? Colors.white : AppColors.highlight,
+              ),
+              const SizedBox(width: 4.0),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.white : AppColors.highlight,
+                  fontSize: 12.0,
+                  fontStyle: label == 'Italic' && isActive
+                      ? FontStyle.italic
+                      : FontStyle.normal,
+                  decoration: label == 'Underline' && isActive
+                      ? TextDecoration.underline
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static const List<FontWeight> _fontWeights = [
+    FontWeight.w300,
+    FontWeight.normal,
+    FontWeight.w500,
+    FontWeight.bold,
+  ];
+
+  String _getWeightLabel(FontWeight weight) {
+    switch (weight) {
+      case FontWeight.w300:
+        return 'Light';
+      case FontWeight.normal:
+        return 'Regular';
+      case FontWeight.w500:
+        return 'Medium';
+      case FontWeight.bold:
+        return 'Bold';
+      default:
+        return '';
+    }
+  }
+}
 // SPACING TAB - Compact sliders
 
 class _SpacingTab extends StatelessWidget {
@@ -1198,7 +1275,7 @@ class _SpacingTab extends StatelessWidget {
                 icon: Icons.space_bar_rounded,
                 label: 'Letter Spacing',
                 value: controller.letterSpacing.value,
-                min: 0.0,
+                min: -3,
                 max: 32.0,
 
                 onChanged: (value) {
