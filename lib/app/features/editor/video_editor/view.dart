@@ -2,11 +2,11 @@ import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
-import 'package:cardmaker/stack_board/lib/stack_case.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -28,7 +28,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late ImageEditorController _imageEditorController;
-  final canvasController = Get.find<EditorController>();
+  final canvasController = Get.find<CanvasController>();
   @override
   void initState() {
     super.initState();

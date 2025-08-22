@@ -2,10 +2,10 @@ import 'package:cardmaker/app/features/editor/circular_text/model.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
-import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:cardmaker/widgets/ruler_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -244,7 +244,7 @@ class _TextPainterWithStroke extends CustomPainter {
 }
 
 class TextStyleController extends GetxController {
-  final editorController = Get.find<EditorController>();
+  final editorController = Get.find<CanvasController>();
 
   // Tab control
   final currentIndex = 0.obs;
@@ -641,7 +641,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         children: [
           GestureDetector(
             onTap: () {
-              Get.to(() => TextEditorPage(item: _controller.textItem));
+              Get.to(() => UpdateTextView(item: _controller.textItem));
             },
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 12),
@@ -1075,7 +1075,7 @@ class _StyleTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       child: GetBuilder<TextStyleController>(
         id: 'text_style',
         builder: (controller) {
@@ -1084,7 +1084,8 @@ class _StyleTab extends StatelessWidget {
               // Font weights - radio buttons
               Row(
                 spacing: 12,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: _fontWeights.map((weight) {
                   final isSelected = weight == controller.fontWeight.value;
                   return GestureDetector(
@@ -1134,7 +1135,7 @@ class _StyleTab extends StatelessWidget {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 12.0),
+              const SizedBox(height: 8.0),
               // Style buttons (italic/underline)
               Row(
                 children: [

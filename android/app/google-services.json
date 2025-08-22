@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "370527194012",
+    "project_id": "inkkaro-33115",
+    "storage_bucket": "inkkaro-33115.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370527194012:android:8f56289e48f924ccda1659",
+        "android_client_info": {
+          "package_name": "com.example.cardmaker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDe2PEwNI6MfZqL-sErRkJ5EfGzoc_TPag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

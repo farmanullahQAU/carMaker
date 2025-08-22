@@ -1,6 +1,6 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
-import 'package:cardmaker/stack_board/lib/stack_case.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -475,7 +475,7 @@ class ImageEditorController extends GetxController {
   void _notifyImageUpdate() {
     // Notify the main editor controller about the image update
     try {
-      final editorController = Get.find<EditorController>();
+      final editorController = Get.find<CanvasController>();
       editorController.update(['canvas_stack', 'stack_board']);
     } catch (e) {
       // EditorController might not be available in all contexts

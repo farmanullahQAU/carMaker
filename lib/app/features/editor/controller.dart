@@ -1,24 +1,40 @@
+import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:cardmaker/app/features/editor/edit_item/view.dart';
+import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
-import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
-import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/services/template_services.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:screenshot/screenshot.dart';
+import 'package:uuid/uuid.dart';
 
-class EditorController extends GetxController {
+class CanvasController extends GetxController {
   final StackBoardController boardController = StackBoardController();
+  final textEditController = Get.put(TextEditorController());
   final RxString selectedFont = 'Poppins'.obs;
   final RxDouble fontSize = 24.0.obs;
   final Rx<Color> fontColor = Colors.black.obs;
-  final RxString selectedBackground = ''.obs;
+  final RxnString selectedBackground = RxnString();
   final RxDouble backgroundHue = 0.0.obs;
   final RxString templateName = ''.obs;
+  bool isExporting = false;
+  final ScreenshotController screenshotController = ScreenshotController();
 
+  final RxBool allowTouch = false.obs;
+  final Rx<StackImageItem?> activePhotoItem = Rx<StackImageItem?>(null);
+  final Rx<PanelType> activePanel = PanelType.none.obs;
+  RxBool isShowEditIcon = false.obs;
   final RxDouble templateOriginalWidth = 0.0.obs;
   final RxDouble templateOriginalHeight = 0.0.obs;
   final Rx<Size> actualStackBoardRenderSize = Size(100, 100).obs;
@@ -76,7 +92,7 @@ class EditorController extends GetxController {
     categoryId.value = initialTemplate!.categoryId;
     tags.value = initialTemplate!.tags;
     isPremium.value = initialTemplate!.isPremium;
-    selectedBackground.value = initialTemplate!.backgroundImage;
+    selectedBackground.value = initialTemplate?.backgroundImage;
     templateOriginalWidth.value = initialTemplate!.width.toDouble();
     templateOriginalHeight.value = initialTemplate!.height.toDouble();
     canvasWidth.value = initialTemplate!.width.toDouble();
@@ -122,7 +138,7 @@ class EditorController extends GetxController {
       'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
     );
 
-    loadExportedTemplate(
+    loadDesignFromStorage(
       initialTemplate!,
       context,
       scaledCanvasWidth.value,
@@ -133,27 +149,27 @@ class EditorController extends GetxController {
     update(['canvas_stack']); // Trigger rebuild of canvas stack
   }
 
-  void loadExportedTemplate(
+  void loadDesignFromStorage(
     CardTemplate template,
     BuildContext context,
     double scaledCanvasWidth,
     double scaledCanvasHeight,
   ) async {
     print("Loading exported template...");
-    final controller = Get.find<EditorController>();
-    controller.selectedBackground.value = template.backgroundImage;
-    controller.templateName.value = template.name;
-    controller.category.value = template.category;
-    controller.categoryId.value = template.categoryId;
-    controller.tags.value = template.tags;
-    controller.isPremium.value = template.isPremium;
-    controller.backgroundHue.value = 0.0;
-    controller.templateOriginalWidth.value = template.width.toDouble();
-    controller.templateOriginalHeight.value = template.height.toDouble();
-    controller.canvasWidth.value = scaledCanvasWidth;
-    controller.canvasHeight.value = scaledCanvasHeight;
-    controller.boardController.clear();
-    controller.profileImageItems.clear();
+    final controller = Get.find<CanvasController>();
+    selectedBackground.value = template.backgroundImage;
+    templateName.value = template.name;
+    category.value = template.category;
+    categoryId.value = template.categoryId;
+    tags.value = template.tags;
+    isPremium.value = template.isPremium;
+    backgroundHue.value = 0.0;
+    templateOriginalWidth.value = template.width.toDouble();
+    templateOriginalHeight.value = template.height.toDouble();
+    canvasWidth.value = scaledCanvasWidth;
+    canvasHeight.value = scaledCanvasHeight;
+    boardController.clear();
+    profileImageItems.clear();
 
     for (final itemJson in template.items) {
       try {
@@ -163,7 +179,7 @@ class EditorController extends GetxController {
         final item = _deserializeItem(itemJson);
         if (isProfileImage) {
           if (item is StackImageItem) {
-            controller.profileImageItems.add(item);
+            profileImageItems.add(item);
           }
           continue;
         }
@@ -212,10 +228,8 @@ class EditorController extends GetxController {
           'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
         );
 
-        controller.boardController.addItem(updatedItem);
-        controller._undoStack.add(
-          _ItemState(item: updatedItem, action: _ItemAction.add),
-        );
+        boardController.addItem(updatedItem);
+        _undoStack.add(_ItemState(item: updatedItem, action: _ItemAction.add));
       } catch (err) {
         debugPrint('Error loading item: $err');
       }
@@ -245,7 +259,6 @@ class EditorController extends GetxController {
       data: data,
       googleFont: 'Roboto',
       style: const TextStyle(fontSize: 24, color: Colors.black),
-      textAlign: TextAlign.center,
     );
     final textItem = StackTextItem(
       id: UniqueKey().toString(),
@@ -356,6 +369,69 @@ class EditorController extends GetxController {
     }
   }
 
+  Future<void> addTemplate(File thumbnailFile) async {
+    final currentItems = boardController.getAllData();
+
+    final templateService = TemplateService();
+    try {
+      print('Adding template...');
+      // Generate a unique ID for the template
+      final templateId = Uuid().v4();
+      final template = CardTemplate(
+        imagePath: "",
+        categoryId: 'general',
+        id: templateId,
+        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
+        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
+        width: templateOriginalWidth.value,
+        height: templateOriginalHeight.value,
+        category: 'General', // Default category; can be set via UI
+        tags: ['default'], // Default tags; can be set via UI
+        isPremium: false, // Default; can be set via UI
+      );
+
+      // Handle background image (user-picked or asset)
+      File? backgroundFile;
+      if ((selectedBackground.value?.isNotEmpty ?? false) &&
+          !selectedBackground.value!.startsWith('asset')) {
+        backgroundFile = File(selectedBackground.value!);
+      }
+
+      // Use TemplateService to upload and save
+      await templateService.addTemplate(
+        template,
+        thumbnailFile: thumbnailFile,
+        backgroundFile: backgroundFile,
+      );
+
+      // Cleanup temporary files after TemplateService is done
+      if (await thumbnailFile.exists()) {
+        await thumbnailFile.delete();
+      }
+      if (backgroundFile != null && await backgroundFile.exists()) {
+        await backgroundFile.delete();
+      }
+
+      Get.snackbar(
+        'Success',
+        'Template added successfully with ID: $templateId',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+      );
+    } catch (e, s) {
+      debugPrint('Failed to add template: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to add template: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+      rethrow;
+    }
+  }
+
   void updateStackBoardRenderSize(Size size) {
     if (actualStackBoardRenderSize.value != size) {
       actualStackBoardRenderSize.value = size;
@@ -363,7 +439,7 @@ class EditorController extends GetxController {
     }
   }
 
-  Future<void> exportDesign() async {
+  Future<void> saveDesign() async {
     final double originalWidth = initialTemplate!.width.toDouble();
     final double originalHeight = initialTemplate!.height.toDouble();
 
@@ -419,16 +495,17 @@ class EditorController extends GetxController {
       createdAt: DateTime.now(),
       updatedAt: null,
       category: category.value,
+
       categoryId: categoryId.value,
       compatibleDesigns: initialTemplate!.compatibleDesigns,
       width: originalWidth,
       height: originalHeight,
       isPremium: isPremium.value,
       tags: tags.value,
-      imagePath: selectedBackground.value,
+      imagePath: "",
     );
 
-    await addTemplate(temp);
+    await addTemplateToLocale(temp);
   }
 
   void _updateGridSize() {
@@ -506,7 +583,7 @@ class EditorController extends GetxController {
     }
   }
 
-  Future<void> addTemplate(CardTemplate template) async {
+  Future<void> addTemplateToLocale(CardTemplate template) async {
     print('Adding template: ${template.backgroundImage}');
     await StorageService.addTemplate(template);
   }
@@ -555,6 +632,62 @@ class EditorController extends GetxController {
     update(['canvas_stack', 'bottom_sheet']);
   }
 
+  Future<File> exportAsImage() async {
+    try {
+      isExporting = true;
+      update(['export_button']);
+      boardController.unSelectAll();
+      final exportKey = GlobalKey();
+
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          elevation: 0,
+          child: SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: CanvasStack(
+              showGrid: false,
+              showBorders: false,
+              stackBoardKey: GlobalKey(),
+              canvasScale: canvasScale,
+              scaledCanvasWidth: scaledCanvasWidth,
+              scaledCanvasHeight: scaledCanvasHeight,
+            ),
+          ),
+        ),
+        targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        pixelRatio: 2,
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/invitation_card.png");
+      await file.writeAsBytes(image);
+      Get.snackbar(
+        'Success',
+        'Image exported successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade900,
+      );
+      return file;
+      Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+    } catch (e, s) {
+      debugPrint('Export Image failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export image due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      // isExporting = false;
+      update(['export_button']);
+    }
+    throw Exception('Failed to export image');
+  }
+
   Future<void> replaceImageItem() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -566,7 +699,7 @@ class EditorController extends GetxController {
 
           offset: item.offset,
           size: item.size,
-          content: item.content?.copyWith(assetName: image.path),
+          content: item.content?.copyWith(filePath: image.path),
           angle: item.angle,
           isProfileImage: item.isProfileImage,
         );
@@ -588,6 +721,88 @@ class EditorController extends GetxController {
     }
   }
 
+  Future<void> exportAsPDF() async {
+    try {
+      isExporting = true;
+      update(['export_button']);
+      boardController.unSelectAll();
+      final exportKey = GlobalKey();
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          shadowColor: Colors.transparent,
+
+          elevation: 0,
+          color: Colors.white,
+          child: SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: Transform.scale(
+              scale: 1,
+              child: CanvasStack(
+                showGrid: false,
+                showBorders: false,
+                stackBoardKey: GlobalKey(),
+                canvasScale: canvasScale,
+                scaledCanvasWidth: scaledCanvasWidth,
+                scaledCanvasHeight: scaledCanvasHeight,
+              ),
+            ),
+          ),
+        ),
+        targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        pixelRatio: 2,
+      );
+
+      final tempDir = await getTemporaryDirectory();
+      final imagePath = '${tempDir.path}/temp_invitation_card.png';
+      final imageFile = File(imagePath);
+      await imageFile.writeAsBytes(image);
+
+      final pdf = pw.Document();
+      final imageProvider = pw.MemoryImage(image);
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat(
+            scaledCanvasWidth.value,
+            scaledCanvasHeight.value,
+          ),
+          build: (pw.Context context) {
+            return pw.Center(child: pw.Image(imageProvider));
+          },
+        ),
+      );
+
+      final pdfPath = '${tempDir.path}/invitation_card.pdf';
+      final pdfFile = File(pdfPath);
+      await pdfFile.writeAsBytes(await pdf.save());
+
+      if (await pdfFile.exists()) {
+        Get.to(() => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath));
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to create PDF file',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade900,
+        );
+      }
+    } catch (e, s) {
+      debugPrint('Export PDF failed: $e\n$s');
+      Get.snackbar(
+        'Error',
+        'Failed to export PDF due to widget issue',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    } finally {
+      isExporting = false;
+      update(['export_button']);
+    }
+  }
+
   Future<void> pickAndAddImage() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -597,7 +812,7 @@ class EditorController extends GetxController {
           offset: Offset(100, 100),
           size: Size(Get.width * 0.3, Get.width * 0.3),
 
-          content: ImageItemContent(assetName: image.path),
+          content: ImageItemContent(filePath: image.path),
         );
         boardController.addItem(newItem);
 
@@ -609,6 +824,24 @@ class EditorController extends GetxController {
       Get.snackbar(
         'Error',
         'Failed to handle image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
+  }
+
+  Future<void> pickAndUpdateBackground() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        selectedBackground.value = image.path;
+        update(['canvas_stack']);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to handle background image: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,

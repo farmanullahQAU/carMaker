@@ -1,6 +1,7 @@
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
-import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
@@ -15,7 +16,8 @@ class CategoryModel {
   final String? imagePath;
 
   CategoryModel({
-    required this.id,
+    required this.id, // 4. Updated HomeTab with the new banner
+
     required this.name,
     required this.color,
     required this.icon,
@@ -59,6 +61,25 @@ class QuickAction {
   );
 }
 
+// --- Canvas Size Model ---
+class CanvasSize {
+  final String title;
+  final double width;
+  final double height;
+  final IconData icon;
+  final Color color;
+  final String? thumbnailPath;
+
+  CanvasSize({
+    required this.title,
+    required this.width,
+    required this.height,
+    required this.icon,
+    required this.color,
+    this.thumbnailPath,
+  });
+}
+
 // --- Main Home Page Widget ---
 class HomePage extends GetView<HomeController> {
   const HomePage({super.key});
@@ -74,7 +95,7 @@ class HomePage extends GetView<HomeController> {
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: controller.onPageChanged,
         children: [
-          const HomeTab(),
+          HomeTab(),
           EditorPage(),
           const PlaceholderPage(
             title: "My Designs",
@@ -92,24 +113,10 @@ class HomePage extends GetView<HomeController> {
 
   Widget _buildModernBottomNav() {
     return Container(
-      // decoration: BoxDecoration(
-      //   color: Get.theme.colorScheme.surface,
-      //   boxShadow: [
-      //     BoxShadow(
-      //       color: Get.theme.colorScheme.shadow.withOpacity(0.08),
-      //       blurRadius: 16,
-      //       offset: const Offset(0, -2),
-      //     ),
-      //   ],
-      // ),
       child: SafeArea(
         child: NavigationBar(
           selectedIndex: controller.selectedIndex.value,
           onDestinationSelected: controller.onBottomNavTap,
-          // height: 68,
-          // backgroundColor: Colors.transparent,
-          // elevation: 0,
-          // indicatorColor: Get.theme.colorScheme.primaryContainer,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
             _ModernNavDestination(
@@ -163,13 +170,15 @@ class HomeTab extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         _buildModernAppBar(),
+        const SliverToBoxAdapter(
+          child: CanvasSizesRow(), // Now simplified with only basic canvases
+        ),
         SliverToBoxAdapter(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const QuickActionsGrid(),
               const SizedBox(height: 20),
-              const AIBanner(),
+              const ProfessionalTemplatesBanner(), // New banner
               const SizedBox(height: 20),
               const SectionTitle(title: 'Browse Categories', showSeeAll: true),
               const SizedBox(height: 12),
@@ -192,14 +201,13 @@ class HomeTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            ', User!',
+            'Hello, User!',
             style: Get.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Get.theme.colorScheme.onSurface,
             ),
           ),
-
-          Image.asset("assets/logo.png"),
+          // Image.asset("assets/logo.png"), // Add your logo back
         ],
       ),
       actions: [
@@ -220,7 +228,6 @@ class HomeTab extends StatelessWidget {
       ],
       pinned: false,
       floating: true,
-      toolbarHeight: 200,
       backgroundColor: Get.theme.colorScheme.surface,
       elevation: 0,
     );
@@ -260,58 +267,6 @@ class SectionTitle extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class QuickActionsGrid extends GetView<HomeController> {
-  const QuickActionsGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 100,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemCount: controller.quickActions.length,
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          final action = controller.quickActions[index];
-          return GestureDetector(
-            onTap: () => controller.onQuickActionTap(action),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 66,
-                  height: 66,
-                  decoration: BoxDecoration(
-                    color: action.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: action.color.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(action.icon, color: action.color, size: 30),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  action.title,
-                  style: Get.textTheme.labelSmall?.copyWith(
-                    color: Get.theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }
@@ -366,7 +321,6 @@ class AIBanner extends StatelessWidget {
                 const SizedBox(height: 12),
                 FilledButton.tonal(
                   onPressed: () => Get.to(() => MaskingExamplePage()),
-
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Get.theme.colorScheme.primary,
@@ -405,66 +359,52 @@ class HorizontalCardList extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width for responsive sizing
     final screenWidth = MediaQuery.of(context).size.width;
-    // Calculate card width based on screen size
-    final cardWidth = screenWidth;
-
-    // Fixed ListView height based on screen size
-    // final listViewHeight = screenWidth < 600 ? 200.0 : 350.0;
+    final cardHeight = screenWidth * 0.5; // Fixed height for all cards
+    const minCardWidth = 100.0; // Minimum width to prevent overly narrow cards
+    const maxCardWidth = 200.0; // Maximum width to prevent overly wide cards
 
     return Obx(() {
       final templates = controller.templates.isEmpty
           ? []
           : controller.templates;
       return SizedBox(
-        height: 150,
+        height: cardHeight + 16, // Add padding to account for margins
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: templates.length,
           itemBuilder: (context, index) {
-            CardTemplate template = templates[index];
-            // Calculate scale factor to fit image into card width
-
-            final aspectRatio = template.width / template.height;
-            final cardHeight = 200.0;
-            final cardWidth = cardHeight * aspectRatio;
+            final template = templates[index];
 
             return GestureDetector(
               onTap: () => controller.onTemplateTap(template),
-              child: Container(
-                width: cardWidth,
-                height: cardHeight,
-                margin: const EdgeInsets.only(right: 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: (template.thumbnailPath?.isNotEmpty ?? false)
-                      ? Image.asset(
-                          template.thumbnailPath!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.image_not_supported),
-                          ),
-                        ),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: template.thumbnailPath?.isNotEmpty ?? false
+                    ? Image.asset(
+                        template.thumbnailPath!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholder();
+                        },
+                      )
+                    : _buildPlaceholder(),
               ),
             );
           },
         ),
       );
     });
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: Colors.grey[200],
+      child: const Center(
+        child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
+      ),
+    );
   }
 }
 
@@ -606,7 +546,6 @@ class MaskingExamplePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mask Boundary Example')),
       body: Center(
-        // Centering the single example for clarity
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -618,15 +557,10 @@ class MaskingExamplePage extends StatelessWidget {
             SizedBox(
               width: Get.width * 0.8,
               height: 600,
-              // This color helps visualize the container's boundaries
               child: WidgetMask(
                 blendMode: BlendMode.srcOver,
-
                 childSaveLayer: true,
-                mask: Image.asset(
-                  'assets/card7.png', // A simple circle mask (you need this asset)
-                  // fit: BoxFit.contain,
-                ),
+                mask: Image.asset('assets/card7.png'),
                 child: InkWell(
                   onTap: () {
                     print("xxxxxxxxxxxxxxxxx");
@@ -637,13 +571,243 @@ class MaskingExamplePage extends StatelessWidget {
                     initialScale: PhotoViewComputedScale.contained,
                     basePosition: Alignment.center,
                     enablePanAlways: true,
-                    imageProvider: AssetImage(
-                      'assets/Farman.png', // A simple circle mask (you need this asset)
-                      // fit: BoxFit.cover,
-                    ),
+                    imageProvider: const AssetImage('assets/Farman.png'),
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 1. Replace AIBanner with ProfessionalTemplatesBanner
+class ProfessionalTemplatesBanner extends StatelessWidget {
+  const ProfessionalTemplatesBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.brandingLight, // Purple
+
+            AppColors.branding, // Purple-blue
+            AppColors.brandingLight, // Purple
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF667EEA).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Professional Templates',
+                  style: Get.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Social media, business cards, prints & more.',
+                  style: Get.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  onPressed: () =>
+                      Get.to(() => const ProfessionalTemplatesPage()),
+                  // style: FilledButton.styleFrom(
+                  //   backgroundColor: Colors.white,
+                  //   foregroundColor: AppColors.branding,
+                  //   padding: const EdgeInsets.symmetric(
+                  //     horizontal: 16,
+                  //     vertical: 8,
+                  //   ),
+                  //   shape: RoundedRectangleBorder(
+                  //     borderRadius: BorderRadius.circular(10),
+                  //   ),
+                  // ),
+                  child: Text(
+                    'Explore',
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Icon(
+            Icons.business_center_outlined,
+            size: 42,
+            color: Colors.white.withOpacity(0.8),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 2. Simplified CanvasSizesRow - only basic canvases
+class CanvasSizesRow extends GetView<HomeController> {
+  const CanvasSizesRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Start a new design',
+            style: Get.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Get.theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          // Only basic canvas sizes section
+          _buildBasicCanvasSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicCanvasSection() {
+    final basicSizes = [
+      {
+        'title': 'Square',
+        'aspectRatio': 1.0,
+        'gradient': LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.branding.withOpacity(0.01),
+            AppColors.branding.withOpacity(0.02),
+            AppColors.branding.withOpacity(0.3),
+          ],
+        ),
+      },
+      {
+        'title': 'Portrait',
+        'aspectRatio': 0.75,
+        'gradient': LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.branding.withOpacity(0.8),
+            AppColors.branding.withOpacity(0.6),
+            AppColors.branding.withOpacity(0.4),
+          ],
+        ),
+      },
+      {
+        'title': 'Landscape',
+        'aspectRatio': 1.33,
+        'gradient': LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            AppColors.branding.withOpacity(0.85),
+            AppColors.branding.withOpacity(0.65),
+            AppColors.branding.withOpacity(0.45),
+          ],
+        ),
+      },
+    ];
+
+    return SizedBox(
+      height: 90.0,
+      child: Row(
+        spacing: 16,
+        children: basicSizes.asMap().entries.map((entry) {
+          final index = entry.key;
+          final canvas = entry.value;
+          return Expanded(
+            child: Container(
+              // margin: EdgeInsets.only(
+              //   left: index == 0 ? 0 : 8.0,
+              //   right: index == basicSizes.length - 1 ? 0 : 8.0,
+              // ),
+              child: _buildBasicCanvasCardWithGradient(
+                canvas['title'] as String,
+                canvas['aspectRatio'] as double,
+                canvas['gradient'] as LinearGradient,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildBasicCanvasCardWithGradient(
+    String title,
+    double aspectRatio,
+    LinearGradient gradient,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        // Handle tap
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          // gradient: gradient,
+          color: Get.theme.colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(20.0),
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Get.theme.colorScheme.shadow.withOpacity(0.05),
+          //     blurRadius: 6.0,
+          //     offset: const Offset(0, 2),
+          //   ),
+          // ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Canvas preview container
+            Container(
+              width: 60.0,
+              height: 60.0 / aspectRatio,
+              decoration: BoxDecoration(
+                color: Get.theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(8.0),
+                // border: Border.all(
+                //   color: Get.theme.colorScheme.outline.withOpacity(0.2),
+                //   width: 0.5,
+                // ),
+                // boxShadow: [
+                //   BoxShadow(
+                //     color: Colors.black.withOpacity(0.1),
+                //     blurRadius: 4.0,
+                //     offset: const Offset(0, 2.0),
+                //   ),
+                // ],
+              ),
+              child: Icon(Icons.add, color: AppColors.branding, size: 20.0),
             ),
           ],
         ),

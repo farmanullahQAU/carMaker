@@ -1,22 +1,20 @@
 // Add this new route/page in your app
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/home/home.dart';
-import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class TextEditorPage extends StatelessWidget {
+class UpdateTextView extends StatelessWidget {
   final StackTextItem? item;
 
-  const TextEditorPage({super.key, this.item});
+  const UpdateTextView({super.key, this.item});
 
   @override
   Widget build(BuildContext context) {
-    final editorController = Get.find<EditorController>();
-    final controller = Get.put(
-      TextEditorController(editorController, existingItem: item),
-    );
+    final editorController = Get.find<CanvasController>();
+    final controller = Get.put(TextEditorController(existingItem: item));
 
     return Scaffold(
       appBar: AppBar(
@@ -145,14 +143,13 @@ class TextEditorPage extends StatelessWidget {
 }
 
 class TextEditorController extends GetxController {
-  final EditorController editorController;
   final StackTextItem? existingItem;
 
   late TextEditingController textController;
   RxBool isSaving = false.obs;
   RxInt characterCount = 0.obs;
 
-  TextEditorController(this.editorController, {this.existingItem});
+  TextEditorController({this.existingItem});
 
   @override
   void onInit() {
@@ -166,6 +163,7 @@ class TextEditorController extends GetxController {
   }
 
   Future<void> saveChanges() async {
+    final canvasController = Get.find<CanvasController>();
     isSaving.value = true;
 
     // Get the current text from the controller
@@ -189,8 +187,8 @@ class TextEditorController extends GetxController {
         ),
       );
 
-      editorController.boardController.updateItem(updatedItem);
-      editorController.boardController.updateBasic(
+      canvasController.boardController.updateItem(updatedItem);
+      canvasController.boardController.updateBasic(
         existingItem!.id,
         size: getTextWidth(
           text: currentText,
@@ -215,11 +213,11 @@ class TextEditorController extends GetxController {
           style: const TextStyle(fontSize: 24, fontFamily: "Roboto"),
         ),
         offset: Offset(
-          editorController.scaledCanvasWidth.value / 2 - 100,
-          editorController.scaledCanvasHeight.value / 2 - 25,
+          canvasController.scaledCanvasWidth.value / 2 - 100,
+          canvasController.scaledCanvasHeight.value / 2 - 25,
         ),
       );
-      editorController.boardController.addItem(newItem, selectIt: true);
+      canvasController.boardController.addItem(newItem, selectIt: true);
     }
 
     isSaving.value = false;

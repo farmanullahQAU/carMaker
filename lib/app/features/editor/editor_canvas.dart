@@ -2,25 +2,20 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/controller.dart';
-import 'package:cardmaker/app/features/editor/edit_item/image_edit.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/text_editor.dart';
 import 'package:cardmaker/app/features/editor/video_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
-import 'package:cardmaker/stack_board/lib/flutter_stack_board.dart';
-import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
-import 'package:cardmaker/stack_board/lib/stack_case.dart';
-import 'package:cardmaker/stack_board/lib/stack_items.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:get/get.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:photo_view/photo_view.dart';
-import 'package:screenshot/screenshot.dart';
 
 // Define panel types as an enum
 enum PanelType {
@@ -31,16 +26,8 @@ enum PanelType {
   advancedImage, // Add this new panel type
 }
 
-class EditorPage extends GetView<EditorController> {
-  bool isExporting = false;
-
-  EditorPage({super.key});
-
-  final ScreenshotController screenshotController = ScreenshotController();
-  final RxBool allowTouch = false.obs;
-  final Rx<StackImageItem?> activePhotoItem = Rx<StackImageItem?>(null);
-  final Rx<PanelType> activePanel = PanelType.none.obs;
-  RxBool isShowEditIcon = false.obs;
+class EditorPage extends GetView<CanvasController> {
+  const EditorPage({super.key});
 
   StackItem deserializeItem(Map<String, dynamic> itemJson) {
     final type = itemJson['type'];
@@ -53,145 +40,8 @@ class EditorPage extends GetView<EditorController> {
     }
   }
 
-  Future<void> exportAsPDF() async {
-    try {
-      isExporting = true;
-      controller.update(['export_button']);
-      controller.boardController.unSelectAll();
-      final exportKey = GlobalKey();
-      final image = await screenshotController.captureFromWidget(
-        Material(
-          child: SizedBox(
-            width: controller.scaledCanvasWidth.value,
-            height: controller.scaledCanvasHeight.value,
-            key: exportKey,
-            child: Transform.scale(
-              scale: 0.95,
-              child: _buildCanvasStack(
-                showGrid: false,
-                showBorders: false,
-                stackBoardKey: GlobalKey(),
-                canvasScale: controller.canvasScale,
-                scaledCanvasWidth: controller.scaledCanvasWidth,
-                scaledCanvasHeight: controller.scaledCanvasHeight,
-              ),
-            ),
-          ),
-        ),
-        targetSize: Size(
-          controller.scaledCanvasWidth.value,
-          controller.scaledCanvasHeight.value,
-        ),
-        pixelRatio: 2,
-      );
-
-      final tempDir = await getTemporaryDirectory();
-      final imagePath = '${tempDir.path}/temp_invitation_card.png';
-      final imageFile = File(imagePath);
-      await imageFile.writeAsBytes(image);
-
-      final pdf = pw.Document();
-      final imageProvider = pw.MemoryImage(image);
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat(
-            controller.scaledCanvasWidth.value,
-            controller.scaledCanvasHeight.value,
-          ),
-          build: (pw.Context context) {
-            return pw.Center(child: pw.Image(imageProvider));
-          },
-        ),
-      );
-
-      final pdfPath = '${tempDir.path}/invitation_card.pdf';
-      final pdfFile = File(pdfPath);
-      await pdfFile.writeAsBytes(await pdf.save());
-
-      if (await pdfFile.exists()) {
-        Get.to(() => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath));
-      } else {
-        Get.snackbar(
-          'Error',
-          'Failed to create PDF file',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
-        );
-      }
-    } catch (e, s) {
-      debugPrint('Export PDF failed: $e\n$s');
-      Get.snackbar(
-        'Error',
-        'Failed to export PDF due to widget issue',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-    } finally {
-      isExporting = false;
-      controller.update(['export_button']);
-    }
-  }
-
-  Future<void> exportAsImage() async {
-    try {
-      isExporting = true;
-      controller.update(['export_button']);
-      controller.boardController.unSelectAll();
-      final exportKey = GlobalKey();
-
-      final image = await screenshotController.captureFromWidget(
-        Material(
-          child: SizedBox(
-            width: controller.scaledCanvasWidth.value,
-            height: controller.scaledCanvasHeight.value,
-            key: exportKey,
-            child: _buildCanvasStack(
-              showGrid: false,
-              showBorders: false,
-              stackBoardKey: GlobalKey(),
-              canvasScale: controller.canvasScale,
-              scaledCanvasWidth: controller.scaledCanvasWidth,
-              scaledCanvasHeight: controller.scaledCanvasHeight,
-            ),
-          ),
-        ),
-        targetSize: Size(
-          controller.scaledCanvasWidth.value,
-          controller.scaledCanvasHeight.value,
-        ),
-        pixelRatio: 2,
-      );
-
-      final output = await getTemporaryDirectory();
-      final file = File("${output.path}/invitation_card.png");
-      await file.writeAsBytes(image);
-      Get.snackbar(
-        'Success',
-        'Image exported successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
-      Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
-    } catch (e, s) {
-      debugPrint('Export Image failed: $e\n$s');
-      Get.snackbar(
-        'Error',
-        'Failed to export image due to widget issue',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-    } finally {
-      isExporting = false;
-      controller.update(['export_button']);
-    }
-  }
-
   Widget buildPanelContent() {
-    return GetBuilder<EditorController>(
+    return GetBuilder<CanvasController>(
       id: 'bottom_sheet',
       builder: (controller) {
         final item = controller.activeItem.value;
@@ -206,7 +56,7 @@ class EditorPage extends GetView<EditorController> {
                   textItem: item,
                 )
               : const SizedBox.shrink(), // PanelType.text
-          _ShapePanel(controller: controller), // PanelType.shapes
+
           (item is StackImageItem)
               ? AdvancedImagePanel(
                   key: ValueKey(item.id),
@@ -224,7 +74,7 @@ class EditorPage extends GetView<EditorController> {
         ];
 
         return IndexedStack(
-          index: activePanel.value.index - 1,
+          index: controller.activePanel.value.index - 1,
           alignment: Alignment.bottomCenter,
           children: panels,
         );
@@ -232,244 +82,216 @@ class EditorPage extends GetView<EditorController> {
     );
   }
 
-  Widget _buildCanvasStack({
-    required bool showGrid,
-    required bool showBorders,
-    required GlobalKey stackBoardKey,
-    required RxDouble canvasScale,
-    required RxDouble scaledCanvasWidth,
-    required RxDouble scaledCanvasHeight,
-  }) {
-    return GetBuilder<EditorController>(
-      id: 'canvas_stack',
-      builder: (controller) {
-        print("Built");
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Background image
-            // IgnorePointer(
-            //   ignoring: true,
-            //   child: SizedBox(
-            //     width: scaledCanvasWidth.value,
-            //     height: scaledCanvasHeight.value,
-            //     child: controller.selectedBackground.value.isNotEmpty
-            //         ? ColorFiltered(
-            //             colorFilter: ColorFilter.matrix(
-            //               _hueMatrix(controller.backgroundHue.value),
-            //             ),
-            //             child: Image.asset(
-            //               controller.selectedBackground.value,
-            //               width: scaledCanvasWidth.value,
-            //               height: scaledCanvasHeight.value,
-            //               fit: BoxFit.contain,
-            //             ),
-            //           )
-            //         : Container(color: Colors.grey[200]),
-            //   ),
-            // ),
+  // Widget _buildCanvasStack({
+  //   required bool showGrid,
+  //   required bool showBorders,
+  //   required GlobalKey stackBoardKey,
+  //   required RxDouble canvasScale,
+  //   required RxDouble scaledCanvasWidth,
+  //   required RxDouble scaledCanvasHeight,
+  // }) {
+  //   return GetBuilder<CanvasController>(
+  //     id: 'canvas_stack',
+  //     builder: (controller) {
+  //       print("Built");
+  //       return Stack(
+  //         alignment: Alignment.center,
+  //         children: [
 
-            // Dynamic PhotoView for each profile image
-            ...controller.profileImageItems.map(
-              (profileItem) => Positioned(
-                left: profileItem.offset.dx * canvasScale.value,
-                top: profileItem.offset.dy * canvasScale.value,
-                child: ClipRect(
-                  child: SizedBox(
-                    width: profileItem.size.width * canvasScale.value,
-                    height: profileItem.size.height * canvasScale.value,
-                    child: PhotoView(
-                      imageProvider: AssetImage(
-                        profileItem.content?.assetName ?? "",
-                      ),
-                      minScale: PhotoViewComputedScale.contained * 0.4,
-                      maxScale: PhotoViewComputedScale.covered * 3.0,
-                      initialScale: PhotoViewComputedScale.contained,
-                      basePosition: Alignment.center,
-                      enablePanAlways: true,
-                      filterQuality: FilterQuality.high,
-                      backgroundDecoration: const BoxDecoration(
-                        color: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Foreground image with transparent hole
-            if (controller.initialTemplate?.backgroundImage.isNotEmpty ?? false)
-              IgnorePointer(
-                ignoring: true,
-                child: SizedBox(
-                  width: scaledCanvasWidth.value,
-                  height: scaledCanvasHeight.value,
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.matrix(
-                      _hueMatrix(controller.backgroundHue.value),
-                    ),
-                    child: Image.asset(
-                      controller.initialTemplate?.backgroundImage ?? "",
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ),
-            // StackBoard with touch handling
-            SizedBox(
-              width: scaledCanvasWidth.value,
-              height: scaledCanvasHeight.value,
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: showGrid
-                    ? (event) {
-                        final localPos = event.localPosition;
-                        final scale = canvasScale.value;
-                        StackImageItem? tappedItem = controller
-                            .profileImageItems
-                            .firstWhereOrNull((item) {
-                              final hole = Rect.fromLTWH(
-                                item.offset.dx * scale,
-                                item.offset.dy * scale,
-                                item.size.width * scale,
-                                item.size.height * scale,
-                              );
-                              return hole.contains(localPos);
-                            });
-                        if (tappedItem != null) {
-                          print(
-                            "Touched inside ${tappedItem.id}, activating PhotoView.",
-                          );
-                          activePhotoItem.value = tappedItem;
-                          allowTouch.value = true;
-                          controller.update(['stack_board']);
-                        } else {
-                          if (allowTouch.value != false) {
-                            //to overcome unncessary rebuilds
-                            allowTouch.value = false;
-                            activePhotoItem.value = null;
-                          }
-                          controller.activeItem.value = null;
-                          activePanel.value = PanelType.none;
-                          controller.update(['stack_board']);
-                        }
-                      }
-                    : null,
-                child: GetBuilder<EditorController>(
-                  id: 'stack_board',
-                  builder: (controller) => IgnorePointer(
-                    ignoring: allowTouch.value,
-                    child: StackBoard(
-                      key: stackBoardKey,
-                      controller: controller.boardController,
-                      customBuilder: (StackItem<StackItemContent> item) {
-                        return (item is StackTextItem && item.content != null)
-                            ? StackTextCase(item: item, isFitted: true)
-                            : (item is StackImageItem && item.content != null)
-                            ? StackImageCase(item: item)
-                            : (item is ColorStackItem1 && item.content != null)
-                            ? Container(
-                                width: item.size.width,
-                                height: item.size.height,
-                                color: item.content!.color,
-                              )
-                            : const SizedBox.shrink();
-                      },
-                      borderBuilder: showBorders
-                          ? (status, item) {
-                              final CaseStyle style = CaseStyle();
-                              final double leftRight =
-                                  status == StackItemStatus.idle
-                                  ? 0
-                                  : -(style.buttonSize) / 2;
-                              final double topBottom =
-                                  status == StackItemStatus.idle
-                                  ? 0
-                                  : -(style.buttonSize) * 1.5;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 500),
-                                child: Positioned(
-                                  left: -leftRight,
-                                  top: -topBottom,
-                                  right: -leftRight,
-                                  bottom: -topBottom,
-                                  child: IgnorePointer(
-                                    ignoring: true,
-                                    child: CustomPaint(
-                                      painter: BorderPainter(
-                                        dotted: status == StackItemStatus.idle,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-                          : (status, item) => const SizedBox.shrink(),
-                      onDel: (item) =>
-                          controller.boardController.removeById(item.id),
-                      onEdit: (item) async {
-                        if (item is StackTextItem) {
-                          print(item.id);
-                          await Get.to(() => TextEditorPage(item: item));
-                        } else if (item is StackImageItem) {
-                          Get.to(() => ImageEditorPage(item: item));
-                        }
-                      },
+  //           ...controller.profileImageItems.map(
+  //             (profileItem) => Positioned(
+  //               left: profileItem.offset.dx * canvasScale.value,
+  //               top: profileItem.offset.dy * canvasScale.value,
+  //               child: ClipRect(
+  //                 child: SizedBox(
+  //                   width: profileItem.size.width * canvasScale.value,
+  //                   height: profileItem.size.height * canvasScale.value,
+  //                   child: PhotoView(
+  //                     imageProvider: AssetImage(
+  //                       profileItem.content?.assetName ?? "",
+  //                     ),
+  //                     minScale: PhotoViewComputedScale.contained * 0.4,
+  //                     maxScale: PhotoViewComputedScale.covered * 3.0,
+  //                     initialScale: PhotoViewComputedScale.contained,
+  //                     basePosition: Alignment.center,
+  //                     enablePanAlways: true,
+  //                     filterQuality: FilterQuality.high,
+  //                     backgroundDecoration: const BoxDecoration(
+  //                       color: Colors.transparent,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           // Foreground image with transparent hole
+  //           if (controller.selectedBackground.value != null)
+  //             IgnorePointer(
+  //               ignoring: true,
+  //               child: SizedBox(
+  //                 width: scaledCanvasWidth.value,
+  //                 height: scaledCanvasHeight.value,
+  //                 child: ColorFiltered(
+  //                   colorFilter: ColorFilter.matrix(
+  //                     _hueMatrix(controller.backgroundHue.value),
+  //                   ),
+  //                   child: Image.asset(
+  //                     controller.selectedBackground.value!,
+  //                     fit: BoxFit.cover,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           // StackBoard with touch handling
+  //           SizedBox(
+  //             width: scaledCanvasWidth.value,
+  //             height: scaledCanvasHeight.value,
+  //             child: Listener(
+  //               behavior: HitTestBehavior.translucent,
+  //               onPointerDown: showGrid
+  //                   ? (event) {
+  //                       final localPos = event.localPosition;
+  //                       final scale = canvasScale.value;
+  //                       StackImageItem? tappedItem = controller
+  //                           .profileImageItems
+  //                           .firstWhereOrNull((item) {
+  //                             final hole = Rect.fromLTWH(
+  //                               item.offset.dx * scale,
+  //                               item.offset.dy * scale,
+  //                               item.size.width * scale,
+  //                               item.size.height * scale,
+  //                             );
+  //                             return hole.contains(localPos);
+  //                           });
+  //                       if (tappedItem != null) {
+  //                         print(
+  //                           "Touched inside ${tappedItem.id}, activating PhotoView.",
+  //                         );
+  //                         activePhotoItem.value = tappedItem;
+  //                         allowTouch.value = true;
+  //                         controller.update(['stack_board']);
+  //                       } else {
+  //                         if (allowTouch.value != false) {
+  //                           //to overcome unncessary rebuilds
+  //                           allowTouch.value = false;
+  //                           activePhotoItem.value = null;
+  //                         }
+  //                         controller.activeItem.value = null;
+  //                         activePanel.value = PanelType.none;
+  //                         controller.update(['stack_board']);
+  //                       }
+  //                     }
+  //                   : null,
+  //               child: GetBuilder<CanvasController>(
+  //                 id: 'stack_board',
+  //                 builder: (controller) => IgnorePointer(
+  //                   ignoring: allowTouch.value,
+  //                   child: StackBoard(
+  //                     key: stackBoardKey,
+  //                     controller: controller.boardController,
+  //                     customBuilder: (StackItem<StackItemContent> item) {
+  //                       return (item is StackTextItem && item.content != null)
+  //                           ? StackTextCase(item: item, isFitted: true)
+  //                           : (item is StackImageItem && item.content != null)
+  //                           ? StackImageCase(item: item)
+  //                           : const SizedBox.shrink();
+  //                     },
+  //                     borderBuilder: showBorders
+  //                         ? (status, item) {
+  //                             final CaseStyle style = CaseStyle();
+  //                             final double leftRight =
+  //                                 status == StackItemStatus.idle
+  //                                 ? 0
+  //                                 : -(style.buttonSize) / 2;
+  //                             final double topBottom =
+  //                                 status == StackItemStatus.idle
+  //                                 ? 0
+  //                                 : -(style.buttonSize) * 1.5;
+  //                             return AnimatedContainer(
+  //                               duration: const Duration(milliseconds: 500),
+  //                               child: Positioned(
+  //                                 left: -leftRight,
+  //                                 top: -topBottom,
+  //                                 right: -leftRight,
+  //                                 bottom: -topBottom,
+  //                                 child: IgnorePointer(
+  //                                   ignoring: true,
+  //                                   child: CustomPaint(
+  //                                     painter: BorderPainter(
+  //                                       dotted: status == StackItemStatus.idle,
+  //                                     ),
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             );
+  //                           }
+  //                         : (status, item) => const SizedBox.shrink(),
+  //                     onDel: (item) =>
+  //                         controller.boardController.removeById(item.id),
+  //                     onEdit: (item) async {
+  //                       if (item is StackTextItem) {
+  //                         print(item.id);
+  //                         await Get.to(() => TextEditorPage(item: item));
+  //                       } else if (item is StackImageItem) {
+  //                         Get.to(() => ImageEditorPage(item: item));
+  //                       }
+  //                     },
 
-                      onStatusChanged: (item, status) {
-                        if (status == StackItemStatus.selected) {
-                          controller.activeItem.value = controller
-                              .boardController
-                              .getById(item.id);
-                          if (item is StackTextItem) {
-                            activePanel.value = PanelType.text;
-                          } else if (item is StackImageItem) {
-                            activePanel.value = PanelType.advancedImage;
-                          } else {
-                            activePanel.value = PanelType.none;
-                          }
-                          controller.draggedItem.value = null;
-                        } else if (status == StackItemStatus.moving) {
-                          activePanel.value = PanelType.none;
-                          controller.draggedItem.value = item;
-                        } else if (status == StackItemStatus.idle) {
-                          activePanel.value = PanelType.none;
-                          if (controller.draggedItem.value?.id == item.id) {
-                            controller.draggedItem.value = null;
-                          }
-                        }
-                        controller.update(['canvas_stack', 'bottom_sheet']);
-                        return true;
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Alignment guides
-            if (showGrid)
-              IgnorePointer(
-                ignoring: true,
-                child: CustomPaint(
-                  size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-                  painter: AlignmentGuidePainter(
-                    draggedItem: controller.draggedItem.value,
-                    stackBoardSize: Size(
-                      scaledCanvasWidth.value,
-                      scaledCanvasHeight.value,
-                    ),
-                    showGrid: controller.showGrid.isTrue,
-                    gridSize: 50.0,
-                    guideColor: Colors.blue.withOpacity(0.5),
-                    criticalGuideColor: Colors.red,
-                    centerGuideColor: Colors.green,
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
+  //                     onStatusChanged: (item, status) {
+  //                       if (status == StackItemStatus.selected) {
+  //                         controller.activeItem.value = controller
+  //                             .boardController
+  //                             .getById(item.id);
+  //                         if (item is StackTextItem) {
+  //                           activePanel.value = PanelType.text;
+  //                         } else if (item is StackImageItem) {
+  //                           activePanel.value = PanelType.advancedImage;
+  //                         } else {
+  //                           activePanel.value = PanelType.none;
+  //                         }
+  //                         controller.draggedItem.value = null;
+  //                       } else if (status == StackItemStatus.moving) {
+  //                         activePanel.value = PanelType.none;
+  //                         controller.draggedItem.value = item;
+  //                       } else if (status == StackItemStatus.idle) {
+  //                         activePanel.value = PanelType.none;
+  //                         if (controller.draggedItem.value?.id == item.id) {
+  //                           controller.draggedItem.value = null;
+  //                         }
+  //                       }
+  //                       controller.update(['canvas_stack', 'bottom_sheet']);
+  //                       return true;
+  //                     },
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //           // Alignment guides
+  //           if (showGrid)
+  //             IgnorePointer(
+  //               ignoring: true,
+  //               child: CustomPaint(
+  //                 size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+  //                 painter: AlignmentGuidePainter(
+  //                   draggedItem: controller.draggedItem.value,
+  //                   stackBoardSize: Size(
+  //                     scaledCanvasWidth.value,
+  //                     scaledCanvasHeight.value,
+  //                   ),
+  //                   showGrid: controller.showGrid.isTrue,
+  //                   gridSize: 50.0,
+  //                   guideColor: Colors.blue.withOpacity(0.5),
+  //                   criticalGuideColor: Colors.red,
+  //                   centerGuideColor: Colors.green,
+  //                 ),
+  //               ),
+  //             ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -477,13 +299,18 @@ class EditorPage extends GetView<EditorController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
-          GetBuilder<EditorController>(
+          GetBuilder<CanvasController>(
             id: 'export_button',
             builder: (controller) => _ModernExportButton(
-              onExportPDF: exportAsPDF,
-              onExportImage: exportAsImage,
-              onSave: () => controller.exportDesign(),
-              isExporting: isExporting,
+              onExportPDF: controller.exportAsPDF,
+              onExportImage: controller.exportAsImage,
+              onSave: () async {
+                // final file = await exportAsImage();
+                // await controller.addTemplate(file);
+                controller.saveDesign();
+                controller.isExporting = false;
+              },
+              isExporting: controller.isExporting,
             ),
           ),
           SizedBox(width: 16),
@@ -495,12 +322,24 @@ class EditorPage extends GetView<EditorController> {
         children: [
           Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Align(
                   alignment: Alignment.topCenter,
-                  child: Material(
-                    elevation: 10,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+
+                      boxShadow: [
+                        BoxShadow(
+                          color: Get.theme.shadowColor.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+
                     child: LayoutBuilder(
                       builder:
                           (BuildContext context, BoxConstraints constraints) {
@@ -510,7 +349,7 @@ class EditorPage extends GetView<EditorController> {
                                 context,
                               );
                             });
-                            return _buildCanvasStack(
+                            return CanvasStack(
                               showGrid: true,
                               showBorders: true,
                               stackBoardKey: controller.stackBoardKey,
@@ -535,10 +374,10 @@ class EditorPage extends GetView<EditorController> {
                         activeIcon: Icons.emoji_emotions,
                         label: 'Stickers',
                         panelType: PanelType.stickers,
-                        activePanel: activePanel,
+                        activePanel: controller.activePanel,
                         onPressed: () {
-                          activePanel.value =
-                              activePanel.value == PanelType.stickers
+                          controller.activePanel.value =
+                              controller.activePanel.value == PanelType.stickers
                               ? PanelType.none
                               : PanelType.stickers;
                           controller.update(['bottom_sheet']);
@@ -549,10 +388,10 @@ class EditorPage extends GetView<EditorController> {
                         activeIcon: Icons.palette,
                         label: 'Colors',
                         panelType: PanelType.color,
-                        activePanel: activePanel,
+                        activePanel: controller.activePanel,
                         onPressed: () {
-                          activePanel.value =
-                              activePanel.value == PanelType.color
+                          controller.activePanel.value =
+                              controller.activePanel.value == PanelType.color
                               ? PanelType.none
                               : PanelType.color;
                           controller.update(['bottom_sheet']);
@@ -563,18 +402,18 @@ class EditorPage extends GetView<EditorController> {
                         activeIcon: Icons.text_fields,
                         label: 'Text',
                         panelType: PanelType.text,
-                        activePanel: activePanel,
+                        activePanel: controller.activePanel,
                         onPressed: () {
-                          if (activePanel.value == PanelType.text) {
-                            activePanel.value = PanelType.none;
+                          if (controller.activePanel.value == PanelType.text) {
+                            controller.activePanel.value = PanelType.none;
                           } else {
                             if (controller.activeItem.value == null ||
-                                controller.activeItem.value is! StackTextItem) {
+                                controller.activeItem.value is StackTextItem) {
                               // controller.addText("Tap to edit text");
 
-                              Get.to(() => TextEditorPage());
+                              Get.to(() => UpdateTextView());
                             }
-                            activePanel.value = PanelType.text;
+                            controller.activePanel.value = PanelType.text;
                           }
                           controller.update(['bottom_sheet']);
                         },
@@ -584,16 +423,57 @@ class EditorPage extends GetView<EditorController> {
                         activeIcon: Icons.photo_filter,
                         label: 'Image',
                         panelType: PanelType.advancedImage,
-                        activePanel: activePanel,
+                        activePanel: controller.activePanel,
                         onPressed: () {
-                          if (activePanel.value == PanelType.advancedImage) {
-                            activePanel.value = PanelType.none;
+                          if (controller.activePanel.value ==
+                              PanelType.advancedImage) {
+                            controller.activePanel.value = PanelType.none;
                           } else {
                             if (controller.activeItem.value != null &&
                                 controller.activeItem.value is StackImageItem) {
-                              activePanel.value = PanelType.advancedImage;
+                              controller.activePanel.value =
+                                  PanelType.advancedImage;
                             } else {
-                              controller.pickAndAddImage();
+                              // controller.pickAndAddImage();
+
+                              // Show bottom sheet with options
+                              showModalBottomSheet<Widget>(
+                                context: context,
+                                builder: (_) => BottomSheet(
+                                  onClosing: () {},
+                                  builder: (context) {
+                                    return Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ListTile(
+                                          leading: Icon(
+                                            Icons.add_photo_alternate_outlined,
+                                          ),
+                                          title: Text('Add Image to Canvas'),
+                                          onTap: () {
+                                            Get.back(); // Close bottom sheet
+                                            controller.pickAndAddImage();
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: Icon(Icons.image_outlined),
+                                          title: Text(
+                                            'Change Background Image',
+                                          ),
+                                          onTap: () {
+                                            Get.back(); // Close bottom sheet
+                                            controller
+                                                .pickAndUpdateBackground();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                backgroundColor: Colors.transparent,
+                                isScrollControlled: true,
+                                barrierColor: Colors.transparent,
+                              );
                             }
                           }
                           controller.update(['bottom_sheet']);
@@ -607,7 +487,7 @@ class EditorPage extends GetView<EditorController> {
           ),
 
           Obx(
-            () => activePanel.value == PanelType.none
+            () => controller.activePanel.value == PanelType.none
                 ? SizedBox()
                 : buildPanelContent(),
           ),
@@ -615,58 +495,10 @@ class EditorPage extends GetView<EditorController> {
       ),
     );
   }
-
-  List<double> _hueMatrix(double degrees) {
-    final radians = degrees * math.pi / 180;
-    final cosVal = math.cos(radians);
-    final sinVal = math.sin(radians);
-
-    const lumR = 0.213;
-    const lumG = 0.715;
-    const lumB = 0.122;
-
-    return [
-      lumR + cosVal * (1 - lumR) + sinVal * (-lumR),
-      lumG + cosVal * (-lumG) + sinVal * (-lumG),
-      lumB + cosVal * (-lumB) + sinVal * (1 - lumB),
-      0,
-      0,
-      lumR + cosVal * (-lumR) + sinVal * 0.143,
-      lumG + cosVal * (1 - lumG) + sinVal * 0.140,
-      lumB + cosVal * (-lumB) + sinVal * -0.283,
-      0,
-      0,
-      lumR + cosVal * (-lumR) + sinVal * (-(1 - lumR)),
-      lumG + cosVal * (-lumG) + sinVal * lumG,
-      lumB + cosVal * (1 - lumB) + sinVal * lumB,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-    ];
-  }
-}
-
-class _ShapePanel extends StatelessWidget {
-  final EditorController controller;
-
-  const _ShapePanel({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 100,
-      color: Colors.grey[200],
-      child: Center(child: Text('Shapes Panel (Implement as needed)')),
-    );
-  }
 }
 
 class _StickerPanel extends StatelessWidget {
-  final EditorController controller;
+  final CanvasController controller;
 
   const _StickerPanel({required this.controller});
 
@@ -863,7 +695,7 @@ class _StickerPanel extends StatelessWidget {
 }
 
 class _HueAdjustmentPanel extends StatelessWidget {
-  final EditorController controller;
+  final CanvasController controller;
 
   const _HueAdjustmentPanel({required this.controller});
 
@@ -958,20 +790,20 @@ class _HueAdjustmentPanel extends StatelessWidget {
 
 class BorderPainter extends CustomPainter {
   final bool dotted;
-  final double stroke = 0.5;
-  final double dash = 3;
-  final double dash2 = 0;
+  final double stroke = 0.2; // Made thinner
+  final double dash = 2; // Smaller dash
+  final double dash2 = 2; // Smaller gap
 
   const BorderPainter({required this.dotted});
 
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = Get.find<EditorController>().draggedItem.value == null
-          ? AppColors.accent
-          : AppColors.accent
+      ..color = Get.find<CanvasController>().draggedItem.value == null
+          ? AppColors.accent.withOpacity(0.5) // More subtle color
+          : AppColors.accent.withOpacity(0.7)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke;
+      ..strokeWidth = stroke; // Thin stroke
 
     final Rect rect = Offset.zero & size;
 
@@ -979,7 +811,7 @@ class BorderPainter extends CustomPainter {
       canvas.drawRect(rect, paint);
       return;
     }
-    if (Get.find<EditorController>().draggedItem.value != null) {
+    if (Get.find<CanvasController>().draggedItem.value != null) {
       final Path path = Path()..addRect(rect);
       final Path dashedPath = Path();
       for (final pm in path.computeMetrics()) {
@@ -987,7 +819,7 @@ class BorderPainter extends CustomPainter {
         while (d < pm.length) {
           final double len = math.min(dash, pm.length - d);
           dashedPath.addPath(pm.extractPath(d, d + len), Offset.zero);
-          d += dash * 2;
+          d += dash + dash2; // Adjusted dash pattern
         }
       }
       canvas.drawPath(dashedPath, paint);
@@ -1018,8 +850,8 @@ class AlignmentGuidePainter extends CustomPainter {
   });
 
   void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    const double dashWidth = 2;
-    const double dashSpace = 2;
+    const double dashWidth = 2; // Smaller dash
+    const double dashSpace = 2; // Smaller gap
     double distance = (end - start).distance;
     final double dx = (end.dx - start.dx) / distance;
     final double dy = (end.dy - start.dy) / distance;
@@ -1041,16 +873,19 @@ class AlignmentGuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint gridPaint = Paint()
-      ..color = guideColor.withOpacity(0.3)
+      ..color = guideColor
+          .withOpacity(0.2) // More subtle
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.2;
+      ..strokeWidth = 0.3; // Thinner lines
 
     final Paint centerPaint = Paint()
       ..color = centerGuideColor
+          .withOpacity(0.5) // More subtle
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 0.5; // Thinner center lines
 
     if (draggedItem != null) {
+      // Draw center guides only when dragging
       _drawDashedLine(
         canvas,
         Offset(stackBoardSize.width / 2, 0),
@@ -1066,7 +901,20 @@ class AlignmentGuidePainter extends CustomPainter {
     }
 
     if (showGrid) {
-      for (double x = 0; x <= stackBoardSize.width; x += gridSize) {
+      // Calculate the number of full grid cells that fit in the width and height
+      final int horizontalCells = (stackBoardSize.width / gridSize).floor();
+      final int verticalCells = (stackBoardSize.height / gridSize).floor();
+
+      // Calculate the adjusted grid size to fit perfectly
+      final double adjustedWidth = stackBoardSize.width / horizontalCells;
+      final double adjustedHeight = stackBoardSize.height / verticalCells;
+
+      // Use the average of width and height adjustments for square grids
+      final double adjustedGridSize = (adjustedWidth + adjustedHeight) / 2;
+
+      // Draw vertical lines
+      for (int i = 0; i <= horizontalCells; i++) {
+        final double x = i * adjustedGridSize;
         _drawDashedLine(
           canvas,
           Offset(x, 0),
@@ -1074,7 +922,10 @@ class AlignmentGuidePainter extends CustomPainter {
           gridPaint,
         );
       }
-      for (double y = 0; y <= stackBoardSize.height; y += gridSize) {
+
+      // Draw horizontal lines
+      for (int i = 0; i <= verticalCells; i++) {
+        final double y = i * adjustedGridSize;
         _drawDashedLine(
           canvas,
           Offset(0, y),
@@ -1090,72 +941,7 @@ class AlignmentGuidePainter extends CustomPainter {
     return oldDelegate.draggedItem?.id != draggedItem?.id ||
         oldDelegate.stackBoardSize != stackBoardSize ||
         oldDelegate.showGrid != showGrid ||
-        oldDelegate.gridSize != gridSize ||
-        oldDelegate.guideColor != guideColor ||
-        oldDelegate.criticalGuideColor != criticalGuideColor ||
-        oldDelegate.centerGuideColor != centerGuideColor;
-  }
-}
-
-class ColorStackItem1 extends StackItem<ColorContent> {
-  ColorStackItem1({
-    required super.size,
-    super.id,
-    super.offset,
-    super.angle = null,
-    super.status = null,
-    super.content,
-  }) : super(lockZOrder: true);
-
-  factory ColorStackItem1.fromJson(Map<String, dynamic> json) {
-    return ColorStackItem1(
-      id: json['id'],
-      size: Size(json['size']['width'], json['size']['height']),
-      offset: Offset(json['offset']['dx'], json['offset']['dy']),
-      angle: json['angle'],
-      status: json['status'] != null
-          ? StackItemStatus.values[json['status']]
-          : null,
-      content: json['content'] != null
-          ? ColorContent.fromJson(json['content'])
-          : null,
-    );
-  }
-
-  @override
-  ColorStackItem1 copyWith({
-    Size? size,
-    Offset? offset,
-    double? angle,
-    StackItemStatus? status,
-    bool? lockZOrder,
-    ColorContent? content,
-    bool? isCentered,
-    bool? isProfileImage,
-  }) {
-    return ColorStackItem1(
-      id: id,
-      size: size ?? this.size,
-      offset: offset ?? this.offset,
-      angle: angle ?? this.angle,
-      status: status ?? this.status,
-      content: content ?? this.content,
-    );
-  }
-}
-
-class ColorContent extends StackItemContent {
-  ColorContent({required this.color});
-
-  final Color color;
-
-  factory ColorContent.fromJson(Map<String, dynamic> json) {
-    return ColorContent(color: Color(json['color']));
-  }
-
-  @override
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{'color': color.value};
+        oldDelegate.gridSize != gridSize;
   }
 }
 
@@ -1303,7 +1089,7 @@ class _ModernExportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<EditorController>(
+    return GetBuilder<CanvasController>(
       id: "export_button",
       builder: (_) => PopupMenuButton<String>(
         offset: Offset(0, 55),
@@ -1509,7 +1295,7 @@ class _ModernExportButton extends StatelessWidget {
 
 // Enhanced Text Editor Panel
 class _TextEditorPanel extends StatelessWidget {
-  final EditorController controller;
+  final CanvasController controller;
   final StackTextItem textItem;
 
   const _TextEditorPanel({
@@ -1543,5 +1329,260 @@ class _TextEditorPanel extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class CanvasStack extends StatelessWidget {
+  final bool showGrid;
+  final bool showBorders;
+  final GlobalKey stackBoardKey;
+  final RxDouble canvasScale;
+  final RxDouble scaledCanvasWidth;
+  final RxDouble scaledCanvasHeight;
+
+  const CanvasStack({
+    super.key,
+    required this.showGrid,
+    required this.showBorders,
+    required this.stackBoardKey,
+    required this.canvasScale,
+    required this.scaledCanvasWidth,
+    required this.scaledCanvasHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<CanvasController>(
+      id: 'canvas_stack',
+      builder: (controller) {
+        print("Built");
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Profile images
+            ...controller.profileImageItems.map(
+              (profileItem) => Positioned(
+                left: profileItem.offset.dx * canvasScale.value,
+                top: profileItem.offset.dy * canvasScale.value,
+                child: ClipRect(
+                  child: SizedBox(
+                    width: profileItem.size.width * canvasScale.value,
+                    height: profileItem.size.height * canvasScale.value,
+                    child: PhotoView(
+                      imageProvider: AssetImage(
+                        profileItem.content?.assetName ?? "",
+                      ),
+                      minScale: PhotoViewComputedScale.contained * 0.4,
+                      maxScale: PhotoViewComputedScale.covered * 3.0,
+                      initialScale: PhotoViewComputedScale.contained,
+                      basePosition: Alignment.center,
+                      enablePanAlways: true,
+                      filterQuality: FilterQuality.high,
+                      backgroundDecoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Foreground image with transparent hole
+            if (controller.selectedBackground.value != null)
+              IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.matrix(
+                      _hueMatrix(controller.backgroundHue.value),
+                    ),
+                    child: Image.asset(
+                      controller.selectedBackground.value!,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            // StackBoard with touch handling
+            SizedBox(
+              width: scaledCanvasWidth.value,
+              height: scaledCanvasHeight.value,
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: showGrid
+                    ? (event) {
+                        final localPos = event.localPosition;
+                        final scale = canvasScale.value;
+                        StackImageItem? tappedItem = controller
+                            .profileImageItems
+                            .firstWhereOrNull((item) {
+                              final hole = Rect.fromLTWH(
+                                item.offset.dx * scale,
+                                item.offset.dy * scale,
+                                item.size.width * scale,
+                                item.size.height * scale,
+                              );
+                              return hole.contains(localPos);
+                            });
+                        if (tappedItem != null) {
+                          print(
+                            "Touched inside ${tappedItem.id}, activating PhotoView.",
+                          );
+                          controller.activePhotoItem.value = tappedItem;
+                          controller.allowTouch.value = true;
+                          controller.update(['stack_board']);
+                        } else {
+                          if (controller.allowTouch.value != false) {
+                            //to overcome unncessary rebuilds
+                            controller.allowTouch.value = false;
+                            controller.activePhotoItem.value = null;
+                          }
+                          controller.activeItem.value = null;
+                          controller.activePanel.value = PanelType.none;
+                          controller.update(['stack_board']);
+                        }
+                      }
+                    : null,
+                child: GetBuilder<CanvasController>(
+                  id: 'stack_board',
+                  builder: (controller) => IgnorePointer(
+                    ignoring: controller.allowTouch.value,
+                    child: StackBoard(
+                      key: stackBoardKey,
+                      controller: controller.boardController,
+                      customBuilder: (StackItem<StackItemContent> item) {
+                        return (item is StackTextItem && item.content != null)
+                            ? StackTextCase(item: item, isFitted: true)
+                            : (item is StackImageItem && item.content != null)
+                            ? StackImageCase(item: item)
+                            : const SizedBox.shrink();
+                      },
+                      borderBuilder: showBorders
+                          ? (status, item) {
+                              final CaseStyle style = CaseStyle();
+                              final double leftRight =
+                                  status == StackItemStatus.idle
+                                  ? 0
+                                  : -(style.buttonSize) / 2;
+                              final double topBottom =
+                                  status == StackItemStatus.idle
+                                  ? 0
+                                  : -(style.buttonSize) * 1.5;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 500),
+                                child: Positioned(
+                                  left: -leftRight,
+                                  top: -topBottom,
+                                  right: -leftRight,
+                                  bottom: -topBottom,
+                                  child: IgnorePointer(
+                                    ignoring: true,
+                                    child: CustomPaint(
+                                      painter: BorderPainter(
+                                        dotted: status == StackItemStatus.idle,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          : (status, item) => const SizedBox.shrink(),
+                      onDel: (item) =>
+                          controller.boardController.removeById(item.id),
+                      onEdit: (item) async {
+                        if (item is StackTextItem) {
+                          print(item.id);
+                          await Get.to(() => UpdateTextView(item: item));
+                        }
+                      },
+                      onStatusChanged: (item, status) {
+                        if (status == StackItemStatus.selected) {
+                          controller.activeItem.value = controller
+                              .boardController
+                              .getById(item.id);
+                          if (item is StackTextItem) {
+                            controller.activePanel.value = PanelType.text;
+                          } else if (item is StackImageItem) {
+                            controller.activePanel.value =
+                                PanelType.advancedImage;
+                          } else {
+                            controller.activePanel.value = PanelType.none;
+                          }
+                          controller.draggedItem.value = null;
+                        } else if (status == StackItemStatus.moving) {
+                          controller.activePanel.value = PanelType.none;
+                          controller.draggedItem.value = item;
+                        } else if (status == StackItemStatus.idle) {
+                          controller.activePanel.value = PanelType.none;
+                          if (controller.draggedItem.value?.id == item.id) {
+                            controller.draggedItem.value = null;
+                          }
+                        }
+                        controller.update(['canvas_stack', 'bottom_sheet']);
+                        return true;
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Alignment guides
+            if (showGrid)
+              IgnorePointer(
+                ignoring: true,
+                child: CustomPaint(
+                  size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+                  painter: AlignmentGuidePainter(
+                    draggedItem: controller.draggedItem.value,
+                    stackBoardSize: Size(
+                      scaledCanvasWidth.value,
+                      scaledCanvasHeight.value,
+                    ),
+                    showGrid: controller.showGrid.isTrue,
+                    gridSize: 50.0,
+                    guideColor: Colors.blue.withOpacity(0.5),
+                    criticalGuideColor: Colors.red,
+                    centerGuideColor: Colors.green,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<double> _hueMatrix(double degrees) {
+    final radians = degrees * math.pi / 180;
+    final cosVal = math.cos(radians);
+    final sinVal = math.sin(radians);
+
+    const lumR = 0.213;
+    const lumG = 0.715;
+    const lumB = 0.122;
+
+    return [
+      lumR + cosVal * (1 - lumR) + sinVal * (-lumR),
+      lumG + cosVal * (-lumG) + sinVal * (-lumG),
+      lumB + cosVal * (-lumB) + sinVal * (1 - lumB),
+      0,
+      0,
+      lumR + cosVal * (-lumR) + sinVal * 0.143,
+      lumG + cosVal * (1 - lumG) + sinVal * 0.140,
+      lumB + cosVal * (-lumB) + sinVal * -0.283,
+      0,
+      0,
+      lumR + cosVal * (-lumR) + sinVal * (-(1 - lumR)),
+      lumG + cosVal * (-lumG) + sinVal * lumG,
+      lumB + cosVal * (1 - lumB) + sinVal * lumB,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+    ];
   }
 }
