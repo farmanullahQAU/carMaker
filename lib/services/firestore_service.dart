@@ -7,15 +7,21 @@ import 'package:get/get.dart';
 class FirestoreService {
   static const String _templatesCollection = 'templates';
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Singleton instance
+  static final FirestoreService _instance = FirestoreService._internal();
 
-  /// Initializes FirestoreService with offline persistence.
-  FirestoreService() {
+  // Private constructor
+  FirestoreService._internal() {
     _firestore.settings = const Settings(
       persistenceEnabled: true,
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
   }
+
+  // Factory constructor → always returns same instance
+  factory FirestoreService() => _instance;
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Adds a template to Firestore with provided metadata.
   Future<void> addTemplate(

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cardmaker/core/extensions/extensions.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -161,86 +162,6 @@ class ImageItemContent extends StackItemContent {
     );
   }
 
-  factory ImageItemContent.fromJson(Map<String, dynamic> json) {
-    return ImageItemContent(
-      url: json['url'] != null ? asT<String>(json['url']) : null,
-      assetName: json['assetName'] != null
-          ? asT<String>(json['assetName'])
-          : null,
-      filePath: json['filePath'] != null ? asT<String>(json['filePath']) : null,
-      semanticLabel: json['semanticLabel'] != null
-          ? asT<String>(json['semanticLabel'])
-          : null,
-      excludeFromSemantics:
-          asNullT<bool>(json['excludeFromSemantics']) ?? false,
-      width: json['width'] != null ? asT<double>(json['width']) : null,
-      height: json['height'] != null ? asT<double>(json['height']) : null,
-      color: json['color'] != null ? Color(asT<int>(json['color'])) : null,
-      colorBlendMode: json['colorBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['colorBlendMode'])]
-          : BlendMode.srcIn,
-      fit: json['fit'] != null
-          ? BoxFit.values[asT<int>(json['fit'])]
-          : BoxFit.cover,
-      repeat: json['repeat'] != null
-          ? ImageRepeat.values[asT<int>(json['repeat'])]
-          : ImageRepeat.noRepeat,
-      matchTextDirection: asNullT<bool>(json['matchTextDirection']) ?? false,
-      gaplessPlayback: asNullT<bool>(json['gaplessPlayback']) ?? false,
-      isAntiAlias: asNullT<bool>(json['isAntiAlias']) ?? true,
-      filterQuality: json['filterQuality'] != null
-          ? FilterQuality.values[asT<int>(json['filterQuality'])]
-          : FilterQuality.high,
-      // Advanced properties
-      brightness: asNullT<double>(json['brightness']) ?? 0.0,
-      contrast: asNullT<double>(json['contrast']) ?? 1.0,
-      saturation: asNullT<double>(json['saturation']) ?? 1.0,
-      hue: asNullT<double>(json['hue']) ?? 0.0,
-      opacity: asNullT<double>(json['opacity']) ?? 1.0,
-      borderRadius: asNullT<double>(json['borderRadius']) ?? 0.0,
-      borderWidth: asNullT<double>(json['borderWidth']) ?? 0.0,
-      borderColor: json['borderColor'] != null
-          ? Color(asT<int>(json['borderColor']))
-          : null,
-      shadowBlur: asNullT<double>(json['shadowBlur']) ?? 0.0,
-      shadowOffset: json['shadowOffset'] != null
-          ? Offset(
-              asT<double>(json['shadowOffset']['dx']),
-              asT<double>(json['shadowOffset']['dy']),
-            )
-          : const Offset(0, 0),
-      shadowColor: json['shadowColor'] != null
-          ? Color(asT<int>(json['shadowColor']))
-          : null,
-      rotationAngle: asNullT<double>(json['rotationAngle']) ?? 0.0,
-      flipHorizontal: asNullT<bool>(json['flipHorizontal']) ?? false,
-      flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
-      activeFilter: asNullT<String>(json['activeFilter']) ?? 'none',
-      vignette: asNullT<double>(json['vignette']) ?? 0.0,
-      vignetteColor: json['vignetteColor'] != null
-          ? Color(asT<int>(json['vignetteColor']))
-          : null,
-      overlayColor: json['overlayColor'] != null
-          ? Color(asT<int>(json['overlayColor']))
-          : null,
-      overlayBlendMode: json['overlayBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['overlayBlendMode'])]
-          : null,
-      maskShape: json['maskShape'] != null
-          ? ImageMaskShape.values[asT<int>(json['maskShape'])]
-          : ImageMaskShape.none,
-      noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
-      sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
-      emboss: asNullT<bool>(json['emboss']) ?? false,
-      // Shape border properties
-      shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
-      shapeBorderColor: json['shapeBorderColor'] != null
-          ? Color(asT<int>(json['shapeBorderColor']))
-          : null,
-      shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
-    );
-  }
-
   void _init() {
     if (url != null && assetName != null && filePath != null) {
       throw Exception('url and assetName can not be set at the same time');
@@ -365,6 +286,210 @@ class ImageItemContent extends StackItemContent {
     emboss = false;
   }
 
+  factory ImageItemContent.fromJson(Map<String, dynamic> json) {
+    return ImageItemContent(
+      url: json['url'] != null ? asT<String>(json['url']) : null,
+      assetName: json['assetName'] != null
+          ? asT<String>(json['assetName'])
+          : null,
+      filePath: json['filePath'] != null ? asT<String>(json['filePath']) : null,
+      semanticLabel: json['semanticLabel'] != null
+          ? asT<String>(json['semanticLabel'])
+          : null,
+      excludeFromSemantics:
+          asNullT<bool>(json['excludeFromSemantics']) ?? false,
+      width: json['width'] != null ? asT<double>(json['width']) : null,
+      height: json['height'] != null ? asT<double>(json['height']) : null,
+      color: ColorExtension.fromARGB32(json['color'] as String?),
+      colorBlendMode: json['colorBlendMode'] != null
+          ? BlendMode.values[asT<int>(json['colorBlendMode'])]
+          : BlendMode.srcIn,
+      fit: json['fit'] != null
+          ? BoxFit.values[asT<int>(json['fit'])]
+          : BoxFit.cover,
+      repeat: json['repeat'] != null
+          ? ImageRepeat.values[asT<int>(json['repeat'])]
+          : ImageRepeat.noRepeat,
+      matchTextDirection: asNullT<bool>(json['matchTextDirection']) ?? false,
+      gaplessPlayback: asNullT<bool>(json['gaplessPlayback']) ?? false,
+      isAntiAlias: asNullT<bool>(json['isAntiAlias']) ?? true,
+      filterQuality: json['filterQuality'] != null
+          ? FilterQuality.values[asT<int>(json['filterQuality'])]
+          : FilterQuality.high,
+      // Advanced properties
+      brightness: asNullT<double>(json['brightness']) ?? 0.0,
+      contrast: asNullT<double>(json['contrast']) ?? 1.0,
+      saturation: asNullT<double>(json['saturation']) ?? 1.0,
+      hue: asNullT<double>(json['hue']) ?? 0.0,
+      opacity: asNullT<double>(json['opacity']) ?? 1.0,
+      borderRadius: asNullT<double>(json['borderRadius']) ?? 0.0,
+      borderWidth: asNullT<double>(json['borderWidth']) ?? 0.0,
+      borderColor: ColorExtension.fromARGB32(json['borderColor'] as String?),
+      shadowBlur: asNullT<double>(json['shadowBlur']) ?? 0.0,
+      shadowOffset: json['shadowOffset'] != null
+          ? Offset(
+              asT<double>(json['shadowOffset']['dx']),
+              asT<double>(json['shadowOffset']['dy']),
+            )
+          : const Offset(0, 0),
+      shadowColor: ColorExtension.fromARGB32(json['shadowColor'] as String?),
+      rotationAngle: asNullT<double>(json['rotationAngle']) ?? 0.0,
+      flipHorizontal: asNullT<bool>(json['flipHorizontal']) ?? false,
+      flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
+      activeFilter: asNullT<String>(json['activeFilter']) ?? 'none',
+      vignette: asNullT<double>(json['vignette']) ?? 0.0,
+      vignetteColor: ColorExtension.fromARGB32(
+        json['vignetteColor'] as String?,
+      ),
+      overlayColor: ColorExtension.fromARGB32(json['overlayColor'] as String?),
+      overlayBlendMode: json['overlayBlendMode'] != null
+          ? BlendMode.values[asT<int>(json['overlayBlendMode'])]
+          : null,
+      maskShape: json['maskShape'] != null
+          ? ImageMaskShape.values[asT<int>(json['maskShape'])]
+          : ImageMaskShape.none,
+      noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
+      sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
+      emboss: asNullT<bool>(json['emboss']) ?? false,
+      // Shape border properties
+      shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
+      shapeBorderColor: ColorExtension.fromARGB32(
+        json['shapeBorderColor'] as String?,
+      ),
+      shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (url != null) 'url': url,
+      if (assetName != null) 'assetName': assetName,
+      if (filePath != null) 'filePath': filePath,
+      if (semanticLabel != null) 'semanticLabel': semanticLabel,
+      'excludeFromSemantics': excludeFromSemantics,
+      if (width != null) 'width': width,
+      if (height != null) 'height': height,
+      if (color != null) 'color': color?.toARGB32(),
+      if (colorBlendMode != null) 'colorBlendMode': colorBlendMode?.index,
+      'fit': fit.index,
+      'repeat': repeat.index,
+      'matchTextDirection': matchTextDirection,
+      'gaplessPlayback': gaplessPlayback,
+      'isAntiAlias': isAntiAlias,
+      'filterQuality': filterQuality.index,
+      // Advanced properties
+      'brightness': brightness,
+      'contrast': contrast,
+      'saturation': saturation,
+      'hue': hue,
+      'opacity': opacity,
+      'borderRadius': borderRadius,
+      'borderWidth': borderWidth,
+      if (borderColor != null) 'borderColor': borderColor?.toARGB32(),
+      'shadowBlur': shadowBlur,
+      'shadowOffset': {'dx': shadowOffset.dx, 'dy': shadowOffset.dy},
+      if (shadowColor != null) 'shadowColor': shadowColor?.toARGB32(),
+      'rotationAngle': rotationAngle,
+      'flipHorizontal': flipHorizontal,
+      'flipVertical': flipVertical,
+      'activeFilter': activeFilter,
+      'vignette': vignette,
+      if (vignetteColor != null) 'vignetteColor': vignetteColor?.toARGB32(),
+      if (overlayColor != null) 'overlayColor': overlayColor?.toARGB32(),
+      if (overlayBlendMode != null) 'overlayBlendMode': overlayBlendMode?.index,
+      'maskShape': maskShape.index,
+      'noiseIntensity': noiseIntensity,
+      'sharpen': sharpen,
+      'emboss': emboss,
+      // Shape border properties
+      'shapeBorderWidth': shapeBorderWidth,
+      if (shapeBorderColor != null)
+        'shapeBorderColor': shapeBorderColor?.toARGB32(),
+      'shapeBorderRadius': shapeBorderRadius,
+    };
+  }
+
+  /*
+factory ImageItemContent.fromJson(Map<String, dynamic> json) {
+    return ImageItemContent(
+      url: json['url'] != null ? asT<String>(json['url']) : null,
+      assetName: json['assetName'] != null
+          ? asT<String>(json['assetName'])
+          : null,
+      filePath: json['filePath'] != null ? asT<String>(json['filePath']) : null,
+      semanticLabel: json['semanticLabel'] != null
+          ? asT<String>(json['semanticLabel'])
+          : null,
+      excludeFromSemantics:
+          asNullT<bool>(json['excludeFromSemantics']) ?? false,
+      width: json['width'] != null ? asT<double>(json['width']) : null,
+      height: json['height'] != null ? asT<double>(json['height']) : null,
+      color: json['color'] != null ? Color(asT<int>(json['color'])) : null,
+      colorBlendMode: json['colorBlendMode'] != null
+          ? BlendMode.values[asT<int>(json['colorBlendMode'])]
+          : BlendMode.srcIn,
+      fit: json['fit'] != null
+          ? BoxFit.values[asT<int>(json['fit'])]
+          : BoxFit.cover,
+      repeat: json['repeat'] != null
+          ? ImageRepeat.values[asT<int>(json['repeat'])]
+          : ImageRepeat.noRepeat,
+      matchTextDirection: asNullT<bool>(json['matchTextDirection']) ?? false,
+      gaplessPlayback: asNullT<bool>(json['gaplessPlayback']) ?? false,
+      isAntiAlias: asNullT<bool>(json['isAntiAlias']) ?? true,
+      filterQuality: json['filterQuality'] != null
+          ? FilterQuality.values[asT<int>(json['filterQuality'])]
+          : FilterQuality.high,
+      // Advanced properties
+      brightness: asNullT<double>(json['brightness']) ?? 0.0,
+      contrast: asNullT<double>(json['contrast']) ?? 1.0,
+      saturation: asNullT<double>(json['saturation']) ?? 1.0,
+      hue: asNullT<double>(json['hue']) ?? 0.0,
+      opacity: asNullT<double>(json['opacity']) ?? 1.0,
+      borderRadius: asNullT<double>(json['borderRadius']) ?? 0.0,
+      borderWidth: asNullT<double>(json['borderWidth']) ?? 0.0,
+      borderColor: json['borderColor'] != null
+          ? Color(asT<int>(json['borderColor']))
+          : null,
+      shadowBlur: asNullT<double>(json['shadowBlur']) ?? 0.0,
+      shadowOffset: json['shadowOffset'] != null
+          ? Offset(
+              asT<double>(json['shadowOffset']['dx']),
+              asT<double>(json['shadowOffset']['dy']),
+            )
+          : const Offset(0, 0),
+      shadowColor: json['shadowColor'] != null
+          ? Color(asT<int>(json['shadowColor']))
+          : null,
+      rotationAngle: asNullT<double>(json['rotationAngle']) ?? 0.0,
+      flipHorizontal: asNullT<bool>(json['flipHorizontal']) ?? false,
+      flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
+      activeFilter: asNullT<String>(json['activeFilter']) ?? 'none',
+      vignette: asNullT<double>(json['vignette']) ?? 0.0,
+      vignetteColor: json['vignetteColor'] != null
+          ? Color(asT<int>(json['vignetteColor']))
+          : null,
+      overlayColor: json['overlayColor'] != null
+          ? Color(asT<int>(json['overlayColor']))
+          : null,
+      overlayBlendMode: json['overlayBlendMode'] != null
+          ? BlendMode.values[asT<int>(json['overlayBlendMode'])]
+          : null,
+      maskShape: json['maskShape'] != null
+          ? ImageMaskShape.values[asT<int>(json['maskShape'])]
+          : ImageMaskShape.none,
+      noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
+      sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
+      emboss: asNullT<bool>(json['emboss']) ?? false,
+      // Shape border properties
+      shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
+      shapeBorderColor: json['shapeBorderColor'] != null
+          ? Color(asT<int>(json['shapeBorderColor']))
+          : null,
+      shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
+    );
+  }
   @override
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -393,6 +518,7 @@ class ImageItemContent extends StackItemContent {
       'borderRadius': borderRadius,
       'borderWidth': borderWidth,
       if (borderColor != null) 'borderColor': borderColor?.toARGB32,
+
       'shadowBlur': shadowBlur,
       'shadowOffset': {'dx': shadowOffset.dx, 'dy': shadowOffset.dy},
       if (shadowColor != null) 'shadowColor': shadowColor?.toARGB32,
@@ -416,6 +542,7 @@ class ImageItemContent extends StackItemContent {
       'shapeBorderRadius': shapeBorderRadius,
     };
   }
+*/
 }
 
 // Unified Color Filter System - Single source of truth for all filters

@@ -369,13 +369,18 @@ class CanvasController extends GetxController {
   }
 
   Future<void> addTemplate(File thumbnailFile) async {
+    final templateService = Get.put(TemplateService());
+
+    if (templateService.isUploading) {
+      Get.snackbar('Info', 'Template upload already in progress');
+      return;
+    }
+
     final currentItems = boardController.getAllData();
 
-    final templateService = TemplateService();
     try {
       print('Adding template...');
-      // Generate a unique ID for the template
-      final templateId = Uuid().v4();
+      final templateId = Uuid().v4(); //TODO
       final template = CardTemplate(
         imagePath: "",
         categoryId: 'general',
@@ -384,12 +389,12 @@ class CanvasController extends GetxController {
         items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
         width: templateOriginalWidth.value,
         height: templateOriginalHeight.value,
-        category: 'General', // Default category; can be set via UI
-        tags: ['default'], // Default tags; can be set via UI
-        isPremium: false, // Default; can be set via UI
+        category: 'General',
+        tags: ['default'],
+        isPremium: false,
       );
 
-      // Handle background image (user-picked or asset)
+      // Handle background image
       File? backgroundFile;
       if ((selectedBackground.value?.isNotEmpty ?? false) &&
           !selectedBackground.value!.startsWith('asset')) {
@@ -403,31 +408,43 @@ class CanvasController extends GetxController {
         backgroundFile: backgroundFile,
       );
 
-      // Cleanup temporary files after TemplateService is done
+      // Cleanup after successful upload
+      _cleanupTempFiles(thumbnailFile, backgroundFile);
+    } catch (e, s) {
+      debugPrint('Failed to add template: $e\n$s');
+      rethrow;
+    }
+  }
+
+  void _cleanupTempFiles(File thumbnailFile, File? backgroundFile) async {
+    try {
       if (await thumbnailFile.exists()) {
         await thumbnailFile.delete();
       }
       if (backgroundFile != null && await backgroundFile.exists()) {
         await backgroundFile.delete();
       }
+    } catch (e) {
+      debugPrint('Error cleaning up temp files: $e');
+    }
+  }
 
-      Get.snackbar(
-        'Success',
-        'Template added successfully with ID: $templateId',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
-    } catch (e, s) {
-      debugPrint('Failed to add template: $e\n$s');
-      Get.snackbar(
-        'Error',
-        'Failed to add template: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-      rethrow;
+  // Add this method to handle background operations
+  Future<void> performHeavyOperation(Function operation) async {
+    // Show loading indicator
+    final loadingDialog = Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Run in a separate microtask to avoid blocking UI
+      await Future.microtask(() => operation());
+    } finally {
+      // Dismiss loading dialog
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
     }
   }
 
@@ -488,7 +505,7 @@ class CanvasController extends GetxController {
       name: templateName.value.isNotEmpty
           ? templateName.value
           : initialTemplate!.name,
-      thumbnailPath: initialTemplate!.thumbnailPath,
+      thumbnailUrl: initialTemplate!.thumbnailUrl,
       backgroundImage: initialTemplate?.backgroundImage ?? "",
       items: exportedItems,
       createdAt: DateTime.now(),
@@ -590,6 +607,7 @@ class CanvasController extends GetxController {
   @override
   void onClose() {
     boardController.dispose();
+
     super.onClose();
   }
 

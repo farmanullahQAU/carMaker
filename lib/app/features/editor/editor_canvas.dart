@@ -86,10 +86,14 @@ class EditorPage extends GetView<CanvasController> {
               onExportPDF: controller.exportAsPDF,
               onExportImage: controller.exportAsImage,
               onSave: () async {
-                // final file = await exportAsImage();
-                // await controller.addTemplate(file);
-                controller.saveDesign();
-                controller.isExporting = false;
+                try {
+                  final file = await controller.exportAsImage();
+                  await controller.addTemplate(file);
+                  // controller.saveDesign();
+                  controller.isExporting = false;
+                } catch (err) {
+                  controller.isExporting = false;
+                }
               },
               isExporting: controller.isExporting,
             ),

@@ -136,7 +136,7 @@ class HomeController extends GetxController {
       height: 1920,
       icon: Icons.portrait,
       color: const Color(0xFF3B82F6),
-      thumbnailPath: 'assets/portrait_thumbnail.png', // Optional: add asset
+      thumbnailUrl: 'assets/portrait_thumbnail.png', // Optional: add asset
     ),
     CanvasSize(
       title: 'Landscape',
@@ -144,7 +144,7 @@ class HomeController extends GetxController {
       height: 1080,
       icon: Icons.landscape,
       color: const Color(0xFF10B981),
-      thumbnailPath: 'assets/landscape_thumbnail.png', // Optional: add asset
+      thumbnailUrl: 'assets/landscape_thumbnail.png', // Optional: add asset
     ),
     CanvasSize(
       title: 'Square',
@@ -152,7 +152,7 @@ class HomeController extends GetxController {
       height: 1080,
       icon: Icons.square,
       color: const Color(0xFFF59E0B),
-      thumbnailPath: 'assets/square_thumbnail.png', // Optional: add asset
+      thumbnailUrl: 'assets/square_thumbnail.png', // Optional: add asset
     ),
   ];
 
@@ -233,7 +233,7 @@ class HomeController extends GetxController {
     final template = CardTemplate(
       id: 'blank_${canvas.title.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}',
       name: '${canvas.title} Canvas',
-      thumbnailPath: canvas.thumbnailPath,
+      thumbnailUrl: canvas.thumbnailUrl,
       backgroundImage: '',
       items: [],
       createdAt: DateTime.now(),

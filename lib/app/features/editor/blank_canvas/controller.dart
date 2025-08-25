@@ -108,7 +108,7 @@ class CanvasSelectionController extends GetxController {
       id: '22',
       name: 'Greetog',
       backgroundImage: 'assets/card7.png',
-      thumbnailPath: 'assets/hisham.png',
+      thumbnailUrl: 'assets/hisham.png',
       items: [
         {
           "type": "StackImageItem",

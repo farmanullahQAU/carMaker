@@ -5,13 +5,11 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
-import 'package:uuid/uuid.dart';
 
 /// StorageService handles image uploads to Firebase Storage.
 class FirebaseStorageService {
   static const String _imagesStoragePath = 'card_images/templates';
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final Uuid _uuid = const Uuid();
 
   /// Uploads an image to Firebase Storage with compression, returns the download URL.
   Future<String> uploadImage(
@@ -22,14 +20,13 @@ class FirebaseStorageService {
   }) async {
     try {
       final compressedBytes = await _compressImage(imageFile);
-      final effectiveFileName = fileName ?? '${_uuid.v4()}.jpg';
 
       final storageRef = _storage
           .ref()
           .child(_imagesStoragePath)
           .child(templateId)
           .child(imageType)
-          .child(effectiveFileName);
+          .child(fileName!);
 
       final uploadTask = await storageRef.putData(
         compressedBytes,
@@ -59,7 +56,7 @@ class FirebaseStorageService {
 
       // Resize if needed
       if (image.width > 1920 || image.height > 1080) {
-        image = img.copyResize(image, width: 1920);
+        image = img.copyResize(image, maintainAspect: true);
       }
 
       // Encode as JPEG with 85% quality
