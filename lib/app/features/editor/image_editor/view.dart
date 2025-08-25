@@ -1,6 +1,6 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
-import 'package:cardmaker/app/features/editor/text_editor.dart';
-import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/text_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';

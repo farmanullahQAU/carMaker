@@ -3,9 +3,10 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
-import 'package:cardmaker/app/features/editor/text_editor.dart';
-import 'package:cardmaker/app/features/editor/video_editor/view.dart';
+import 'package:cardmaker/app/features/editor/image_editor/view.dart';
+import 'package:cardmaker/app/features/editor/text_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -16,15 +17,6 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:get/get.dart';
 import 'package:open_file/open_file.dart';
 import 'package:photo_view/photo_view.dart';
-
-// Define panel types as an enum
-enum PanelType {
-  none,
-  stickers,
-  color,
-  text,
-  advancedImage, // Add this new panel type
-}
 
 class EditorPage extends GetView<CanvasController> {
   const EditorPage({super.key});
@@ -81,217 +73,6 @@ class EditorPage extends GetView<CanvasController> {
       },
     );
   }
-
-  // Widget _buildCanvasStack({
-  //   required bool showGrid,
-  //   required bool showBorders,
-  //   required GlobalKey stackBoardKey,
-  //   required RxDouble canvasScale,
-  //   required RxDouble scaledCanvasWidth,
-  //   required RxDouble scaledCanvasHeight,
-  // }) {
-  //   return GetBuilder<CanvasController>(
-  //     id: 'canvas_stack',
-  //     builder: (controller) {
-  //       print("Built");
-  //       return Stack(
-  //         alignment: Alignment.center,
-  //         children: [
-
-  //           ...controller.profileImageItems.map(
-  //             (profileItem) => Positioned(
-  //               left: profileItem.offset.dx * canvasScale.value,
-  //               top: profileItem.offset.dy * canvasScale.value,
-  //               child: ClipRect(
-  //                 child: SizedBox(
-  //                   width: profileItem.size.width * canvasScale.value,
-  //                   height: profileItem.size.height * canvasScale.value,
-  //                   child: PhotoView(
-  //                     imageProvider: AssetImage(
-  //                       profileItem.content?.assetName ?? "",
-  //                     ),
-  //                     minScale: PhotoViewComputedScale.contained * 0.4,
-  //                     maxScale: PhotoViewComputedScale.covered * 3.0,
-  //                     initialScale: PhotoViewComputedScale.contained,
-  //                     basePosition: Alignment.center,
-  //                     enablePanAlways: true,
-  //                     filterQuality: FilterQuality.high,
-  //                     backgroundDecoration: const BoxDecoration(
-  //                       color: Colors.transparent,
-  //                     ),
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           // Foreground image with transparent hole
-  //           if (controller.selectedBackground.value != null)
-  //             IgnorePointer(
-  //               ignoring: true,
-  //               child: SizedBox(
-  //                 width: scaledCanvasWidth.value,
-  //                 height: scaledCanvasHeight.value,
-  //                 child: ColorFiltered(
-  //                   colorFilter: ColorFilter.matrix(
-  //                     _hueMatrix(controller.backgroundHue.value),
-  //                   ),
-  //                   child: Image.asset(
-  //                     controller.selectedBackground.value!,
-  //                     fit: BoxFit.cover,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           // StackBoard with touch handling
-  //           SizedBox(
-  //             width: scaledCanvasWidth.value,
-  //             height: scaledCanvasHeight.value,
-  //             child: Listener(
-  //               behavior: HitTestBehavior.translucent,
-  //               onPointerDown: showGrid
-  //                   ? (event) {
-  //                       final localPos = event.localPosition;
-  //                       final scale = canvasScale.value;
-  //                       StackImageItem? tappedItem = controller
-  //                           .profileImageItems
-  //                           .firstWhereOrNull((item) {
-  //                             final hole = Rect.fromLTWH(
-  //                               item.offset.dx * scale,
-  //                               item.offset.dy * scale,
-  //                               item.size.width * scale,
-  //                               item.size.height * scale,
-  //                             );
-  //                             return hole.contains(localPos);
-  //                           });
-  //                       if (tappedItem != null) {
-  //                         print(
-  //                           "Touched inside ${tappedItem.id}, activating PhotoView.",
-  //                         );
-  //                         activePhotoItem.value = tappedItem;
-  //                         allowTouch.value = true;
-  //                         controller.update(['stack_board']);
-  //                       } else {
-  //                         if (allowTouch.value != false) {
-  //                           //to overcome unncessary rebuilds
-  //                           allowTouch.value = false;
-  //                           activePhotoItem.value = null;
-  //                         }
-  //                         controller.activeItem.value = null;
-  //                         activePanel.value = PanelType.none;
-  //                         controller.update(['stack_board']);
-  //                       }
-  //                     }
-  //                   : null,
-  //               child: GetBuilder<CanvasController>(
-  //                 id: 'stack_board',
-  //                 builder: (controller) => IgnorePointer(
-  //                   ignoring: allowTouch.value,
-  //                   child: StackBoard(
-  //                     key: stackBoardKey,
-  //                     controller: controller.boardController,
-  //                     customBuilder: (StackItem<StackItemContent> item) {
-  //                       return (item is StackTextItem && item.content != null)
-  //                           ? StackTextCase(item: item, isFitted: true)
-  //                           : (item is StackImageItem && item.content != null)
-  //                           ? StackImageCase(item: item)
-  //                           : const SizedBox.shrink();
-  //                     },
-  //                     borderBuilder: showBorders
-  //                         ? (status, item) {
-  //                             final CaseStyle style = CaseStyle();
-  //                             final double leftRight =
-  //                                 status == StackItemStatus.idle
-  //                                 ? 0
-  //                                 : -(style.buttonSize) / 2;
-  //                             final double topBottom =
-  //                                 status == StackItemStatus.idle
-  //                                 ? 0
-  //                                 : -(style.buttonSize) * 1.5;
-  //                             return AnimatedContainer(
-  //                               duration: const Duration(milliseconds: 500),
-  //                               child: Positioned(
-  //                                 left: -leftRight,
-  //                                 top: -topBottom,
-  //                                 right: -leftRight,
-  //                                 bottom: -topBottom,
-  //                                 child: IgnorePointer(
-  //                                   ignoring: true,
-  //                                   child: CustomPaint(
-  //                                     painter: BorderPainter(
-  //                                       dotted: status == StackItemStatus.idle,
-  //                                     ),
-  //                                   ),
-  //                                 ),
-  //                               ),
-  //                             );
-  //                           }
-  //                         : (status, item) => const SizedBox.shrink(),
-  //                     onDel: (item) =>
-  //                         controller.boardController.removeById(item.id),
-  //                     onEdit: (item) async {
-  //                       if (item is StackTextItem) {
-  //                         print(item.id);
-  //                         await Get.to(() => TextEditorPage(item: item));
-  //                       } else if (item is StackImageItem) {
-  //                         Get.to(() => ImageEditorPage(item: item));
-  //                       }
-  //                     },
-
-  //                     onStatusChanged: (item, status) {
-  //                       if (status == StackItemStatus.selected) {
-  //                         controller.activeItem.value = controller
-  //                             .boardController
-  //                             .getById(item.id);
-  //                         if (item is StackTextItem) {
-  //                           activePanel.value = PanelType.text;
-  //                         } else if (item is StackImageItem) {
-  //                           activePanel.value = PanelType.advancedImage;
-  //                         } else {
-  //                           activePanel.value = PanelType.none;
-  //                         }
-  //                         controller.draggedItem.value = null;
-  //                       } else if (status == StackItemStatus.moving) {
-  //                         activePanel.value = PanelType.none;
-  //                         controller.draggedItem.value = item;
-  //                       } else if (status == StackItemStatus.idle) {
-  //                         activePanel.value = PanelType.none;
-  //                         if (controller.draggedItem.value?.id == item.id) {
-  //                           controller.draggedItem.value = null;
-  //                         }
-  //                       }
-  //                       controller.update(['canvas_stack', 'bottom_sheet']);
-  //                       return true;
-  //                     },
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           // Alignment guides
-  //           if (showGrid)
-  //             IgnorePointer(
-  //               ignoring: true,
-  //               child: CustomPaint(
-  //                 size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-  //                 painter: AlignmentGuidePainter(
-  //                   draggedItem: controller.draggedItem.value,
-  //                   stackBoardSize: Size(
-  //                     scaledCanvasWidth.value,
-  //                     scaledCanvasHeight.value,
-  //                   ),
-  //                   showGrid: controller.showGrid.isTrue,
-  //                   gridSize: 50.0,
-  //                   guideColor: Colors.blue.withOpacity(0.5),
-  //                   criticalGuideColor: Colors.red,
-  //                   centerGuideColor: Colors.green,
-  //                 ),
-  //               ),
-  //             ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -745,36 +526,44 @@ class _HueAdjustmentPanel extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
-                    gradient: LinearGradient(
-                      colors: [
-                        HSLColor.fromAHSL(
-                          1,
-                          controller.backgroundHue.value,
-                          1,
-                          0.5,
-                        ).toColor(),
-                        HSLColor.fromAHSL(
-                          1,
-                          controller.backgroundHue.value,
-                          0.8,
-                          0.7,
-                        ).toColor(),
-                      ],
-                    ),
+                    gradient: controller.backgroundHue.value != 0.0
+                        ? LinearGradient(
+                            colors: [
+                              HSLColor.fromAHSL(
+                                1,
+                                controller.backgroundHue.value,
+                                1,
+                                0.5,
+                              ).toColor(),
+                              HSLColor.fromAHSL(
+                                1,
+                                controller.backgroundHue.value,
+                                0.8,
+                                0.7,
+                              ).toColor(),
+                            ],
+                          )
+                        : const LinearGradient(
+                            colors: [Colors.transparent, Colors.transparent],
+                          ),
                   ),
                   child: Center(
                     child: Text(
                       '${controller.backgroundHue.value.round()}°',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: controller.backgroundHue.value != 0.0
+                            ? Colors.white
+                            : Colors.black,
                         fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                        shadows: controller.backgroundHue.value != 0.0
+                            ? [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ]
+                            : [],
                       ),
                     ),
                   ),
@@ -785,163 +574,6 @@ class _HueAdjustmentPanel extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class BorderPainter extends CustomPainter {
-  final bool dotted;
-  final double stroke = 0.2; // Made thinner
-  final double dash = 2; // Smaller dash
-  final double dash2 = 2; // Smaller gap
-
-  const BorderPainter({required this.dotted});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = Get.find<CanvasController>().draggedItem.value == null
-          ? AppColors.accent.withOpacity(0.5) // More subtle color
-          : AppColors.accent.withOpacity(0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke; // Thin stroke
-
-    final Rect rect = Offset.zero & size;
-
-    if (!dotted) {
-      canvas.drawRect(rect, paint);
-      return;
-    }
-    if (Get.find<CanvasController>().draggedItem.value != null) {
-      final Path path = Path()..addRect(rect);
-      final Path dashedPath = Path();
-      for (final pm in path.computeMetrics()) {
-        double d = 0;
-        while (d < pm.length) {
-          final double len = math.min(dash, pm.length - d);
-          dashedPath.addPath(pm.extractPath(d, d + len), Offset.zero);
-          d += dash + dash2; // Adjusted dash pattern
-        }
-      }
-      canvas.drawPath(dashedPath, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant BorderPainter old) => old.dotted != dotted;
-}
-
-class AlignmentGuidePainter extends CustomPainter {
-  final StackItem? draggedItem;
-  final Size stackBoardSize;
-  final bool showGrid;
-  final double gridSize;
-  final Color guideColor;
-  final Color criticalGuideColor;
-  final Color centerGuideColor;
-
-  AlignmentGuidePainter({
-    required this.draggedItem,
-    required this.stackBoardSize,
-    required this.showGrid,
-    required this.gridSize,
-    required this.guideColor,
-    required this.criticalGuideColor,
-    required this.centerGuideColor,
-  });
-
-  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    const double dashWidth = 2; // Smaller dash
-    const double dashSpace = 2; // Smaller gap
-    double distance = (end - start).distance;
-    final double dx = (end.dx - start.dx) / distance;
-    final double dy = (end.dy - start.dy) / distance;
-    double remainingDistance = distance;
-
-    Offset current = start;
-    while (remainingDistance > 0) {
-      final double step = math.min(dashWidth, remainingDistance);
-      final Offset next = Offset(
-        current.dx + dx * step,
-        current.dy + dy * step,
-      );
-      canvas.drawLine(current, next, paint);
-      current = Offset(next.dx + dx * dashSpace, next.dy + dy * dashSpace);
-      remainingDistance -= (step + dashSpace);
-    }
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint gridPaint = Paint()
-      ..color = guideColor
-          .withOpacity(0.2) // More subtle
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.3; // Thinner lines
-
-    final Paint centerPaint = Paint()
-      ..color = centerGuideColor
-          .withOpacity(0.5) // More subtle
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5; // Thinner center lines
-
-    if (draggedItem != null) {
-      // Draw center guides only when dragging
-      _drawDashedLine(
-        canvas,
-        Offset(stackBoardSize.width / 2, 0),
-        Offset(stackBoardSize.width / 2, stackBoardSize.height),
-        centerPaint,
-      );
-      _drawDashedLine(
-        canvas,
-        Offset(0, stackBoardSize.height / 2),
-        Offset(stackBoardSize.width, stackBoardSize.height / 2),
-        centerPaint,
-      );
-    }
-
-    if (showGrid) {
-      // Calculate the number of full grid cells that fit in the width and height
-      final int horizontalCells = (stackBoardSize.width / gridSize).floor();
-      final int verticalCells = (stackBoardSize.height / gridSize).floor();
-
-      // Calculate the adjusted grid size to fit perfectly
-      final double adjustedWidth = stackBoardSize.width / horizontalCells;
-      final double adjustedHeight = stackBoardSize.height / verticalCells;
-
-      // Use the average of width and height adjustments for square grids
-      final double adjustedGridSize = (adjustedWidth + adjustedHeight) / 2;
-
-      // Draw vertical lines
-      for (int i = 0; i <= horizontalCells; i++) {
-        final double x = i * adjustedGridSize;
-        _drawDashedLine(
-          canvas,
-          Offset(x, 0),
-          Offset(x, stackBoardSize.height),
-          gridPaint,
-        );
-      }
-
-      // Draw horizontal lines
-      for (int i = 0; i <= verticalCells; i++) {
-        final double y = i * adjustedGridSize;
-        _drawDashedLine(
-          canvas,
-          Offset(0, y),
-          Offset(stackBoardSize.width, y),
-          gridPaint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant AlignmentGuidePainter oldDelegate) {
-    return oldDelegate.draggedItem?.id != draggedItem?.id ||
-        oldDelegate.stackBoardSize != stackBoardSize ||
-        oldDelegate.showGrid != showGrid ||
-        oldDelegate.gridSize != gridSize;
   }
 }
 
@@ -1318,15 +950,6 @@ class _TextEditorPanel extends StatelessWidget {
             // Keep the panel open for better UX
           },
         ),
-
-        Positioned(
-          top: -32,
-          child: FloatingActionButton.small(
-            backgroundColor: AppColors.accent,
-            child: Icon(Icons.edit),
-            onPressed: () {},
-          ),
-        ),
       ],
     );
   }
@@ -1359,6 +982,27 @@ class CanvasStack extends StatelessWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
+            // Background container with hue color when no background image
+            if (controller.selectedBackground.value == null)
+              IgnorePointer(
+                ignoring: true,
+                child: SizedBox(
+                  width: scaledCanvasWidth.value,
+                  height: scaledCanvasHeight.value,
+                  child: Container(
+                    color: controller.backgroundHue.value == 0.0
+                        ? Colors
+                              .transparent // Transparent when hue is 0
+                        : HSLColor.fromAHSL(
+                            1,
+                            controller.backgroundHue.value,
+                            1,
+                            0.5,
+                          ).toColor(),
+                  ),
+                ),
+              ),
+
             // Profile images
             ...controller.profileImageItems.map(
               (profileItem) => Positioned(
@@ -1386,7 +1030,7 @@ class CanvasStack extends StatelessWidget {
                 ),
               ),
             ),
-            // Foreground image with transparent hole
+            // Foreground image with transparent hole (only if background image exists)
             if (controller.selectedBackground.value != null)
               IgnorePointer(
                 ignoring: true,
@@ -1397,10 +1041,18 @@ class CanvasStack extends StatelessWidget {
                     colorFilter: ColorFilter.matrix(
                       _hueMatrix(controller.backgroundHue.value),
                     ),
-                    child: Image.asset(
-                      controller.selectedBackground.value!,
-                      fit: BoxFit.cover,
-                    ),
+                    child:
+                        (controller.selectedBackground.value!.startsWith(
+                              'http',
+                            ) ||
+                            controller.selectedBackground.value!.startsWith(
+                              'https',
+                            ))
+                        ? Image.network(controller.selectedBackground.value!)
+                        : Image.file(
+                            File(controller.selectedBackground.value!),
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),
@@ -1492,7 +1144,6 @@ class CanvasStack extends StatelessWidget {
                           controller.boardController.removeById(item.id),
                       onEdit: (item) async {
                         if (item is StackTextItem) {
-                          print(item.id);
                           await Get.to(() => UpdateTextView(item: item));
                         }
                       },
@@ -1584,5 +1235,180 @@ class CanvasStack extends StatelessWidget {
       1,
       0,
     ];
+  }
+}
+
+class BorderPainter extends CustomPainter {
+  final bool dotted;
+  final double stroke = 0.2; // Made thinner
+  final double dash = 2; // Smaller dash
+  final double dash2 = 2; // Smaller gap
+
+  const BorderPainter({required this.dotted});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = Get.find<CanvasController>().draggedItem.value == null
+          ? AppColors.accent.withOpacity(0.5) // More subtle color
+          : AppColors.accent.withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke; // Thin stroke
+
+    final Rect rect = Offset.zero & size;
+
+    if (!dotted) {
+      canvas.drawRect(rect, paint);
+      return;
+    }
+    if (Get.find<CanvasController>().draggedItem.value != null) {
+      final Path path = Path()..addRect(rect);
+      final Path dashedPath = Path();
+      for (final pm in path.computeMetrics()) {
+        double d = 0;
+        while (d < pm.length) {
+          final double len = math.min(dash, pm.length - d);
+          dashedPath.addPath(pm.extractPath(d, d + len), Offset.zero);
+          d += dash + dash2; // Adjusted dash pattern
+        }
+      }
+      canvas.drawPath(dashedPath, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant BorderPainter old) => old.dotted != dotted;
+}
+
+class AlignmentGuidePainter extends CustomPainter {
+  final StackItem? draggedItem;
+  final Size stackBoardSize;
+  final bool showGrid;
+  final double gridSize;
+  final Color guideColor;
+  final Color criticalGuideColor;
+  final Color centerGuideColor;
+
+  AlignmentGuidePainter({
+    required this.draggedItem,
+    required this.stackBoardSize,
+    required this.showGrid,
+    required this.gridSize,
+    required this.guideColor,
+    required this.criticalGuideColor,
+    required this.centerGuideColor,
+  });
+
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
+    const double dashWidth = 2;
+    const double dashSpace = 2;
+    double distance = (end - start).distance;
+    final double dx = (end.dx - start.dx) / distance;
+    final double dy = (end.dy - start.dy) / distance;
+    double remainingDistance = distance;
+
+    Offset current = start;
+    while (remainingDistance > 0) {
+      final double step = math.min(dashWidth, remainingDistance);
+      final Offset next = Offset(
+        current.dx + dx * step,
+        current.dy + dy * step,
+      );
+      canvas.drawLine(current, next, paint);
+      current = Offset(next.dx + dx * dashSpace, next.dy + dy * dashSpace);
+      remainingDistance -= (step + dashSpace);
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint gridPaint = Paint()
+      ..color = guideColor.withOpacity(0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.3;
+
+    // Fixed: Both center guides now use the same thin, professional stroke width
+    final Paint centerPaint = Paint()
+      ..color = centerGuideColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5; // Made thin and professional
+
+    if (draggedItem != null) {
+      // Draw center guides only when dragging - both using same paint
+      _drawDashedLine(
+        canvas,
+        Offset(stackBoardSize.width / 2, 0),
+        Offset(stackBoardSize.width / 2, stackBoardSize.height),
+        centerPaint, // Using same paint for consistency
+      );
+      _drawDashedLine(
+        canvas,
+        Offset(0, stackBoardSize.height / 2),
+        Offset(stackBoardSize.width, stackBoardSize.height / 2),
+        centerPaint, // Using same paint for consistency
+      );
+    }
+
+    if (showGrid) {
+      // Calculate optimal grid division based on canvas dimensions
+      // Find the greatest common divisor-like approach for clean divisions
+      final double aspectRatio = stackBoardSize.width / stackBoardSize.height;
+
+      // Choose grid division based on aspect ratio for better visual results
+      int horizontalDivisions;
+      int verticalDivisions;
+
+      if (aspectRatio > 1.5) {
+        // Wide format (e.g., 2:1, 16:9)
+        horizontalDivisions = 16;
+        verticalDivisions = (horizontalDivisions / aspectRatio).round();
+      } else if (aspectRatio < 0.67) {
+        // Tall format (e.g., 9:16, 1:2)
+        verticalDivisions = 16;
+        horizontalDivisions = (verticalDivisions * aspectRatio).round();
+      } else {
+        // Square-ish format (e.g., 1:1, 4:3, 3:4)
+        horizontalDivisions = 12;
+        verticalDivisions = (horizontalDivisions / aspectRatio).round();
+      }
+
+      // Ensure we have at least 4 divisions in each direction
+      horizontalDivisions = math.max(4, horizontalDivisions);
+      verticalDivisions = math.max(4, verticalDivisions);
+
+      // Calculate actual grid cell sizes
+      final double cellWidth = stackBoardSize.width / horizontalDivisions;
+      final double cellHeight = stackBoardSize.height / verticalDivisions;
+
+      // Draw vertical lines
+      for (int i = 0; i <= horizontalDivisions; i++) {
+        final double x = i * cellWidth;
+        _drawDashedLine(
+          canvas,
+          Offset(x, 0),
+          Offset(x, stackBoardSize.height),
+          gridPaint,
+        );
+      }
+
+      // Draw horizontal lines
+      for (int i = 0; i <= verticalDivisions; i++) {
+        final double y = i * cellHeight;
+        _drawDashedLine(
+          canvas,
+          Offset(0, y),
+          Offset(stackBoardSize.width, y),
+          gridPaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant AlignmentGuidePainter oldDelegate) {
+    return oldDelegate.draggedItem?.id != draggedItem?.id ||
+        oldDelegate.stackBoardSize != stackBoardSize ||
+        oldDelegate.showGrid != showGrid ||
+        oldDelegate.gridSize != gridSize;
   }
 }

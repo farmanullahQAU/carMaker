@@ -15,4 +15,7 @@ class AppColors {
   static const Color violet = Color(0xFF8B5CF6); // AI Generate
   static const Color blue = Color(0xFF3B82F6); // Blank Canvas
   static const Color emerald = Color(0xFF10B981); // Templates
+
+  //center _guide color
+  static const Color centerGuideColor = Colors.black;
 }

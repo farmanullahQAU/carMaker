@@ -1,10 +1,5 @@
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:flutter/material.dart';
-
-enum CircularTextDirection { clockwise, anticlockwise }
-
-enum CircularTextPosition { outside, inside }
-
-enum StartAngleAlignment { start, center, end }
 
 class TextItem {
   /// Text

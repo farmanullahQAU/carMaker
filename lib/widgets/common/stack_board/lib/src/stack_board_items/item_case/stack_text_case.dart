@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
-import 'package:cardmaker/app/features/editor/text_editor.dart';
+import 'package:cardmaker/app/features/editor/text_editor/view.dart';
+import 'package:cardmaker/core/values/enums.dart' show DualToneDirection;
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

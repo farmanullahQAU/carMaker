@@ -1,5 +1,11 @@
-import 'package:cardmaker/app/features/editor/circular_text/model.dart';
-import 'package:cardmaker/app/features/editor/text_editor.dart';
+import 'package:cardmaker/core/values/enums.dart'
+    show
+        DualToneDirection,
+        Direction,
+        Placement,
+        StartAngleAlignment,
+        CircularTextPosition,
+        CircularTextDirection;
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -114,6 +120,10 @@ class TextItemContent implements StackItemContent {
     this.showBackground,
     this.showStroke,
     this.backgroundPaintColor,
+    // Arc text properties (NEW)
+    this.isArc = false,
+
+    this.arcCurvature,
     // Dual Tone properties (ADD THESE)
     this.hasDualTone = false,
     this.dualToneColor1 = Colors.red,
@@ -220,6 +230,10 @@ class TextItemContent implements StackItemContent {
       backgroundPaintColor: data['backgroundPaintColor'] == null
           ? null
           : Color(asT<int>(data['backgroundPaintColor'])),
+      // Arc text properties
+      isArc: asT<bool>(data['isArc'], false),
+
+      arcCurvature: asT<double>(data['arcCurvature']),
 
       // Add dual tone properties
       hasDualTone: asT<bool>(data['hasDualTone'], false),
@@ -276,6 +290,18 @@ class TextItemContent implements StackItemContent {
   bool? showBackground;
   bool? showStroke;
   Color? backgroundPaintColor;
+
+  // Arc text properties (NEW)
+  bool isArc;
+  double? arcRadius;
+  double? arcStartAngle;
+  StartAngleAlignment? arcStartAngleAlignment;
+  Direction? arcDirection;
+  Placement? arcPlacement;
+  double? arcStretchAngle;
+  double? arcCurvature;
+
+  //dual tone
   bool hasDualTone;
   Color dualToneColor1;
   Color dualToneColor2;
@@ -322,8 +348,10 @@ class TextItemContent implements StackItemContent {
     bool? showBackground,
     bool? showStroke,
     Color? backgroundPaintColor,
+    // Arc text properties
+    bool? isArc,
 
-    // Dual Tone properties (ADD THESE)
+    double? arcCurvature,
     // Dual Tone properties (ADD THESE)
     bool? hasDualTone,
     Color? dualToneColor1,
@@ -368,6 +396,10 @@ class TextItemContent implements StackItemContent {
       showBackground: showBackground ?? this.showBackground,
       showStroke: showStroke ?? this.showStroke,
       backgroundPaintColor: backgroundPaintColor ?? this.backgroundPaintColor,
+      // Arc text properties
+      isArc: isArc ?? this.isArc,
+
+      arcCurvature: arcCurvature ?? this.arcCurvature,
       // Add dual tone properties
       hasDualTone: hasDualTone ?? this.hasDualTone,
       dualToneColor1: dualToneColor1 ?? this.dualToneColor1,
@@ -418,8 +450,11 @@ class TextItemContent implements StackItemContent {
       if (showStroke != null) 'showStroke': showStroke,
       if (backgroundPaintColor != null)
         'backgroundPaintColor': backgroundPaintColor?.toARGB32(),
-      'strokeWidth': strokeWidth,
 
+      // Arc text properties
+      'isArc': isArc,
+
+      if (arcCurvature != null) 'arcCurvature': arcCurvature,
       // Add dual tone properties
       'hasDualTone': hasDualTone,
       'dualToneColor1': dualToneColor1.toARGB32(),

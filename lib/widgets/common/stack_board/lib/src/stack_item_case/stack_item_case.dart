@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:math';
 
-import 'package:cardmaker/app/features/editor/circular_text/model.dart';
-import 'package:cardmaker/app/features/editor/circular_text/widget.dart';
+import 'package:cardmaker/app/features/editor/text_editor/circular_text/model.dart';
+import 'package:cardmaker/app/features/editor/text_editor/circular_text/widget.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_item_case/config_builder.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -468,7 +470,7 @@ class _StackItemCaseState extends State<StackItemCase> {
     if (item is StackTextItem && item.content?.isCircular == true) {
       final textContent = item.content!;
       final backgroundPaint = Paint()
-        ..color = textContent.backgroundPaintColor ?? Colors.grey.shade200;
+        ..color = textContent.backgroundPaintColor ?? Colors.white;
       if (textContent.showBackground == true) {
         if (textContent.showStroke == true) {
           backgroundPaint
@@ -620,7 +622,17 @@ class _StackItemCaseState extends State<StackItemCase> {
         onPanUpdate: (DragUpdateDetails dud) =>
             _onScaleUpdate(dud, context, status),
         onPanEnd: (_) => _onPanEnd(context, status),
-        child: _toolCase(context, style, null),
+        child: _toolCase(
+          context,
+          style,
+          decoration: BoxDecoration(
+            color: AppColors.brandingLight,
+            shape: BoxShape.circle,
+          ),
+          null,
+          width: 15,
+          height: 15,
+        ),
       ),
     );
   }
@@ -656,7 +668,8 @@ class _StackItemCaseState extends State<StackItemCase> {
                   color: style.buttonBgColor,
                   border: Border.all(
                     width: style.buttonBorderWidth,
-                    color: style.buttonBorderColor,
+                    // color: style.buttonBorderColor,
+                    color: AppColors.brandingLight,
                   ),
                   borderRadius: BorderRadius.circular(style.buttonSize),
                 ),
@@ -742,18 +755,27 @@ class _StackItemCaseState extends State<StackItemCase> {
 
   /// * 操作手柄壳
   /// * Operation handle shell
-  Widget _toolCase(BuildContext context, CaseStyle style, Widget? child) {
+  Widget _toolCase(
+    BuildContext context,
+    CaseStyle style,
+    Widget? child, {
+    double? width,
+    double? height,
+    BoxDecoration? decoration,
+  }) {
     return Container(
-      width: style.buttonSize,
-      height: style.buttonSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: style.buttonBgColor,
-        border: Border.all(
-          width: style.buttonBorderWidth,
-          color: style.buttonBorderColor,
-        ),
-      ),
+      width: width ?? style.buttonSize,
+      height: height ?? style.buttonSize,
+      decoration:
+          decoration ??
+          BoxDecoration(
+            shape: BoxShape.circle,
+            color: style.buttonBgColor,
+            border: Border.all(
+              width: style.buttonBorderWidth,
+              color: style.buttonBorderColor,
+            ),
+          ),
       child: child == null
           ? null
           : IconTheme(

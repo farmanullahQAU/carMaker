@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:flutter/material.dart';
 
 import 'model.dart';

@@ -8,9 +8,7 @@ class InitialBindings extends Bindings {
     try {
       Get.lazyPut(() => HomeController());
 
-      Get.put(CanvasController());
-
-      // Get.lazyPut(() => HomeController());
+      Get.lazyPut(() => CanvasController());
       // Get.lazyPut(() => OnboardingController());
       // Get.lazyPut(() => TrendingController());
     } catch (e) {}

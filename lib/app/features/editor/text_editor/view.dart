@@ -1,571 +1,16 @@
-import 'package:cardmaker/app/features/editor/circular_text/model.dart';
-import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
+import 'package:cardmaker/app/features/editor/text_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
-import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:cardmaker/widgets/ruler_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-enum DualToneDirection { horizontal, vertical, diagonal, radial }
-
-class StrokeText extends StatelessWidget {
-  final String text;
-  final Color strokeColor;
-  final double strokeWidth;
-  final TextStyle? textStyle;
-  final TextAlign? textAlign;
-  final TextDirection? textDirection;
-  final TextScaler? textScaler;
-  final TextOverflow? overflow;
-  final int? maxLines;
-
-  const StrokeText({
-    super.key,
-    required this.text,
-    this.strokeColor = Colors.amber, // Default stroke color
-    this.strokeWidth = 3, // Default stroke width
-    this.textStyle,
-    this.textAlign,
-    this.textDirection,
-    this.textScaler,
-    this.overflow,
-    this.maxLines,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Calculate proper size constraints for the text
-    final defaultTextStyle = TextStyle(
-      fontSize: textStyle?.fontSize ?? 24,
-      color: textStyle?.color ?? Colors.black,
-      fontFamily: textStyle?.fontFamily,
-      fontWeight: textStyle?.fontWeight,
-      fontStyle: textStyle?.fontStyle,
-      letterSpacing: textStyle?.letterSpacing,
-      wordSpacing: textStyle?.wordSpacing,
-      height: textStyle?.height,
-    );
-
-    // Create a TextPainter to measure the text
-    final textPainter = TextPainter(
-      text: TextSpan(text: text, style: defaultTextStyle),
-      textAlign: textAlign ?? TextAlign.start,
-      textDirection: textDirection ?? TextDirection.ltr,
-      textScaler: textScaler ?? TextScaler.noScaling,
-      maxLines: maxLines,
-      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
-    );
-
-    // Layout the text with constraints to get proper size
-    textPainter.layout(minWidth: 0, maxWidth: double.infinity);
-
-    // Add stroke width padding to prevent clipping
-    final additionalWidth = strokeWidth * 2;
-    final additionalHeight = strokeWidth * 2;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate the actual size needed
-        double width = textPainter.width + additionalWidth;
-        double height = textPainter.height + additionalHeight;
-
-        // Respect parent constraints
-        if (constraints.maxWidth != double.infinity) {
-          width = width.clamp(0.0, constraints.maxWidth);
-        }
-        if (constraints.maxHeight != double.infinity) {
-          height = height.clamp(0.0, constraints.maxHeight);
-        }
-
-        return SizedBox(
-          width: width,
-          height: height,
-          child: CustomPaint(
-            size: Size(width, height),
-            painter: _TextPainterWithStroke(
-              text: text,
-              strokeColor: strokeColor,
-              strokeWidth: strokeWidth,
-              textStyle: textStyle,
-              textAlign: textAlign,
-              textDirection: textDirection,
-              textScaler: textScaler,
-              overflow: overflow,
-              maxLines: maxLines,
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _TextPainterWithStroke extends CustomPainter {
-  final String text;
-  final Color strokeColor;
-  final double strokeWidth;
-  final TextStyle? textStyle;
-  final TextAlign? textAlign;
-  final TextDirection? textDirection;
-  final TextScaler? textScaler;
-  final TextOverflow? overflow;
-  final int? maxLines;
-
-  _TextPainterWithStroke({
-    required this.text,
-    required this.strokeColor,
-    required this.strokeWidth,
-    this.textStyle,
-    this.textAlign,
-    this.textDirection,
-    this.textScaler,
-    this.overflow,
-    this.maxLines,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (text.isEmpty || size.width <= 0 || size.height <= 0) return;
-
-    const defaultTextStyle = TextStyle(fontSize: 24, color: Colors.black);
-
-    final mergedTextStyle = defaultTextStyle.merge(textStyle);
-
-    // Create stroke text style
-    final strokeTextStyle = mergedTextStyle.copyWith(
-      foreground: Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..color = strokeColor,
-    );
-
-    // Create main text style
-    final mainTextStyle = mergedTextStyle.copyWith(
-      color: mergedTextStyle.color ?? Colors.black,
-    );
-
-    // Create stroke text painter
-    final strokePainter = TextPainter(
-      text: TextSpan(text: text, style: strokeTextStyle),
-      textAlign: textAlign ?? TextAlign.start,
-      textDirection: textDirection ?? TextDirection.ltr,
-      textScaler: textScaler ?? TextScaler.noScaling,
-      maxLines: maxLines,
-      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
-    );
-
-    // Create main text painter
-    final mainTextPainter = TextPainter(
-      text: TextSpan(text: text, style: mainTextStyle),
-      textAlign: textAlign ?? TextAlign.start,
-      textDirection: textDirection ?? TextDirection.ltr,
-      textScaler: textScaler ?? TextScaler.noScaling,
-      maxLines: maxLines,
-      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
-    );
-
-    // Layout with available width minus stroke padding
-    final maxWidth = (size.width - strokeWidth * 2).clamp(0.0, double.infinity);
-
-    strokePainter.layout(minWidth: 0, maxWidth: maxWidth);
-    mainTextPainter.layout(minWidth: 0, maxWidth: maxWidth);
-
-    // Calculate offset based on alignment and available space
-    final offset = _calculateOffset(strokePainter, size);
-
-    // Draw the stroke first
-    strokePainter.paint(canvas, offset);
-
-    // Then draw the main text
-    mainTextPainter.paint(canvas, offset);
-  }
-
-  // Helper method to calculate the offset based on text alignment
-  Offset _calculateOffset(TextPainter painter, Size size) {
-    // Add stroke width as padding
-    final paddingX = strokeWidth;
-    final paddingY = strokeWidth;
-
-    switch (textAlign ?? TextAlign.start) {
-      case TextAlign.center:
-        return Offset(
-          ((size.width - painter.width) / 2).clamp(
-            paddingX,
-            size.width - paddingX,
-          ),
-          ((size.height - painter.height) / 2).clamp(
-            paddingY,
-            size.height - paddingY,
-          ),
-        );
-      case TextAlign.end:
-      case TextAlign.right:
-        return Offset(
-          (size.width - painter.width - paddingX).clamp(
-            paddingX,
-            size.width - paddingX,
-          ),
-          ((size.height - painter.height) / 2).clamp(
-            paddingY,
-            size.height - paddingY,
-          ),
-        );
-      case TextAlign.left:
-      case TextAlign.start:
-      case TextAlign.justify:
-      default:
-        return Offset(
-          paddingX,
-          ((size.height - painter.height) / 2).clamp(
-            paddingY,
-            size.height - paddingY,
-          ),
-        );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TextPainterWithStroke oldDelegate) {
-    return text != oldDelegate.text ||
-        strokeColor != oldDelegate.strokeColor ||
-        strokeWidth != oldDelegate.strokeWidth ||
-        textStyle != oldDelegate.textStyle ||
-        textAlign != oldDelegate.textAlign ||
-        textDirection != oldDelegate.textDirection ||
-        textScaler != oldDelegate.textScaler ||
-        overflow != oldDelegate.overflow ||
-        maxLines != oldDelegate.maxLines;
-  }
-}
-
-class TextStyleController extends GetxController {
-  final editorController = Get.find<CanvasController>();
-
-  // Tab control
-  final currentIndex = 0.obs;
-  final circularSubTabIndex = 0.obs;
-
-  // Text item reference
-  StackTextItem? textItem;
-
-  // Text properties
-  final selectedFont = 'Roboto'.obs;
-  final fontSize = 16.0.obs;
-  final letterSpacing = 0.0.obs;
-  final lineHeight = 1.2.obs;
-  final textAlign = TextAlign.left.obs;
-  final textColor = Colors.black.obs;
-  Color? textColorOld; //to keep track of textcolor when reset stroke effects
-  final backgroundColor = Colors.transparent.obs;
-  final fontWeight = FontWeight.normal.obs;
-  final isItalic = false.obs;
-  final isUnderlined = false.obs;
-  final maskImage = Rx<String?>(null);
-
-  var maskOpacity = (1.0).obs;
-
-  // New mask properties for advanced settings
-  final maskScale = 1.0.obs;
-  final maskRotation = 0.0.obs;
-  final maskPositionX = 0.0.obs;
-  final maskPositionY = 0.0.obs;
-  final maskBlendMode = BlendMode.dstATop.obs;
-  final maskTileMode = TileMode.clamp.obs;
-
-  // Add this method to reset mask settings
-  void resetMaskSettings() {
-    maskOpacity.value = 1.0;
-    maskScale.value = 1.0;
-    maskRotation.value = 0.0;
-    maskPositionX.value = 0.0;
-    maskPositionY.value = 0.0;
-    maskBlendMode.value = BlendMode.dstATop;
-    maskTileMode.value = TileMode.clamp;
-    updateTextItem();
-  }
-
-  // Effects - Shadow
-  final hasShadow = false.obs;
-  final shadowOffset = const Offset(2, 2).obs;
-  final shadowBlurRadius = 4.0.obs;
-  final shadowColor = Colors.black54.obs;
-  // Dual Tone properties (ADD THESE)
-  final hasDualTone = false.obs;
-  Color? dualToneColor1;
-  Color? dualToneColor2;
-  final dualToneDirection = DualToneDirection.horizontal.obs;
-  final dualTonePosition = 0.5.obs; // 0.0 to 1.0 for gradient position
-  // Effects - Stroke (NEW)
-  final hasStroke = false.obs;
-  final strokeWidth = 2.0.obs;
-
-  final strokeColor = Colors.black.obs;
-  String? selectedTemplateId;
-  String? selectedDualToneTemplateId;
-
-  // Circular text
-  final isCircular = false.obs;
-  final radius = 0.0.obs;
-  final space = 10.0.obs;
-  final startAngle = 0.0.obs;
-  final startAngleAlignment = StartAngleAlignment.start.obs;
-  final position = CircularTextPosition.inside.obs;
-  final direction = CircularTextDirection.clockwise.obs;
-  final showBackground = true.obs;
-  final showStroke = false.obs;
-  final backgroundPaintColor = Colors.grey.shade200.obs;
-
-  static const popularFonts = [
-    'Roboto',
-    'Poppins',
-    'Inter',
-    'Montserrat',
-    'Lato',
-    'Open Sans',
-    'Nunito',
-    'Raleway',
-    'Playfair Display',
-    'Merriweather',
-  ];
-
-  static const predefinedColors = [
-    Colors.transparent,
-    Colors.black,
-    Colors.white,
-    Color(0xFF333333), // Dark grey
-    Color(0xFF666666), // Medium grey
-    Color(0xFF999999), // Light grey
-    Color(0xFFCCCCCC), // Very light grey
-    Colors.red,
-    Color(0xFFFF6B6B), // Light red
-    Color(0xFF8B0000), // Dark red
-    Colors.pink,
-    Color(0xFFFF69B4), // Hot pink
-    Colors.orange,
-    Color(0xFFFF8C00), // Dark orange
-    Colors.amber,
-    Colors.yellow,
-    Color(0xFFFFD700), // Gold
-    Colors.lime,
-    Colors.green,
-    Color(0xFF00FF7F), // Spring green
-    Color(0xFF228B22), // Forest green
-    Colors.teal,
-    Color(0xFF00CED1), // Dark turquoise
-    Colors.cyan,
-    Color(0xFF87CEEB), // Sky blue
-    Colors.blue,
-    Color(0xFF4169E1), // Royal blue
-    Color(0xFF191970), // Midnight blue
-    Colors.indigo,
-    Colors.purple,
-    Color(0xFF9370DB), // Medium purple
-    Color(0xFF8A2BE2), // Blue violet
-    Colors.brown,
-    Color(0xFFD2691E), // Chocolate
-  ];
-
-  static const maskImages = [
-    'assets/gliter1.jpeg',
-    'assets/gliter2.jpeg',
-    'assets/gliter3.jpeg',
-    'assets/gliter4.jpeg',
-  ];
-
-  void initializeProperties(StackTextItem? item) {
-    textItem = item;
-
-    final textContent = item?.content;
-    selectedFont.value = textContent?.googleFont ?? 'Roboto';
-    fontSize.value = textContent?.style?.fontSize ?? 16.0;
-    letterSpacing.value = textContent?.style?.letterSpacing ?? 0.0;
-    lineHeight.value = textContent?.style?.height ?? 1.2;
-    textAlign.value = textContent?.textAlign ?? TextAlign.left;
-    textColor.value = textContent?.style?.color ?? Colors.black;
-    textColorOld = textContent?.style?.color;
-    backgroundColor.value =
-        textContent?.style?.backgroundColor ?? Colors.transparent;
-    fontWeight.value = textContent?.style?.fontWeight ?? FontWeight.normal;
-    isItalic.value = textContent?.style?.fontStyle == FontStyle.italic;
-    isUnderlined.value =
-        textContent?.style?.decoration == TextDecoration.underline;
-
-    // Only initialize image mask, ignore color mask
-    maskImage.value = textContent?.maskImage;
-
-    // Initialize shadow properties
-    hasShadow.value = textContent?.style?.shadows?.isNotEmpty ?? false;
-    if (hasShadow.value && textContent?.style?.shadows?.isNotEmpty == true) {
-      shadowOffset.value = textContent!.style!.shadows![0].offset;
-      shadowBlurRadius.value = textContent.style!.shadows![0].blurRadius;
-      shadowColor.value = textContent.style!.shadows![0].color;
-    }
-
-    // Initialize stroke properties
-    hasStroke.value = textContent?.hasStroke ?? false;
-    strokeWidth.value = textContent?.strokeWidth ?? 2.0;
-    strokeColor.value = textContent?.strokeColor ?? Colors.black;
-
-    // Initialize circular text properties
-    isCircular.value = textContent?.isCircular ?? false;
-    radius.value = (textContent?.radius ?? 0) >= 50
-        ? textContent!.radius!
-        : 100.0;
-    space.value = textContent?.space ?? 10.0;
-    startAngle.value = textContent?.startAngle ?? 0.0;
-    startAngleAlignment.value =
-        textContent?.startAngleAlignment ?? StartAngleAlignment.start;
-    position.value = textContent?.position ?? CircularTextPosition.inside;
-    direction.value = textContent?.direction ?? CircularTextDirection.clockwise;
-    showBackground.value = textContent?.showBackground ?? true;
-    showStroke.value = textContent?.showStroke ?? false;
-    strokeWidth.value = textContent!.strokeWidth;
-    backgroundPaintColor.value =
-        textContent.backgroundPaintColor ?? Colors.grey.shade200;
-
-    // Initialize dual tone properties (ADD THESE)
-    hasDualTone.value = textContent.hasDualTone ?? false;
-    dualToneColor1 = textContent.dualToneColor1 ?? Colors.red;
-    dualToneColor2 = textContent.dualToneColor2 ?? Colors.blue;
-    dualToneDirection.value =
-        textContent.dualToneDirection ?? DualToneDirection.horizontal;
-    dualTonePosition.value = textContent.dualTonePosition ?? 0.5;
-  }
-
-  void updateTextItem() {
-    // final item = textItem.value;
-    // if (item == null) return;
-
-    final updatedContent = textItem?.content?.copyWith(
-      // Add dual tone properties
-      hasDualTone: hasDualTone.value,
-      dualToneColor1: dualToneColor1,
-      dualToneColor2: dualToneColor2,
-      dualToneDirection: dualToneDirection.value,
-      dualTonePosition: dualTonePosition.value,
-
-      data: textItem?.content?.data,
-      googleFont: selectedFont.value,
-      style: TextStyle(
-        fontFamily: GoogleFonts.getFont(selectedFont.value).fontFamily,
-        fontSize: fontSize.value,
-        letterSpacing: letterSpacing.value,
-        height: lineHeight.value,
-        // Only make text transparent if image mask is applied
-        color: textColor.value,
-        backgroundColor: backgroundColor.value,
-        fontWeight: fontWeight.value,
-        fontStyle: isItalic.value ? FontStyle.italic : FontStyle.normal,
-        decoration: isUnderlined.value
-            ? TextDecoration.underline
-            : TextDecoration.none,
-        shadows: hasShadow.value
-            ? [
-                Shadow(
-                  offset: shadowOffset.value,
-                  blurRadius: shadowBlurRadius.value,
-                  color: shadowColor.value,
-                ),
-              ]
-            : null,
-      ),
-      textAlign: textAlign.value,
-      maskImage: maskImage.value,
-      maskBlendMode: maskBlendMode.value,
-      // Stroke properties
-      hasStroke: hasStroke.value,
-      strokeWidth: strokeWidth.value,
-      strokeColor: strokeColor.value,
-
-      // Circular text properties
-      isCircular: isCircular.value,
-      radius: radius.value,
-      space: space.value,
-      startAngle: startAngle.value,
-      startAngleAlignment: startAngleAlignment.value,
-      position: position.value,
-      direction: direction.value,
-      showBackground: showBackground.value,
-      showStroke: showStroke.value,
-      backgroundPaintColor: backgroundPaintColor.value,
-    );
-
-    if (updatedContent == null) return;
-
-    final currentItem = editorController.boardController.getById(textItem!.id);
-    final updatedItem = textItem?.copyWith(
-      content: updatedContent,
-      offset: currentItem?.offset,
-    );
-
-    editorController.boardController.updateItem(updatedItem!);
-    editorController.boardController.updateBasic(
-      updatedItem.id,
-      status: StackItemStatus.idle,
-      size: updatedItem.size,
-      offset: updatedItem.offset,
-    );
-
-    if (!updatedContent.isCircular) {
-      final span = TextSpan(
-        text: updatedContent.data,
-        style: updatedContent.style,
-      );
-
-      final painter = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
-        textAlign: updatedContent.textAlign ?? TextAlign.left,
-        maxLines: null,
-      );
-
-      const double maxWidth = 800.0;
-      painter.layout(maxWidth: maxWidth);
-
-      final width = painter.width.clamp(50.0, maxWidth);
-      final height = painter.height.clamp(25.0, double.infinity);
-
-      editorController.boardController.updateBasic(
-        updatedItem.id,
-        status: StackItemStatus.selected,
-        size: Size(width, height),
-        offset: updatedItem.offset,
-      );
-    } else {
-      final diameter = updatedContent.radius! * 2;
-      editorController.boardController.updateBasic(
-        updatedItem.id,
-        status: StackItemStatus.selected,
-        size: Size(diameter, diameter),
-        offset: updatedItem.offset,
-      );
-    }
-  }
-
-  resetStrok() {
-    textColor(textColorOld);
-  }
-
-  String weightToString(FontWeight weight) {
-    switch (weight) {
-      case FontWeight.w300:
-        return 'Light';
-      case FontWeight.normal:
-        return 'Regular';
-      case FontWeight.w500:
-        return 'Medium';
-      case FontWeight.bold:
-        return 'Bold';
-      default:
-        return 'Regular';
-    }
-  }
-}
+import 'fonts_search/view.dart';
 
 class TextStylingEditor extends StatefulWidget {
   final StackTextItem textItem;
@@ -618,12 +63,13 @@ class _TextStylingEditorState extends State<TextStylingEditor>
     });
 
     _tabController = TabController(
-      length: 12,
+      length: 11,
       vsync: this,
       initialIndex: _controller.currentIndex.value,
     );
     _tabController.addListener(() {
       _controller.currentIndex.value = _tabController.index;
+
       _controller.update(['tab_view']);
     });
   }
@@ -639,29 +85,10 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {
-              Get.to(() => UpdateTextView(item: _controller.textItem));
-            },
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 12),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.branding.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.branding.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Icon(
-                Icons.keyboard_alt,
-                color: AppColors.branding.withOpacity(0.7),
-                size: 20,
-              ),
-            ),
-          ),
+          // Text Edit Button (replaces keyboard icon)
+          _buildTextEditButton(),
+          const SizedBox(width: 8),
+
           Expanded(
             child: TabBar(
               controller: _tabController,
@@ -677,7 +104,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
-
               tabs: [
                 const Tab(
                   icon: Icon(Icons.format_size, size: 16),
@@ -703,21 +129,15 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 ),
                 const Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),
                 const Tab(icon: Icon(Icons.blur_on, size: 16), text: 'Effects'),
-                const Tab(
-                  icon: Icon(Icons.gradient, size: 16),
-                  text: 'Dual',
-                ), // ADD THIS
+                const Tab(icon: Icon(Icons.gradient, size: 16), text: 'Dual'),
                 const Tab(icon: Icon(Icons.circle, size: 16), text: 'Circular'),
-                FloatingActionButton.small(
-                  onPressed: () {
-                    _controller.editorController.duplicateItem();
-                  },
-
-                  child: Icon(Icons.control_point_duplicate, size: 16),
-                ),
+                // Removed duplicate button from tabs
               ],
             ),
           ),
+
+          // Duplicate Button (moved to separate button)
+          _buildDuplicateButton(),
         ],
       ),
     );
@@ -734,7 +154,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
             child: TabBarView(
               physics: const NeverScrollableScrollPhysics(),
               controller: _tabController,
-
               children: [
                 _SizeTab(controller: controller),
                 _AlignmentTab(controller: controller),
@@ -745,17 +164,77 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 _FontTab(controller: controller),
                 _MaskTab(controller: controller),
                 _EffectsTab(controller: controller),
-                _DualToneTuneTab(controller: controller), // ADD THIS
+                _DualToneTuneTab(controller: controller),
                 _CircularTab(
                   controller: controller,
                   tabController: _circularSubTabController,
                 ),
-                SizedBox(),
+                // Removed duplicate tab (empty SizedBox)
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  // Professional Text Edit Button
+  Widget _buildTextEditButton() {
+    return Tooltip(
+      message: 'Edit Text Content',
+      child: GestureDetector(
+        onTap: () {
+          Get.to(() => UpdateTextView(item: _controller.textItem));
+        },
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.branding.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.branding.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: const Icon(
+            Icons.edit_note,
+            color: AppColors.branding,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Professional Duplicate Button
+  Widget _buildDuplicateButton() {
+    return Tooltip(
+      message: 'Duplicate Text',
+      child: GestureDetector(
+        onTap: () {
+          _controller.editorController.duplicateItem();
+          // Show feedback
+        },
+        child: Container(
+          width: 40,
+          height: 40,
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            color: AppColors.accent.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.accent.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: const Icon(
+            Icons.content_copy,
+            color: AppColors.accent,
+            size: 18,
+          ),
+        ),
+      ),
     );
   }
 
@@ -774,16 +253,16 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       case 5: // Spacing
         return 120;
       case 6: // Font
-        return 160;
+        return 250;
       case 7: // Mask
         return 120;
       case 8: // Effects
         return 120;
-      case 9: // Dual Tone - ADD THIS CASE
+      case 9: // Dual Tone
         return 120;
-      case 10: // Circular - CHANGE: was case 9, now case 10
+      case 10: // Circular
         return 250;
-      case 11:
+      case 11: // Arc
         return 1;
       default:
         return 120;
@@ -1347,51 +826,467 @@ class _FontTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(8),
-      child: GetBuilder<TextStyleController>(
-        id: 'font_family',
-        builder: (controller) {
-          return Center(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: TextStyleController.popularFonts.map((font) {
-                final isSelected = font == controller.selectedFont.value;
-                return ChoiceChip(
-                  onSelected: (v) {
-                    controller.selectedFont.value = font;
-                    controller.updateTextItem();
-                    controller.update(['font_family']);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Get.theme.colorScheme.surface,
+            Get.theme.colorScheme.surfaceContainer.withOpacity(0.2),
+          ],
+        ),
+      ),
+      child: Column(
+        children: [
+          // Search Header with professional button
+          _buildSearchHeader(),
+
+          // Font List with Infinite Scroll
+          Expanded(
+            child: GetBuilder<TextStyleController>(
+              id: 'font_list',
+              builder: (controller) {
+                return GetBuilder<TextStyleController>(
+                  id: 'font_family',
+                  builder: (controller) {
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        // Load more when reaching 80% of the scroll
+                        if (scrollInfo.metrics.pixels >
+                            scrollInfo.metrics.maxScrollExtent * 0.8) {
+                          controller.loadMoreFonts();
+                        }
+                        return false;
+                      },
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        physics: const BouncingScrollPhysics(),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 6),
+                        itemCount:
+                            controller.displayedFonts.length +
+                            (controller.hasMoreFonts.value ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          // Loading indicator at the end
+                          if (index == controller.displayedFonts.length) {
+                            return _buildLoadingIndicator();
+                          }
+
+                          final font = controller.displayedFonts[index];
+                          final isSelected =
+                              font == controller.selectedFont.value;
+
+                          return _buildFontItem(
+                            font: font,
+                            isSelected: isSelected,
+                            onTap: () {
+                              controller.selectedFont.value = font;
+                              controller.updateTextItem();
+                              controller.update(['font_family']);
+                            },
+                          );
+                        },
+                      ),
+                    );
                   },
-                  selected: isSelected,
-                  selectedColor: AppColors.branding,
-                  backgroundColor: Get.theme.colorScheme.surfaceContainerHigh,
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide.none,
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  showCheckmark: false,
-                  visualDensity: VisualDensity.comfortable,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
-                  ),
-                  label: Text(
-                    font,
-                    style: GoogleFonts.getFont(font, fontSize: 14),
-                  ),
                 );
-              }).toList(),
+              },
             ),
-          );
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchHeader() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Browse Fonts',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Get.theme.colorScheme.onSurface,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(elevation: 10),
+            onPressed: () => _openFontSearch(),
+            label: Text('Search'),
+            icon: Icon(Icons.search_rounded, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFontSearch() {
+    Get.to(
+      () => FontSearchPage(
+        currentSelectedFont: controller.selectedFont.value,
+        onFontSelected: (String selectedFont) {
+          controller.selectedFont.value = selectedFont;
+          controller.updateTextItem();
+          controller.update(['font_family']);
         },
       ),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  Widget _buildFontItem({
+    required String font,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppColors.branding.withOpacity(0.15),
+                    AppColors.branding.withOpacity(0.05),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Font Preview Text
+                  Text(
+                    font,
+                    style: GoogleFonts.getFont(
+                      font,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                      letterSpacing: 0.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                ],
+              ),
+            ),
+
+            // Selection Indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.branding : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.branding : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return GetBuilder<TextStyleController>(
+      id: 'font_list',
+      builder: (controller) {
+        if (!controller.isLoadingMoreFonts.value) return SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.branding),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Loading more fonts...',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
+/*
+class _FontTab extends StatelessWidget {
+  final TextStyleController controller;
+  const _FontTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Get.theme.colorScheme.surface,
+            Get.theme.colorScheme.surfaceContainer.withOpacity(0.2),
+          ],
+        ),
+      ),
+      child: Column(
+        children: [
+          // Font List with Infinite Scroll
+          Expanded(
+            child: GetBuilder<TextStyleController>(
+              id: 'font_list',
+              builder: (controller) {
+                return GetBuilder<TextStyleController>(
+                  id: 'font_family',
+                  builder: (controller) {
+                    return NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                        // Load more when reaching 80% of the scroll
+                        if (scrollInfo.metrics.pixels >
+                            scrollInfo.metrics.maxScrollExtent * 0.8) {
+                          controller.loadMoreFonts();
+                        }
+                        return false;
+                      },
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        physics: const BouncingScrollPhysics(),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 6),
+                        itemCount:
+                            controller.displayedFonts.length +
+                            (controller.hasMoreFonts.value ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          // Loading indicator at the end
+                          if (index == controller.displayedFonts.length) {
+                            return _buildLoadingIndicator();
+                          }
+
+                          final font = controller.displayedFonts[index];
+                          final isSelected =
+                              font == controller.selectedFont.value;
+
+                          return _buildFontItem(
+                            font: font,
+                            isSelected: isSelected,
+                            onTap: () {
+                              controller.selectedFont.value = font;
+                              controller.updateTextItem();
+                              controller.update(['font_family']);
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFontItem({
+    required String font,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppColors.branding.withOpacity(0.15),
+                    AppColors.branding.withOpacity(0.05),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+
+          // border: Border.all(
+          //   color: isSelected
+          //       ? AppColors.branding
+          //       : Get.theme.colorScheme.outline.withOpacity(0.08),
+          //   width: isSelected ? 2 : 1,
+          // ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Font Name
+                  // Text(
+                  //   font,
+                  //   style: TextStyle(
+                  //     fontSize: 15,
+                  //     fontWeight: FontWeight.w600,
+                  //     color: isSelected
+                  //         ? AppColors.branding
+                  //         : Get.theme.colorScheme.onSurface,
+                  //     letterSpacing: 0.3,
+                  //   ),
+                  // ),
+                  // const SizedBox(height: 6),
+                  // Font Preview Text
+                  Text(
+                    font,
+                    style: GoogleFonts.getFont(
+                      font,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                      letterSpacing: 0.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+
+                  // Font Style Indicators
+                ],
+              ),
+            ),
+
+            // Selection Indicator
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.branding : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.branding : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return GetBuilder<TextStyleController>(
+      id: 'font_list',
+      builder: (controller) {
+        if (!controller.isLoadingMoreFonts.value) return SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.branding),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Loading more fonts...',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _getFontCategory(String fontName) {
+    // Simple categorization based on font name patterns
+    final lowerName = fontName.toLowerCase();
+
+    if (lowerName.contains('serif') && !lowerName.contains('sans')) {
+      return 'Serif';
+    } else if (lowerName.contains('sans') ||
+        lowerName.contains('roboto') ||
+        lowerName.contains('inter') ||
+        lowerName.contains('poppins')) {
+      return 'Sans Serif';
+    } else if (lowerName.contains('script') ||
+        lowerName.contains('cursive') ||
+        lowerName.contains('dancing') ||
+        lowerName.contains('caveat')) {
+      return 'Script';
+    } else if (lowerName.contains('mono') || lowerName.contains('code')) {
+      return 'Monospace';
+    } else if (lowerName.contains('display') || lowerName.contains('title')) {
+      return 'Display';
+    }
+
+    return 'Sans Serif';
+  }
+}
+*/
 // MASK TAB - Fixed implementation with proper organization
 class _MaskTab extends StatelessWidget {
   final TextStyleController controller;
@@ -3068,6 +2963,7 @@ class _CircularTab extends StatelessWidget {
                         Tab(text: 'Spacing'),
                         Tab(text: 'Radius'),
                         Tab(text: 'Angle'),
+
                         Tab(text: 'Position'),
                         Tab(text: 'Direction'),
                         Tab(text: 'Style'),
@@ -3276,8 +3172,6 @@ class _TextDirectionSubTab extends StatelessWidget {
   }
 }
 
-///.........................................
-
 class _StyleSubTab extends StatelessWidget {
   final TextStyleController controller;
   const _StyleSubTab({required this.controller});
@@ -3404,7 +3298,239 @@ class _ColorsSubTab extends StatelessWidget {
   }
 }
 
+// New Arc Tab with sub-tabs
+// Add this Arc Tab class to your TextStylingEditor file
+
 // ====================== SHARED HELPER METHODS ======================
+class StrokeText extends StatelessWidget {
+  final String text;
+  final Color strokeColor;
+  final double strokeWidth;
+  final TextStyle? textStyle;
+  final TextAlign? textAlign;
+  final TextDirection? textDirection;
+  final TextScaler? textScaler;
+  final TextOverflow? overflow;
+  final int? maxLines;
+
+  const StrokeText({
+    super.key,
+    required this.text,
+    this.strokeColor = Colors.amber, // Default stroke color
+    this.strokeWidth = 3, // Default stroke width
+    this.textStyle,
+    this.textAlign,
+    this.textDirection,
+    this.textScaler,
+    this.overflow,
+    this.maxLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate proper size constraints for the text
+    final defaultTextStyle = TextStyle(
+      fontSize: textStyle?.fontSize ?? 24,
+      color: textStyle?.color ?? Colors.black,
+      fontFamily: textStyle?.fontFamily,
+      fontWeight: textStyle?.fontWeight,
+      fontStyle: textStyle?.fontStyle,
+      letterSpacing: textStyle?.letterSpacing,
+      wordSpacing: textStyle?.wordSpacing,
+      height: textStyle?.height,
+    );
+
+    // Create a TextPainter to measure the text
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: defaultTextStyle),
+      textAlign: textAlign ?? TextAlign.start,
+      textDirection: textDirection ?? TextDirection.ltr,
+      textScaler: textScaler ?? TextScaler.noScaling,
+      maxLines: maxLines,
+      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
+    );
+
+    // Layout the text with constraints to get proper size
+    textPainter.layout(minWidth: 0, maxWidth: double.infinity);
+
+    // Add stroke width padding to prevent clipping
+    final additionalWidth = strokeWidth * 2;
+    final additionalHeight = strokeWidth * 2;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate the actual size needed
+        double width = textPainter.width + additionalWidth;
+        double height = textPainter.height + additionalHeight;
+
+        // Respect parent constraints
+        if (constraints.maxWidth != double.infinity) {
+          width = width.clamp(0.0, constraints.maxWidth);
+        }
+        if (constraints.maxHeight != double.infinity) {
+          height = height.clamp(0.0, constraints.maxHeight);
+        }
+
+        return SizedBox(
+          width: width,
+          height: height,
+          child: CustomPaint(
+            size: Size(width, height),
+            painter: _TextPainterWithStroke(
+              text: text,
+              strokeColor: strokeColor,
+              strokeWidth: strokeWidth,
+              textStyle: textStyle,
+              textAlign: textAlign,
+              textDirection: textDirection,
+              textScaler: textScaler,
+              overflow: overflow,
+              maxLines: maxLines,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TextPainterWithStroke extends CustomPainter {
+  final String text;
+  final Color strokeColor;
+  final double strokeWidth;
+  final TextStyle? textStyle;
+  final TextAlign? textAlign;
+  final TextDirection? textDirection;
+  final TextScaler? textScaler;
+  final TextOverflow? overflow;
+  final int? maxLines;
+
+  _TextPainterWithStroke({
+    required this.text,
+    required this.strokeColor,
+    required this.strokeWidth,
+    this.textStyle,
+    this.textAlign,
+    this.textDirection,
+    this.textScaler,
+    this.overflow,
+    this.maxLines,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (text.isEmpty || size.width <= 0 || size.height <= 0) return;
+
+    const defaultTextStyle = TextStyle(fontSize: 24, color: Colors.black);
+
+    final mergedTextStyle = defaultTextStyle.merge(textStyle);
+
+    // Create stroke text style
+    final strokeTextStyle = mergedTextStyle.copyWith(
+      foreground: Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..color = strokeColor,
+    );
+
+    // Create main text style
+    final mainTextStyle = mergedTextStyle.copyWith(
+      color: mergedTextStyle.color ?? Colors.black,
+    );
+
+    // Create stroke text painter
+    final strokePainter = TextPainter(
+      text: TextSpan(text: text, style: strokeTextStyle),
+      textAlign: textAlign ?? TextAlign.start,
+      textDirection: textDirection ?? TextDirection.ltr,
+      textScaler: textScaler ?? TextScaler.noScaling,
+      maxLines: maxLines,
+      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
+    );
+
+    // Create main text painter
+    final mainTextPainter = TextPainter(
+      text: TextSpan(text: text, style: mainTextStyle),
+      textAlign: textAlign ?? TextAlign.start,
+      textDirection: textDirection ?? TextDirection.ltr,
+      textScaler: textScaler ?? TextScaler.noScaling,
+      maxLines: maxLines,
+      ellipsis: overflow == TextOverflow.ellipsis ? '...' : null,
+    );
+
+    // Layout with available width minus stroke padding
+    final maxWidth = (size.width - strokeWidth * 2).clamp(0.0, double.infinity);
+
+    strokePainter.layout(minWidth: 0, maxWidth: maxWidth);
+    mainTextPainter.layout(minWidth: 0, maxWidth: maxWidth);
+
+    // Calculate offset based on alignment and available space
+    final offset = _calculateOffset(strokePainter, size);
+
+    // Draw the stroke first
+    strokePainter.paint(canvas, offset);
+
+    // Then draw the main text
+    mainTextPainter.paint(canvas, offset);
+  }
+
+  // Helper method to calculate the offset based on text alignment
+  Offset _calculateOffset(TextPainter painter, Size size) {
+    // Add stroke width as padding
+    final paddingX = strokeWidth;
+    final paddingY = strokeWidth;
+
+    switch (textAlign ?? TextAlign.start) {
+      case TextAlign.center:
+        return Offset(
+          ((size.width - painter.width) / 2).clamp(
+            paddingX,
+            size.width - paddingX,
+          ),
+          ((size.height - painter.height) / 2).clamp(
+            paddingY,
+            size.height - paddingY,
+          ),
+        );
+      case TextAlign.end:
+      case TextAlign.right:
+        return Offset(
+          (size.width - painter.width - paddingX).clamp(
+            paddingX,
+            size.width - paddingX,
+          ),
+          ((size.height - painter.height) / 2).clamp(
+            paddingY,
+            size.height - paddingY,
+          ),
+        );
+      case TextAlign.left:
+      case TextAlign.start:
+      case TextAlign.justify:
+      default:
+        return Offset(
+          paddingX,
+          ((size.height - painter.height) / 2).clamp(
+            paddingY,
+            size.height - paddingY,
+          ),
+        );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TextPainterWithStroke oldDelegate) {
+    return text != oldDelegate.text ||
+        strokeColor != oldDelegate.strokeColor ||
+        strokeWidth != oldDelegate.strokeWidth ||
+        textStyle != oldDelegate.textStyle ||
+        textAlign != oldDelegate.textAlign ||
+        textDirection != oldDelegate.textDirection ||
+        textScaler != oldDelegate.textScaler ||
+        overflow != oldDelegate.overflow ||
+        maxLines != oldDelegate.maxLines;
+  }
+}
 
 Widget _buildCompactSection({
   required String title,

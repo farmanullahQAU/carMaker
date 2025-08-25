@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
-import 'package:cardmaker/app/features/editor/video_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/services/template_services.dart';
@@ -21,7 +21,6 @@ import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
   final StackBoardController boardController = StackBoardController();
-  final textEditController = Get.put(TextEditorController());
   final RxString selectedFont = 'Poppins'.obs;
   final RxDouble fontSize = 24.0.obs;
   final Rx<Color> fontColor = Colors.black.obs;
@@ -627,7 +626,7 @@ class CanvasController extends GetxController {
     }
 
     boardController.addItem(newItem);
-    // activeItem.value = newItem;
+    activeItem.value = newItem;
 
     update(['canvas_stack', 'bottom_sheet']);
   }
@@ -811,6 +810,7 @@ class CanvasController extends GetxController {
           id: UniqueKey().toString(),
           offset: Offset(100, 100),
           size: Size(Get.width * 0.3, Get.width * 0.3),
+          lockZOrder: true,
 
           content: ImageItemContent(filePath: image.path),
         );
