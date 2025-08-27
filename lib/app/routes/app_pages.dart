@@ -1,7 +1,9 @@
 import 'package:cardmaker/app/bindings/initial.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/models/card_template.dart';
 import 'package:get/get.dart';
 
 class AppPages {
@@ -17,6 +19,14 @@ class AppPages {
       name: Routes.editor,
       page: () => EditorPage(),
       binding: InitialBindings(),
+    ),
+
+    GetPage(
+      name: Routes.categoryTemplates,
+      page: () {
+        final CategoryModel category = Get.arguments as CategoryModel;
+        return CategoryTemplatesPage(category: category);
+      },
     ),
   ];
 }

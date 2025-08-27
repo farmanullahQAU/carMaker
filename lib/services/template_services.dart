@@ -4,6 +4,7 @@ import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/firebase_storage_service.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -148,6 +149,63 @@ class TemplateService extends GetxService {
       tags: tags,
       limit: limit,
     );
+  }
+
+  /// Get templates with pagination support for category pages
+  Future<QuerySnapshot<Map<String, dynamic>>> getTemplatesPaginated({
+    String? category,
+    List<String>? tags,
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    return await _firestoreService.getTemplatesPaginated(
+      category: category,
+      tags: tags,
+      limit: limit,
+      startAfterDocument: startAfterDocument,
+    );
+  }
+
+  /// Get templates count for a specific category
+  Future<int> getTemplatesCount({String? category}) async {
+    return await _firestoreService.getTemplatesCount(category: category);
+  }
+
+  /// Search templates with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> searchTemplatesPaginated({
+    required String searchTerm,
+    String? category,
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    return await _firestoreService.searchTemplatesPaginated(
+      searchTerm: searchTerm,
+      category: category,
+      limit: limit,
+      startAfterDocument: startAfterDocument,
+    );
+  }
+
+  /// Get templates by category with proper typing
+  Future<List<CardTemplate>> getTemplatesByCategory({
+    required String category,
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      final snapshot = await getTemplatesPaginated(
+        category: category,
+        limit: limit,
+        startAfterDocument: startAfterDocument,
+      );
+
+      return snapshot.docs
+          .map((doc) => CardTemplate.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching templates by category: $e');
+      return [];
+    }
   }
 
   /// Helper method to deserialize StackItem from JSON

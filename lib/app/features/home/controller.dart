@@ -1,3 +1,4 @@
+import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
@@ -42,42 +43,42 @@ class HomeController extends GetxController {
       name: 'Birthday',
       color: const Color(0xFFF59E0B),
       icon: Icons.cake_outlined,
-      imagePath: 'assets/birthday_2.png',
+      imagePath: '',
     ),
     CategoryModel(
       id: 'wedding',
       name: 'Wedding',
       color: const Color(0xFFEC4899),
       icon: Icons.favorite_outline,
-      imagePath: 'assets/card1.png',
+      imagePath: '',
     ),
     CategoryModel(
       id: 'business',
       name: 'Business',
       color: const Color(0xFF6366F1),
       icon: Icons.business_outlined,
-      imagePath: 'assets/card1.png',
+      imagePath: '',
     ),
     CategoryModel(
       id: 'anniversary',
       name: 'Anniversary',
       color: const Color(0xFF8B5CF6),
       icon: Icons.celebration_outlined,
-      imagePath: 'assets/card1.png',
+      imagePath: '',
     ),
     CategoryModel(
       id: 'invitation',
       name: 'Invitation',
       color: const Color(0xFF06B6D4),
       icon: Icons.mail_outline,
-      imagePath: 'assets/card1.png',
+      imagePath: '',
     ),
     CategoryModel(
       id: 'holiday',
       name: 'Holiday',
       color: const Color(0xFF10B981),
       icon: Icons.card_giftcard_outlined,
-      imagePath: 'assets/card1.png',
+      imagePath: '',
     ),
   ];
 
@@ -220,8 +221,16 @@ class HomeController extends GetxController {
     }
   }
 
+  // void onCategoryTap(CategoryModel category) {
+  //   Get.toNamed('/category/${category.id}');
+  // }
   void onCategoryTap(CategoryModel category) {
-    Get.toNamed('/category/${category.id}');
+    // Navigate with proper arguments to avoid controller conflicts
+    Get.to(
+      () => CategoryTemplatesPage(category: category),
+      preventDuplicates: true,
+      arguments: category,
+    );
   }
 
   void onTemplateTap(CardTemplate template) {

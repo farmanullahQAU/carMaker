@@ -383,13 +383,13 @@ class CanvasController extends GetxController {
       final templateId = Uuid().v4(); //TODO
       final template = CardTemplate(
         imagePath: "",
-        categoryId: 'general',
+        categoryId: 'birthday',
         id: templateId,
         name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
         items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
         width: templateOriginalWidth.value,
         height: templateOriginalHeight.value,
-        category: 'General',
+        category: 'birthday',
         tags: ['default'],
         isPremium: false,
       );

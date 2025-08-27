@@ -11,6 +11,7 @@ class CardTemplate {
   final DateTime? updatedAt;
   final String category;
   final String categoryId;
+  final bool isFeatured;
   final List<String> compatibleDesigns;
   final double width;
   final double height;
@@ -29,6 +30,7 @@ class CardTemplate {
     this.updatedAt,
     this.category = 'general',
     required this.categoryId,
+    this.isFeatured = false,
     this.compatibleDesigns = const [],
     this.width = 1240,
     this.height = 1740,
@@ -54,6 +56,7 @@ class CardTemplate {
         : null,
     category: json['category'] ?? 'general',
     categoryId: json['categoryId'] ?? 'general',
+    isFeatured: json['isFeatured'] ?? false,
     compatibleDesigns: List<String>.from(json['compatibleDesigns'] ?? []),
     width: (json['width'] ?? 1000).toDouble(),
     height: (json['height'] ?? 1000).toDouble(),
@@ -76,6 +79,7 @@ class CardTemplate {
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     'category': category,
     'categoryId': categoryId,
+    'isFeatured': isFeatured,
     'compatibleDesigns': compatibleDesigns,
     'width': width,
     'height': height,
@@ -86,4 +90,36 @@ class CardTemplate {
   };
 
   double get aspectRatio => width / height;
+}
+
+class CategoryModel {
+  final String id;
+  final String name;
+  final Color color;
+  final IconData icon;
+  final String? imagePath;
+
+  CategoryModel({
+    required this.id,
+    required this.name,
+    required this.color,
+    required this.icon,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'color': color.value,
+    'icon': icon.codePoint,
+    'imagePath': imagePath,
+  };
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
+    id: json['id'],
+    name: json['name'],
+    color: Color(json['color']),
+    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+    imagePath: json['imagePath'],
+  );
 }

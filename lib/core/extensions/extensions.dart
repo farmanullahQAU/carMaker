@@ -10,9 +10,13 @@ extension ColorExtension on Color {
   String toARGB32() => '${this.toARGB32()}';
 
   /// Creates a Color from an ARGB32 string, returns null if invalid.
-  static Color? fromARGB32(String? colorString) {
+  static Color? fromARGB32(dynamic colorString) {
     if (colorString == null) return null;
     try {
+      if (colorString is int) {
+        return Color(colorString);
+      }
+
       final intColor = int.parse(colorString);
       return Color(intColor);
     } catch (e) {

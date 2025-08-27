@@ -1,6 +1,7 @@
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/template_services.dart';
@@ -10,37 +11,6 @@ import 'package:photo_view/photo_view.dart';
 import 'package:widget_mask/widget_mask.dart';
 
 // --- ENHANCED DATA MODELS ---
-class CategoryModel {
-  final String id;
-  final String name;
-  final Color color;
-  final IconData icon;
-  final String? imagePath;
-
-  CategoryModel({
-    required this.id,
-    required this.name,
-    required this.color,
-    required this.icon,
-    this.imagePath,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'color': color.value,
-    'icon': icon.codePoint,
-    'imagePath': imagePath,
-  };
-
-  factory CategoryModel.fromJson(Map<String, dynamic> json) => CategoryModel(
-    id: json['id'],
-    name: json['name'],
-    color: Color(json['color']),
-    icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
-    imagePath: json['imagePath'],
-  );
-}
 
 class QuickAction {
   final String title;
@@ -203,7 +173,7 @@ class HomeTab extends GetView<HomeController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Hello, User!',
+            'Start a Design',
             style: Get.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: Get.theme.colorScheme.onSurface,
@@ -307,7 +277,7 @@ class TemplateCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         // Navigate to EditorPage with the selected template
-        Get.to(() => EditorPage(), arguments: {'template': template});
+        Get.toNamed(Routes.editor, arguments: {'template': template});
       },
       child: Container(
         width: cardWidth,
@@ -498,14 +468,14 @@ class CanvasSizesRow extends GetView<HomeController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Start a new design',
-            style: Get.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Get.theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16.0),
+          // Text(
+          //   'Start a new design',
+          //   style: Get.textTheme.titleMedium?.copyWith(
+          //     fontWeight: FontWeight.w600,
+          //     color: Get.theme.colorScheme.onSurface,
+          //   ),
+          // ),
+          // const SizedBox(height: 16.0),
           // Only basic canvas sizes section
           _buildBasicCanvasSection(),
         ],
@@ -641,70 +611,66 @@ class CategoriesList extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
-      child: ListView.builder(
+      height: 40,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: controller.categories.length,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemBuilder: (context, index) {
           final category = controller.categories[index];
-          return Container(
-            margin: const EdgeInsets.only(right: 10),
-            child: GestureDetector(
-              onTap: () => controller.onCategoryTap(category),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+          return InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () => controller.onCategoryTap(category),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    category.color.withOpacity(0.2),
+                    category.color.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      category.color.withOpacity(0.2),
-                      category.color.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: category.color.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: category.color.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: category.color,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: category.color,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      category.name,
-                      style: Get.textTheme.bodyMedium?.copyWith(
-                        color: Get.theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    category.name,
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: Get.theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
         },
+        separatorBuilder: (context, _) => const SizedBox(width: 8),
       ),
     );
   }

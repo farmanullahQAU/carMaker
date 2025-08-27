@@ -54,7 +54,76 @@ class FirestoreService {
     }
   }
 
-  /// Retrieves a stream of templates with optional filtering and pagination.
+  /// Get templates with pagination support
+  Future<QuerySnapshot<Map<String, dynamic>>> getTemplatesPaginated({
+    String? category,
+    List<String>? tags,
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      print("Fetching templates...of category $category");
+      Query<Map<String, dynamic>> query = _firestore
+          .collection(_templatesCollection)
+          .orderBy('updatedAt', descending: true)
+          .limit(limit);
+
+      if (category != null) {
+        query = query.where('category', isEqualTo: category);
+      }
+      if (tags != null && tags.isNotEmpty) {
+        query = query.where('tags', arrayContainsAny: tags);
+      }
+
+      if (startAfterDocument != null) {
+        query = query.startAfterDocument(startAfterDocument);
+      }
+
+      return await query.get();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to fetch templates: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+      rethrow;
+    }
+  }
+
+  /// Search templates with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> searchTemplatesPaginated({
+    required String searchTerm,
+    String? category,
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      // Note: This is a basic implementation. For better search,
+      // consider using Algolia or implementing full-text search
+      Query<Map<String, dynamic>> query = _firestore
+          .collection(_templatesCollection)
+          .orderBy('name')
+          .where('name', isGreaterThanOrEqualTo: searchTerm)
+          .where('name', isLessThanOrEqualTo: '$searchTerm\uf8ff')
+          .limit(limit);
+
+      if (category != null) {
+        query = query.where('category', isEqualTo: category);
+      }
+
+      if (startAfterDocument != null) {
+        query = query.startAfterDocument(startAfterDocument);
+      }
+
+      return await query.get();
+    } catch (e) {
+      print('Error searching templates: $e');
+      rethrow;
+    }
+  }
+
   Stream<List<CardTemplate>> getTemplates({
     String? category,
     List<String>? tags,
@@ -87,6 +156,25 @@ class FirestoreService {
         colorText: Colors.red.shade900,
       );
       return Stream.value([]);
+    }
+  }
+
+  /// Get templates count for a category
+  Future<int> getTemplatesCount({String? category}) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore.collection(
+        _templatesCollection,
+      );
+
+      if (category != null) {
+        query = query.where('category', isEqualTo: category);
+      }
+
+      final snapshot = await query.count().get();
+      return snapshot.count ?? 0;
+    } catch (e) {
+      print('Error getting templates count: $e');
+      return 0;
     }
   }
 }

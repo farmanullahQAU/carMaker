@@ -324,7 +324,7 @@ class ImageItemContent extends StackItemContent {
       opacity: asNullT<double>(json['opacity']) ?? 1.0,
       borderRadius: asNullT<double>(json['borderRadius']) ?? 0.0,
       borderWidth: asNullT<double>(json['borderWidth']) ?? 0.0,
-      borderColor: ColorExtension.fromARGB32(json['borderColor'] as String?),
+      borderColor: ColorExtension.fromARGB32(json['borderColor']),
       shadowBlur: asNullT<double>(json['shadowBlur']) ?? 0.0,
       shadowOffset: json['shadowOffset'] != null
           ? Offset(
@@ -332,7 +332,7 @@ class ImageItemContent extends StackItemContent {
               asT<double>(json['shadowOffset']['dy']),
             )
           : const Offset(0, 0),
-      shadowColor: ColorExtension.fromARGB32(json['shadowColor'] as String?),
+      shadowColor: ColorExtension.fromARGB32(json['shadowColor']),
       rotationAngle: asNullT<double>(json['rotationAngle']) ?? 0.0,
       flipHorizontal: asNullT<bool>(json['flipHorizontal']) ?? false,
       flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
@@ -353,9 +353,7 @@ class ImageItemContent extends StackItemContent {
       emboss: asNullT<bool>(json['emboss']) ?? false,
       // Shape border properties
       shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
-      shapeBorderColor: ColorExtension.fromARGB32(
-        json['shapeBorderColor'] as String?,
-      ),
+      shapeBorderColor: ColorExtension.fromARGB32(json['shapeBorderColor']),
       shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
     );
   }

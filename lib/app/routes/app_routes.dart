@@ -7,6 +7,7 @@ abstract class Routes {
   static const editor = _Paths.editor;
 
   static const bottomNavbarView = _Paths.bottomNavbarView;
+  static const categoryTemplates = _Paths.categoryTemplates;
 }
 
 abstract class _Paths {
@@ -18,4 +19,5 @@ abstract class _Paths {
   static const home = '/home';
   static const signin = "/signin";
   static const editor = "/editor";
+  static const String categoryTemplates = '/category-templates';
 }
