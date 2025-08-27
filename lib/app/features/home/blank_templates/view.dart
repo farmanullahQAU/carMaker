@@ -9,23 +9,20 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Professional Templates'),
-        backgroundColor: Get.theme.colorScheme.surface,
-        elevation: 0,
-      ),
       backgroundColor: Get.theme.colorScheme.surface,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 16.0),
-            _buildSocialMediaSection(),
-            const SizedBox(height: 32.0),
-            _buildPhotoDesignsSection(),
-            const SizedBox(height: 32.0),
-            _buildPrintDesignsSection(),
-            const SizedBox(height: 32.0),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 16.0),
+              _buildSocialMediaSection(),
+              const SizedBox(height: 32.0),
+              _buildPhotoDesignsSection(),
+              const SizedBox(height: 32.0),
+              _buildPrintDesignsSection(),
+              const SizedBox(height: 32.0),
+            ],
+          ),
         ),
       ),
     );
@@ -36,7 +33,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '1',
         name: 'Instagram Post',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Social Media',
         categoryId: 'social_media',
@@ -49,7 +46,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '2',
         name: 'Instagram Story',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Social Media',
         categoryId: 'social_media',
@@ -62,7 +59,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '3',
         name: 'Facebook Post',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Social Media',
         categoryId: 'social_media',
@@ -75,7 +72,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '4',
         name: 'Twitter Header',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Social Media',
         categoryId: 'social_media',
@@ -88,7 +85,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '5',
         name: 'LinkedIn Post',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Social Media',
         categoryId: 'social_media',
@@ -134,7 +131,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '6',
         name: '4x6 Photo',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Photo Designs',
         categoryId: 'photo_designs',
@@ -147,7 +144,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '7',
         name: '5x7 Photo',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Photo Designs',
         categoryId: 'photo_designs',
@@ -160,7 +157,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '8',
         name: 'Square Photo',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Photo Designs',
         categoryId: 'photo_designs',
@@ -173,7 +170,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '9',
         name: 'Polaroid',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Photo Designs',
         categoryId: 'photo_designs',
@@ -219,7 +216,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '10',
         name: 'A4 Flyer',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Print Designs',
         categoryId: 'print_designs',
@@ -232,7 +229,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '11',
         name: 'Poster',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Print Designs',
         categoryId: 'print_designs',
@@ -245,7 +242,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '12',
         name: 'Brochure',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Print Designs',
         categoryId: 'print_designs',
@@ -258,7 +255,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
       CardTemplate(
         id: '13',
         name: 'Business Card',
-        backgroundImage: null,
+        backgroundImageUrl: null,
         items: [],
         category: 'Print Designs',
         categoryId: 'print_designs',

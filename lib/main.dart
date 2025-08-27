@@ -29,6 +29,7 @@ class CardMakerApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       initialRoute: Routes.home,
       theme: CardMakerTheme.lightTheme(),
+
       darkTheme: CardMakerTheme.darkTheme(),
 
       getPages: AppPages.pages,

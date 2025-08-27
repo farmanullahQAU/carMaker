@@ -91,7 +91,7 @@ class CanvasController extends GetxController {
     categoryId.value = initialTemplate!.categoryId;
     tags.value = initialTemplate!.tags;
     isPremium.value = initialTemplate!.isPremium;
-    selectedBackground.value = initialTemplate?.backgroundImage;
+    selectedBackground.value = initialTemplate?.backgroundImageUrl;
     templateOriginalWidth.value = initialTemplate!.width.toDouble();
     templateOriginalHeight.value = initialTemplate!.height.toDouble();
     canvasWidth.value = initialTemplate!.width.toDouble();
@@ -156,7 +156,7 @@ class CanvasController extends GetxController {
   ) async {
     print("Loading exported template...");
     final controller = Get.find<CanvasController>();
-    selectedBackground.value = template.backgroundImage;
+    selectedBackground.value = template.backgroundImageUrl;
     templateName.value = template.name;
     category.value = template.category;
     categoryId.value = template.categoryId;
@@ -506,7 +506,7 @@ class CanvasController extends GetxController {
           ? templateName.value
           : initialTemplate!.name,
       thumbnailUrl: initialTemplate!.thumbnailUrl,
-      backgroundImage: initialTemplate?.backgroundImage ?? "",
+      backgroundImageUrl: initialTemplate?.backgroundImageUrl ?? "",
       items: exportedItems,
       createdAt: DateTime.now(),
       updatedAt: null,
@@ -600,7 +600,7 @@ class CanvasController extends GetxController {
   }
 
   Future<void> addTemplateToLocale(CardTemplate template) async {
-    print('Adding template: ${template.backgroundImage}');
+    print('Adding template: ${template.backgroundImageUrl}');
     await StorageService.addTemplate(template);
   }
 

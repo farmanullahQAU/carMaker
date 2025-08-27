@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
@@ -1007,6 +1008,12 @@ class CanvasStack extends StatelessWidget {
                 ),
               ),
 
+            // if (controller.selectedBackground.value != null)
+            //   CachedNetworkImage(
+            //     imageUrl: controller.selectedBackground.value!,
+            //     scale: controller.initialTemplate!.aspectRatio,
+            //   ),
+
             // Profile images
             ...controller.profileImageItems.map(
               (profileItem) => Positioned(
@@ -1052,7 +1059,14 @@ class CanvasStack extends StatelessWidget {
                             controller.selectedBackground.value!.startsWith(
                               'https',
                             ))
-                        ? Image.network(controller.selectedBackground.value!)
+                        ? CachedNetworkImage(
+                            imageUrl: controller.selectedBackground.value!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                Container(color: Colors.grey[200]),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error, color: Colors.grey[400]),
+                          )
                         : Image.file(
                             File(controller.selectedBackground.value!),
                             fit: BoxFit.cover,

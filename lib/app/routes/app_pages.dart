@@ -24,8 +24,12 @@ class AppPages {
     GetPage(
       name: Routes.categoryTemplates,
       page: () {
-        final CategoryModel category = Get.arguments as CategoryModel;
-        return CategoryTemplatesPage(category: category);
+        final arguments = Get.arguments;
+        if (arguments is CategoryModel) {
+          return CategoryTemplatesPage(category: arguments);
+        } else {
+          return CategoryTemplatesPage(category: null);
+        }
       },
     ),
   ];

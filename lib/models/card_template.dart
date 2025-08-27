@@ -5,7 +5,7 @@ class CardTemplate {
   final String id;
   final String name;
   final String? thumbnailUrl;
-  final String? backgroundImage;
+  final String? backgroundImageUrl;
   final List<Map<String, dynamic>> items;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -24,7 +24,7 @@ class CardTemplate {
     required this.id,
     required this.name,
     this.thumbnailUrl,
-    this.backgroundImage,
+    this.backgroundImageUrl,
     required this.items,
     DateTime? createdAt,
     this.updatedAt,
@@ -46,7 +46,7 @@ class CardTemplate {
     id: json['id'],
     name: json['name'],
     thumbnailUrl: json['thumbnailUrl'],
-    backgroundImage: json['backgroundImage'],
+    backgroundImageUrl: json['backgroundImageUrl'],
     items: List<Map<String, dynamic>>.from(json['items']),
     createdAt: json['createdAt'] != null
         ? (json['createdAt'] as Timestamp).toDate()
@@ -73,7 +73,7 @@ class CardTemplate {
     'id': id,
     'name': name,
     if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
-    'backgroundImage': backgroundImage,
+    'backgroundImageUrl': backgroundImageUrl,
     'items': items,
     'createdAt': FieldValue.serverTimestamp(),
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),

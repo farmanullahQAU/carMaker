@@ -1,6 +1,19 @@
+// import 'dart:async';
+
+// import 'package:cardmaker/app/features/home/controller.dart';
+// import 'package:cardmaker/app/routes/app_routes.dart';
+// import 'package:cardmaker/core/values/app_colors.dart';
+// import 'package:cardmaker/models/card_template.dart';
+// import 'package:cardmaker/services/template_services.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+
 import 'dart:async';
 
+import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/template_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,22 +21,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CategoryTemplatesController extends GetxController {
-  final CategoryModel category;
+  final CategoryModel? category;
   late final TemplateService _templateService;
 
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
-  final RxList<CardTemplate> _allTemplates =
-      <CardTemplate>[].obs; // Store all templates for search
+  final RxList<CardTemplate> _allTemplates = <CardTemplate>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool hasMoreData = true.obs;
   final RxString searchQuery = ''.obs;
+  final RxString selectedCategory = ''.obs;
+  final RxString selectedType = ''.obs; // Free, Premium, or empty for all
+  final RxList<String> availableCategories = <String>[].obs;
+  final RxList<String> favoriteTemplateIds = <String>[].obs;
 
   late final ScrollController scrollController;
-  static const int _pageSize = 3;
+  static const int _pageSize = 10;
   DocumentSnapshot? _lastDocument;
   Timer? _searchDebounce;
 
-  CategoryTemplatesController(this.category);
+  CategoryTemplatesController([this.category]);
 
   @override
   void onInit() {
@@ -31,6 +47,11 @@ class CategoryTemplatesController extends GetxController {
     _templateService = Get.find<TemplateService>();
     scrollController = ScrollController();
     _setupScrollListener();
+
+    // Initialize selected category
+    selectedCategory.value = category?.id ?? '';
+    _initializeAvailableCategories();
+    _loadFavorites();
     loadTemplates();
   }
 
@@ -40,6 +61,7 @@ class CategoryTemplatesController extends GetxController {
     _searchDebounce?.cancel();
     templates.clear();
     _allTemplates.clear();
+    favoriteTemplateIds.clear();
     super.onClose();
   }
 
@@ -54,6 +76,27 @@ class CategoryTemplatesController extends GetxController {
     });
   }
 
+  void _initializeAvailableCategories() {
+    final homeController = Get.find<HomeController>();
+    final uniqueCategories = homeController.categories.map((c) => c.id).toSet();
+    availableCategories.addAll(uniqueCategories);
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      final favoriteIds = await _templateService.getFavoriteTemplateIds();
+      favoriteTemplateIds.assignAll(favoriteIds);
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to load favorites: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
+  }
+
   Future<void> loadTemplates({bool refresh = false}) async {
     if (isLoading.value && !refresh) return;
 
@@ -65,11 +108,11 @@ class CategoryTemplatesController extends GetxController {
         _allTemplates.clear();
         _lastDocument = null;
         hasMoreData.value = true;
+        await _loadFavorites(); // Refresh favorites on pull-to-refresh
       }
 
-      // Use the TemplateService method instead of direct Firestore calls
       final snapshot = await _templateService.getTemplatesPaginated(
-        category: category.id,
+        category: category?.id,
         limit: _pageSize,
         startAfterDocument: _lastDocument,
       );
@@ -80,9 +123,11 @@ class CategoryTemplatesController extends GetxController {
             .toList();
 
         templates.addAll(newTemplates);
-        _allTemplates.addAll(newTemplates); // Store all templates
+        _allTemplates.addAll(newTemplates);
         _lastDocument = snapshot.docs.last;
         hasMoreData.value = snapshot.docs.length == _pageSize;
+
+        _applyFilters();
       } else {
         hasMoreData.value = false;
       }
@@ -103,31 +148,94 @@ class CategoryTemplatesController extends GetxController {
     await loadTemplates();
   }
 
-  void onSearchChanged(String query) {
-    // Cancel previous debounce timer
-    _searchDebounce?.cancel();
+  void onCategoryFilterChanged(String categoryId) {
+    selectedCategory.value = categoryId;
+    _applyFilters();
+  }
 
-    // Set new debounce timer
+  void onTypeFilterChanged(String type) {
+    selectedType.value = type;
+    _applyFilters();
+  }
+
+  void clearFilters() {
+    selectedCategory.value = '';
+    selectedType.value = '';
+    searchQuery.value = '';
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    var filtered = _allTemplates.toList();
+
+    // Apply category filter
+    if (selectedCategory.value.isNotEmpty) {
+      filtered = filtered.where((template) {
+        return template.categoryId == selectedCategory.value;
+      }).toList();
+    }
+
+    // Apply type filter
+    if (selectedType.value.isNotEmpty) {
+      filtered = filtered.where((template) {
+        return selectedType.value == 'free'
+            ? !template.isPremium
+            : template.isPremium;
+      }).toList();
+    }
+
+    // Apply search filter
+    if (searchQuery.value.isNotEmpty) {
+      final searchLower = searchQuery.value.toLowerCase();
+      filtered = filtered.where((template) {
+        return template.name.toLowerCase().contains(searchLower) ||
+            template.tags.any((tag) => tag.toLowerCase().contains(searchLower));
+      }).toList();
+    }
+
+    templates.assignAll(filtered);
+  }
+
+  void onSearchChanged(String query) {
+    _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 300), () {
       searchQuery.value = query;
-      _performSearch();
+      _applyFilters();
     });
   }
 
-  void _performSearch() {
-    if (searchQuery.value.isEmpty) {
-      // Show all templates when search is empty
-      templates.assignAll(_allTemplates);
-      return;
+  Future<void> toggleFavorite(CardTemplate template) async {
+    try {
+      if (favoriteTemplateIds.contains(template.id)) {
+        await _templateService.removeFromFavorites(template.id);
+        favoriteTemplateIds.remove(template.id);
+        Get.snackbar(
+          'Removed',
+          'Template removed from favorites',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+        );
+      } else {
+        await _templateService.addToFavorites(template.id);
+        favoriteTemplateIds.add(template.id);
+        Get.snackbar(
+          'Added',
+          'Template added to favorites',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to update favorites: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
     }
-
-    final filtered = _allTemplates.where((template) {
-      final searchLower = searchQuery.value.toLowerCase();
-      return template.name.toLowerCase().contains(searchLower) ||
-          template.tags.any((tag) => tag.toLowerCase().contains(searchLower));
-    }).toList();
-
-    templates.assignAll(filtered);
   }
 
   void onTemplateSelected(CardTemplate template) {
@@ -137,29 +245,71 @@ class CategoryTemplatesController extends GetxController {
   Future<void> onRefresh() async {
     await loadTemplates(refresh: true);
   }
+
+  String getCategoryName(String categoryId) {
+    if (categoryId.isEmpty) return 'All Categories';
+
+    final homeController = Get.find<HomeController>();
+    final category = homeController.categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => CategoryModel(
+        id: categoryId,
+        name: categoryId.capitalizeFirst!,
+        color: AppColors.branding,
+        icon: Icons.category_outlined,
+        imagePath: '',
+      ),
+    );
+
+    return category.name;
+  }
+
+  Color getCategoryColor(String categoryId) {
+    if (categoryId.isEmpty) return AppColors.branding;
+
+    final homeController = Get.find<HomeController>();
+    final category = homeController.categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => CategoryModel(
+        id: categoryId,
+        name: categoryId.capitalizeFirst!,
+        color: AppColors.branding,
+        icon: Icons.category_outlined,
+        imagePath: '',
+      ),
+    );
+
+    return category.color;
+  }
+
+  String getPageTitle() {
+    return category?.name ?? 'All Templates';
+  }
+
+  Color getPageColor() {
+    return category?.color ?? AppColors.branding;
+  }
 }
 
-// import 'package:cardmaker/app/routes/app_routes.dart';
-// import 'package:cardmaker/models/card_template.dart';
-// import 'package:cardmaker/services/template_services.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
 // class CategoryTemplatesController extends GetxController {
-//   final CategoryModel category;
+//   final CategoryModel? category;
 //   late final TemplateService _templateService;
 
 //   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
+//   final RxList<CardTemplate> _allTemplates = <CardTemplate>[].obs;
 //   final RxBool isLoading = false.obs;
 //   final RxBool hasMoreData = true.obs;
 //   final RxString searchQuery = ''.obs;
+//   final RxString selectedCategory = ''.obs;
+//   final RxString selectedType = ''.obs; // Free, Premium, or empty for all
+//   final RxList<String> availableCategories = <String>[].obs;
 
 //   late final ScrollController scrollController;
-//   static const int _pageSize = 20;
+//   static const int _pageSize = 10;
 //   DocumentSnapshot? _lastDocument;
+//   Timer? _searchDebounce;
 
-//   CategoryTemplatesController(this.category);
+//   CategoryTemplatesController([this.category]);
 
 //   @override
 //   void onInit() {
@@ -167,13 +317,19 @@ class CategoryTemplatesController extends GetxController {
 //     _templateService = Get.find<TemplateService>();
 //     scrollController = ScrollController();
 //     _setupScrollListener();
+
+//     // Initialize selected category
+//     selectedCategory.value = category?.id ?? '';
+//     _initializeAvailableCategories();
 //     loadTemplates();
 //   }
 
 //   @override
 //   void onClose() {
 //     scrollController.dispose();
+//     _searchDebounce?.cancel();
 //     templates.clear();
+//     _allTemplates.clear();
 //     super.onClose();
 //   }
 
@@ -188,6 +344,12 @@ class CategoryTemplatesController extends GetxController {
 //     });
 //   }
 
+//   void _initializeAvailableCategories() {
+//     final homeController = Get.find<HomeController>();
+//     final uniqueCategories = homeController.categories.map((c) => c.id).toSet();
+//     availableCategories.addAll(uniqueCategories);
+//   }
+
 //   Future<void> loadTemplates({bool refresh = false}) async {
 //     if (isLoading.value && !refresh) return;
 
@@ -196,13 +358,13 @@ class CategoryTemplatesController extends GetxController {
 //     try {
 //       if (refresh) {
 //         templates.clear();
+//         _allTemplates.clear();
 //         _lastDocument = null;
 //         hasMoreData.value = true;
 //       }
 
-//       // Use the TemplateService method instead of direct Firestore calls
 //       final snapshot = await _templateService.getTemplatesPaginated(
-//         category: category.id,
+//         category: category?.id,
 //         limit: _pageSize,
 //         startAfterDocument: _lastDocument,
 //       );
@@ -213,8 +375,11 @@ class CategoryTemplatesController extends GetxController {
 //             .toList();
 
 //         templates.addAll(newTemplates);
+//         _allTemplates.addAll(newTemplates);
 //         _lastDocument = snapshot.docs.last;
 //         hasMoreData.value = snapshot.docs.length == _pageSize;
+
+//         _applyFilters();
 //       } else {
 //         hasMoreData.value = false;
 //       }
@@ -235,24 +400,60 @@ class CategoryTemplatesController extends GetxController {
 //     await loadTemplates();
 //   }
 
-//   void onSearchChanged(String query) {
-//     searchQuery.value = query;
-//     _performSearch();
+//   void onCategoryFilterChanged(String categoryId) {
+//     selectedCategory.value = categoryId;
+//     _applyFilters();
 //   }
 
-//   void _performSearch() {
-//     if (searchQuery.value.isEmpty) {
-//       loadTemplates(refresh: true);
-//       return;
+//   void onTypeFilterChanged(String type) {
+//     selectedType.value = type;
+//     _applyFilters();
+//   }
+
+//   void clearFilters() {
+//     selectedCategory.value = '';
+//     selectedType.value = '';
+//     searchQuery.value = '';
+//     _applyFilters();
+//   }
+
+//   void _applyFilters() {
+//     var filtered = _allTemplates.toList();
+
+//     // Apply category filter
+//     if (selectedCategory.value.isNotEmpty) {
+//       filtered = filtered.where((template) {
+//         return template.categoryId == selectedCategory.value;
+//       }).toList();
 //     }
 
-//     final filtered = templates.where((template) {
+//     // Apply type filter
+//     if (selectedType.value.isNotEmpty) {
+//       filtered = filtered.where((template) {
+//         return selectedType.value == 'free'
+//             ? !template.isPremium
+//             : template.isPremium;
+//       }).toList();
+//     }
+
+//     // Apply search filter
+//     if (searchQuery.value.isNotEmpty) {
 //       final searchLower = searchQuery.value.toLowerCase();
-//       return template.name.toLowerCase().contains(searchLower) ||
-//           template.tags.any((tag) => tag.toLowerCase().contains(searchLower));
-//     }).toList();
+//       filtered = filtered.where((template) {
+//         return template.name.toLowerCase().contains(searchLower) ||
+//             template.tags.any((tag) => tag.toLowerCase().contains(searchLower));
+//       }).toList();
+//     }
 
 //     templates.assignAll(filtered);
+//   }
+
+//   void onSearchChanged(String query) {
+//     _searchDebounce?.cancel();
+//     _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+//       searchQuery.value = query;
+//       _applyFilters();
+//     });
 //   }
 
 //   void onTemplateSelected(CardTemplate template) {
@@ -261,5 +462,49 @@ class CategoryTemplatesController extends GetxController {
 
 //   Future<void> onRefresh() async {
 //     await loadTemplates(refresh: true);
+//   }
+
+//   String getCategoryName(String categoryId) {
+//     if (categoryId.isEmpty) return 'All Categories';
+
+//     final homeController = Get.find<HomeController>();
+//     final category = homeController.categories.firstWhere(
+//       (c) => c.id == categoryId,
+//       orElse: () => CategoryModel(
+//         id: categoryId,
+//         name: categoryId.capitalizeFirst!,
+//         color: AppColors.branding,
+//         icon: Icons.category_outlined,
+//         imagePath: '',
+//       ),
+//     );
+
+//     return category.name;
+//   }
+
+//   Color getCategoryColor(String categoryId) {
+//     if (categoryId.isEmpty) return AppColors.branding;
+
+//     final homeController = Get.find<HomeController>();
+//     final category = homeController.categories.firstWhere(
+//       (c) => c.id == categoryId,
+//       orElse: () => CategoryModel(
+//         id: categoryId,
+//         name: categoryId.capitalizeFirst!,
+//         color: AppColors.branding,
+//         icon: Icons.category_outlined,
+//         imagePath: '',
+//       ),
+//     );
+
+//     return category.color;
+//   }
+
+//   String getPageTitle() {
+//     return category?.name ?? 'All Templates';
+//   }
+
+//   Color getPageColor() {
+//     return category?.color ?? AppColors.branding;
 //   }
 // }

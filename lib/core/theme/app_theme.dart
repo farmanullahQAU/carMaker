@@ -1,5 +1,6 @@
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CardMakerTheme {
   static ThemeData lightTheme() {
@@ -12,7 +13,7 @@ class CardMakerTheme {
         // tertiary: AppColors.tertiary,
         brightness: Brightness.light,
       ),
-      textTheme: Typography.blackMountainView,
+      textTheme: GoogleFonts.interTextTheme(Typography.blackMountainView),
     );
   }
 
@@ -33,7 +34,7 @@ class CardMakerTheme {
         // tertiary: AppColors.tertiary,
         brightness: Brightness.dark,
       ),
-      textTheme: Typography.whiteMountainView,
+      textTheme: GoogleFonts.montserratTextTheme(Typography.whiteMountainView),
     );
   }
 }
