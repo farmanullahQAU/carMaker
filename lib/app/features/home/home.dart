@@ -1,11 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
-import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
-import 'package:cardmaker/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
@@ -61,27 +58,34 @@ class HomePage extends GetView<HomeController> {
     return Obx(
       () => Scaffold(
         backgroundColor: Get.theme.colorScheme.surface,
-        extendBody: (controller.selectedIndex.value == 0) ? true : false,
-
-        body: Obx(
-          () => IndexedStack(
-            // controller: controller.pageController,
-            // physics: const NeverScrollableScrollPhysics(),
-            // onPageChanged: controller.onPageChanged,
-            index: controller.selectedIndex.value,
-            children: [
-              HomeTab(),
-              const ProfessionalTemplatesPage(),
-
-              EditorPage(),
-              // const PlaceholderPage(
-              //   title: "Premium",
-              //   icon: Icons.workspace_premium_outlined,
-              // ),
-            ],
-          ),
+        extendBody: controller.selectedIndex.value == 0 ? true : false,
+        appBar: controller.selectedIndex.value == 0
+            ? null
+            : AppBar(
+                title: Text(
+                  controller.selectedIndex.value == 1
+                      ? 'Templates'
+                      : 'My Designs',
+                  style: Get.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Get.theme.colorScheme.onSurface,
+                  ),
+                ),
+                backgroundColor: Get.theme.colorScheme.surface,
+                elevation: 0,
+              ),
+        body: IndexedStack(
+          index: controller.selectedIndex.value,
+          children: [
+            const HomeTab(),
+            const ProfessionalTemplatesPage(),
+            // PlaceholderPage(
+            //   title: "My Designs",
+            //   icon: Icons.palette_outlined,
+            // ),
+          ],
         ),
-        bottomNavigationBar: Obx(() => _buildModernBottomNav()),
+        bottomNavigationBar: _buildModernBottomNav(),
       ),
     );
   }
@@ -90,7 +94,6 @@ class HomePage extends GetView<HomeController> {
     return NavigationBar(
       selectedIndex: controller.selectedIndex.value,
       onDestinationSelected: controller.onBottomNavTap,
-
       destinations: [
         _ModernNavDestination(
           icon: Icons.home_outlined,
@@ -107,11 +110,6 @@ class HomePage extends GetView<HomeController> {
           selectedIcon: Icons.palette,
           label: 'My Designs',
         ),
-        // _ModernNavDestination(
-        //   icon: Icons.workspace_premium_outlined,
-        //   selectedIcon: Icons.workspace_premium,
-        //   label: 'Premium',
-        // ),
       ],
     );
   }
@@ -124,11 +122,7 @@ class _ModernNavDestination extends NavigationDestination {
     required super.label,
   }) : super(
          icon: Icon(icon, size: 22),
-         selectedIcon: Icon(
-           selectedIcon,
-           //  size: 22,
-           color: Get.theme.colorScheme.primary,
-         ),
+         selectedIcon: Icon(selectedIcon, color: Get.theme.colorScheme.primary),
        );
 }
 
@@ -138,87 +132,71 @@ class HomeTab extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        _buildModernAppBar(),
-        const SliverToBoxAdapter(
-          child: CanvasSizesRow(), // Simplified with only basic canvases
-        ),
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              const ProfessionalTemplatesBanner(),
-              const ProfessionalTemplatesBanner(),
-              const ProfessionalTemplatesBanner(),
-
-              const SizedBox(height: 20),
-              // const SectionTitle(title: 'Browse Categories', showSeeAll: true),
-              const SizedBox(height: 12),
-              const CategoriesList(),
-              const SizedBox(height: 20),
-              const SectionTitle(title: 'Featured Templates', showSeeAll: true),
-              const SizedBox(height: 12),
-              HorizontalCardList(), // Updated to show templates
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  SliverAppBar _buildModernAppBar() {
-    return SliverAppBar(
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Start a Design',
-            style: Get.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: Get.theme.colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: IconButton(
-            onPressed: () {},
-            icon: Badge(
-              backgroundColor: Get.theme.colorScheme.primary,
-              child: Icon(
-                Icons.notifications_none_rounded,
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Start a Design',
+              style: Get.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
                 color: Get.theme.colorScheme.onSurface,
-                size: 24,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              onPressed: () {},
+              icon: Badge(
+                backgroundColor: Get.theme.colorScheme.primary,
+                child: Icon(
+                  Icons.notifications_none_rounded,
+                  color: Get.theme.colorScheme.onSurface,
+                  size: 24,
+                ),
               ),
             ),
           ),
+        ],
+        backgroundColor: Get.theme.colorScheme.surface,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        // physics: const BouncingScrollPhysics(),
+        child: Column(
+          spacing: 8,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const CanvasSizesRow(),
+            const ProfessionalTemplatesBanner(),
+            const SectionTitle(title: 'Browse Categories', showSeeAll: true),
+            const CategoriesList(),
+            const SectionTitle(title: 'Featured Templates', showSeeAll: true),
+            const HorizontalCardList(),
+          ],
         ),
-      ],
-      pinned: false,
-      floating: true,
-      backgroundColor: Get.theme.colorScheme.surface,
-      elevation: 0,
+      ),
     );
   }
 }
 
-// --- Updated HorizontalCardList Widget to Display Templates ---
+// --- New HorizontalCardList Widget to Display Templates ---
 class HorizontalCardList extends GetView<HomeController> {
   const HorizontalCardList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => SizedBox(
-        height: 150,
-        child: controller.isLoading.value
+    return SizedBox(
+      height: 150,
+      child: GetBuilder<HomeController>(
+        id: 'templates',
+        builder: (controller) => controller.isLoading.value
             ? const Center(child: CircularProgressIndicator())
-            : controller.featuredTemplates.isEmpty
+            : controller.templates.isEmpty
             ? Center(
                 child: Text(
                   'No templates available',
@@ -230,17 +208,15 @@ class HorizontalCardList extends GetView<HomeController> {
             : ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: controller.featuredTemplates.length + 1,
+                physics: const BouncingScrollPhysics(),
+                cacheExtent: 500.0,
+                itemCount: controller.templates.length + 1,
                 itemBuilder: (context, index) {
-                  if (index == controller.featuredTemplates.length) {
+                  if (index == controller.templates.length) {
                     return _buildViewAllButton();
                   }
-
-                  final template = controller.featuredTemplates[index];
-                  return TemplateCard(
-                    template: template,
-                    onFavoriteToggle: () => controller.toggleFavorite(template),
-                  );
+                  final template = controller.templates[index];
+                  return TemplateCard(template: template);
                 },
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
               ),
@@ -250,21 +226,12 @@ class HorizontalCardList extends GetView<HomeController> {
 
   Widget _buildViewAllButton() {
     return GestureDetector(
-      onTap: () {
-        Get.to(() => const ProfessionalTemplatesPage());
-      },
+      onTap: () => Get.to(() => const ProfessionalTemplatesPage()),
       child: Container(
         width: 100,
         decoration: BoxDecoration(
           color: Get.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Get.theme.colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
           border: Border.all(
             color: Get.theme.colorScheme.outline.withOpacity(0.1),
             width: 1,
@@ -287,7 +254,7 @@ class HorizontalCardList extends GetView<HomeController> {
               ),
             ),
             const SizedBox(height: 12),
-            Text('View All'),
+            const Text('View All'),
           ],
         ),
       ),
@@ -295,25 +262,18 @@ class HorizontalCardList extends GetView<HomeController> {
   }
 }
 
-// --- Updated TemplateCard Widget ---
-class TemplateCard extends StatelessWidget {
+// --- New TemplateCard Widget ---
+class TemplateCard extends GetView<HomeController> {
   final CardTemplate template;
-  final VoidCallback? onFavoriteToggle;
 
-  const TemplateCard({
-    super.key,
-    required this.template,
-    this.onFavoriteToggle,
-  });
+  const TemplateCard({super.key, required this.template});
 
   @override
   Widget build(BuildContext context) {
     final aspectRatio = template.width / template.height;
 
     return GestureDetector(
-      onTap: () {
-        Get.toNamed(Routes.editor, arguments: {'template': template});
-      },
+      onTap: () => controller.onTemplateTap(template),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: Get.width * 0.4),
         child: AspectRatio(
@@ -323,53 +283,52 @@ class TemplateCard extends StatelessWidget {
               Align(
                 alignment: Alignment.topCenter,
                 child: Container(
-                  padding: EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Get.theme.colorScheme.shadow.withOpacity(0.04),
-                        blurRadius: 15,
+                        color: Get.theme.shadowColor.withOpacity(0.1),
+                        blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      child: template.thumbnailUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: template.thumbnailUrl!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  Container(color: Colors.grey[200]),
-                              errorWidget: (context, url, error) =>
-                                  Icon(Icons.error, color: Colors.grey[400]),
-                            )
-                          : Icon(
-                              Icons.image,
-                              size: 40,
-                              color: Get.theme.colorScheme.onSurfaceVariant,
-                            ),
-                    ),
+                    borderRadius: BorderRadius.circular(12),
+
+                    child: template.thumbnailUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: template.thumbnailUrl!,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 200),
+                            placeholder: (context, url) =>
+                                Container(color: Colors.grey[200]),
+                            errorWidget: (context, url, error) =>
+                                Icon(Icons.error, color: Colors.grey[400]),
+                          )
+                        : Icon(
+                            Icons.image,
+                            size: 40,
+                            color: Get.theme.colorScheme.onSurfaceVariant,
+                          ),
                   ),
                 ),
               ),
-              // Favorite button
               Positioned(
                 top: 8,
                 right: 8,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Get.theme.colorScheme.surface.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: GetBuilder<HomeController>(
-                    builder: (controller) => IconButton(
-                      icon: Obx(
-                        () => Icon(
+                child: GetBuilder<HomeController>(
+                  id: 'favorites',
+                  builder: (controller) => Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Get.theme.colorScheme.surface.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Obx(
+                      () => IconButton(
+                        icon: Icon(
                           controller.favoriteTemplateIds.contains(template.id)
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
@@ -381,16 +340,11 @@ class TemplateCard extends StatelessWidget {
                               ? Colors.red
                               : Get.theme.colorScheme.onSurface,
                         ),
+                        onPressed: () async {
+                          await controller.toggleFavorite(template.id);
+                        },
+                        padding: EdgeInsets.zero,
                       ),
-                      onPressed: () {
-                        final authService = Get.find<AuthService>();
-                        if (authService.isUserAuthenticated()) {
-                          onFavoriteToggle?.call();
-                        } else {
-                          authService.promptLogin();
-                        }
-                      },
-                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ),
@@ -403,203 +357,6 @@ class TemplateCard extends StatelessWidget {
   }
 }
 
-/*
-// --- New HorizontalCardList Widget to Display Templates ---
-class HorizontalCardList extends GetView<HomeController> {
-  const HorizontalCardList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final templateService = Get.find<TemplateService>();
-
-    return SizedBox(
-      height: 150, // Fixed height for the card list
-      child: StreamBuilder<List<CardTemplate>>(
-        stream: templateService.getTemplates(limit: 10), // Fetch templates
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error loading templates: ${snapshot.error}',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Get.theme.colorScheme.error,
-                ),
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Text(
-                'No templates available',
-                style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Get.theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            );
-          }
-
-          final templates = snapshot.data!;
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount:
-                templates.length + 1, // Add one for the "View All" button
-            itemBuilder: (context, index) {
-              if (index == templates.length) {
-                // This is the "View All" button
-                return _buildViewAllButton();
-              }
-
-              final template = templates[index];
-              return TemplateCard(template: template);
-            },
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildViewAllButton() {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to a full templates gallery page
-        Get.to(() => const ProfessionalTemplatesPage());
-      },
-      child: Container(
-        width: 100,
-        decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Get.theme.colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-          border: Border.all(
-            color: Get.theme.colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.branding.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.branding,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text('View All'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// --- New TemplateCard Widget ---
-class TemplateCard extends StatelessWidget {
-  final CardTemplate template;
-
-  const TemplateCard({super.key, required this.template});
-
-  @override
-  Widget build(BuildContext context) {
-    // Calculate aspect ratio from template dimensions
-    final aspectRatio = template.width / template.height;
-
-    return GestureDetector(
-      onTap: () {
-        // Navigate to EditorPage with the selected template
-        Get.toNamed(Routes.editor, arguments: {'template': template});
-      },
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: Get.width * 0.4),
-        child: AspectRatio(
-          aspectRatio: aspectRatio,
-          child: Stack(
-            children: [
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  padding: EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Get.theme.colorScheme.shadow.withOpacity(0.04),
-                        blurRadius: 15,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      child: template.thumbnailUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: template.thumbnailUrl!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  Container(color: Colors.grey[200]),
-                              errorWidget: (context, url, error) =>
-                                  Icon(Icons.error, color: Colors.grey[400]),
-                            )
-                          : Icon(
-                              Icons.image,
-                              size: 40,
-                              color: Get.theme.colorScheme.onSurfaceVariant,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-              // Favorite button
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Get.theme.colorScheme.surface.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.favorite_border_rounded,
-                      size: 18,
-                      color: Get.theme.colorScheme.onSurface,
-                    ),
-                    onPressed: () {
-                      // Handle favorite action
-                    },
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
 // --- Modern UI Components ---
 class SectionTitle extends StatelessWidget {
   final String title;
@@ -722,19 +479,7 @@ class CanvasSizesRow extends GetView<HomeController> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          // Text(
-          //   'Start a new design',
-          //   style: Get.textTheme.titleMedium?.copyWith(
-          //     fontWeight: FontWeight.w600,
-          //     color: Get.theme.colorScheme.onSurface,
-          //   ),
-          // ),
-          // const SizedBox(height: 16.0),
-          // Only basic canvas sizes section
-          _buildBasicCanvasSection(),
-        ],
+        children: [_buildBasicCanvasSection()],
       ),
     );
   }
@@ -785,21 +530,14 @@ class CanvasSizesRow extends GetView<HomeController> {
     return SizedBox(
       height: 90.0,
       child: Row(
-        spacing: 16,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: basicSizes.asMap().entries.map((entry) {
-          final index = entry.key;
           final canvas = entry.value;
           return Expanded(
-            child: Container(
-              // margin: EdgeInsets.only(
-              //   left: index == 0 ? 0 : 8.0,
-              //   right: index == basicSizes.length - 1 ? 0 : 8.0,
-              // ),
-              child: _buildBasicCanvasCardWithGradient(
-                canvas['title'] as String,
-                canvas['aspectRatio'] as double,
-                canvas['gradient'] as LinearGradient,
-              ),
+            child: _buildBasicCanvasCardWithGradient(
+              canvas['title'] as String,
+              canvas['aspectRatio'] as double,
+              canvas['gradient'] as LinearGradient,
             ),
           );
         }).toList(),
@@ -818,38 +556,18 @@ class CanvasSizesRow extends GetView<HomeController> {
       },
       child: Container(
         decoration: BoxDecoration(
-          // gradient: gradient,
           color: Get.theme.colorScheme.surfaceContainer,
           borderRadius: BorderRadius.circular(20.0),
-          // boxShadow: [
-          //   BoxShadow(
-          //     color: Get.theme.colorScheme.shadow.withOpacity(0.05),
-          //     blurRadius: 6.0,
-          //     offset: const Offset(0, 2),
-          //   ),
-          // ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Canvas preview container
             Container(
               width: 60.0,
               height: 60.0 / aspectRatio,
               decoration: BoxDecoration(
                 color: Get.theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(8.0),
-                // border: Border.all(
-                //   color: Get.theme.colorScheme.outline.withOpacity(0.2),
-                //   width: 0.5,
-                // ),
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.black.withOpacity(0.1),
-                //     blurRadius: 4.0,
-                //     offset: const Offset(0, 2.0),
-                //   ),
-                // ],
               ),
               child: Icon(Icons.add, color: AppColors.branding, size: 20.0),
             ),
@@ -872,6 +590,8 @@ class CategoriesList extends GetView<HomeController> {
         scrollDirection: Axis.horizontal,
         itemCount: controller.categories.length,
         padding: const EdgeInsets.symmetric(horizontal: 20),
+        physics: const BouncingScrollPhysics(),
+        cacheExtent: 500.0,
         itemBuilder: (context, index) {
           final category = controller.categories[index];
           return InkWell(

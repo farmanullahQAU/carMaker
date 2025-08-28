@@ -146,19 +146,6 @@ class TemplateService extends GetxService {
     }
   }
 
-  /// Retrieves templates with optional filtering.
-  Stream<List<CardTemplate>> getTemplates({
-    String? category,
-    List<String>? tags,
-    int limit = 20,
-  }) {
-    return _firestoreService.getTemplates(
-      category: category,
-      tags: tags,
-      limit: limit,
-    );
-  }
-
   /// Get templates with pagination support for category pages
   Future<QuerySnapshot<Map<String, dynamic>>> getTemplatesPaginated({
     String? category,

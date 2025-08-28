@@ -13,7 +13,7 @@ class CardMakerTheme {
         // tertiary: AppColors.tertiary,
         brightness: Brightness.light,
       ),
-      textTheme: GoogleFonts.interTextTheme(Typography.blackMountainView),
+      textTheme: GoogleFonts.interTightTextTheme(Typography.blackMountainView),
     );
   }
 
