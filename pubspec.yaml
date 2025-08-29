@@ -58,6 +58,7 @@ dependencies:
   cached_network_image: ^3.4.1
   firebase_auth: ^6.0.1
   path: ^1.9.1
+  flutter_image_compress: ^2.4.0
   # stack_board: ^0.2.6+1
 flutter_native_splash:
   color: "#ffffff"  # White background for light mode
@@ -70,6 +71,12 @@ flutter_native_splash:
     image: assets/splash.png
     # icon_background_color: "#ffffff"
     # icon_background_color_dark: "#000000"
+   #branding: assets/dart.png
+
+  # To position the branding image at the bottom of the screen you can use bottom, bottomRight,
+  # and bottomLeft. The default values is bottom if not specified or specified something else.
+  #branding_mode: bottom
+  
 
 
 dev_dependencies:

@@ -530,6 +530,7 @@ class CanvasSizesRow extends GetView<HomeController> {
     return SizedBox(
       height: 90.0,
       child: Row(
+        spacing: 8,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: basicSizes.asMap().entries.map((entry) {
           final canvas = entry.value;

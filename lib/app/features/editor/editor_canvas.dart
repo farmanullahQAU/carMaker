@@ -1195,12 +1195,19 @@ class CanvasStack extends StatelessWidget {
               child: IgnorePointer(
                 ignoring: true,
                 child: Opacity(
-                  opacity: 0.3, // Semi-transparent for watermark effect
-                  child: Image.asset(
-                    'assets/logo_white.png',
-                    width: 100, // Adjust size as needed
-                    height: 100,
-                    fit: BoxFit.contain,
+                  opacity: 0.2, // Semi-transparent for watermark effect
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/icon.png',
+                        width: 33, // Adjust size as needed
+                        height: 33,
+                        fit: BoxFit.contain,
+                      ),
+                      Text("Inkkaro", style: TextStyle(fontSize: 11)),
+                    ],
                   ),
                 ),
               ),

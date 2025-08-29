@@ -151,26 +151,28 @@ class _TextStylingEditorState extends State<TextStylingEditor>
           duration: const Duration(milliseconds: 200),
           child: SizedBox(
             height: _getTabHeight(controller.currentIndex.value),
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _tabController,
-              children: [
-                _SizeTab(controller: controller),
-                _AlignmentTab(controller: controller),
-                _ColorTab(controller: controller),
-                _BackgroundTab(controller: controller),
-                _StyleTab(controller: controller),
-                _SpacingTab(controller: controller),
-                _FontTab(controller: controller),
-                _MaskTab(controller: controller),
-                _EffectsTab(controller: controller),
-                _DualToneTuneTab(controller: controller),
-                _CircularTab(
-                  controller: controller,
-                  tabController: _circularSubTabController,
-                ),
-                // Removed duplicate tab (empty SizedBox)
-              ],
+            child: SafeArea(
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                controller: _tabController,
+                children: [
+                  _SizeTab(controller: controller),
+                  _AlignmentTab(controller: controller),
+                  _ColorTab(controller: controller),
+                  _BackgroundTab(controller: controller),
+                  _StyleTab(controller: controller),
+                  _SpacingTab(controller: controller),
+                  _FontTab(controller: controller),
+                  _MaskTab(controller: controller),
+                  _EffectsTab(controller: controller),
+                  _DualToneTuneTab(controller: controller),
+                  _CircularTab(
+                    controller: controller,
+                    tabController: _circularSubTabController,
+                  ),
+                  // Removed duplicate tab (empty SizedBox)
+                ],
+              ),
             ),
           ),
         );
@@ -247,7 +249,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       case 2: // Color
         return 80;
       case 3: // Background
-        return 100;
+        return 80;
       case 4: // Style
         return 100;
       case 5: // Spacing
@@ -450,7 +452,7 @@ class _BackgroundTab extends StatelessWidget {
         builder: (controller) {
           return ColorSelector(
             title: "Bg Color",
-            showTitle: true,
+            showTitle: false,
 
             colors: TextStyleController.predefinedColors,
             currentColor: controller.backgroundColor.value,
@@ -728,7 +730,7 @@ class _StyleTab extends StatelessWidget {
 
 class _SpacingTab extends StatelessWidget {
   // Spacing constants
-  static const double _sectionSpacing = 16.0;
+  static const double _sectionSpacing = 8.0;
   static const double _cardPaddingH = 16.0;
   static const double _cardPaddingV = 12.0;
   static const double _cardBorderRadius = 12.0;
@@ -741,53 +743,55 @@ class _SpacingTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GetBuilder<TextStyleController>(
-            id: 'letter_spacing',
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          spacing: 8,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GetBuilder<TextStyleController>(
+              id: 'letter_spacing',
 
-            builder: (context) {
-              return CompactSlider(
-                icon: Icons.space_bar_rounded,
-                label: 'Letter Spacing',
-                value: controller.letterSpacing.value,
-                min: -3,
-                max: 32.0,
+              builder: (context) {
+                return CompactSlider(
+                  icon: Icons.space_bar_rounded,
+                  label: 'Letter Spacing',
+                  value: controller.letterSpacing.value,
+                  min: -3,
+                  max: 32.0,
 
-                onChanged: (value) {
-                  controller.letterSpacing.value = value;
-                  controller.updateTextItem();
-                  controller.update(['letter_spacing']);
-                },
-              );
-            },
-          ),
+                  onChanged: (value) {
+                    controller.letterSpacing.value = value;
+                    controller.updateTextItem();
+                    controller.update(['letter_spacing']);
+                  },
+                );
+              },
+            ),
 
-          const SizedBox(height: _sectionSpacing),
-          GetBuilder<TextStyleController>(
-            id: 'line_height',
+            GetBuilder<TextStyleController>(
+              id: 'line_height',
 
-            builder: (context) {
-              return CompactSlider(
-                icon: Icons.height_rounded,
-                label: 'Line Height',
-                value: controller.lineHeight.value,
-                min: 0.8,
-                max: 3.0,
+              builder: (context) {
+                return CompactSlider(
+                  icon: Icons.height_rounded,
+                  label: 'Line Height',
+                  value: controller.lineHeight.value,
+                  min: 0.8,
+                  max: 3.0,
 
-                onChanged: (value) {
-                  controller.lineHeight.value = value;
-                  controller.updateTextItem();
-                  controller.update(['line_height']);
-                },
-              );
-            },
-          ),
-        ],
+                  onChanged: (value) {
+                    controller.lineHeight.value = value;
+                    controller.updateTextItem();
+                    controller.update(['line_height']);
+                  },
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

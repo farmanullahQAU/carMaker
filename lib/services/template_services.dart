@@ -48,9 +48,6 @@ class TemplateService extends GetxService {
         if (item is StackImageItem && item.content?.filePath != null) {
           // Extract the file extension from the file path
           final fileExtension = path.extension(item.content!.filePath!);
-          print(
-            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee $fileExtension",
-          );
 
           // Upload image to Firebase Storage with original extension
           final imageUrl = await _storageService.uploadImage(
@@ -58,6 +55,7 @@ class TemplateService extends GetxService {
             template.id,
             'template_images',
             fileName: '${item.id}$fileExtension', // Use original extension
+            extension: fileExtension,
           );
 
           // Update ImageItemContent with the URL
@@ -89,6 +87,7 @@ class TemplateService extends GetxService {
           template.id,
           'thumbnails',
           fileName: 'thumbnail$thumbnailExtension', // Use original extension
+          extension: thumbnailExtension,
         );
         templateData['thumbnailUrl'] = thumbnailUrl;
       }
@@ -104,6 +103,7 @@ class TemplateService extends GetxService {
           template.id,
           'backgrounds',
           fileName: 'background$backgroundExtension', // Use original extension
+          extension: backgroundExtension,
         );
         templateData['backgroundImageUrl'] = backgroundUrl;
       }
