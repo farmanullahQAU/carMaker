@@ -530,6 +530,16 @@ class StackImageCase extends StatelessWidget {
     // Apply advanced transformations and effects
     imageWidget = _applyAdvancedEffects(imageWidget);
 
+    if (content.overlayColor != null) {
+      imageWidget = ColorFiltered(
+        colorFilter: ColorFilter.mode(
+          content.overlayColor!.withValues(alpha: content.overlayOpacity),
+          BlendMode.srcATop,
+        ),
+        child: imageWidget,
+      );
+    }
+
     return imageWidget;
   }
 
@@ -730,43 +740,43 @@ class StackImageCase extends StatelessWidget {
     List<Widget> children = [widget];
 
     // Apply gradient overlay
-    if (content.gradientOverlay != null) {
-      children.add(
-        Positioned.fill(
-          child: Container(
-            width: content.width,
-            height: content.height,
-            decoration: BoxDecoration(gradient: content.gradientOverlay),
-          ),
-        ),
-      );
-    }
+    // if (content.gradientOverlay != null) {
+    //   children.add(
+    //     Positioned.fill(
+    //       child: Container(
+    //         width: content.width,
+    //         height: content.height,
+    //         decoration: BoxDecoration(gradient: content.gradientOverlay),
+    //       ),
+    //     ),
+    //   );
+    // }
 
     // Apply color overlay with border radius
     if (content.overlayColor != null) {
-      children.add(
-        Positioned.fill(
-          child: Container(
-            width: content.width,
-            height: content.height,
-            decoration: BoxDecoration(
-              color: content.overlayColor,
-              borderRadius: content.borderRadius > 0.0
-                  ? BorderRadius.circular(content.borderRadius)
-                  : null,
-            ),
-            child: content.overlayBlendMode != null
-                ? ColorFiltered(
-                    colorFilter: ColorFilter.mode(
-                      content.overlayColor!,
-                      content.overlayBlendMode!,
-                    ),
-                    child: Container(),
-                  )
-                : null,
-          ),
-        ),
-      );
+      // children.add(
+      //   Positioned.fill(
+      //     child: Container(
+      //       // width: content.width,
+      //       // height: content.height,
+      //       // decoration: BoxDecoration(
+      //       //   color: content.overlayColor,
+      //       //   borderRadius: content.borderRadius > 0.0
+      //       //       ? BorderRadius.circular(content.borderRadius)
+      //       //       : null,
+      //       // ),
+      //       child: content.overlayBlendMode != null
+      //           ? ColorFiltered(
+      //               colorFilter: ColorFilter.mode(
+      //                 content.overlayColor!,
+      //                 content.overlayBlendMode!,
+      //               ),
+      //               child: Container(),
+      //             )
+      //           : null,
+      //     ),
+      //   ),
+      // );
     }
 
     // Apply vignette effect

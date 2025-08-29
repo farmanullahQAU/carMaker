@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color branding = Colors.pink; // Primary Branding Color
-  static const Color brandingLight = Colors.pinkAccent;
+  static const Color branding = Colors.purple; // Primary Branding Color
+  static const Color brandingLight = Colors.purpleAccent;
 
   static const Color accent = Colors.teal; // Accent – fresh contrast
   static const Color accentLight = Colors.tealAccent;

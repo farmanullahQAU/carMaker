@@ -9,6 +9,7 @@ class CompactSlider extends StatelessWidget {
   final double min;
   final double max;
   final ValueChanged<double> onChanged;
+  final int? division;
 
   const CompactSlider({
     super.key,
@@ -18,6 +19,7 @@ class CompactSlider extends StatelessWidget {
     required this.min,
     required this.max,
     required this.onChanged,
+    this.division,
   });
 
   @override
@@ -58,12 +60,13 @@ class CompactSlider extends StatelessWidget {
                 value: value.clamp(min, max),
                 min: min,
                 max: max,
+                divisions: division,
                 onChanged: onChanged,
               ),
             ),
           ),
           Text(
-            value.round().toString(),
+            value.toStringAsFixed(1),
             style: const TextStyle(
               color: AppColors.branding,
               fontSize: 10,

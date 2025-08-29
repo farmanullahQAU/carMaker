@@ -57,16 +57,17 @@ dependencies:
   shimmer: ^3.0.0
   cached_network_image: ^3.4.1
   firebase_auth: ^6.0.1
+  path: ^1.9.1
   # stack_board: ^0.2.6+1
 flutter_native_splash:
   color: "#ffffff"  # White background for light mode
 
 #our logo has whilte text w,o,r,d so we cant keep dark backdroud for ligt becuase these letter will not show , 
-  image: assets/logo.png  
+  image: assets/splash.png  
   color_dark: "#000000"  # Dark background for dark mode
 
   android_12: # 12 NOT MEANS ANDOIRD 12 
-    image: assets/logo.png
+    image: assets/splash.png
     # icon_background_color: "#ffffff"
     # icon_background_color_dark: "#000000"
 

@@ -66,7 +66,9 @@ class _StackItemCaseState extends State<StackItemCase> {
       StackBoardConfig.of(context).caseStyle ??
       const CaseStyle();
 
-  double _minSize(BuildContext context) => _caseStyle(context).buttonSize * 2;
+  // double _minSize(BuildContext context) => _caseStyle(context).buttonSize * 2;
+
+  double _minSize(BuildContext context) => 20.0; // Allow smaller sizes
 
   /// * 主体鼠标指针样式
   /// * Main body mouse pointer style
@@ -630,8 +632,8 @@ class _StackItemCaseState extends State<StackItemCase> {
             shape: BoxShape.circle,
           ),
           null,
-          width: 15,
-          height: 15,
+          width: 18,
+          height: 18,
         ),
       ),
     );

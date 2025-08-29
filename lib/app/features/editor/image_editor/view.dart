@@ -1185,37 +1185,172 @@ class _ColorOverlayPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = [
       null, // For "no color"
-      ...Colors.primaries.take(55).map((color) => color.withOpacity(0.3)),
+      ...Colors.primaries.take(70).map((color) => color.withOpacity(0.4)),
     ];
 
     return GetBuilder<ImageEditorController>(
       id: 'color_overlay_page',
       builder: (controller) {
-        return ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: colors.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (context, index) {
-            final color = colors[index];
-            final isActive = color == null
-                ? controller.overlayColor == null
-                : controller.overlayColor?.value == color.value;
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                // Color selection
+                SizedBox(
+                  height: 80,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: colors.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final color = colors[index];
+                      final isActive = color == null
+                          ? controller.overlayColor == null
+                          : controller.overlayColor?.value == color.value;
 
-            return _ColorChip(
-              color: color,
-              isActive: isActive,
-              onTap: () {
-                controller.setOverlayColor(color);
-                if (color != null) {
-                  controller.setOverlayBlendMode(BlendMode.overlay);
-                }
-                onUpdate();
-              },
-            );
-          },
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          _ColorChip(
+                            color: color,
+                            isActive: isActive,
+                            onTap: () {
+                              controller.setOverlayColor(color);
+
+                              onUpdate();
+                            },
+                          ),
+                          if (isActive && color != null)
+                            Positioned.fill(
+                              bottom: 16,
+                              child: GestureDetector(
+                                onTap: () => _showOverlaySettingsBottomSheet(
+                                  context,
+                                  controller,
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    // color: Colors.black.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.tune,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
+    );
+  }
+
+  void _showOverlaySettingsBottomSheet(
+    BuildContext context,
+    ImageEditorController controller,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: OverlaySettingsBottomSheet(
+          controller: imageEditorController,
+          onUpdate: onUpdate,
+        ),
+      ),
+    );
+  }
+}
+
+// New OverlaySettingsBottomSheet class
+class OverlaySettingsBottomSheet extends StatelessWidget {
+  final ImageEditorController controller;
+  final VoidCallback onUpdate;
+
+  const OverlaySettingsBottomSheet({
+    required this.controller,
+    required this.onUpdate,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHandleBar(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Get.theme.shadowColor.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Overlay Opacity Slider
+                GetBuilder<ImageEditorController>(
+                  id: 'overlay_opacity',
+                  builder: (controller) {
+                    return CompactSlider(
+                      label: "Opacity",
+                      icon: Icons.opacity,
+                      value: controller.overlayOpacity,
+
+                      min: 0.0,
+                      max: 1.0,
+
+                      onChanged: (value) {
+                        controller.setOverlayOpacity(value);
+                        onUpdate();
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandleBar() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
     );
   }
 }

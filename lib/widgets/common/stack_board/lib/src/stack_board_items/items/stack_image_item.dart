@@ -47,7 +47,7 @@ class ImageItemContent extends StackItemContent {
     this.vignette = 0.0,
     this.vignetteColor,
     this.overlayColor,
-    this.overlayBlendMode,
+    this.overlayOpacity,
     this.cropRect,
     this.maskShape = ImageMaskShape.none,
     this.gradientOverlay,
@@ -98,7 +98,7 @@ class ImageItemContent extends StackItemContent {
     double? vignette,
     Color? vignetteColor,
     Color? overlayColor,
-    BlendMode? overlayBlendMode,
+    double? overlayOpacity,
     Rect? cropRect,
     ImageMaskShape? maskShape,
     Gradient? gradientOverlay,
@@ -147,7 +147,7 @@ class ImageItemContent extends StackItemContent {
       vignette: vignette ?? this.vignette,
       vignetteColor: vignetteColor ?? this.vignetteColor,
       overlayColor: overlayColor ?? this.overlayColor,
-      overlayBlendMode: overlayBlendMode ?? this.overlayBlendMode,
+      overlayOpacity: overlayOpacity ?? this.overlayOpacity,
       cropRect: cropRect ?? this.cropRect,
       maskShape: maskShape ?? this.maskShape,
       gradientOverlay: gradientOverlay ?? this.gradientOverlay,
@@ -220,7 +220,7 @@ class ImageItemContent extends StackItemContent {
   double vignette; // 0.0 to 1.0
   Color? vignetteColor;
   Color? overlayColor;
-  BlendMode? overlayBlendMode;
+  double? overlayOpacity = 0.4;
   Rect? cropRect;
   ImageMaskShape maskShape;
   Gradient? gradientOverlay;
@@ -300,10 +300,9 @@ class ImageItemContent extends StackItemContent {
           asNullT<bool>(json['excludeFromSemantics']) ?? false,
       width: json['width'] != null ? asT<double>(json['width']) : null,
       height: json['height'] != null ? asT<double>(json['height']) : null,
-      color: ColorExtension.fromARGB32(json['color'] as String?),
-      colorBlendMode: json['colorBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['colorBlendMode'])]
-          : BlendMode.srcIn,
+      color: ColorExtension.fromARGB32(json['color']),
+      colorBlendMode: BlendMode.values[asT<int>(json['colorBlendMode'])],
+
       fit: json['fit'] != null
           ? BoxFit.values[asT<int>(json['fit'])]
           : BoxFit.cover,
@@ -338,13 +337,11 @@ class ImageItemContent extends StackItemContent {
       flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
       activeFilter: asNullT<String>(json['activeFilter']) ?? 'none',
       vignette: asNullT<double>(json['vignette']) ?? 0.0,
-      vignetteColor: ColorExtension.fromARGB32(
-        json['vignetteColor'] as String?,
-      ),
-      overlayColor: ColorExtension.fromARGB32(json['overlayColor'] as String?),
-      overlayBlendMode: json['overlayBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['overlayBlendMode'])]
-          : null,
+      vignetteColor: ColorExtension.fromARGB32(json['vignetteColor']),
+      overlayColor: ColorExtension.fromARGB32(json['overlayColor']),
+
+      overlayOpacity: json['overlayOpacity'],
+
       maskShape: json['maskShape'] != null
           ? ImageMaskShape.values[asT<int>(json['maskShape'])]
           : ImageMaskShape.none,
@@ -395,7 +392,7 @@ class ImageItemContent extends StackItemContent {
       'vignette': vignette,
       if (vignetteColor != null) 'vignetteColor': vignetteColor?.toARGB32(),
       if (overlayColor != null) 'overlayColor': overlayColor?.toARGB32(),
-      if (overlayBlendMode != null) 'overlayBlendMode': overlayBlendMode?.index,
+      'overlayOpacity': overlayOpacity,
       'maskShape': maskShape.index,
       'noiseIntensity': noiseIntensity,
       'sharpen': sharpen,

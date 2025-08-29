@@ -472,6 +472,7 @@ class _ProfessionalTemplateCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               _buildFavoriteButton(),
               if (template.isPremium) _buildPremiumBadge(),
             ],
@@ -524,11 +525,11 @@ class _ProfessionalTemplateCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Get.theme.colorScheme.surfaceContainer,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Get.theme.colorScheme.shadow.withOpacity(0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -539,10 +540,10 @@ class _ProfessionalTemplateCard extends StatelessWidget {
                 controller.favoriteTemplateIds.contains(template.id)
                     ? Icons.favorite
                     : Icons.favorite_border,
-                size: 20,
+                // size: 20,
                 color: controller.favoriteTemplateIds.contains(template.id)
-                    ? Colors.red
-                    : AppColors.accent,
+                    ? AppColors.branding
+                    : AppColors.brandingLight,
               ),
             ),
           ),

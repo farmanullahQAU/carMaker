@@ -21,6 +21,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               const SizedBox(height: 32.0),
               _buildPrintDesignsSection(),
               const SizedBox(height: 32.0),
+              _buildInvitationsGreetingsSection(), // New section added
+              const SizedBox(height: 32.0),
             ],
           ),
         ),
@@ -288,6 +290,117 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 16.0),
               itemBuilder: (context, index) {
                 return _buildTemplateCard(printDesignTemplates[index]);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvitationsGreetingsSection() {
+    final invitationGreetingTemplates = [
+      CardTemplate(
+        id: '18',
+        name: 'A5 Portrait',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1240,
+        height: 1748,
+        imagePath: '',
+        icon: Icons.mail_outline,
+        color: const Color(0xFF9C27B0), // Purple for elegance
+      ),
+      CardTemplate(
+        id: '19',
+        name: 'A5 Landscape',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1748,
+        height: 1240,
+        imagePath: '',
+        icon: Icons.card_giftcard,
+        color: const Color(0xFFF44336), // Red for festive theme
+      ),
+      CardTemplate(
+        id: '14',
+        name: 'Wedding Invitation',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1500,
+        height: 2100,
+        imagePath: '',
+        icon: Icons.favorite,
+        color: const Color(0xFFD81B60), // Pink for wedding theme
+      ),
+      CardTemplate(
+        id: '15',
+        name: 'Birthday Greeting',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1080,
+        height: 1080,
+        imagePath: '',
+        icon: Icons.cake,
+        color: const Color(0xFFFFC107), // Amber for festive theme
+      ),
+      CardTemplate(
+        id: '16',
+        name: 'Party Invitation',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1200,
+        height: 1800,
+        imagePath: '',
+        icon: Icons.celebration,
+        color: const Color(0xFF2196F3), // Blue for party theme
+      ),
+      CardTemplate(
+        id: '17',
+        name: 'Holiday Card',
+        backgroundImageUrl: null,
+        items: [],
+        category: 'Invitations & Greetings',
+        categoryId: 'invitations_greetings',
+        width: 1800,
+        height: 1200,
+        imagePath: '',
+        icon: Icons.card_giftcard,
+        color: const Color(0xFF4CAF50), // Green for holiday theme
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(
+            'Invitations & Greetings',
+            'Weddings, birthdays, parties & more',
+            Icons.card_giftcard,
+            const Color(0xFFD81B60),
+          ),
+          const SizedBox(height: 16.0),
+          SizedBox(
+            height: 160.0,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+              itemCount: invitationGreetingTemplates.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 16.0),
+              itemBuilder: (context, index) {
+                return _buildTemplateCard(invitationGreetingTemplates[index]);
               },
             ),
           ),

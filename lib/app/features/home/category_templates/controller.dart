@@ -208,14 +208,6 @@ class CategoryTemplatesController extends GetxController {
     try {
       if (favoriteTemplateIds.contains(template.id)) {
         await _templateService.removeFromFavorites(template.id);
-        favoriteTemplateIds.remove(template.id);
-        Get.snackbar(
-          'Removed',
-          'Template removed from favorites',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-        );
       } else {
         await _templateService.addToFavorites(template.id);
         favoriteTemplateIds.add(template.id);

@@ -24,8 +24,10 @@ class ImageEditorController extends GetxController {
   // Mask and overlay states
   final Rx<ImageMaskShape> _selectedMaskShape = ImageMaskShape.none.obs;
   final Rx<Color?> _overlayColor = Rx<Color?>(null);
-  final Rx<BlendMode> _overlayBlendMode = BlendMode.overlay.obs;
+  final RxDouble _overlayOpacity = 0.4.obs; // Default opacity
 
+  // Getter for overlay opacity
+  double get overlayOpacity => _overlayOpacity.value;
   // Border properties
   final RxDouble _borderWidth = 0.0.obs;
   final RxDouble _borderRadius = 0.0.obs;
@@ -40,9 +42,6 @@ class ImageEditorController extends GetxController {
   Offset get shadowOffset => _shadowOffset.value;
 
   // Getter for noise intensity
-
-  bool? showOverlayControls;
-  bool? showVignetteControls;
 
   // Transform properties
   final RxDouble _rotationAngle = 0.0.obs;
@@ -68,7 +67,6 @@ class ImageEditorController extends GetxController {
   double get filterIntensity => _filterIntensity.value;
   ImageMaskShape get selectedMaskShape => _selectedMaskShape.value;
   Color? get overlayColor => _overlayColor.value;
-  BlendMode get overlayBlendMode => _overlayBlendMode.value;
   StackImageItem? get selectedImageItem => _selectedImageItem;
   double get borderWidth => _borderWidth.value;
   double get borderRadius => _borderRadius.value;
@@ -197,25 +195,28 @@ class ImageEditorController extends GetxController {
     update(['shape_option']);
   }
 
+  // Updated setOverlayColor method
   void setOverlayColor(Color? color) {
     if (_selectedImageItem?.content == null) return;
 
     _overlayColor.value = color;
     _selectedImageItem!.content!.overlayColor = color;
     if (color != null) {
-      _selectedImageItem!.content!.overlayBlendMode = _overlayBlendMode.value;
+      _selectedImageItem!.content!.overlayOpacity =
+          _overlayOpacity.value; // Set opacity
     }
     _notifyImageUpdate();
     update(['color_overlay_page']);
   }
 
-  void setOverlayBlendMode(BlendMode blendMode) {
+  // New method for setting overlay opacity
+  void setOverlayOpacity(double opacity) {
     if (_selectedImageItem?.content == null) return;
 
-    _overlayBlendMode.value = blendMode;
-    _selectedImageItem!.content!.overlayBlendMode = blendMode;
+    _overlayOpacity.value = opacity;
+    _selectedImageItem!.content!.overlayOpacity = opacity;
     _notifyImageUpdate();
-    update(['color_overlay_page']);
+    update(['color_overlay_page', 'overlay_opacity']);
   }
 
   void setVignette(double value) {
@@ -446,8 +447,7 @@ class ImageEditorController extends GetxController {
     _activeFilter.value = content.activeFilter ?? 'none';
     _selectedMaskShape.value = content.maskShape ?? ImageMaskShape.none;
     _overlayColor.value = content.overlayColor;
-    _overlayBlendMode.value = content.overlayBlendMode ?? BlendMode.overlay;
-
+    _overlayOpacity.value = content.overlayOpacity ?? 0.4;
     _borderWidth.value = content.borderWidth ?? 0.0;
     _borderRadius.value = content.borderRadius ?? 0.0;
     _borderColor.value = content.borderColor;
