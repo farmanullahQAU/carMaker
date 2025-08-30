@@ -289,7 +289,7 @@ class TextStyleController extends GetxController {
     strokeWidth.value = textContent!.strokeWidth;
     backgroundPaintColor.value =
         textContent.backgroundPaintColor ?? Colors.grey.shade200;
-    isArc.value = textContent.isArc ?? false; // Add this line
+    isArc.value = textContent.isArc; // Add this line
     arcCurvature.value = textContent.arcCurvature ?? 0.0; // Add this line
   }
 
