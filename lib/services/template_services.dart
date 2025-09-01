@@ -19,6 +19,7 @@ class TemplateService extends GetxService {
   final RxBool _isUploading = false.obs;
 
   bool get isUploading => _isUploading.value;
+
   @override
   void onInit() {
     super.onInit();
@@ -109,16 +110,14 @@ class TemplateService extends GetxService {
       }
 
       // Save template to Firestore
-      await _firestoreService.addTemplate(template, templateData);
+
+      if (template.isDraft) {
+        await _firestoreService.saveDraft(template.id, templateData);
+      } else {
+        await _firestoreService.addTemplate(template.id, templateData);
+      }
 
       Get.back(); // Close loading dialog
-      Get.snackbar(
-        'Success',
-        'Template uploaded successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
     } catch (e) {
       Get.back(); // Close loading dialog
       Get.snackbar(
@@ -242,6 +241,97 @@ class TemplateService extends GetxService {
     } catch (e) {
       debugPrint('Error fetching favorite template IDs: $e');
       return [];
+    }
+  }
+
+  /// Get favorite template IDs with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> getFavoriteTemplateIdsPaginated({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      return await _firestoreService.getFavoriteTemplateIdsPaginated(
+        limit: limit,
+        startAfterDocument: startAfterDocument,
+      );
+    } catch (e) {
+      debugPrint('Error fetching paginated favorite template IDs: $e');
+      rethrow;
+    }
+  }
+
+  /// Get favorite templates with pagination
+  Future<List<CardTemplate>> getFavoriteTemplates({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      return await _firestoreService.getFavoriteTemplates(
+        limit: limit,
+        startAfterDocument: startAfterDocument,
+      );
+    } catch (e) {
+      debugPrint('Error fetching favorite templates: $e');
+      return [];
+    }
+  }
+
+  /// Get user's drafts with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> getUserDraftsPaginated({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    return await _firestoreService.getUserDraftsPaginated(
+      limit: limit,
+      startAfterDocument: startAfterDocument,
+    );
+  }
+
+  /// Get user's drafts as CardTemplate list
+  Future<List<CardTemplate>> getUserDrafts({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      final snapshot = await getUserDraftsPaginated(
+        limit: limit,
+        startAfterDocument: startAfterDocument,
+      );
+
+      return snapshot.docs
+          .map((doc) => CardTemplate.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching user drafts: $e');
+      return [];
+    }
+  }
+
+  /// Delete a draft
+  Future<void> deleteDraft(String draftId) async {
+    try {
+      await _firestoreService.deleteDraft(draftId);
+
+      Get.snackbar(
+        'Draft Deleted',
+        'Draft has been deleted successfully',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.shade100,
+        colorText: Colors.orange.shade900,
+      );
+    } catch (e) {
+      debugPrint('Error deleting draft: $e');
+      rethrow;
+    }
+  }
+
+  /// Get drafts count for dashboard
+  Future<int> getDraftsCount() async {
+    try {
+      return await _firestoreService.getDraftsCount();
+    } catch (e) {
+      debugPrint('Error getting drafts count: $e');
+      return 0;
     }
   }
 

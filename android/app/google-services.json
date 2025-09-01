@@ -12,7 +12,12 @@
           "package_name": "com.example.cardmaker"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "370527194012-p63ecinqsi57pdbjqvqljfnclggooh3e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDe2PEwNI6MfZqL-sErRkJ5EfGzoc_TPag"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "370527194012-p63ecinqsi57pdbjqvqljfnclggooh3e.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "370527194012-7g3asuub36cg2tqlv9poehc61v02h3kd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cardmaker"
+              }
+            }
+          ]
         }
       }
     }

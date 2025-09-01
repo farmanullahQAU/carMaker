@@ -86,10 +86,10 @@ class EditorPage extends GetView<CanvasController> {
             builder: (controller) => _ModernExportButton(
               onExportPDF: controller.exportAsPDF,
               onExportImage: controller.exportAsImage,
+              onSaveDraft: controller.saveDraft,
               onSave: () async {
                 try {
-                  final file = await controller.exportAsImage();
-                  await controller.addTemplate(file);
+                  await controller.uploadTemplate();
                   // controller.saveDesign();
                   controller.isExporting = false;
                 } catch (err) {
@@ -713,6 +713,8 @@ class _ProfessionalToolbarButton extends StatelessWidget {
 
 class _ModernExportButton extends StatelessWidget {
   final VoidCallback onExportPDF;
+  final VoidCallback onSaveDraft;
+
   final VoidCallback onExportImage;
   final VoidCallback onSave;
   final bool isExporting;
@@ -722,6 +724,7 @@ class _ModernExportButton extends StatelessWidget {
     required this.onExportImage,
     required this.onSave,
     required this.isExporting,
+    required this.onSaveDraft,
   });
 
   @override
@@ -834,6 +837,40 @@ class _ModernExportButton extends StatelessWidget {
               ],
             ),
           ),
+
+          PopupMenuItem<String>(
+            value: 'draft',
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.picture_as_pdf_outlined,
+                    color: Colors.red.shade700,
+                    size: 18,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'save draft',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'save as a draft',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
         onSelected: (value) {
           switch (value) {
@@ -864,6 +901,9 @@ class _ModernExportButton extends StatelessWidget {
               break;
             case 'pdf':
               onExportPDF();
+              break;
+            case 'draft':
+              onSaveDraft();
               break;
             case 'image':
               onExportImage();

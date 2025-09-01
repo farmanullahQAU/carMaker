@@ -102,8 +102,9 @@ class TextItemContent implements StackItemContent {
     this.selectionColor,
     this.googleFont,
     this.maskImage,
+    this.hasMask = false,
+    this.maskBlendMode,
 
-    this.maskBlendMode = BlendMode.dstATop,
     // Stroke properties (NEW)
     this.hasStroke = false,
     this.strokeWidth = 2.0,
@@ -184,6 +185,7 @@ class TextItemContent implements StackItemContent {
           : Color(asT<int>(data['selectionColor'])),
       googleFont: data['googleFont'],
       maskImage: data['maskImage'],
+      hasMask: asT<bool>(data['hasMask'], false),
 
       // New mask properties with defaults
       maskBlendMode: data['maskBlendMode'] == null
@@ -270,9 +272,11 @@ class TextItemContent implements StackItemContent {
   Color? selectionColor;
   String? googleFont;
   String? maskImage;
+  // Add this property
+  bool hasMask;
   // New mask properties
 
-  BlendMode maskBlendMode;
+  BlendMode? maskBlendMode;
 
   // Stroke properties (NEW)
   bool hasStroke;
@@ -326,6 +330,7 @@ class TextItemContent implements StackItemContent {
     String? googleFont,
     //mask properties
     String? maskImage,
+    bool? hasMask,
     BlendMode? maskBlendMode,
 
     double? maskOpacity,
@@ -377,6 +382,7 @@ class TextItemContent implements StackItemContent {
       googleFont: googleFont ?? this.googleFont,
       //mask properties
       maskImage: maskImage ?? this.maskImage,
+      hasMask: hasMask ?? this.hasMask,
 
       maskBlendMode: maskBlendMode ?? this.maskBlendMode,
 
@@ -429,8 +435,8 @@ class TextItemContent implements StackItemContent {
       if (selectionColor != null) 'selectionColor': selectionColor?.toARGB32(),
       if (googleFont != null) 'googleFont': googleFont,
       if (maskImage != null) 'maskImage': maskImage,
-
-      'maskBlendMode': maskBlendMode.toString(),
+      'hasMask': hasMask,
+      if (maskBlendMode != null) 'maskBlendMode': maskBlendMode.toString(),
 
       // Stroke properties (NEW)
       'hasStroke': hasStroke,

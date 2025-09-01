@@ -393,7 +393,7 @@ class _ProfessionalSlider extends StatelessWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
-                            showValueIndicator: ShowValueIndicator.always,
+                            showValueIndicator: ShowValueIndicator.onDrag,
                           ),
                           child: Slider(
                             value: currentValue.clamp(config.min, config.max),
@@ -979,15 +979,16 @@ class _EffectsPage extends StatelessWidget {
           size: 28,
           color: isSelected ? AppColors.branding : null,
         );
-      case ImageMaskShape.hexagon:
-        return Icon(
-          Icons.hexagon_outlined,
-          size: 28,
-          color: isSelected ? AppColors.branding : null,
-        );
+
       case ImageMaskShape.none:
         return Icon(
           Icons.layers_clear_outlined,
+          size: 28,
+          color: isSelected ? AppColors.branding : Colors.grey.shade600,
+        );
+      case ImageMaskShape.polygon:
+        return Icon(
+          Icons.podcasts,
           size: 28,
           color: isSelected ? AppColors.branding : Colors.grey.shade600,
         );
@@ -1048,6 +1049,9 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
             ),
             child: Column(
               children: [
+                // Shape-specific customization
+                _buildShapeSpecificSettings(),
+
                 // Border Width
                 GetBuilder<ImageEditorController>(
                   id: 'shape_border_width',
@@ -1090,7 +1094,6 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
                 // Border Color
                 GetBuilder<ImageEditorController>(
                   id: 'shape_border_color',
-
                   builder: (controller) {
                     return ColorSelector(
                       title: 'Border Color',
@@ -1111,6 +1114,67 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
     );
   }
 
+  // Simplified shape-specific settings without duplication
+  Widget _buildShapeSpecificSettings() {
+    return GetBuilder<ImageEditorController>(
+      id: 'shape_specific_settings',
+      builder: (controller) {
+        final content = controller.selectedImageItem?.content;
+        if (content == null) return const SizedBox.shrink();
+
+        switch (controller.selectedMaskShape) {
+          case ImageMaskShape.polygon:
+            return Column(
+              children: [
+                CompactSlider(
+                  label: "Sides",
+                  icon: Icons.shape_line,
+                  value: content.polygonSides.toDouble(),
+                  min: 3.0,
+                  max: 12.0,
+                  onChanged: (value) {
+                    controller.setPolygonSides(value.toInt());
+                  },
+                ),
+                SizedBox(height: 8),
+              ],
+            );
+
+          case ImageMaskShape.star:
+            return Column(
+              children: [
+                CompactSlider(
+                  label: "Points",
+                  icon: Icons.star,
+                  value: content.starPoints.toDouble(),
+                  min: 3.0,
+                  max: 12.0,
+                  onChanged: (value) {
+                    controller.setStarPoints(value.toInt());
+                  },
+                ),
+                const SizedBox(height: 8),
+                CompactSlider(
+                  label: "Inset",
+                  icon: Icons.contrast,
+                  value: content.starInset,
+                  min: 0.1,
+                  max: 0.9,
+                  onChanged: (value) {
+                    controller.setStarInset(value);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            );
+
+          default:
+            return const SizedBox.shrink();
+        }
+      },
+    );
+  }
+
   Widget _buildHandleBar() {
     return Center(
       child: Container(
@@ -1120,22 +1184,6 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
           color: Colors.grey.shade400,
           borderRadius: BorderRadius.circular(2),
         ),
-      ),
-    );
-  }
-
-  void _showColorPicker(
-    BuildContext context,
-    String title,
-    Color? currentColor,
-    Function(Color?) onChanged,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => QuickColorPicker(
-        title: title,
-        currentColor: currentColor,
-        onChanged: onChanged,
       ),
     );
   }
@@ -1913,7 +1961,8 @@ class _MaskButton extends StatelessWidget {
         return Icons.star_outline;
       case ImageMaskShape.heart:
         return Icons.favorite_outline;
-      case ImageMaskShape.hexagon:
+
+      case ImageMaskShape.polygon:
         return Icons.hexagon_outlined;
     }
   }

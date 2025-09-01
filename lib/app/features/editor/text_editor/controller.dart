@@ -30,29 +30,9 @@ class TextStyleController extends GetxController {
   final fontWeight = FontWeight.normal.obs;
   final isItalic = false.obs;
   final isUnderlined = false.obs;
-  final maskImage = Rx<String?>(null);
-
-  var maskOpacity = (1.0).obs;
-
-  // New mask properties for advanced settings
-  final maskScale = 1.0.obs;
-  final maskRotation = 0.0.obs;
-  final maskPositionX = 0.0.obs;
-  final maskPositionY = 0.0.obs;
-  final maskBlendMode = BlendMode.dstATop.obs;
-  final maskTileMode = TileMode.clamp.obs;
-
-  // Add this method to reset mask settings
-  void resetMaskSettings() {
-    maskOpacity.value = 1.0;
-    maskScale.value = 1.0;
-    maskRotation.value = 0.0;
-    maskPositionX.value = 0.0;
-    maskPositionY.value = 0.0;
-    maskBlendMode.value = BlendMode.dstATop;
-    maskTileMode.value = TileMode.clamp;
-    updateTextItem();
-  }
+  String? maskImage;
+  bool hasMask = false; // Make this reactive
+  BlendMode maskBlendMode = BlendMode.srcATop;
 
   // Effects - Shadow
   final hasShadow = false.obs;
@@ -237,6 +217,7 @@ class TextStyleController extends GetxController {
   ];
 
   static const maskImages = [
+    null,
     'assets/gliter1.jpeg',
     'assets/gliter2.jpeg',
     'assets/gliter3.jpeg',
@@ -264,7 +245,8 @@ class TextStyleController extends GetxController {
     isItalic.value = textContent?.style?.fontStyle == FontStyle.italic;
     isUnderlined.value =
         textContent?.style?.decoration == TextDecoration.underline;
-    maskImage.value = textContent?.maskImage;
+    maskImage = textContent?.maskImage;
+    hasMask = textContent?.hasMask ?? false;
     hasShadow.value = textContent?.style?.shadows?.isNotEmpty ?? false;
     if (hasShadow.value && textContent?.style?.shadows?.isNotEmpty == true) {
       shadowOffset.value = textContent!.style!.shadows![0].offset;
@@ -326,8 +308,9 @@ class TextStyleController extends GetxController {
             : null,
       ),
       textAlign: textAlign.value,
-      maskImage: maskImage.value,
-      maskBlendMode: maskBlendMode.value,
+      maskImage: maskImage,
+      hasMask: hasMask,
+      maskBlendMode: maskBlendMode,
       hasStroke: hasStroke.value,
       strokeWidth: strokeWidth.value,
       strokeColor: strokeColor.value,
@@ -392,189 +375,6 @@ class TextStyleController extends GetxController {
       );
     }
   }
-  /* without arc
-  void initializeProperties(StackTextItem? item) {
-    textItem = item;
-
-    final textContent = item?.content;
-    selectedFont.value = textContent?.googleFont ?? 'Roboto';
-    fontSize.value = textContent?.style?.fontSize ?? 16.0;
-    letterSpacing.value = textContent?.style?.letterSpacing ?? 0.0;
-    lineHeight.value = textContent?.style?.height ?? 1.2;
-    textAlign.value = textContent?.textAlign ?? TextAlign.left;
-    textColor.value = textContent?.style?.color ?? Colors.black;
-    textColorOld = textContent?.style?.color;
-    backgroundColor.value =
-        textContent?.style?.backgroundColor ?? Colors.transparent;
-    fontWeight.value = textContent?.style?.fontWeight ?? FontWeight.normal;
-    isItalic.value = textContent?.style?.fontStyle == FontStyle.italic;
-    isUnderlined.value =
-        textContent?.style?.decoration == TextDecoration.underline;
-
-    // Only initialize image mask, ignore color mask
-    maskImage.value = textContent?.maskImage;
-
-    // Initialize shadow properties
-    hasShadow.value = textContent?.style?.shadows?.isNotEmpty ?? false;
-    if (hasShadow.value && textContent?.style?.shadows?.isNotEmpty == true) {
-      shadowOffset.value = textContent!.style!.shadows![0].offset;
-      shadowBlurRadius.value = textContent.style!.shadows![0].blurRadius;
-      shadowColor.value = textContent.style!.shadows![0].color;
-    }
-
-    // Initialize stroke properties
-    hasStroke.value = textContent?.hasStroke ?? false;
-    strokeWidth.value = textContent?.strokeWidth ?? 2.0;
-    strokeColor.value = textContent?.strokeColor ?? Colors.black;
-
-    // Initialize circular text properties
-    isCircular.value = textContent?.isCircular ?? false;
-    radius.value = (textContent?.radius ?? 0) >= 50
-        ? textContent!.radius!
-        : 100.0;
-    space.value = textContent?.space ?? 10.0;
-    startAngle.value = textContent?.startAngle ?? 0.0;
-    startAngleAlignment.value =
-        textContent?.startAngleAlignment ?? StartAngleAlignment.start;
-    position.value = textContent?.position ?? CircularTextPosition.inside;
-    direction.value = textContent?.direction ?? CircularTextDirection.clockwise;
-    showBackground.value = textContent?.showBackground ?? true;
-    showStroke.value = textContent?.showStroke ?? false;
-    strokeWidth.value = textContent!.strokeWidth;
-    backgroundPaintColor.value =
-        textContent.backgroundPaintColor ?? Colors.grey.shade200;
-
-    // Initialize dual tone properties (ADD THESE)
-    hasDualTone.value = textContent.hasDualTone ?? false;
-    dualToneColor1 = textContent.dualToneColor1 ?? Colors.red;
-    dualToneColor2 = textContent.dualToneColor2 ?? Colors.blue;
-    dualToneDirection.value =
-        textContent.dualToneDirection ?? DualToneDirection.horizontal;
-    dualTonePosition.value = textContent.dualTonePosition ?? 0.5;
-  }
-
-  void updateTextItem() {
-    // final item = textItem.value;
-    // if (item == null) return;
-
-    final updatedContent = textItem?.content?.copyWith(
-      // Add dual tone properties
-      hasDualTone: hasDualTone.value,
-      dualToneColor1: dualToneColor1,
-      dualToneColor2: dualToneColor2,
-      dualToneDirection: dualToneDirection.value,
-      dualTonePosition: dualTonePosition.value,
-
-      data: textItem?.content?.data,
-      googleFont: selectedFont.value,
-      style: TextStyle(
-        fontFamily: GoogleFonts.getFont(selectedFont.value).fontFamily,
-        fontSize: fontSize.value,
-        letterSpacing: letterSpacing.value,
-        height: lineHeight.value,
-        // Only make text transparent if image mask is applied
-        color: textColor.value,
-        backgroundColor: backgroundColor.value,
-        fontWeight: fontWeight.value,
-        fontStyle: isItalic.value ? FontStyle.italic : FontStyle.normal,
-        decoration: isUnderlined.value
-            ? TextDecoration.underline
-            : TextDecoration.none,
-        shadows: hasShadow.value
-            ? [
-                Shadow(
-                  offset: shadowOffset.value,
-                  blurRadius: shadowBlurRadius.value,
-                  color: shadowColor.value,
-                ),
-              ]
-            : null,
-      ),
-      textAlign: textAlign.value,
-      maskImage: maskImage.value,
-      maskBlendMode: maskBlendMode.value,
-      // Stroke properties
-      hasStroke: hasStroke.value,
-      strokeWidth: strokeWidth.value,
-      strokeColor: strokeColor.value,
-
-      // Circular text properties
-      isCircular: isCircular.value,
-      radius: radius.value,
-      space: space.value,
-      startAngle: startAngle.value,
-      startAngleAlignment: startAngleAlignment.value,
-      position: position.value,
-      direction: direction.value,
-      showBackground: showBackground.value,
-      showStroke: showStroke.value,
-      backgroundPaintColor: backgroundPaintColor.value,
-      // Arc text properties
-      isArc: isArc.value,
-    );
-
-    if (updatedContent == null) return;
-
-    final currentItem = editorController.boardController.getById(textItem!.id);
-    final updatedItem = textItem?.copyWith(
-      content: updatedContent,
-      offset: currentItem?.offset,
-    );
-
-    editorController.boardController.updateItem(updatedItem!);
-    editorController.boardController.updateBasic(
-      updatedItem.id,
-      status: StackItemStatus.idle,
-      size: updatedItem.size,
-      offset: updatedItem.offset,
-    );
-    // Update sizing logic for arc text
-    if (updatedContent.isArc) {
-      final diameter = updatedContent.arcRadius! * 2;
-      editorController.boardController.updateBasic(
-        updatedItem.id,
-        status: StackItemStatus.selected,
-        size: Size(diameter, diameter),
-        offset: updatedItem.offset,
-      );
-    }
-
-    if (!updatedContent.isCircular) {
-      final span = TextSpan(
-        text: updatedContent.data,
-        style: updatedContent.style,
-      );
-
-      final painter = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
-        textAlign: updatedContent.textAlign ?? TextAlign.left,
-        maxLines: null,
-      );
-
-      const double maxWidth = 800.0;
-      painter.layout(maxWidth: maxWidth);
-
-      final width = painter.width.clamp(50.0, maxWidth);
-      final height = painter.height.clamp(25.0, double.infinity);
-
-      editorController.boardController.updateBasic(
-        updatedItem.id,
-        status: StackItemStatus.selected,
-        size: Size(width, height),
-        offset: updatedItem.offset,
-      );
-    } else {
-      final diameter = updatedContent.radius! * 2;
-      editorController.boardController.updateBasic(
-        updatedItem.id,
-        status: StackItemStatus.selected,
-        size: Size(diameter, diameter),
-        offset: updatedItem.offset,
-      );
-    }
-  }
-*/
 
   resetStrok() {
     textColor(textColorOld);

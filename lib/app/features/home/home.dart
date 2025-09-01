@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
+import 'package:cardmaker/app/features/home/ssss.dart';
+import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
@@ -59,26 +61,27 @@ class HomePage extends GetView<HomeController> {
       () => Scaffold(
         backgroundColor: Get.theme.colorScheme.surface,
         extendBody: controller.selectedIndex.value == 0 ? true : false,
-        appBar: controller.selectedIndex.value == 0
-            ? null
-            : AppBar(
-                title: Text(
-                  controller.selectedIndex.value == 1
-                      ? 'Templates'
-                      : 'My Designs',
-                  style: Get.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Get.theme.colorScheme.onSurface,
-                  ),
-                ),
-                backgroundColor: Get.theme.colorScheme.surface,
-                elevation: 0,
-              ),
+        // appBar: controller.selectedIndex.value == 0
+        //     ? null
+        //     : AppBar(
+        //         title: Text(
+        //           controller.selectedIndex.value == 1
+        //               ? 'Templates'
+        //               : 'My Designs',
+        //           style: Get.textTheme.titleLarge?.copyWith(
+        //             fontWeight: FontWeight.w600,
+        //             color: Get.theme.colorScheme.onSurface,
+        //           ),
+        //         ),
+        //         backgroundColor: Get.theme.colorScheme.surface,
+        //         elevation: 0,
+        //       ),
         body: IndexedStack(
           index: controller.selectedIndex.value,
           children: [
             const HomeTab(),
             const ProfessionalTemplatesPage(),
+            ProfilePage(),
             // PlaceholderPage(
             //   title: "My Designs",
             //   icon: Icons.palette_outlined,
@@ -91,10 +94,12 @@ class HomePage extends GetView<HomeController> {
   }
 
   Widget _buildModernBottomNav() {
-    return NavigationBar(
-      selectedIndex: controller.selectedIndex.value,
-      onDestinationSelected: controller.onBottomNavTap,
-      destinations: [
+    return BottomNavigationBar(
+      currentIndex: controller.selectedIndex.value,
+      onTap: controller.onBottomNavTap,
+      elevation: 4,
+
+      items: [
         _ModernNavDestination(
           icon: Icons.home_outlined,
           selectedIcon: Icons.home_rounded,
@@ -106,24 +111,21 @@ class HomePage extends GetView<HomeController> {
           label: 'Templates',
         ),
         _ModernNavDestination(
-          icon: Icons.palette_outlined,
-          selectedIcon: Icons.palette,
-          label: 'My Designs',
+          icon: Icons.person_outline,
+          selectedIcon: Icons.person,
+          label: 'Profile',
         ),
       ],
     );
   }
 }
 
-class _ModernNavDestination extends NavigationDestination {
+class _ModernNavDestination extends BottomNavigationBarItem {
   _ModernNavDestination({
     required IconData icon,
     required IconData selectedIcon,
-    required super.label,
-  }) : super(
-         icon: Icon(icon, size: 22),
-         selectedIcon: Icon(selectedIcon, color: Get.theme.colorScheme.primary),
-       );
+    required String label,
+  }) : super(icon: Icon(icon), activeIcon: Icon(selectedIcon), label: label);
 }
 
 // --- The Main Scrollable Home Tab ---
@@ -133,6 +135,7 @@ class HomeTab extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,8 +385,7 @@ class SectionTitle extends StatelessWidget {
           if (showSeeAll)
             TextButton(
               onPressed: () {
-                // Navigate to a full templates page or filter templates
-                // Get.to(() => const ProfessionalTemplatesPage());
+                Get.to(() => MorphableShapeDemoPage());
               },
               child: Text(
                 'See All',

@@ -50,6 +50,7 @@ class ImageItemContent extends StackItemContent {
     this.overlayOpacity,
     this.cropRect,
     this.maskShape = ImageMaskShape.none,
+
     this.gradientOverlay,
     this.patternOverlay,
     this.noiseIntensity = 0.0,
@@ -59,9 +60,14 @@ class ImageItemContent extends StackItemContent {
     this.shapeBorderWidth = 0.0,
     this.shapeBorderColor,
     this.shapeBorderRadius = 0.0,
+    // Add shape customization properties here
+    this.polygonSides = 6, // For polygon shapes
+    this.starPoints = 5, // For star shapes
+    this.starInset = 0.4, // For star shapes (0.0 to 1.0)
   }) {
     _init();
   }
+
   ImageItemContent copyWith({
     String? url,
     String? assetName,
@@ -110,6 +116,10 @@ class ImageItemContent extends StackItemContent {
     double? shapeBorderWidth,
     Color? shapeBorderColor,
     double? shapeBorderRadius,
+    // Add the new shape customization properties
+    int? polygonSides,
+    int? starPoints,
+    double? starInset,
   }) {
     return ImageItemContent(
       url: url ?? this.url,
@@ -159,6 +169,10 @@ class ImageItemContent extends StackItemContent {
       shapeBorderWidth: shapeBorderWidth ?? this.shapeBorderWidth,
       shapeBorderColor: shapeBorderColor ?? this.shapeBorderColor,
       shapeBorderRadius: shapeBorderRadius ?? this.shapeBorderRadius,
+      // Add the new shape customization properties
+      polygonSides: polygonSides ?? this.polygonSides,
+      starPoints: starPoints ?? this.starPoints,
+      starInset: starInset ?? this.starInset,
     );
   }
 
@@ -234,6 +248,9 @@ class ImageItemContent extends StackItemContent {
   double shapeBorderWidth = 0.0;
   Color? shapeBorderColor;
   double shapeBorderRadius = 0.0; // Only for rounded rectangle
+  int polygonSides = 5; // For polygon shapes
+  int starPoints = 5; // For star shapes
+  double starInset = 0.4; // For star shapes (0.0 to 1.0)
 
   void setRes({String? url, String? assetName, String? filePath}) {
     if (url != null) this.url = url;
@@ -345,6 +362,10 @@ class ImageItemContent extends StackItemContent {
       maskShape: json['maskShape'] != null
           ? ImageMaskShape.values[asT<int>(json['maskShape'])]
           : ImageMaskShape.none,
+
+      polygonSides: asNullT<int>(json['polygonSides']) ?? 6,
+      starPoints: asNullT<int>(json['starPoints']) ?? 5,
+      starInset: asNullT<double>(json['starInset']) ?? 0.4,
       noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
       sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
       emboss: asNullT<bool>(json['emboss']) ?? false,
@@ -393,7 +414,12 @@ class ImageItemContent extends StackItemContent {
       if (vignetteColor != null) 'vignetteColor': vignetteColor?.toARGB32(),
       if (overlayColor != null) 'overlayColor': overlayColor?.toARGB32(),
       'overlayOpacity': overlayOpacity,
+      //effects
       'maskShape': maskShape.index,
+
+      'polygonSides': polygonSides,
+      'starPoints': starPoints,
+      'starInset': starInset,
       'noiseIntensity': noiseIntensity,
       'sharpen': sharpen,
       'emboss': emboss,

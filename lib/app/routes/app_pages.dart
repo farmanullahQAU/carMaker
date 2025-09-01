@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/bindings/initial.dart';
+import 'package:cardmaker/app/features/auth/auth_screen.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
@@ -31,6 +32,12 @@ class AppPages {
           return CategoryTemplatesPage(category: null);
         }
       },
+    ),
+
+    GetPage(
+      name: Routes.auth,
+      page: () => AuthScreen(),
+      binding: InitialBindings(),
     ),
   ];
 }

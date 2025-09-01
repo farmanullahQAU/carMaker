@@ -33,6 +33,7 @@ class CardMakerApp extends StatelessWidget {
       darkTheme: CardMakerTheme.darkTheme(),
 
       getPages: AppPages.pages,
+
       initialBinding: InitialBindings(),
     );
   }

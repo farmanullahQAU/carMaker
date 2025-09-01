@@ -1,7 +1,7 @@
 abstract class Routes {
   Routes._();
   static const home = _Paths.home;
-  static const signin = _Paths.signin;
+  static const auth = _Paths.auth;
 
   static const onboarding = _Paths.onboarding;
   static const editor = _Paths.editor;
@@ -17,7 +17,7 @@ abstract class _Paths {
   static const onboarding = '/onboarding';
 
   static const home = '/home';
-  static const signin = "/signin";
+  static const auth = "/auth";
   static const editor = "/editor";
   static const String categoryTemplates = '/category-templates';
 }

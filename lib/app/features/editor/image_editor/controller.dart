@@ -209,6 +209,30 @@ class ImageEditorController extends GetxController {
     update(['color_overlay_page']);
   }
 
+  void setPolygonSides(int sides) {
+    if (_selectedImageItem?.content == null) return;
+
+    _selectedImageItem!.content!.polygonSides = sides.clamp(3, 12);
+    _notifyImageUpdate();
+    update(['shape_specific_settings']);
+  }
+
+  void setStarPoints(int points) {
+    if (_selectedImageItem?.content == null) return;
+
+    _selectedImageItem!.content!.starPoints = points.clamp(3, 12);
+    _notifyImageUpdate();
+    update(['shape_specific_settings']);
+  }
+
+  void setStarInset(double inset) {
+    if (_selectedImageItem?.content == null) return;
+
+    _selectedImageItem!.content!.starInset = inset.clamp(0.1, 0.9);
+    _notifyImageUpdate();
+    update(['shape_specific_settings']);
+  }
+
   // New method for setting overlay opacity
   void setOverlayOpacity(double opacity) {
     if (_selectedImageItem?.content == null) return;

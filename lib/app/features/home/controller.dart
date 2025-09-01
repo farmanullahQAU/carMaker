@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 
 class HomeController extends GetxController {
   final selectedIndex = 0.obs;
-  final pageController = PageController();
+
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
   final RxList<String> favoriteTemplateIds =
       <String>[].obs; // Cached favorite IDs
@@ -165,12 +165,6 @@ class HomeController extends GetxController {
     _initializeData();
   }
 
-  @override
-  void onClose() {
-    pageController.dispose();
-    super.onClose();
-  }
-
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
@@ -201,18 +195,11 @@ class HomeController extends GetxController {
   }
 
   Future<void> _loadFavoriteTemplateIds() async {
-    if (authService.isUserAuthenticated()) {
-      final favorites = await templateService.getFavoriteTemplateIds();
-      favoriteTemplateIds.assignAll(favorites);
-    }
+    final favorites = await templateService.getFavoriteTemplateIds();
+    favoriteTemplateIds.assignAll(favorites);
   }
 
   Future<void> toggleFavorite(String templateId) async {
-    if (!authService.isUserAuthenticated()) {
-      authService.promptLogin();
-      return;
-    }
-
     try {
       if (favoriteTemplateIds.contains(templateId)) {
         await templateService.removeFromFavorites(templateId);
@@ -240,11 +227,6 @@ class HomeController extends GetxController {
     if (selectedIndex.value == index) return;
 
     selectedIndex.value = index;
-    pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOutCubic,
-    );
   }
 
   void onCategoryTap(CategoryModel category) {
@@ -260,27 +242,6 @@ class HomeController extends GetxController {
   }
 
   void onTemplateTap(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: template);
-  }
-
-  void onCanvasSizeTap(CanvasSize canvas) {
-    final template = CardTemplate(
-      id: 'blank_${canvas.title.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}',
-      name: '${canvas.title} Canvas',
-      thumbnailUrl: canvas.thumbnailUrl,
-      backgroundImageUrl: '',
-      items: [],
-      createdAt: DateTime.now(),
-      updatedAt: null,
-      category: 'general',
-      categoryId: 'general',
-      compatibleDesigns: [],
-      width: canvas.width,
-      height: canvas.height,
-      isPremium: false,
-      tags: [canvas.title.toLowerCase(), 'blank'],
-      imagePath: '',
-    );
     Get.toNamed(Routes.editor, arguments: template);
   }
 

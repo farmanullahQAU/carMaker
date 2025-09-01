@@ -1,3 +1,4 @@
+import 'dart:io' show File;
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -10,6 +11,7 @@ import 'package:cardmaker/services/template_services.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,6 +19,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:screenshot/screenshot.dart';
+import 'package:universal_html/html.dart' as html; // For web support
 import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
@@ -368,14 +371,14 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<void> addTemplate(File thumbnailFile) async {
+  Future<void> uploadTemplate({bool? isDraft = false}) async {
     final templateService = Get.put(TemplateService());
 
     if (templateService.isUploading) {
       Get.snackbar('Info', 'Template upload already in progress');
       return;
     }
-
+    final thumbnailFile = await exportAsImage();
     final currentItems = boardController.getAllData();
 
     try {
@@ -392,6 +395,8 @@ class CanvasController extends GetxController {
         category: 'birthday',
         tags: ['default'],
         isPremium: false,
+
+        isDraft: isDraft!,
       );
 
       // Handle background image
@@ -520,8 +525,7 @@ class CanvasController extends GetxController {
       tags: tags.value,
       imagePath: "",
     );
-
-    await addTemplateToLocale(temp);
+    await StorageService.addTemplate(temp);
   }
 
   void _updateGridSize() {
@@ -599,11 +603,6 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<void> addTemplateToLocale(CardTemplate template) async {
-    print('Adding template: ${template.backgroundImageUrl}');
-    await StorageService.addTemplate(template);
-  }
-
   @override
   void onClose() {
     boardController.dispose();
@@ -656,9 +655,12 @@ class CanvasController extends GetxController {
       boardController.unSelectAll();
       final exportKey = GlobalKey();
 
+      // Capture the widget as an image
       final image = await screenshotController.captureFromWidget(
         Material(
           elevation: 0,
+          color: Colors.white,
+
           child: SizedBox(
             width: scaledCanvasWidth.value,
             height: scaledCanvasHeight.value,
@@ -677,33 +679,109 @@ class CanvasController extends GetxController {
         pixelRatio: 2,
       );
 
-      final output = await getTemporaryDirectory();
-      final file = File("${output.path}/invitation_card.png");
-      await file.writeAsBytes(image);
-      Get.snackbar(
-        'Success',
-        'Image exported successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
-      );
-      return file;
-      Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+      if (kIsWeb) {
+        // Web: Trigger a browser download
+        final blob = html.Blob([image]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'invitation_card.png')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+
+        // Return a dummy File object for consistency
+        Get.snackbar(
+          'Success',
+          'Image downloaded in browser',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+        );
+        return File('invitation_card.png'); // Dummy file for web
+      } else {
+        // Android: Save to temporary directory
+        final output = await getTemporaryDirectory();
+        final file = File("${output.path}/invitation_card.png");
+        await file.writeAsBytes(image);
+
+        Get.snackbar(
+          'Success',
+          'Image exported successfully to ${file.path}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+        );
+        return file;
+      }
     } catch (e, s) {
-      debugPrint('Export Image failed: $e\n$s');
+      debugPrint('Export Image failed: $e\nStack trace: $s');
       Get.snackbar(
         'Error',
-        'Failed to export image due to widget issue',
+        'Failed to export image: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
       );
+      rethrow;
     } finally {
-      // isExporting = false;
+      isExporting = false;
       update(['export_button']);
     }
-    throw Exception('Failed to export image');
   }
+  // Future<File> exportAsImage() async {
+  //   try {
+  //     isExporting = true;
+  //     update(['export_button']);
+  //     boardController.unSelectAll();
+  //     final exportKey = GlobalKey();
+
+  //     final image = await screenshotController.captureFromWidget(
+  //       Material(
+  //         elevation: 0,
+  //         child: SizedBox(
+  //           width: scaledCanvasWidth.value,
+  //           height: scaledCanvasHeight.value,
+  //           key: exportKey,
+  //           child: CanvasStack(
+  //             showGrid: false,
+  //             showBorders: false,
+  //             stackBoardKey: GlobalKey(),
+  //             canvasScale: canvasScale,
+  //             scaledCanvasWidth: scaledCanvasWidth,
+  //             scaledCanvasHeight: scaledCanvasHeight,
+  //           ),
+  //         ),
+  //       ),
+  //       targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+  //       pixelRatio: 2,
+  //     );
+
+  //     final output = await getTemporaryDirectory();
+  //     final file = File("${output.path}/invitation_card.png");
+  //     await file.writeAsBytes(image);
+  //     Get.snackbar(
+  //       'Success',
+  //       'Image exported successfully',
+  //       snackPosition: SnackPosition.BOTTOM,
+  //       backgroundColor: Colors.green.shade100,
+  //       colorText: Colors.green.shade900,
+  //     );
+  //     return file;
+  //     Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
+  //   } catch (e, s) {
+  //     debugPrint('Export Image failed: $e\n$s');
+  //     Get.snackbar(
+  //       'Error',
+  //       'Failed to export image due to widget issue',
+  //       snackPosition: SnackPosition.BOTTOM,
+  //       backgroundColor: Colors.red.shade100,
+  //       colorText: Colors.red.shade900,
+  //     );
+  //   } finally {
+  //     // isExporting = false;
+  //     update(['export_button']);
+  //   }
+  //   throw Exception('Failed to export image');
+  // }
 
   Future<void> replaceImageItem() async {
     try {
@@ -866,14 +944,22 @@ class CanvasController extends GetxController {
       );
     }
   }
+
+  // Replace the saveDraft method in CanvasController with this simplified version:
+
+  /// Save current design as draft to Firebase
+  Future<void> saveDraft({bool isDraft = false, String? customName}) async {
+    try {
+      uploadTemplate(isDraft: true);
+    } catch (err) {}
+  }
 }
 
 class _ItemState {
   final StackItem item;
   final _ItemAction action;
-  final double? previousHue;
 
-  _ItemState({required this.item, required this.action, this.previousHue});
+  _ItemState({required this.item, required this.action});
 }
 
-enum _ItemAction { add, update, hue }
+enum _ItemAction { add, update }

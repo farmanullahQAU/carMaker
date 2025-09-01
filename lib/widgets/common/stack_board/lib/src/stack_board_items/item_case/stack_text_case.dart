@@ -63,6 +63,7 @@ class StackTextCase extends StatelessWidget {
     final textStyle = content?.style?.copyWith(
       fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
       height: content?.style?.height,
+      color: content?.style?.color ?? Colors.black,
     );
 
     Widget textWidget;
@@ -123,6 +124,7 @@ class StackTextCase extends StatelessWidget {
         textAlign: content?.textAlign ?? TextAlign.center,
         textDirection: content?.textDirection,
         locale: content?.locale,
+
         softWrap: true,
         overflow: TextOverflow.visible,
         textScaler: content?.textScaleFactor != null
@@ -138,10 +140,11 @@ class StackTextCase extends StatelessWidget {
 
     Widget wrappedWidget;
 
-    // Update the mask implementation in your StackTextCase _buildNormal method
-
-    if (content?.maskImage != null && content?.hasDualTone != true) {
+    if (content?.hasMask == true &&
+        content?.maskImage != null &&
+        content?.hasDualTone != true) {
       wrappedWidget = FutureBuilder<ui.Image>(
+        key: ValueKey(content?.maskImage ?? 'no_mask'),
         future: _loadImage(content!.maskImage!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -166,26 +169,24 @@ class StackTextCase extends StatelessWidget {
                   filterQuality: FilterQuality.high,
                 );
               },
-              blendMode: content!.maskBlendMode,
-              child: Container(
-                child: Text(
-                  content!.data!,
-                  style: textStyle,
-                  strutStyle: content!.strutStyle?.style,
-                  textAlign: content!.textAlign ?? TextAlign.center,
-                  textDirection: content!.textDirection,
-                  locale: content!.locale,
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                  textScaler: content!.textScaleFactor != null
-                      ? TextScaler.linear(content!.textScaleFactor!)
-                      : TextScaler.noScaling,
-                  maxLines: content!.maxLines ?? 5,
-                  semanticsLabel: content!.semanticsLabel,
-                  textWidthBasis: content!.textWidthBasis,
-                  textHeightBehavior: content!.textHeightBehavior,
-                  selectionColor: content!.selectionColor,
-                ),
+              blendMode: content!.maskBlendMode!,
+              child: Text(
+                content!.data!,
+                style: textStyle,
+                strutStyle: content!.strutStyle?.style,
+                textAlign: content!.textAlign ?? TextAlign.center,
+                textDirection: content!.textDirection,
+                locale: content!.locale,
+                softWrap: true,
+                overflow: TextOverflow.visible,
+                textScaler: content!.textScaleFactor != null
+                    ? TextScaler.linear(content!.textScaleFactor!)
+                    : TextScaler.noScaling,
+                maxLines: content!.maxLines ?? 5,
+                semanticsLabel: content!.semanticsLabel,
+                textWidthBasis: content!.textWidthBasis,
+                textHeightBehavior: content!.textHeightBehavior,
+                selectionColor: content!.selectionColor,
               ),
             ),
           );

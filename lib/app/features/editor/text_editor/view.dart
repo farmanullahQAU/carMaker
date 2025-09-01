@@ -427,7 +427,7 @@ class _ColorTab extends StatelessWidget {
             onColorSelected: (color) {
               controller.textColor.value = color;
               controller.textColorOld = color;
-              controller.maskImage.value = null;
+              controller.maskImage = null;
               controller.updateTextItem();
               controller.update(['text_color', 'mask']);
             },
@@ -1317,15 +1317,14 @@ class _MaskTab extends StatelessWidget {
           return ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount:
-                TextStyleController.maskImages.length + 1, // +1 for "None"
+            itemCount: TextStyleController.maskImages.length, // +1 for "None"
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildNoMaskOption();
               }
-              final image = TextStyleController.maskImages[index - 1];
-              return _buildMaskOption(image);
+              final image = TextStyleController.maskImages[index];
+              return _buildMaskOption(image!);
             },
           );
         },
@@ -1334,7 +1333,7 @@ class _MaskTab extends StatelessWidget {
   }
 
   Widget _buildNoMaskOption() {
-    final isSelected = controller.maskImage.value == null;
+    final isSelected = controller.maskImage == null;
     return GestureDetector(
       onTap: () => _clearMask(controller),
       child: AnimatedContainer(
@@ -1385,7 +1384,7 @@ class _MaskTab extends StatelessWidget {
   }
 
   Widget _buildMaskOption(String image) {
-    final isSelected = image == controller.maskImage.value;
+    final isSelected = image == controller.maskImage;
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -1406,6 +1405,7 @@ class _MaskTab extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Text(controller.maskImage.toString()),
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -1482,13 +1482,21 @@ class _MaskTab extends StatelessWidget {
   }
 
   void _clearMask(TextStyleController controller) {
-    controller.maskImage.value = null;
+    print('Clearing mask');
+    controller.hasMask = false; // Set hasMask to false
+    controller.maskImage = null;
+    controller.maskBlendMode = BlendMode.srcATop;
+
     controller.updateTextItem();
     controller.update(['mask_presets', 'mask_settings']);
   }
 
   void _selectImageMask(TextStyleController controller, String image) {
-    controller.maskImage.value = image;
+    controller.hasMask = true; // Set hasMask to true
+    controller.maskImage = image;
+    if (controller.backgroundColor.value != Colors.transparent) {
+      controller.backgroundColor(Colors.transparent);
+    }
     controller.updateTextItem();
     controller.update(['mask_presets', 'mask_settings']);
   }
@@ -1603,11 +1611,11 @@ class MaskTuneBottomSheet extends StatelessWidget {
               children: blendModes.map((blendModeData) {
                 final mode = blendModeData['mode'] as BlendMode;
                 final name = blendModeData['name'] as String;
-                final isSelected = controller.maskBlendMode.value == mode;
+                final isSelected = controller.maskBlendMode == mode;
 
                 return GestureDetector(
                   onTap: () {
-                    controller.maskBlendMode.value = mode;
+                    controller.maskBlendMode = mode;
                     controller.updateTextItem();
                     controller.update(['mask_properties', 'mask_blend_mode']);
                   },
@@ -2908,7 +2916,7 @@ class _CircularTab extends StatelessWidget {
                             controller.updateTextItem();
                             controller.update(['circular_toggle']);
                           },
-                          activeColor: AppColors.accent,
+                          activeThumbColor: AppColors.accent,
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                         ),

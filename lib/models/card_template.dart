@@ -17,8 +17,11 @@ class CardTemplate {
   final double height;
   final bool isPremium;
   final List<String> tags;
+  final String imagePath;
   final IconData? icon;
   final Color color;
+  final bool isFavorite;
+  final bool isDraft;
 
   CardTemplate({
     required this.id,
@@ -36,9 +39,11 @@ class CardTemplate {
     this.height = 1740,
     this.isPremium = false,
     this.tags = const [],
-    required String imagePath,
+    required this.imagePath,
     this.icon,
     this.color = Colors.transparent,
+    this.isFavorite = false,
+    this.isDraft = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory CardTemplate.fromJson(Map<String, dynamic> json) => CardTemplate(
@@ -47,33 +52,47 @@ class CardTemplate {
     name: json['name'],
     thumbnailUrl: json['thumbnailUrl'],
     backgroundImageUrl: json['backgroundImageUrl'],
-    items: List<Map<String, dynamic>>.from(json['items']),
+    items: List<Map<String, dynamic>>.from(json['items'] ?? []),
     createdAt: json['createdAt'] != null
-        ? (json['createdAt'] as Timestamp).toDate()
+        ? (json['createdAt'] is Timestamp
+              ? (json['createdAt'] as Timestamp).toDate()
+              : DateTime.parse(json['createdAt']))
         : null,
     updatedAt: json['updatedAt'] != null
-        ? (json['updatedAt'] as Timestamp).toDate()
+        ? (json['updatedAt'] is Timestamp
+              ? (json['updatedAt'] as Timestamp).toDate()
+              : DateTime.parse(json['updatedAt']))
         : null,
     category: json['category'] ?? 'general',
     categoryId: json['categoryId'] ?? 'general',
     isFeatured: json['isFeatured'] ?? false,
     compatibleDesigns: List<String>.from(json['compatibleDesigns'] ?? []),
-    width: (json['width'] ?? 1000).toDouble(),
-    height: (json['height'] ?? 1000).toDouble(),
+    width: (json['width'] is double
+        ? json['width']
+        : (json['width'] ?? 1000).toDouble()),
+    height: (json['height'] is double
+        ? json['height']
+        : (json['height'] ?? 1000).toDouble()),
     isPremium: json['isPremium'] ?? false,
     tags: List<String>.from(json['tags'] ?? []),
-    icon: IconData(
-      json['icon'] ?? Icons.image.codePoint,
-      fontFamily: 'MaterialIcons',
-    ),
-    color: Color(json['color'] ?? 0xFF000000),
+    icon: json['icon'] != null
+        ? IconData(
+            json['icon'] is int ? json['icon'] : Icons.image.codePoint,
+            fontFamily: 'MaterialIcons',
+          )
+        : null,
+    color: json['color'] != null
+        ? Color(json['color'] is int ? json['color'] : 0xFF000000)
+        : Colors.transparent,
+    isFavorite: json['isFavorite'] ?? false,
+    isDraft: json['isDraft'] ?? false,
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
-    'backgroundImageUrl': backgroundImageUrl,
+    if (backgroundImageUrl != null) 'backgroundImageUrl': backgroundImageUrl,
     'items': items,
     'createdAt': FieldValue.serverTimestamp(),
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
@@ -85,11 +104,60 @@ class CardTemplate {
     'height': height,
     'isPremium': isPremium,
     'tags': tags,
-    'icon': icon?.codePoint,
-    'color': color.toARGB32(),
+    'imagePath': imagePath,
+    if (icon != null) 'icon': icon!.codePoint,
+    'color': color.value,
+    'isFavorite': isFavorite,
+    'isDraft': isDraft,
   };
 
   double get aspectRatio => width / height;
+
+  CardTemplate copyWith({
+    String? id,
+    String? name,
+    String? thumbnailUrl,
+    String? backgroundImageUrl,
+    List<Map<String, dynamic>>? items,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? category,
+    String? categoryId,
+    bool? isFeatured,
+    List<String>? compatibleDesigns,
+    double? width,
+    double? height,
+    bool? isPremium,
+    List<String>? tags,
+    String? imagePath,
+    IconData? icon,
+    Color? color,
+    bool? isFavorite,
+    bool? isDraft,
+  }) {
+    return CardTemplate(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
+      items: items ?? this.items,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
+      isFeatured: isFeatured ?? this.isFeatured,
+      compatibleDesigns: compatibleDesigns ?? this.compatibleDesigns,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      isPremium: isPremium ?? this.isPremium,
+      tags: tags ?? this.tags,
+      imagePath: imagePath ?? this.imagePath,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      isFavorite: isFavorite ?? this.isFavorite,
+      isDraft: isDraft ?? this.isDraft,
+    );
+  }
 }
 
 class CategoryModel {
