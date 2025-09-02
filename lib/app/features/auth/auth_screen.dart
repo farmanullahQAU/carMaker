@@ -14,7 +14,7 @@ class AuthScreen extends GetView<AuthController> {
       body: Stack(
         children: [
           // Background
-          // _buildBackground(),
+          _buildBackground(),
 
           // Content
           SafeArea(
@@ -69,9 +69,9 @@ class AuthScreen extends GetView<AuthController> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.branding.withOpacity(0.1),
+            AppColors.branding.withOpacity(0.05),
             AppColors.brandingLight.withOpacity(0.05),
-            Colors.white,
+            // Colors.white,
           ],
         ),
       ),

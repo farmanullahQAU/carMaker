@@ -12,7 +12,7 @@ class ImageEditorController extends GetxController {
   StackImageItem? _selectedImageItem;
 
   // Tab controller index for the image editor
-  final RxInt _selectedTabIndex = 0.obs;
+  static final RxInt _selectedTabIndex = 0.obs;
 
   // Filter states
   final RxString _activeFilter = 'none'.obs;

@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
-import 'package:cardmaker/app/features/home/ssss.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
@@ -385,7 +385,7 @@ class SectionTitle extends StatelessWidget {
           if (showSeeAll)
             TextButton(
               onPressed: () {
-                Get.to(() => MorphableShapeDemoPage());
+                Get.toNamed(Routes.auth);
               },
               child: Text(
                 'See All',
@@ -487,46 +487,35 @@ class CanvasSizesRow extends GetView<HomeController> {
   }
 
   Widget _buildBasicCanvasSection() {
-    final basicSizes = [
-      {
-        'title': 'Square',
-        'aspectRatio': 1.0,
-        'gradient': LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.branding.withOpacity(0.01),
-            AppColors.branding.withOpacity(0.02),
-            AppColors.branding.withOpacity(0.3),
-          ],
-        ),
-      },
-      {
-        'title': 'Portrait',
-        'aspectRatio': 0.75,
-        'gradient': LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.branding.withOpacity(0.8),
-            AppColors.branding.withOpacity(0.6),
-            AppColors.branding.withOpacity(0.4),
-          ],
-        ),
-      },
-      {
-        'title': 'Landscape',
-        'aspectRatio': 1.33,
-        'gradient': LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            AppColors.branding.withOpacity(0.85),
-            AppColors.branding.withOpacity(0.65),
-            AppColors.branding.withOpacity(0.45),
-          ],
-        ),
-      },
+    // Define list of CardTemplate constructors
+    final basicTemplates = [
+      CardTemplate(
+        id: 'square',
+        name: 'Square',
+        width: 1000,
+        height: 1000,
+        categoryId: 'general',
+        imagePath: 'assets/square.png',
+        items: [],
+      ),
+      CardTemplate(
+        id: 'portrait',
+        name: 'Portrait',
+        width: 750,
+        height: 1000,
+        categoryId: 'general',
+        imagePath: 'assets/portrait.png',
+        items: [],
+      ),
+      CardTemplate(
+        id: 'landscape',
+        name: 'Landscape',
+        width: 1000,
+        height: 750,
+        categoryId: 'general',
+        imagePath: 'assets/landscape.png',
+        items: [],
+      ),
     ];
 
     return SizedBox(
@@ -534,45 +523,38 @@ class CanvasSizesRow extends GetView<HomeController> {
       child: Row(
         spacing: 8,
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: basicSizes.asMap().entries.map((entry) {
-          final canvas = entry.value;
-          return Expanded(
-            child: _buildBasicCanvasCardWithGradient(
-              canvas['title'] as String,
-              canvas['aspectRatio'] as double,
-              canvas['gradient'] as LinearGradient,
-            ),
-          );
+        children: basicTemplates.asMap().entries.map((entry) {
+          final template = entry.value;
+          return Expanded(child: _buildBasicCanvasCard(template));
         }).toList(),
       ),
     );
   }
 
-  Widget _buildBasicCanvasCardWithGradient(
-    String title,
-    double aspectRatio,
-    LinearGradient gradient,
-  ) {
+  Widget _buildBasicCanvasCard(CardTemplate template) {
     return GestureDetector(
       onTap: () {
-        // Handle tap
+        Get.toNamed(Routes.editor, arguments: template);
       },
       child: Container(
         decoration: BoxDecoration(
           color: Get.theme.colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(20.0),
+          borderRadius: BorderRadius.circular(12.0),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 60.0,
-              height: 60.0 / aspectRatio,
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8.0),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: 60.0,
+                height: 60.0 / template.aspectRatio,
+                decoration: BoxDecoration(
+                  color: Get.theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Icon(Icons.add, color: AppColors.branding, size: 20.0),
               ),
-              child: Icon(Icons.add, color: AppColors.branding, size: 20.0),
             ),
           ],
         ),

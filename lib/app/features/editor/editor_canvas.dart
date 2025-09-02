@@ -150,123 +150,117 @@ class EditorPage extends GetView<CanvasController> {
               ),
 
               SafeArea(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _ProfessionalToolbarButton(
-                        icon: Icons.emoji_emotions_outlined,
-                        activeIcon: Icons.emoji_emotions,
-                        label: 'Stickers',
-                        panelType: PanelType.stickers,
-                        activePanel: controller.activePanel,
-                        onPressed: () {
-                          controller.activePanel.value =
-                              controller.activePanel.value == PanelType.stickers
-                              ? PanelType.none
-                              : PanelType.stickers;
-                          controller.update(['bottom_sheet']);
-                        },
-                      ),
-                      _ProfessionalToolbarButton(
-                        icon: Icons.palette_outlined,
-                        activeIcon: Icons.palette,
-                        label: 'Colors',
-                        panelType: PanelType.color,
-                        activePanel: controller.activePanel,
-                        onPressed: () {
-                          controller.activePanel.value =
-                              controller.activePanel.value == PanelType.color
-                              ? PanelType.none
-                              : PanelType.color;
-                          controller.update(['bottom_sheet']);
-                        },
-                      ),
-                      _ProfessionalToolbarButton(
-                        icon: Icons.text_fields_outlined,
-                        activeIcon: Icons.text_fields,
-                        label: 'Text',
-                        panelType: PanelType.text,
-                        activePanel: controller.activePanel,
-                        onPressed: () {
-                          if (controller.activePanel.value == PanelType.text) {
-                            controller.activePanel.value = PanelType.none;
-                          } else {
-                            if (controller.activeItem.value == null ||
-                                controller.activeItem.value is StackTextItem) {
-                              // controller.addText("Tap to edit text");
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _ProfessionalToolbarButton(
+                      icon: Icons.emoji_emotions_outlined,
+                      activeIcon: Icons.emoji_emotions,
+                      label: 'Stickers',
+                      panelType: PanelType.stickers,
+                      activePanel: controller.activePanel,
+                      onPressed: () {
+                        controller.activePanel.value =
+                            controller.activePanel.value == PanelType.stickers
+                            ? PanelType.none
+                            : PanelType.stickers;
+                        controller.update(['bottom_sheet']);
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.palette_outlined,
+                      activeIcon: Icons.palette,
+                      label: 'Colors',
+                      panelType: PanelType.color,
+                      activePanel: controller.activePanel,
+                      onPressed: () {
+                        controller.activePanel.value =
+                            controller.activePanel.value == PanelType.color
+                            ? PanelType.none
+                            : PanelType.color;
+                        controller.update(['bottom_sheet']);
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.text_fields_outlined,
+                      activeIcon: Icons.text_fields,
+                      label: 'Text',
+                      panelType: PanelType.text,
+                      activePanel: controller.activePanel,
+                      onPressed: () {
+                        if (controller.activePanel.value == PanelType.text) {
+                          controller.activePanel.value = PanelType.none;
+                        } else {
+                          if (controller.activeItem.value == null ||
+                              controller.activeItem.value is StackTextItem) {
+                            // controller.addText("Tap to edit text");
 
-                              Get.to(() => UpdateTextView());
-                            }
-                            controller.activePanel.value = PanelType.text;
+                            Get.to(() => UpdateTextView());
                           }
-                          controller.update(['bottom_sheet']);
-                        },
-                      ),
-                      _ProfessionalToolbarButton(
-                        icon: Icons.photo_filter_outlined,
-                        activeIcon: Icons.photo_filter,
-                        label: 'Image',
-                        panelType: PanelType.advancedImage,
-                        activePanel: controller.activePanel,
-                        onPressed: () {
-                          if (controller.activePanel.value ==
-                              PanelType.advancedImage) {
-                            controller.activePanel.value = PanelType.none;
+                          controller.activePanel.value = PanelType.none;
+                        }
+                        controller.update(['bottom_sheet']);
+                      },
+                    ),
+                    _ProfessionalToolbarButton(
+                      icon: Icons.photo_filter_outlined,
+                      activeIcon: Icons.photo_filter,
+                      label: 'Image',
+                      panelType: PanelType.advancedImage,
+                      activePanel: controller.activePanel,
+                      onPressed: () {
+                        if (controller.activePanel.value ==
+                            PanelType.advancedImage) {
+                          controller.activePanel.value = PanelType.none;
+                        } else {
+                          if (controller.activeItem.value != null &&
+                              controller.activeItem.value is StackImageItem) {
+                            controller.activePanel.value =
+                                PanelType.advancedImage;
                           } else {
-                            if (controller.activeItem.value != null &&
-                                controller.activeItem.value is StackImageItem) {
-                              controller.activePanel.value =
-                                  PanelType.advancedImage;
-                            } else {
-                              // controller.pickAndAddImage();
+                            // controller.pickAndAddImage();
 
-                              // Show bottom sheet with options
-                              showModalBottomSheet<Widget>(
-                                context: context,
-                                builder: (_) => BottomSheet(
-                                  onClosing: () {},
-                                  builder: (context) {
-                                    return Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        ListTile(
-                                          leading: Icon(
-                                            Icons.add_photo_alternate_outlined,
-                                          ),
-                                          title: Text('Add Image to Canvas'),
-                                          onTap: () {
-                                            Get.back(); // Close bottom sheet
-                                            controller.pickAndAddImage();
-                                          },
+                            // Show bottom sheet with options
+                            showModalBottomSheet<Widget>(
+                              context: context,
+                              builder: (_) => BottomSheet(
+                                onClosing: () {},
+                                builder: (context) {
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        leading: Icon(
+                                          Icons.add_photo_alternate_outlined,
                                         ),
-                                        ListTile(
-                                          leading: Icon(Icons.image_outlined),
-                                          title: Text(
-                                            'Change Background Image',
-                                          ),
-                                          onTap: () {
-                                            Get.back(); // Close bottom sheet
-                                            controller
-                                                .pickAndUpdateBackground();
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                                backgroundColor: Colors.transparent,
-                                isScrollControlled: true,
-                                barrierColor: Colors.transparent,
-                              );
-                            }
+                                        title: Text('Add Image to Canvas'),
+                                        onTap: () {
+                                          Get.back(); // Close bottom sheet
+                                          controller.pickAndAddImage();
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: Icon(Icons.image_outlined),
+                                        title: Text('Change Background Image'),
+                                        onTap: () {
+                                          Get.back(); // Close bottom sheet
+                                          controller.pickAndUpdateBackground();
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                              backgroundColor: Colors.transparent,
+                              isScrollControlled: true,
+                              barrierColor: Colors.transparent,
+                            );
                           }
-                          controller.update(['bottom_sheet']);
-                        },
-                      ),
-                    ],
-                  ),
+                        }
+                        controller.update(['bottom_sheet']);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -675,7 +669,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
         onTap: onPressed,
         child: AnimatedContainer(
           duration: Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isActive
                 ? AppColors.branding.withOpacity(0.1)
@@ -694,13 +688,13 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                   size: 24,
                 ),
               ),
-              SizedBox(height: 4),
+              // SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive ? AppColors.branding : Colors.grey[600],
+                  // fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  // color: isActive ? AppColors.branding : Colors.grey[600],
                 ),
               ),
             ],

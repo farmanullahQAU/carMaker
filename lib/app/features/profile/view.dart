@@ -16,10 +16,13 @@ class ProfilePage extends StatelessWidget {
     final controller = Get.put(ProfileController());
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      // backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+
+        // backgroundColor: Colors.white,
+        backgroundColor: AppColors.brandingLight.withValues(alpha: 0.05),
+
         title: const Text(
           'My Profile',
           style: TextStyle(
@@ -31,13 +34,10 @@ class ProfilePage extends StatelessWidget {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black87,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Get.back(),
         ),
+
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
           child: Container(
@@ -95,9 +95,10 @@ class ProfilePage extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // color: Colors.white,
+        color: AppColors.brandingLight.withValues(alpha: 0.05),
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade100, width: 1),
         ),
@@ -105,7 +106,7 @@ class ProfilePage extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            radius: 32,
+            radius: 20,
             backgroundColor: Colors.blue.shade50,
             child: user?.photoURL != null
                 ? ClipOval(
@@ -323,9 +324,8 @@ class ProfilePage extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'Loading more templates...',
+                'Loading templates...',
                 style: Get.textTheme.bodySmall?.copyWith(
-                  color: AppColors.accent,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -470,9 +470,9 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey.shade100,
+                color: AppColors.pink.withValues(alpha: 0.07),
               ),
-              child: Icon(icon, size: 48, color: Colors.grey.shade400),
+              child: Icon(icon, size: 48, color: Colors.white),
             ),
             const SizedBox(height: 16),
             Text(
@@ -492,25 +492,6 @@ class ProfilePage extends StatelessWidget {
                 fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => Get.toNamed('/create'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.blue.shade600,
-                side: BorderSide(color: Colors.blue.shade600),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-              child: const Text(
-                'Create Now',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
             ),
           ],
         ),

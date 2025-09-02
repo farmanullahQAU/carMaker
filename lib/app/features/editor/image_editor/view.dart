@@ -27,19 +27,18 @@ class AdvancedImagePanel extends StatefulWidget {
 class _AdvancedImagePanelState extends State<AdvancedImagePanel>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late ImageEditorController _imageEditorController;
+  late final ImageEditorController _imageEditorController = Get.put(
+    ImageEditorController(),
+  );
   final canvasController = Get.find<CanvasController>();
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-
-    // Initialize or get the ImageEditorController
-    try {
-      _imageEditorController = Get.find<ImageEditorController>();
-    } catch (e) {
-      _imageEditorController = Get.put(ImageEditorController());
-    }
+    _tabController = TabController(
+      length: 6,
+      vsync: this,
+      initialIndex: _imageEditorController.selectedTabIndex,
+    );
 
     // Set the current image item
     _imageEditorController.setSelectedImageItem(widget.imageItem);
