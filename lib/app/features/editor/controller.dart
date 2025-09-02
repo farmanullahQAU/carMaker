@@ -4,8 +4,10 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/services/template_services.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
@@ -23,6 +25,9 @@ import 'package:universal_html/html.dart' as html; // For web support
 import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
+  final templateService = Get.put(TemplateService());
+  final authService = Get.find<AuthService>();
+
   final StackBoardController boardController = StackBoardController();
   final RxString selectedFont = 'Poppins'.obs;
   final RxDouble fontSize = 24.0.obs;
@@ -372,8 +377,10 @@ class CanvasController extends GetxController {
   }
 
   Future<void> uploadTemplate({bool? isDraft = false}) async {
-    final templateService = Get.put(TemplateService());
-
+    if (authService.user == null) {
+      Get.toNamed(Routes.auth);
+      return;
+    }
     if (templateService.isUploading) {
       Get.snackbar('Info', 'Template upload already in progress');
       return;

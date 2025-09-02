@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/core/extensions/extensions.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
@@ -186,7 +187,7 @@ class ImageItemContent extends StackItemContent {
     }
 
     if (url != null) {
-      _image = NetworkImage(url!);
+      _image = CachedNetworkImageProvider(url!);
     } else if (assetName != null) {
       _image = AssetImage(assetName!);
     } else if (filePath != null) {

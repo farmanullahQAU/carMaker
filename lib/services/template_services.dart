@@ -5,10 +5,8 @@ import 'package:cardmaker/services/firebase_storage_service.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:path/path.dart' as path;
 
 import 'firestore_service.dart';
 
@@ -16,24 +14,19 @@ import 'firestore_service.dart';
 class TemplateService extends GetxService {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseStorageService _storageService = FirebaseStorageService();
+
   final RxBool _isUploading = false.obs;
 
   bool get isUploading => _isUploading.value;
 
-  @override
-  void onInit() {
-    super.onInit();
-    if (FirebaseAuth.instance.currentUser == null) {
-      FirebaseAuth.instance.signInAnonymously();
-    }
-  }
-
+  /// Adds a template with optional image files and uploads images from ImageItemContent.
   /// Adds a template with optional image files and uploads images from ImageItemContent.
   Future<void> addTemplate(
     CardTemplate template, {
     File? thumbnailFile,
     File? backgroundFile,
   }) async {
+    print("is draft. ..................... ${template.isDraft}");
     if (_isUploading.value) {
       Get.snackbar('Info', 'Another upload is in progress');
       return;
@@ -47,16 +40,13 @@ class TemplateService extends GetxService {
       for (final itemJson in template.items) {
         final item = _deserializeItem(itemJson);
         if (item is StackImageItem && item.content?.filePath != null) {
-          // Extract the file extension from the file path
-          final fileExtension = path.extension(item.content!.filePath!);
-
-          // Upload image to Firebase Storage with original extension
+          // Always save as .webp
           final imageUrl = await _storageService.uploadImage(
             File(item.content!.filePath!),
             template.id,
             'template_images',
-            fileName: '${item.id}$fileExtension', // Use original extension
-            extension: fileExtension,
+            fileName: '${item.id}.webp',
+            isDraft: template.isDraft,
           );
 
           // Update ImageItemContent with the URL
@@ -79,38 +69,30 @@ class TemplateService extends GetxService {
       templateData['items'] = updatedItems;
 
       // Upload thumbnail if provided
-      String? thumbnailUrl;
       if (thumbnailFile != null) {
-        // Extract thumbnail file extension
-        final thumbnailExtension = path.extension(thumbnailFile.path);
-        thumbnailUrl = await _storageService.uploadImage(
+        final thumbnailUrl = await _storageService.uploadImage(
           thumbnailFile,
           template.id,
           'thumbnails',
-          fileName: 'thumbnail$thumbnailExtension', // Use original extension
-          extension: thumbnailExtension,
+          fileName: 'thumbnail.webp',
+          isDraft: template.isDraft,
         );
         templateData['thumbnailUrl'] = thumbnailUrl;
       }
 
       // Upload background if provided
-      String? backgroundUrl;
       if (backgroundFile != null) {
-        // Extract background file extension
-        final backgroundExtension = path.extension(backgroundFile.path);
-
-        backgroundUrl = await _storageService.uploadImage(
+        final backgroundUrl = await _storageService.uploadImage(
           backgroundFile,
           template.id,
           'backgrounds',
-          fileName: 'background$backgroundExtension', // Use original extension
-          extension: backgroundExtension,
+          fileName: 'background.webp',
+          isDraft: template.isDraft,
         );
         templateData['backgroundImageUrl'] = backgroundUrl;
       }
 
       // Save template to Firestore
-
       if (template.isDraft) {
         await _firestoreService.saveDraft(template.id, templateData);
       } else {

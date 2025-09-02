@@ -65,6 +65,7 @@ dependencies:
   google_sign_in: ^7.1.1
   universal_html: ^2.2.4
   morphable_shape: ^2.0.0
+  url_launcher: ^6.3.2
   # stack_board: ^0.2.6+1
 flutter_native_splash:
   color: "#ffffff"  # White background for light mode

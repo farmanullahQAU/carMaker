@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -553,7 +554,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   void _editDraft(CardTemplate template) {
-    Get.toNamed('/editor', arguments: template);
+    Get.toNamed(Routes.editor, arguments: template);
   }
 
   void _showDeleteDialog(String draftId, Function(String)? onDelete) {

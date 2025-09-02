@@ -1,15 +1,27 @@
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
 
 class FirestoreService {
+  // 🔹 Private constructor
+  FirestoreService._internal();
+
+  // 🔹 The single instance
+  static final FirestoreService _instance = FirestoreService._internal();
+
+  // 🔹 Public accessor
+  factory FirestoreService() => _instance;
+
+  // 🔹 Firebase instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+  // 🔹 Always fetch latest userId (don’t cache it at init, otherwise null before login)
+  String? get userId => Get.find<AuthService>().user?.uid;
 
   // Add a template to Firestore
   Future<void> addTemplate(String id, Map<String, dynamic> templateData) async {
     if (userId == null) throw Exception('User not authenticated');
-
     await _firestore.collection('templates').doc(id).set(templateData);
   }
 
@@ -85,7 +97,6 @@ class FirestoreService {
       'templateRef': _firestore.collection('templates').doc(templateId),
     });
 
-    // Increment favoriteCount in templates
     await _firestore.collection('templates').doc(templateId).update({
       'favoriteCount': FieldValue.increment(1),
     });
@@ -102,7 +113,6 @@ class FirestoreService {
         .doc(templateId)
         .delete();
 
-    // Decrement favoriteCount in templates
     await _firestore.collection('templates').doc(templateId).update({
       'favoriteCount': FieldValue.increment(-1),
     });
@@ -165,7 +175,6 @@ class FirestoreService {
 
     if (templateIds.isEmpty) return [];
 
-    // Fetch template details in batches due to Firestore's whereIn limit (10 items)
     const int batchSize = 10;
     final List<CardTemplate> templates = [];
     for (int i = 0; i < templateIds.length; i += batchSize) {

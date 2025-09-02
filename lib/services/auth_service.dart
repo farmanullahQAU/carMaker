@@ -78,8 +78,6 @@ class AuthService extends GetxController {
 
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final Rx<User?> currentUser = Rx<User?>(null);
 
   @override
   void onInit() {

@@ -871,27 +871,7 @@ class _ModernExportButton extends StatelessWidget {
             case 'save':
               onSave();
               // Show success feedback
-              Get.snackbar(
-                '',
-                '',
-                titleText: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text(
-                      'Saved!',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                messageText: Text('Your design has been saved successfully'),
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.green.shade50,
-                colorText: Colors.green.shade800,
-                borderRadius: 12,
-                margin: EdgeInsets.all(16),
-                duration: Duration(seconds: 2),
-              );
+
               break;
             case 'pdf':
               onExportPDF();
