@@ -1,13 +1,26 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/app/settings/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
+
+class ProfileTab extends StatelessWidget {
+  bool get isLoggedIn => Get.find<AuthService>().user != null;
+  const ProfileTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return isLoggedIn ? ProfilePage() : AuthWrapper();
+  }
+}
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -162,7 +175,7 @@ class ProfilePage extends StatelessWidget {
               size: 24,
             ),
             onPressed: () {
-              Get.toNamed('/settings');
+              Get.to(() => SettingsPage());
             },
           ),
         ],
@@ -471,7 +484,7 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.pink.withValues(alpha: 0.07),
+                color: AppColors.pink400Light,
               ),
               child: Icon(icon, size: 48, color: Colors.white),
             ),
@@ -622,7 +635,7 @@ class _ProfessionalTemplateCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.brandingLight.withValues(alpha: 0.06),
+        color: AppColors.brandingLight.withValues(alpha: 0.02),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
       ),
       child: Column(
@@ -875,7 +888,7 @@ class _FavoriteTemplateCard extends StatelessWidget {
                     // ),
                     child: Icon(
                       Icons.favorite,
-                      color: AppColors.pink,
+                      color: AppColors.red400,
                       size: 24,
                     ),
                   ),

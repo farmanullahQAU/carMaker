@@ -98,6 +98,7 @@ class AuthController extends GetxController {
 
   Future<void> signInWithGoogle() async {
     final String? error = await authService.signInWithGoogle();
+    Get.back();
     if (error != null) {
       authService.errorMessage.value = error;
     }
