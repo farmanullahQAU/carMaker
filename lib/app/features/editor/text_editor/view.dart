@@ -461,7 +461,7 @@ class _BackgroundTab extends StatelessWidget {
               controller.updateTextItem();
               controller.update(['background_color']);
             },
-            selectedBorderColor: AppColors.background,
+            selectedBorderColor: Colors.white,
             itemSize: 35,
           );
           // return GridView.builder(
@@ -2091,7 +2091,7 @@ class TuneBottomSheet extends StatelessWidget {
                   controller.updateTextItem();
                   controller.update(['stroke_properties']);
                 },
-                selectedBorderColor: AppColors.background,
+                selectedBorderColor: Colors.white,
                 itemSize: 25,
               ),
             ],
@@ -2143,7 +2143,7 @@ class TuneBottomSheet extends StatelessWidget {
                   controller.updateTextItem();
                   controller.update(['shadow_properties']);
                 },
-                selectedBorderColor: AppColors.background,
+                selectedBorderColor: Colors.white,
 
                 itemSize: 25,
               ),

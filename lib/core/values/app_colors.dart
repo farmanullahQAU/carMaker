@@ -7,10 +7,10 @@ class AppColors {
   static const Color accent = Colors.teal; // Accent – fresh contrast
 
   static const Color highlight = Color.fromARGB(255, 121, 120, 120);
-  static const Color background = Colors.white;
+  static const Color backgroundLight = Color(0xFFFAFAFA);
+  static const Color backgroundDark = Color(0xFF121212);
 
   //center _guide color
-  static const Color centerGuideColor = Colors.black;
   // Amber
   // Amber
   static const Color amber400 = Color(0xFFFFCA28); // Amber 400
@@ -31,4 +31,7 @@ class AppColors {
   // Pink
   static const Color pink400 = Color(0xFFEC407A); // Pink 400
   static const Color pink400Light = Color(0x1AEC407A); // 10% opacity
+
+  static const Color gray400 = Color(0xFF9CA3AF);
+  static const Color gray200 = Color(0xFFE5E7EB);
 }

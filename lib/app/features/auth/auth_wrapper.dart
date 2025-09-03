@@ -9,7 +9,6 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

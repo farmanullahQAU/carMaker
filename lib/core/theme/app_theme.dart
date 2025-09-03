@@ -10,6 +10,7 @@ class CardMakerTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.branding,
         primary: AppColors.branding,
+        surface: AppColors.backgroundLight,
         // tertiary: AppColors.tertiary,
         brightness: Brightness.light,
       ),
@@ -25,7 +26,7 @@ class CardMakerTheme {
         // seedColor: Colors.pink,
         seedColor: AppColors.branding,
         primary: AppColors.branding,
-        surface: Color(0xff180A0A),
+        surface: AppColors.backgroundDark,
 
         // Dark surface color
         // tertiary: Colors.white,
@@ -34,7 +35,7 @@ class CardMakerTheme {
         // tertiary: AppColors.tertiary,
         brightness: Brightness.dark,
       ),
-      textTheme: GoogleFonts.montserratTextTheme(Typography.whiteMountainView),
+      textTheme: GoogleFonts.interTightTextTheme(Typography.whiteMountainView),
     );
   }
 }
