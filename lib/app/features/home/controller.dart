@@ -201,6 +201,11 @@ class HomeController extends GetxController {
 
   Future<void> toggleFavorite(String templateId) async {
     try {
+      if (authService.user == null) {
+        Get.toNamed(Routes.auth);
+        return;
+      }
+
       if (favoriteTemplateIds.contains(templateId)) {
         await templateService.removeFromFavorites(templateId);
         favoriteTemplateIds.remove(templateId);

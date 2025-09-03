@@ -257,7 +257,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       case 6: // Font
         return 250;
       case 7: // Mask
-        return 120;
+        return 80;
       case 8: // Effects
         return 120;
       case 9: // Dual Tone
@@ -1309,8 +1309,7 @@ class _MaskTab extends StatelessWidget {
   }
 
   Widget _buildMaskPresets() {
-    return SizedBox(
-      height: 100,
+    return Expanded(
       child: GetBuilder<TextStyleController>(
         id: 'mask_presets',
         builder: (controller) {
@@ -1348,36 +1347,18 @@ class _MaskTab extends StatelessWidget {
               ? Border.all(color: AppColors.branding, width: 0.4)
               : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              height: 56,
-              width: 56,
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.layers_clear,
-                size: 28,
-                color: isSelected
-                    ? AppColors.branding
-                    : Get.theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'None',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.branding : Colors.grey.shade800,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.layers_clear,
+            size: 28,
+            color: isSelected
+                ? AppColors.branding
+                : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
         ),
       ),
     );
@@ -1385,89 +1366,84 @@ class _MaskTab extends StatelessWidget {
 
   Widget _buildMaskOption(String image) {
     final isSelected = image == controller.maskImage;
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        GestureDetector(
-          onTap: () => _selectImageMask(controller, image),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 88,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.branding.withOpacity(0.08)
-                  : Get.theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: isSelected
-                  ? Border.all(color: AppColors.branding, width: 0.4)
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return GestureDetector(
+      onTap: () => _selectImageMask(controller, image),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: EdgeInsets.all(8),
+        // width: 88,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.08)
+              : Get.theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border.all(color: AppColors.branding, width: 0.4)
+              : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.center,
               children: [
-                Text(controller.maskImage.toString()),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: 56,
-                      width: 56,
-                      decoration: BoxDecoration(
-                        color: Get.theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          image,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.image_not_supported,
-                              color: Colors.grey.shade600,
-                            );
-                          },
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    color: Get.theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey.shade600,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                if (isSelected)
+                  Container(
+                    child: GestureDetector(
+                      onTap: () {
+                        _showMaskTuneBottomSheet(Get.context!);
+                      },
+                      child: Container(
+                        height: 56,
+                        width: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: const Icon(Icons.tune, color: Colors.white),
                       ),
                     ),
-
-                    if (isSelected)
-                      Container(
-                        child: GestureDetector(
-                          onTap: () {
-                            _showMaskTuneBottomSheet(Get.context!);
-                          },
-                          child: Container(
-                            height: 56,
-                            width: 56,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.tune, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Mask ${TextStyleController.maskImages.indexOf(image) + 1}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? AppColors.branding
-                        : Colors.grey.shade800,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
-          ),
+            // const SizedBox(height: 8),
+            // Text(
+            //   'Mask ${TextStyleController.maskImages.indexOf(image) + 1}',
+            //   style: TextStyle(
+            //     fontSize: 11,
+            //     fontWeight: FontWeight.w500,
+            //     color: isSelected
+            //         ? AppColors.branding
+            //         : Colors.grey.shade800,
+            //   ),
+            //   maxLines: 1,
+            //   overflow: TextOverflow.ellipsis,
+            // ),
+          ],
         ),
-      ],
+      ),
     );
   }
 

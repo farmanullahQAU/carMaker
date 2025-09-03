@@ -15,6 +15,7 @@ import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/template_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ import 'package:get/get.dart';
 class CategoryTemplatesController extends GetxController {
   final CategoryModel? category;
   late final TemplateService _templateService;
+  final AuthService authService = Get.find<AuthService>();
 
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
   final RxList<CardTemplate> _allTemplates = <CardTemplate>[].obs;
@@ -206,6 +208,10 @@ class CategoryTemplatesController extends GetxController {
 
   Future<void> toggleFavorite(CardTemplate template) async {
     try {
+      if (authService.user == null) {
+        Get.toNamed(Routes.auth);
+        return;
+      }
       if (favoriteTemplateIds.contains(template.id)) {
         await _templateService.removeFromFavorites(template.id);
       } else {
