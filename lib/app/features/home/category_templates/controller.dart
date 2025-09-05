@@ -16,14 +16,15 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
-import 'package:cardmaker/services/template_services.dart';
+import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CategoryTemplatesController extends GetxController {
+  final _firestoreService = FirestoreService();
+
   final CategoryModel? category;
-  late final TemplateService _templateService;
   final AuthService authService = Get.find<AuthService>();
 
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
@@ -46,7 +47,6 @@ class CategoryTemplatesController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _templateService = Get.find<TemplateService>();
     scrollController = ScrollController();
     _setupScrollListener();
 
@@ -86,7 +86,7 @@ class CategoryTemplatesController extends GetxController {
 
   Future<void> _loadFavorites() async {
     try {
-      final favoriteIds = await _templateService.getFavoriteTemplateIds();
+      final favoriteIds = await _firestoreService.getFavoriteTemplateIds();
       favoriteTemplateIds.assignAll(favoriteIds);
     } catch (e) {
       Get.snackbar(
@@ -113,7 +113,7 @@ class CategoryTemplatesController extends GetxController {
         await _loadFavorites(); // Refresh favorites on pull-to-refresh
       }
 
-      final snapshot = await _templateService.getTemplatesPaginated(
+      final snapshot = await _firestoreService.getTemplatesPaginated(
         category: category?.id,
         limit: _pageSize,
         startAfterDocument: _lastDocument,
@@ -213,9 +213,9 @@ class CategoryTemplatesController extends GetxController {
         return;
       }
       if (favoriteTemplateIds.contains(template.id)) {
-        await _templateService.removeFromFavorites(template.id);
+        await _firestoreService.removeFromFavorites(template.id);
       } else {
-        await _templateService.addToFavorites(template.id);
+        await _firestoreService.addToFavorites(template.id);
         favoriteTemplateIds.add(template.id);
         Get.snackbar(
           'Added',
@@ -291,7 +291,7 @@ class CategoryTemplatesController extends GetxController {
 
 // class CategoryTemplatesController extends GetxController {
 //   final CategoryModel? category;
-//   late final TemplateService _templateService;
+//   late final TemplateService _firestoreService;
 
 //   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
 //   final RxList<CardTemplate> _allTemplates = <CardTemplate>[].obs;
@@ -312,7 +312,7 @@ class CategoryTemplatesController extends GetxController {
 //   @override
 //   void onInit() {
 //     super.onInit();
-//     _templateService = Get.find<TemplateService>();
+//     _firestoreService = Get.find<TemplateService>();
 //     scrollController = ScrollController();
 //     _setupScrollListener();
 
@@ -361,7 +361,7 @@ class CategoryTemplatesController extends GetxController {
 //         hasMoreData.value = true;
 //       }
 
-//       final snapshot = await _templateService.getTemplatesPaginated(
+//       final snapshot = await _firestoreService.getTemplatesPaginated(
 //         category: category?.id,
 //         limit: _pageSize,
 //         startAfterDocument: _lastDocument,

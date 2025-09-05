@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/models/card_template.dart';
-import 'package:cardmaker/services/template_services.dart';
+import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,7 +10,7 @@ import 'package:get/get.dart';
 class ProfileController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late TabController tabController;
-  final TemplateService _templateService = Get.put(TemplateService());
+  final _firestoreService = FirestoreService();
 
   // Drafts
   final RxList<CardTemplate> drafts = <CardTemplate>[].obs;
@@ -62,7 +63,7 @@ class ProfileController extends GetxController
 
   Future<void> loadDraftsCount() async {
     try {
-      final count = await _templateService.getDraftsCount();
+      final count = await _firestoreService.getDraftsCount();
       draftsCount.value = count;
     } catch (e) {
       debugPrint('Error loading drafts count: $e');
@@ -76,7 +77,7 @@ class ProfileController extends GetxController
     hasDraftsError.value = false;
 
     try {
-      final snapshot = await _templateService.getUserDraftsPaginated(
+      final snapshot = await _firestoreService.getUserDraftsPaginated(
         limit: _pageSize,
       );
 
@@ -104,7 +105,7 @@ class ProfileController extends GetxController
     isDraftsLoading.value = true;
 
     try {
-      final snapshot = await _templateService.getUserDraftsPaginated(
+      final snapshot = await _firestoreService.getUserDraftsPaginated(
         limit: _pageSize,
         startAfterDocument: lastDraftDocument,
       );
@@ -133,7 +134,7 @@ class ProfileController extends GetxController
     hasFavoritesError.value = false;
 
     try {
-      final favoriteTemplates = await _templateService.getFavoriteTemplates(
+      final favoriteTemplates = await _firestoreService.getFavoriteTemplates(
         limit: _pageSize,
       );
       debugPrint(
@@ -142,9 +143,8 @@ class ProfileController extends GetxController
 
       if (favoriteTemplates.isNotEmpty) {
         favorites.value = favoriteTemplates;
-        final snapshot = await _templateService.getFavoriteTemplateIdsPaginated(
-          limit: _pageSize,
-        );
+        final snapshot = await _firestoreService
+            .getFavoriteTemplateIdsPaginated(limit: _pageSize);
         debugPrint('Initial fetch: ${snapshot.docs.length} favorite IDs');
         lastFavoriteDocument = snapshot.docs.isNotEmpty
             ? snapshot.docs.last
@@ -176,7 +176,7 @@ class ProfileController extends GetxController
     isFavoritesLoading.value = true;
 
     try {
-      final favoriteTemplates = await _templateService.getFavoriteTemplates(
+      final favoriteTemplates = await _firestoreService.getFavoriteTemplates(
         limit: _pageSize,
         startAfterDocument: lastFavoriteDocument,
       );
@@ -184,10 +184,11 @@ class ProfileController extends GetxController
 
       if (favoriteTemplates.isNotEmpty) {
         favorites.addAll(favoriteTemplates);
-        final snapshot = await _templateService.getFavoriteTemplateIdsPaginated(
-          limit: _pageSize,
-          startAfterDocument: lastFavoriteDocument,
-        );
+        final snapshot = await _firestoreService
+            .getFavoriteTemplateIdsPaginated(
+              limit: _pageSize,
+              startAfterDocument: lastFavoriteDocument,
+            );
         debugPrint('Fetched ${snapshot.docs.length} more favorite IDs');
         lastFavoriteDocument = snapshot.docs.isNotEmpty
             ? snapshot.docs.last
@@ -215,17 +216,17 @@ class ProfileController extends GetxController
 
   Future<void> deleteDraft(String draftId) async {
     try {
-      await _templateService.deleteDraft(draftId);
+      await _firestoreService.deleteDraft(draftId);
       drafts.removeWhere((draft) => draft.id == draftId);
       loadDraftsCount();
     } catch (e) {
-      debugPrint('Error deleting draft: $e');
+      final error = FirebaseErrorHandler.handle(e);
     }
   }
 
   Future<void> removeFromFavorites(String templateId) async {
     try {
-      await _templateService.removeFromFavorites(templateId);
+      await _firestoreService.removeFromFavorites(templateId);
       favorites.removeWhere((template) => template.id == templateId);
     } catch (e) {
       debugPrint('Error removing from favorites: $e');

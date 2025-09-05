@@ -2,6 +2,7 @@ import 'package:cardmaker/app/bindings/initial.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/firebase_options.dart';
+import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -33,6 +34,7 @@ class CardMakerApp extends StatelessWidget {
       darkTheme: CardMakerTheme.darkTheme(),
 
       getPages: AppPages.pages,
+      navigatorKey: navigatorKey,
 
       initialBinding: InitialBindings(),
     );

@@ -2,8 +2,8 @@ import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
-import 'package:cardmaker/services/template_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -15,7 +15,7 @@ class HomeController extends GetxController {
       <String>[].obs; // Cached favorite IDs
   final isLoading = false.obs;
   final AuthService authService = Get.find<AuthService>();
-  final TemplateService templateService = Get.find<TemplateService>();
+  final _firestoreService = FirestoreService();
 
   final List<QuickAction> quickActions = [
     QuickAction(
@@ -184,7 +184,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> _loadTemplates() async {
-    final templatesList = await templateService.getTemplatesPaginated(
+    final templatesList = await _firestoreService.getTemplatesPaginated(
       limit: 10,
     );
     templates.assignAll(
@@ -195,7 +195,7 @@ class HomeController extends GetxController {
   }
 
   Future<void> _loadFavoriteTemplateIds() async {
-    final favorites = await templateService.getFavoriteTemplateIds();
+    final favorites = await _firestoreService.getFavoriteTemplateIds();
     favoriteTemplateIds.assignAll(favorites);
   }
 
@@ -207,10 +207,10 @@ class HomeController extends GetxController {
       }
 
       if (favoriteTemplateIds.contains(templateId)) {
-        await templateService.removeFromFavorites(templateId);
+        await _firestoreService.removeFromFavorites(templateId);
         favoriteTemplateIds.remove(templateId);
       } else {
-        await templateService.addToFavorites(templateId);
+        await _firestoreService.addToFavorites(templateId);
         favoriteTemplateIds.add(templateId);
       }
     } catch (e) {

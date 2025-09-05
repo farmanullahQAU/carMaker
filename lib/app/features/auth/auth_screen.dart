@@ -564,15 +564,15 @@ class AuthScreen extends GetView<AuthController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              // const SizedBox(height: 40),
               _buildHeader(),
-              const SizedBox(height: 48),
+              const SizedBox(height: 12),
               _buildAuthForm(),
-              const SizedBox(height: 24),
-              _buildErrorMessage(),
+              // const SizedBox(height: 24),
+              // _buildErrorMessage(),
               const SizedBox(height: 24),
               _buildSocialLogin(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
               _buildAuthModeSwitch(),
               const SizedBox(height: 20),
             ],
@@ -666,7 +666,7 @@ class AuthScreen extends GetView<AuthController> {
           _buildPasswordField(),
           const SizedBox(height: 8),
           _buildForgotPassword(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
           _buildSubmitButton('Sign In'),
         ],
       ),
@@ -820,7 +820,7 @@ class AuthScreen extends GetView<AuthController> {
   /// Build error message display
   Widget _buildErrorMessage() {
     return Obx(() {
-      final errorMessage = controller.authService.errorMessage.value;
+      final errorMessage = controller.errorMessage.value;
       if (errorMessage.isEmpty) return const SizedBox.shrink();
 
       return Container(
@@ -854,7 +854,7 @@ class AuthScreen extends GetView<AuthController> {
                 color: Colors.red.shade700,
                 size: 18,
               ),
-              onPressed: () => controller.authService.errorMessage.value = '',
+              onPressed: () => controller.errorMessage.value = '',
               constraints: const BoxConstraints(),
               padding: EdgeInsets.zero,
             ),

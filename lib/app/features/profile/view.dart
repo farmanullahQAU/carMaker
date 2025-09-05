@@ -18,7 +18,7 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return isLoggedIn ? ProfilePage() : AuthWrapper();
+    return Obx(() => isLoggedIn ? ProfilePage() : AuthWrapper());
   }
 }
 

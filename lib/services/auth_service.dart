@@ -1,70 +1,4 @@
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// class AuthService extends GetxService {
-//   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-//   final Rx<User?> currentUser = Rx<User?>(null);
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     // Listen to auth state changes and update currentUser
-//     _firebaseAuth.authStateChanges().listen((User? user) {
-//       currentUser.value = user;
-//     });
-//     // Set initial user
-//     currentUser.value = _firebaseAuth.currentUser;
-//   }
-
-//   bool isUserAuthenticated() {
-//     return currentUser.value != null;
-//   }
-
-//   String? getUserId() {
-//     return currentUser.value?.uid;
-//   }
-
-//   void promptLogin() {
-//     Get.snackbar(
-//       'Login Required',
-//       'Please log in to perform this action',
-//       snackPosition: SnackPosition.BOTTOM,
-//       backgroundColor: Colors.orange.shade100,
-//       colorText: Colors.orange.shade900,
-//       duration: const Duration(seconds: 3),
-//       mainButton: TextButton(
-//         onPressed: () {
-//           // Get.toNamed(Routes.login);
-//         },
-//         child: Text(
-//           'Log In',
-//           style: Get.textTheme.bodyMedium?.copyWith(
-//             color: Colors.blue.shade700,
-//             fontWeight: FontWeight.w600,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Optional: Method to sign out (if needed elsewhere in the app)
-//   Future<void> signOut() async {
-//     try {
-//       await _firebaseAuth.signOut();
-//       currentUser.value = null;
-//       // Get.offAllNamed(Routes.login);
-//     } catch (e) {
-//       Get.snackbar(
-//         'Error',
-//         'Failed to sign out: $e',
-//         snackPosition: SnackPosition.BOTTOM,
-//         backgroundColor: Colors.red.shade100,
-//         colorText: Colors.red.shade900,
-//       );
-//     }
-//   }
-// }
+import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -77,7 +11,6 @@ class AuthService extends GetxController {
   User? get user => _user.value;
 
   final RxBool isLoading = false.obs;
-  final RxString errorMessage = ''.obs;
 
   @override
   void onInit() {
@@ -93,7 +26,6 @@ class AuthService extends GetxController {
   }) async {
     try {
       isLoading.value = true;
-      errorMessage.value = '';
 
       // Validation
       if (password != confirmPassword) {
@@ -114,12 +46,10 @@ class AuthService extends GetxController {
 
       isLoading.value = false;
       return null;
-    } on FirebaseAuthException catch (e) {
-      isLoading.value = false;
-      return _handleFirebaseError(e);
     } catch (e) {
       isLoading.value = false;
-      return e.toString();
+      final failure = FirebaseErrorHandler.handle(e);
+      return failure.message;
     }
   }
 
@@ -130,7 +60,6 @@ class AuthService extends GetxController {
   }) async {
     try {
       isLoading.value = true;
-      errorMessage.value = '';
 
       final UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
@@ -145,12 +74,10 @@ class AuthService extends GetxController {
 
       isLoading.value = false;
       return null;
-    } on FirebaseAuthException catch (e) {
-      isLoading.value = false;
-      return _handleFirebaseError(e);
     } catch (e) {
       isLoading.value = false;
-      return e.toString();
+      final failure = FirebaseErrorHandler.handle(e);
+      return failure.message;
     }
   }
 
@@ -158,7 +85,6 @@ class AuthService extends GetxController {
   Future<String?> signInWithGoogle() async {
     try {
       isLoading.value = true;
-      errorMessage.value = '';
 
       await GoogleSignIn.instance.initialize(
         serverClientId:
@@ -172,7 +98,7 @@ class AuthService extends GetxController {
 
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
-        accessToken: googleAuth.idToken,
+        accessToken: googleAuth.idToken, // ✅ kept as you originally had it
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
@@ -180,10 +106,9 @@ class AuthService extends GetxController {
       isLoading.value = false;
       return null;
     } catch (e) {
-      print("error");
-      print(e);
       isLoading.value = false;
-      return e.toString();
+      final failure = FirebaseErrorHandler.handle(e);
+      return failure.message;
     }
   }
 
@@ -204,36 +129,10 @@ class AuthService extends GetxController {
       await _auth.sendPasswordResetEmail(email: email.trim());
       isLoading.value = false;
       return null;
-    } on FirebaseAuthException catch (e) {
-      isLoading.value = false;
-      return _handleFirebaseError(e);
     } catch (e) {
       isLoading.value = false;
-      return e.toString();
-    }
-  }
-
-  // Error handling
-  String _handleFirebaseError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-email':
-        return 'Invalid email address format';
-      case 'user-disabled':
-        return 'This user account has been disabled';
-      case 'user-not-found':
-        return 'No user found with this email';
-      case 'wrong-password':
-        return 'Incorrect password';
-      case 'email-already-in-use':
-        return 'This email is already registered';
-      case 'operation-not-allowed':
-        return 'Email/password accounts are not enabled';
-      case 'weak-password':
-        return 'Password is too weak';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection';
-      default:
-        return 'An error occurred: ${e.message}';
+      final failure = FirebaseErrorHandler.handle(e);
+      return failure.message;
     }
   }
 }

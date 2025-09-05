@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:get/get.dart';
 
@@ -35,42 +34,31 @@ class FirebaseStorageService {
   }
 
   /// Uploads an image to Firebase Storage with compression, returns the download URL.
-  Future<String> uploadImage(
+  Future<String?> uploadImage(
     File imageFile,
     String parentId, // templateId or draftId
     String imageType, {
     String? fileName,
     bool isDraft = false,
   }) async {
-    try {
-      final basePath = isDraft
-          ? 'user_drafts/${authService.user!.uid}/$parentId'
-          : 'public_templates/$parentId';
+    final basePath = isDraft
+        ? 'user_drafts/${authService.user!.uid}/$parentId'
+        : 'public_templates/$parentId';
 
-      final storageRef = _storage
-          .ref()
-          .child(basePath)
-          .child(imageType)
-          .child(fileName!);
+    final storageRef = _storage
+        .ref()
+        .child(basePath)
+        .child(imageType)
+        .child(fileName!);
 
-      // compress before upload
-      final compressedBytes = await _compressImage(imageFile);
+    // compress before upload
+    final compressedBytes = await _compressImage(imageFile);
 
-      final uploadTask = await storageRef.putData(
-        compressedBytes,
-        SettableMetadata(contentType: 'image/webp'),
-      );
+    final uploadTask = await storageRef.putData(
+      compressedBytes,
+      SettableMetadata(contentType: 'image/webp'),
+    );
 
-      return await uploadTask.ref.getDownloadURL();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to upload image: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-      rethrow;
-    }
+    return await uploadTask.ref.getDownloadURL();
   }
 }

@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cardmaker/app/features/bg_remover/view.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
@@ -541,6 +543,13 @@ class TemplateCard extends GetView<HomeController> {
   }
 
   Widget _buildTemplateImage() {
+    for (var item in template.items) {
+      if (item['type'] == "StackImageItem") {
+        final img = StackImageItem.fromJson(item);
+        CachedNetworkImage(imageUrl: img.content?.url ?? "");
+      }
+    }
+
     if (template.thumbnailUrl != null) {
       return CachedNetworkImage(
         imageUrl: template.thumbnailUrl!,
@@ -646,7 +655,9 @@ class SectionTitle extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.comfortable,
               ),
-              onPressed: () {},
+              onPressed: () {
+                Get.to(() => BackgroundRemovalPage());
+              },
               child: Text('See all'),
             ),
         ],

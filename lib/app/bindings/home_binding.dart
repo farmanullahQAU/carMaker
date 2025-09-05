@@ -1,10 +1,11 @@
+import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:get/get.dart';
 
-class CreateMemeBinding extends Bindings {
+class HomeBinding extends Bindings {
   @override
   void dependencies() {
     try {
-      // Get.lazyPut(() => MemeCreatorController());
+      Get.lazyPut(() => HomeController());
 
       // Get.lazyPut(() => TopicsController());
     } catch (e) {}

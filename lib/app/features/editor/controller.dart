@@ -5,11 +5,12 @@ import 'dart:math' as math;
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
-import 'package:cardmaker/services/template_services.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -25,8 +26,8 @@ import 'package:universal_html/html.dart' as html; // For web support
 import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
-  final templateService = Get.put(TemplateService());
   final authService = Get.find<AuthService>();
+  final firestoreService = FirestoreService();
 
   final StackBoardController boardController = StackBoardController();
   final RxString selectedFont = 'Poppins'.obs;
@@ -381,10 +382,7 @@ class CanvasController extends GetxController {
       Get.toNamed(Routes.auth);
       return;
     }
-    if (templateService.isUploading) {
-      Get.snackbar('Info', 'Template upload already in progress');
-      return;
-    }
+
     final thumbnailFile = await exportAsImage();
     final currentItems = boardController.getAllData();
 
@@ -414,17 +412,19 @@ class CanvasController extends GetxController {
       }
 
       // Use TemplateService to upload and save
-      await templateService.addTemplate(
+      String? error = await firestoreService.addTemplate(
         template,
         thumbnailFile: thumbnailFile,
         backgroundFile: backgroundFile,
       );
+      if (error?.isNotEmpty ?? false) {
+        Get.snackbar("Error", error!);
+      }
 
       // Cleanup after successful upload
       _cleanupTempFiles(thumbnailFile, backgroundFile);
-    } catch (e, s) {
-      debugPrint('Failed to add template: $e\n$s');
-      rethrow;
+    } catch (e) {
+      final failure = FirebaseErrorHandler.handle(e);
     }
   }
 

@@ -347,7 +347,7 @@ class SettingsPage extends StatelessWidget {
             onPressed: () async {
               Get.back();
               await FirebaseAuth.instance.signOut();
-              Get.offAllNamed('/login');
+              Get.back();
             },
             child: Text(
               'Sign Out',
