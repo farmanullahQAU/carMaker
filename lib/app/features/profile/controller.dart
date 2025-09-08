@@ -29,10 +29,7 @@ class ProfileController extends GetxController
   // Draft count
   final RxInt draftsCount = 0.obs;
 
-  final ScrollController draftsScrollController = ScrollController();
-  // Removed favoritesScrollController as NotificationListener handles pagination
-
-  static const int _pageSize = 2; // Kept as 2 per your preference
+  static const int _pageSize = 2;
 
   Timer? _favoritesDebounceTimer;
 
@@ -43,15 +40,8 @@ class ProfileController extends GetxController
     tabController.addListener(() {
       if (tabController.index == 1 && favorites.isEmpty) {
         loadFavorites();
-      }
-    });
-    // Setup scroll listener for drafts only
-    draftsScrollController.addListener(() {
-      if (draftsScrollController.position.pixels >=
-          draftsScrollController.position.maxScrollExtent - 100) {
-        if (!isDraftsLoading.value && hasMoreDrafts.value) {
-          loadMoreDrafts();
-        }
+      } else if (tabController.index == 0 && drafts.isEmpty) {
+        loadDrafts();
       }
     });
 
@@ -239,14 +229,6 @@ class ProfileController extends GetxController
     hasMoreDrafts.value = true;
     await loadDrafts();
     await loadDraftsCount();
-    Get.snackbar(
-      'Drafts Refreshed',
-      'Your drafts have been updated.',
-      snackPosition: SnackPosition.TOP,
-      duration: Duration(seconds: 2),
-      backgroundColor: Colors.blue.shade600,
-      colorText: Colors.white,
-    );
   }
 
   Future<void> refreshFavorites() async {
@@ -267,7 +249,6 @@ class ProfileController extends GetxController
   @override
   void onClose() {
     tabController.dispose();
-    draftsScrollController.dispose();
     _favoritesDebounceTimer?.cancel();
     super.onClose();
   }

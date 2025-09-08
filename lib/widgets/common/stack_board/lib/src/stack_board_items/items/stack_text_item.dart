@@ -44,7 +44,6 @@ class StackTextItem extends StackItem<TextItemContent> {
   }
 
   @override
-  @override
   StackTextItem copyWith({
     double? angle,
     Size? size,
@@ -54,6 +53,7 @@ class StackTextItem extends StackItem<TextItemContent> {
     TextItemContent? content,
     bool? isCentered,
     bool? isProfileImage, // Added to match base class signature
+    bool? isNewImage,
   }) {
     return StackTextItem(
       id: id,

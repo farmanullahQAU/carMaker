@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// * ValueNotifier安全扩展
 /// * Safe ValueNotifier extension
 class SafeValueNotifier<T> extends ValueNotifier<T> {
-  SafeValueNotifier(T value) : super(value);
+  SafeValueNotifier(super.value);
 
   bool _mounted = true;
 

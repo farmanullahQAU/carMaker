@@ -5,12 +5,12 @@ import 'dart:math' as math;
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
+import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -34,27 +34,19 @@ class CanvasController extends GetxController {
   final RxDouble fontSize = 24.0.obs;
   final Rx<Color> fontColor = Colors.black.obs;
   final RxnString selectedBackground = RxnString();
-  final RxDouble backgroundHue = 0.0.obs;
+  final RxDouble backgroundHue = 0.0.obs; //add to cloude TODO
   final RxString templateName = ''.obs;
   bool isExporting = false;
   final ScreenshotController screenshotController = ScreenshotController();
-
   final RxBool allowTouch = false.obs;
   final Rx<StackImageItem?> activePhotoItem = Rx<StackImageItem?>(null);
   final Rx<PanelType> activePanel = PanelType.none.obs;
   RxBool isShowEditIcon = false.obs;
-  final RxDouble templateOriginalWidth = 0.0.obs;
-  final RxDouble templateOriginalHeight = 0.0.obs;
   final Rx<Size> actualStackBoardRenderSize = Size(100, 100).obs;
-
-  final RxString category = 'general'.obs;
-  final RxString categoryId = 'general'.obs;
-  final RxList<String> tags = <String>[].obs;
-  final RxBool isPremium = false.obs;
+  final Map<String, bool> newImageFlags = {};
   CardTemplate? initialTemplate;
 
-  final RxDouble canvasWidth = 0.0.obs;
-  final RxDouble canvasHeight = 0.0.obs;
+  final RxDouble canvasWsidth = 0.0.obs;
   final List<StackItem<StackItemContent>> itemsToLoad = [];
 
   final Rx<StackItem?> draggedItem = Rx<StackItem?>(null);
@@ -96,15 +88,8 @@ class CanvasController extends GetxController {
     }
 
     templateName.value = initialTemplate!.name;
-    category.value = initialTemplate!.category;
-    categoryId.value = initialTemplate!.categoryId;
-    tags.value = initialTemplate!.tags;
-    isPremium.value = initialTemplate!.isPremium;
+
     selectedBackground.value = initialTemplate?.backgroundImageUrl;
-    templateOriginalWidth.value = initialTemplate!.width.toDouble();
-    templateOriginalHeight.value = initialTemplate!.height.toDouble();
-    canvasWidth.value = initialTemplate!.width.toDouble();
-    canvasHeight.value = initialTemplate!.height.toDouble();
     boardController.clear();
 
     // Collect all profile images from initialTemplate
@@ -118,6 +103,31 @@ class CanvasController extends GetxController {
       }
     }
   }
+
+  void addShapeItem(StackShapeItem shapeItem) {
+    boardController.addItem(shapeItem);
+    activeItem.value = shapeItem;
+    activePanel.value = PanelType.shapeEditor;
+    update(['canvas_stack', 'bottom_sheet']);
+  }
+
+  void updateItem(StackItem item) {
+    final existingItem = boardController.getById(item.id);
+    if (existingItem != null) {
+      // Update the item in the board controller
+      boardController.removeById(item.id);
+      boardController.addItem(item);
+
+      // Update active item if it's the same
+      if (activeItem.value?.id == item.id) {
+        activeItem.value = item;
+      }
+
+      update(['canvas_stack', 'stack_board']);
+    }
+  }
+
+  // Add this to your PanelType enum (if not already present)
 
   void updateCanvasAndLoadTemplate(
     BoxConstraints constraints,
@@ -164,18 +174,10 @@ class CanvasController extends GetxController {
     double scaledCanvasHeight,
   ) async {
     print("Loading exported template...");
-    final controller = Get.find<CanvasController>();
     selectedBackground.value = template.backgroundImageUrl;
     templateName.value = template.name;
-    category.value = template.category;
-    categoryId.value = template.categoryId;
-    tags.value = template.tags;
-    isPremium.value = template.isPremium;
+
     backgroundHue.value = 0.0;
-    templateOriginalWidth.value = template.width.toDouble();
-    templateOriginalHeight.value = template.height.toDouble();
-    canvasWidth.value = scaledCanvasWidth;
-    canvasHeight.value = scaledCanvasHeight;
     boardController.clear();
     profileImageItems.clear();
 
@@ -218,8 +220,8 @@ class CanvasController extends GetxController {
         } else if (item is StackImageItem) {
           double scaledX = item.offset.dx;
           double scaledY = item.offset.dy;
-          final double originalWidth = itemJson['size']['width'];
-          final double originalHeight = itemJson['size']['height'];
+          final double originalWidth = (itemJson['size']['width']).toDouble();
+          final double originalHeight = (itemJson['size']['height']).toDouble();
 
           itemSize = Size(originalWidth, originalHeight);
 
@@ -377,54 +379,37 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<void> uploadTemplate({bool? isDraft = false}) async {
-    if (authService.user == null) {
-      Get.toNamed(Routes.auth);
-      return;
-    }
-
-    final thumbnailFile = await exportAsImage();
-    final currentItems = boardController.getAllData();
-
+  Future<void> uploadTemplate(CardTemplate template) async {
     try {
-      print('Adding template...');
-      final templateId = Uuid().v4(); //TODO
-      final template = CardTemplate(
-        imagePath: "",
-        categoryId: 'birthday',
-        id: templateId,
-        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
-        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
-        width: templateOriginalWidth.value,
-        height: templateOriginalHeight.value,
-        category: 'birthday',
-        tags: ['default'],
-        isPremium: false,
+      if (authService.user == null) {
+        Get.toNamed(Routes.auth);
+        return;
+      }
 
-        isDraft: isDraft!,
-      );
+      final thumbnailFile = await exportAsImage();
 
       // Handle background image
       File? backgroundFile;
       if ((selectedBackground.value?.isNotEmpty ?? false) &&
-          !selectedBackground.value!.startsWith('asset')) {
+          selectedBackground.value != template.backgroundImageUrl &&
+          (!selectedBackground.value!.startsWith('https') ||
+              !selectedBackground.value!.startsWith('http'))) {
         backgroundFile = File(selectedBackground.value!);
       }
 
       // Use TemplateService to upload and save
-      String? error = await firestoreService.addTemplate(
+      await firestoreService.addTemplate(
         template,
         thumbnailFile: thumbnailFile,
         backgroundFile: backgroundFile,
+        newImageFlags: newImageFlags,
       );
-      if (error?.isNotEmpty ?? false) {
-        Get.snackbar("Error", error!);
-      }
 
       // Cleanup after successful upload
+
       _cleanupTempFiles(thumbnailFile, backgroundFile);
-    } catch (e) {
-      final failure = FirebaseErrorHandler.handle(e);
+    } catch (err) {
+      AppToast.error(message: err.toString());
     }
   }
 
@@ -522,14 +507,14 @@ class CanvasController extends GetxController {
       items: exportedItems,
       createdAt: DateTime.now(),
       updatedAt: null,
-      category: category.value,
+      category: initialTemplate!.category,
 
-      categoryId: categoryId.value,
+      categoryId: initialTemplate!.categoryId,
       compatibleDesigns: initialTemplate!.compatibleDesigns,
       width: originalWidth,
       height: originalHeight,
-      isPremium: isPremium.value,
-      tags: tags.value,
+      isPremium: initialTemplate!.isPremium,
+      tags: initialTemplate?.tags ?? [],
       imagePath: "",
     );
     await StorageService.addTemplate(temp);
@@ -617,6 +602,64 @@ class CanvasController extends GetxController {
     super.onClose();
   }
 
+  Future<void> replaceImageItem() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        var item = activeItem.value as StackImageItem;
+
+        final newItem = StackImageItem(
+          offset: item.offset,
+          size: item.size,
+          content: item.content?.copyWith(filePath: image.path),
+          angle: item.angle,
+          isProfileImage: item.isProfileImage,
+          isNewImage: true,
+        );
+        boardController.removeById(item.id);
+        boardController.addItem(newItem);
+
+        activeItem.value = newItem;
+        newImageFlags[item.id] = true; // Mark as new image
+
+        update(['canvas_stack']);
+      }
+    } catch (e) {
+      print(e);
+      Get.snackbar(
+        'Error',
+        'Failed to handle image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
+  }
+
+  Future<void> pickAndAddImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final newItem = StackImageItem(
+          id: UniqueKey().toString(),
+          offset: Offset(100, 100),
+
+          size: Size(Get.width * 0.3, Get.width * 0.3),
+          lockZOrder: true,
+          isNewImage: true,
+          content: ImageItemContent(filePath: image.path),
+        );
+        boardController.addItem(newItem);
+        newImageFlags[newItem.id] = true; // Mark as new image
+
+        activeItem.value = newItem;
+        update(['canvas_stack']);
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to handle image: ${e.toString()}');
+    }
+  }
+
   void duplicateItem() {
     if (activeItem.value == null) return;
 
@@ -636,8 +679,10 @@ class CanvasController extends GetxController {
         content: originalItem.content,
       );
     } else if (originalItem is StackImageItem) {
+      final id = UniqueKey().toString();
+
       newItem = StackImageItem(
-        id: UniqueKey().toString(),
+        id: id,
 
         offset: newOffset,
         size: originalItem.size,
@@ -645,6 +690,8 @@ class CanvasController extends GetxController {
         angle: originalItem.angle,
         isProfileImage: originalItem.isProfileImage,
       );
+
+      newImageFlags[id] = false; // Mark as new image
     } else {
       return; // Unsupported item type
     }
@@ -695,14 +742,6 @@ class CanvasController extends GetxController {
           ..click();
         html.Url.revokeObjectUrl(url);
 
-        // Return a dummy File object for consistency
-        Get.snackbar(
-          'Success',
-          'Image downloaded in browser',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-        );
         return File('invitation_card.png'); // Dummy file for web
       } else {
         // Android: Save to temporary directory
@@ -710,13 +749,6 @@ class CanvasController extends GetxController {
         final file = File("${output.path}/invitation_card.png");
         await file.writeAsBytes(image);
 
-        Get.snackbar(
-          'Success',
-          'Image exported successfully to ${file.path}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-        );
         return file;
       }
     } catch (e, s) {
@@ -732,94 +764,6 @@ class CanvasController extends GetxController {
     } finally {
       isExporting = false;
       update(['export_button']);
-    }
-  }
-  // Future<File> exportAsImage() async {
-  //   try {
-  //     isExporting = true;
-  //     update(['export_button']);
-  //     boardController.unSelectAll();
-  //     final exportKey = GlobalKey();
-
-  //     final image = await screenshotController.captureFromWidget(
-  //       Material(
-  //         elevation: 0,
-  //         child: SizedBox(
-  //           width: scaledCanvasWidth.value,
-  //           height: scaledCanvasHeight.value,
-  //           key: exportKey,
-  //           child: CanvasStack(
-  //             showGrid: false,
-  //             showBorders: false,
-  //             stackBoardKey: GlobalKey(),
-  //             canvasScale: canvasScale,
-  //             scaledCanvasWidth: scaledCanvasWidth,
-  //             scaledCanvasHeight: scaledCanvasHeight,
-  //           ),
-  //         ),
-  //       ),
-  //       targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-  //       pixelRatio: 2,
-  //     );
-
-  //     final output = await getTemporaryDirectory();
-  //     final file = File("${output.path}/invitation_card.png");
-  //     await file.writeAsBytes(image);
-  //     Get.snackbar(
-  //       'Success',
-  //       'Image exported successfully',
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: Colors.green.shade100,
-  //       colorText: Colors.green.shade900,
-  //     );
-  //     return file;
-  //     Get.to(() => ExportPreviewPage(imagePath: file.path, pdfPath: ''));
-  //   } catch (e, s) {
-  //     debugPrint('Export Image failed: $e\n$s');
-  //     Get.snackbar(
-  //       'Error',
-  //       'Failed to export image due to widget issue',
-  //       snackPosition: SnackPosition.BOTTOM,
-  //       backgroundColor: Colors.red.shade100,
-  //       colorText: Colors.red.shade900,
-  //     );
-  //   } finally {
-  //     // isExporting = false;
-  //     update(['export_button']);
-  //   }
-  //   throw Exception('Failed to export image');
-  // }
-
-  Future<void> replaceImageItem() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        var item = activeItem.value as StackImageItem;
-
-        final newItem = StackImageItem(
-          id: UniqueKey().toString(),
-
-          offset: item.offset,
-          size: item.size,
-          content: item.content?.copyWith(filePath: image.path),
-          angle: item.angle,
-          isProfileImage: item.isProfileImage,
-        );
-        boardController.removeById(item.id);
-        boardController.addItem(newItem);
-
-        activeItem.value = newItem;
-
-        update(['canvas_stack']);
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to handle image: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
     }
   }
 
@@ -905,35 +849,6 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<void> pickAndAddImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        final newItem = StackImageItem(
-          id: UniqueKey().toString(),
-          offset: Offset(100, 100),
-          size: Size(Get.width * 0.3, Get.width * 0.3),
-          lockZOrder: true,
-
-          content: ImageItemContent(filePath: image.path),
-        );
-        boardController.addItem(newItem);
-
-        activeItem.value = newItem;
-
-        update(['canvas_stack']);
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to handle image: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
-    }
-  }
-
   Future<void> pickAndUpdateBackground() async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -955,10 +870,58 @@ class CanvasController extends GetxController {
   // Replace the saveDraft method in CanvasController with this simplified version:
 
   /// Save current design as draft to Firebase
-  Future<void> saveDraft({bool isDraft = false, String? customName}) async {
+  Future<void> saveDraft() async {
     try {
-      uploadTemplate(isDraft: true);
-    } catch (err) {}
+      final currentItems = boardController.getAllData();
+
+      print(currentItems);
+
+      CardTemplate template = CardTemplate(
+        imagePath: "",
+        categoryId: 'birthday',
+        id: initialTemplate!.isDraft ? initialTemplate!.id : Uuid().v4(),
+        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
+        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
+        width: initialTemplate!.width,
+        height: initialTemplate!.height,
+        category: 'birthday',
+        tags: ['default'],
+        isPremium: false,
+
+        isDraft: true,
+      );
+
+      uploadTemplate(template);
+    } catch (err) {
+      print("xxxxxxxxxxxxxxxxxxxx");
+      print(err);
+      AppToast.error(message: err.toString());
+    }
+  }
+
+  Future<void> saveAsPublicProject() async {
+    try {
+      final currentItems = boardController.getAllData();
+
+      final template = CardTemplate(
+        imagePath: "",
+        categoryId: 'birthday',
+        id: Uuid().v4(),
+        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
+        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
+        width: initialTemplate!.width,
+        height: initialTemplate!.height,
+        category: 'birthday',
+        tags: ['default'],
+        isPremium: false,
+
+        isDraft: false,
+      );
+
+      uploadTemplate(template);
+    } catch (err) {
+      AppToast.error(message: err.toString());
+    }
   }
 }
 

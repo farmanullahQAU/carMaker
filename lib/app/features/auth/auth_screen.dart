@@ -554,7 +554,7 @@ class AuthScreen extends GetView<AuthController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      // backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -815,53 +815,6 @@ class AuthScreen extends GetView<AuthController> {
         ),
       ),
     );
-  }
-
-  /// Build error message display
-  Widget _buildErrorMessage() {
-    return Obx(() {
-      final errorMessage = controller.errorMessage.value;
-      if (errorMessage.isEmpty) return const SizedBox.shrink();
-
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.red.shade50,
-          borderRadius: BorderRadius.circular(_borderRadius),
-          border: Border.all(color: Colors.red.shade200),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.red.shade700,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                errorMessage,
-                style: TextStyle(
-                  color: Colors.red.shade700,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.close_rounded,
-                color: Colors.red.shade700,
-                size: 18,
-              ),
-              onPressed: () => controller.errorMessage.value = '',
-              constraints: const BoxConstraints(),
-              padding: EdgeInsets.zero,
-            ),
-          ],
-        ),
-      );
-    });
   }
 
   /// Build social login section

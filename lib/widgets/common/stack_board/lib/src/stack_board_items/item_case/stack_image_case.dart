@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../../stack_items.dart';
@@ -34,30 +36,51 @@ class StackImageCase extends StatelessWidget {
   ImageItemContent get content => item.content!;
 
   @override
+  @override
   Widget build(BuildContext context) {
-    Widget imageWidget = Image(
-      image: content.image,
-      width: content.width,
-      height: content.height,
-      fit: content.fit,
-      color: content.color,
-      colorBlendMode: content.colorBlendMode,
-      repeat: content.repeat,
-      filterQuality: content.filterQuality,
-      gaplessPlayback: content.gaplessPlayback,
-      isAntiAlias: content.isAntiAlias,
-      matchTextDirection: content.matchTextDirection,
-      excludeFromSemantics: content.excludeFromSemantics,
-      semanticLabel: content.semanticLabel,
-    );
+    Widget imageWidget;
 
-    // Apply advanced transformations and effects
+    if (content.url != null) {
+      // Only this part changes for network images
+      imageWidget = CachedNetworkImage(
+        imageUrl: content.url!,
+        width: content.width,
+        height: content.height,
+        fit: content.fit,
+        placeholder: (context, url) =>
+            Container(color: AppColors.backgroundLight),
+        errorWidget: (context, url, error) => Container(
+          color: AppColors.red400,
+          child: const Icon(Icons.error_outline, color: Colors.grey),
+        ),
+        fadeInDuration: const Duration(milliseconds: 300),
+      );
+    } else {
+      // Keep everything else EXACTLY the same
+      imageWidget = Image(
+        image: content.image,
+        width: content.width,
+        height: content.height,
+        fit: content.fit,
+        color: content.color,
+        colorBlendMode: content.colorBlendMode,
+        repeat: content.repeat,
+        filterQuality: content.filterQuality,
+        gaplessPlayback: content.gaplessPlayback,
+        isAntiAlias: content.isAntiAlias,
+        matchTextDirection: content.matchTextDirection,
+        excludeFromSemantics: content.excludeFromSemantics,
+        semanticLabel: content.semanticLabel,
+      );
+    }
+
+    // EVERYTHING BELOW STAYS EXACTLY THE SAME
     imageWidget = _applyAdvancedEffects(imageWidget);
 
     if (content.overlayColor != null) {
       imageWidget = ColorFiltered(
         colorFilter: ColorFilter.mode(
-          content.overlayColor!.withValues(alpha: content.overlayOpacity),
+          content.overlayColor!.withOpacity(content.overlayOpacity ?? 0.4),
           BlendMode.srcATop,
         ),
         child: imageWidget,

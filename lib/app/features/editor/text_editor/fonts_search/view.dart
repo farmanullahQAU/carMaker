@@ -112,8 +112,9 @@ class _FontSearchPageState extends State<FontSearchPage> {
           // Quick access to current font
           GetBuilder<FontSearchController>(
             builder: (controller) {
-              if (controller.selectedFont.isEmpty)
+              if (controller.selectedFont.isEmpty) {
                 return const SizedBox.shrink();
+              }
 
               return GestureDetector(
                 onTap: () {

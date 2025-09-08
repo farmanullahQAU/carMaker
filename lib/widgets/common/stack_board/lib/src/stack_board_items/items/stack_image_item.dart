@@ -182,8 +182,9 @@ class ImageItemContent extends StackItemContent {
       throw Exception('url and assetName can not be set at the same time');
     }
 
-    if (url == null && assetName == null && filePath == null) {
-      throw Exception('url and assetName can not be null at the same time');
+    // if (url == null && assetName == null && filePath == null)
+    if (url == null && filePath == null) {
+      throw Exception('url and filePath can not be null at the same time');
     }
 
     if (url != null) {
@@ -253,10 +254,21 @@ class ImageItemContent extends StackItemContent {
   int starPoints = 5; // For star shapes
   double starInset = 0.4; // For star shapes (0.0 to 1.0)
 
+  // void setRes({String? url, String? assetName, String? filePath}) {
+  //   if (url != null) this.url = url;
+  //   if (assetName != null) this.assetName = assetName;
+  //   if (filePath != null) this.filePath = filePath;
+
+  //   _init();
+  // }
   void setRes({String? url, String? assetName, String? filePath}) {
-    if (url != null) this.url = url;
-    if (assetName != null) this.assetName = assetName;
-    if (filePath != null) this.filePath = filePath;
+    if (url != null) {
+      this.url = url;
+    } else if (assetName != null) {
+      this.assetName = assetName;
+    } else if (filePath != null) {
+      this.filePath = filePath;
+    }
 
     _init();
   }
@@ -304,9 +316,13 @@ class ImageItemContent extends StackItemContent {
     emboss = false;
   }
 
-  factory ImageItemContent.fromJson(Map<String, dynamic> json) {
+  factory ImageItemContent.fromJson(
+    Map<String, dynamic> json, {
+    bool isNewImage = false,
+  }) {
     return ImageItemContent(
       url: json['url'] != null ? asT<String>(json['url']) : null,
+
       assetName: json['assetName'] != null
           ? asT<String>(json['assetName'])
           : null,
@@ -431,140 +447,6 @@ class ImageItemContent extends StackItemContent {
       'shapeBorderRadius': shapeBorderRadius,
     };
   }
-
-  /*
-factory ImageItemContent.fromJson(Map<String, dynamic> json) {
-    return ImageItemContent(
-      url: json['url'] != null ? asT<String>(json['url']) : null,
-      assetName: json['assetName'] != null
-          ? asT<String>(json['assetName'])
-          : null,
-      filePath: json['filePath'] != null ? asT<String>(json['filePath']) : null,
-      semanticLabel: json['semanticLabel'] != null
-          ? asT<String>(json['semanticLabel'])
-          : null,
-      excludeFromSemantics:
-          asNullT<bool>(json['excludeFromSemantics']) ?? false,
-      width: json['width'] != null ? asT<double>(json['width']) : null,
-      height: json['height'] != null ? asT<double>(json['height']) : null,
-      color: json['color'] != null ? Color(asT<int>(json['color'])) : null,
-      colorBlendMode: json['colorBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['colorBlendMode'])]
-          : BlendMode.srcIn,
-      fit: json['fit'] != null
-          ? BoxFit.values[asT<int>(json['fit'])]
-          : BoxFit.cover,
-      repeat: json['repeat'] != null
-          ? ImageRepeat.values[asT<int>(json['repeat'])]
-          : ImageRepeat.noRepeat,
-      matchTextDirection: asNullT<bool>(json['matchTextDirection']) ?? false,
-      gaplessPlayback: asNullT<bool>(json['gaplessPlayback']) ?? false,
-      isAntiAlias: asNullT<bool>(json['isAntiAlias']) ?? true,
-      filterQuality: json['filterQuality'] != null
-          ? FilterQuality.values[asT<int>(json['filterQuality'])]
-          : FilterQuality.high,
-      // Advanced properties
-      brightness: asNullT<double>(json['brightness']) ?? 0.0,
-      contrast: asNullT<double>(json['contrast']) ?? 1.0,
-      saturation: asNullT<double>(json['saturation']) ?? 1.0,
-      hue: asNullT<double>(json['hue']) ?? 0.0,
-      opacity: asNullT<double>(json['opacity']) ?? 1.0,
-      borderRadius: asNullT<double>(json['borderRadius']) ?? 0.0,
-      borderWidth: asNullT<double>(json['borderWidth']) ?? 0.0,
-      borderColor: json['borderColor'] != null
-          ? Color(asT<int>(json['borderColor']))
-          : null,
-      shadowBlur: asNullT<double>(json['shadowBlur']) ?? 0.0,
-      shadowOffset: json['shadowOffset'] != null
-          ? Offset(
-              asT<double>(json['shadowOffset']['dx']),
-              asT<double>(json['shadowOffset']['dy']),
-            )
-          : const Offset(0, 0),
-      shadowColor: json['shadowColor'] != null
-          ? Color(asT<int>(json['shadowColor']))
-          : null,
-      rotationAngle: asNullT<double>(json['rotationAngle']) ?? 0.0,
-      flipHorizontal: asNullT<bool>(json['flipHorizontal']) ?? false,
-      flipVertical: asNullT<bool>(json['flipVertical']) ?? false,
-      activeFilter: asNullT<String>(json['activeFilter']) ?? 'none',
-      vignette: asNullT<double>(json['vignette']) ?? 0.0,
-      vignetteColor: json['vignetteColor'] != null
-          ? Color(asT<int>(json['vignetteColor']))
-          : null,
-      overlayColor: json['overlayColor'] != null
-          ? Color(asT<int>(json['overlayColor']))
-          : null,
-      overlayBlendMode: json['overlayBlendMode'] != null
-          ? BlendMode.values[asT<int>(json['overlayBlendMode'])]
-          : null,
-      maskShape: json['maskShape'] != null
-          ? ImageMaskShape.values[asT<int>(json['maskShape'])]
-          : ImageMaskShape.none,
-      noiseIntensity: asNullT<double>(json['noiseIntensity']) ?? 0.0,
-      sharpen: asNullT<double>(json['sharpen']) ?? 0.0,
-      emboss: asNullT<bool>(json['emboss']) ?? false,
-      // Shape border properties
-      shapeBorderWidth: asNullT<double>(json['shapeBorderWidth']) ?? 0.0,
-      shapeBorderColor: json['shapeBorderColor'] != null
-          ? Color(asT<int>(json['shapeBorderColor']))
-          : null,
-      shapeBorderRadius: asNullT<double>(json['shapeBorderRadius']) ?? 0.0,
-    );
-  }
-  @override
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      // Existing properties
-      if (url != null) 'url': url,
-      if (assetName != null) 'assetName': assetName,
-      if (filePath != null) 'filePath': filePath,
-      if (semanticLabel != null) 'semanticLabel': semanticLabel,
-      'excludeFromSemantics': excludeFromSemantics,
-      if (width != null) 'width': width,
-      if (height != null) 'height': height,
-      if (color != null) 'color': color,
-      if (colorBlendMode != null) 'colorBlendMode': colorBlendMode?.index,
-      'fit': fit.index,
-      'repeat': repeat.index,
-      'matchTextDirection': matchTextDirection,
-      'gaplessPlayback': gaplessPlayback,
-      'isAntiAlias': isAntiAlias,
-      'filterQuality': filterQuality.index,
-      // Advanced properties
-      'brightness': brightness,
-      'contrast': contrast,
-      'saturation': saturation,
-      'hue': hue,
-      'opacity': opacity,
-      'borderRadius': borderRadius,
-      'borderWidth': borderWidth,
-      if (borderColor != null) 'borderColor': borderColor?.toARGB32,
-
-      'shadowBlur': shadowBlur,
-      'shadowOffset': {'dx': shadowOffset.dx, 'dy': shadowOffset.dy},
-      if (shadowColor != null) 'shadowColor': shadowColor?.toARGB32,
-      'rotationAngle': rotationAngle,
-      'flipHorizontal': flipHorizontal,
-      'flipVertical': flipVertical,
-      'activeFilter': activeFilter,
-      'vignette': vignette,
-      if (vignetteColor != null) 'vignetteColor': vignetteColor?.toARGB32(),
-      if (overlayColor != null) 'overlayColor': overlayColor?.toARGB32(),
-      if (overlayBlendMode != null) 'overlayBlendMode': overlayBlendMode?.index,
-      'maskShape': maskShape.index,
-      'noiseIntensity': noiseIntensity,
-      'sharpen': sharpen,
-      'emboss': emboss,
-
-      // Shape border properties
-      'shapeBorderWidth': shapeBorderWidth,
-      if (shapeBorderColor != null)
-        'shapeBorderColor': shapeBorderColor?.toARGB32(),
-      'shapeBorderRadius': shapeBorderRadius,
-    };
-  }
-*/
 }
 
 // Unified Color Filter System - Single source of truth for all filters
@@ -1580,6 +1462,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
     super.status = null,
     super.lockZOrder = null,
     super.isProfileImage = false,
+    super.isNewImage = false,
   });
 
   factory StackImageItem.fromJson(Map<String, dynamic> data) {
@@ -1593,6 +1476,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
       status: StackItemStatus.values[data['status'] as int],
       lockZOrder: asNullT<bool>(data['lockZOrder']) ?? false,
       isProfileImage: asNullT<bool>(data['isProfileImage']) ?? false,
+
       content: ImageItemContent.fromJson(asMap(data['content'])),
     );
   }
@@ -1670,6 +1554,7 @@ class StackImageItem extends StackItem<ImageItemContent> {
     bool? lockZOrder,
     ImageItemContent? content,
     bool? isProfileImage,
+    bool? isNewImage,
     bool? isCentered,
   }) {
     return StackImageItem(

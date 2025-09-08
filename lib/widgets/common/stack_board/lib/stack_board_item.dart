@@ -1,4 +1,4 @@
-library stack_board_item;
+library;
 
 export 'src/core/stack_board_item/stack_item.dart';
 export 'src/core/stack_board_item/stack_item_content.dart';

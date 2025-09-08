@@ -6,6 +6,7 @@ import 'package:cardmaker/app/settings/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/widgets/common/template_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -18,7 +19,12 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => isLoggedIn ? ProfilePage() : AuthWrapper());
+    return Obx(
+      () => AnimatedSwitcher(
+        duration: Duration(milliseconds: 1000),
+        child: isLoggedIn ? ProfilePage() : AuthWrapper(),
+      ),
+    );
   }
 }
 
@@ -30,13 +36,9 @@ class ProfilePage extends StatelessWidget {
     final controller = Get.put(ProfileController());
 
     return Scaffold(
-      // backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
-
-        // backgroundColor: Colors.white,
         backgroundColor: AppColors.brandingLight.withValues(alpha: 0.05),
-
         title: const Text(
           'My Profile',
           style: TextStyle(
@@ -51,12 +53,10 @@ class ProfilePage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Get.back(),
         ),
-
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(50),
               color: Get.theme.colorScheme.surface,
@@ -111,7 +111,6 @@ class ProfilePage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
       decoration: BoxDecoration(
-        // color: Colors.white,
         color: AppColors.brandingLight.withValues(alpha: 0.05),
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade100, width: 1),
@@ -208,14 +207,28 @@ class ProfilePage extends StatelessWidget {
           );
         }
 
-        return _buildStaggeredTemplateGrid(
-          controller.drafts,
-          controller.draftsScrollController,
-          isDrafts: true,
-          isLoading: controller.isDraftsLoading.value,
-          hasMore: controller.hasMoreDrafts.value,
-          onDelete: controller.deleteDraft,
-          onEdit: (template) => _editDraft(template),
+        return NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.pixels >=
+                    notification.metrics.maxScrollExtent - 100 &&
+                !controller.isDraftsLoading.value &&
+                controller.hasMoreDrafts.value) {
+              debugPrint(
+                'Drafts scroll within 100px of bottom: loading more...',
+              );
+              controller.loadMoreDrafts();
+            }
+            return false; // Allow other listeners to process the notification
+          },
+          child: _buildStaggeredTemplateGrid(
+            controller.drafts,
+            null, // No ScrollController
+            isDrafts: true,
+            isLoading: controller.isDraftsLoading.value,
+            hasMore: controller.hasMoreDrafts.value,
+            onDelete: controller.deleteDraft,
+            onEdit: (template) => _editDraft(template),
+          ),
         );
       }),
     );
@@ -250,7 +263,6 @@ class ProfilePage extends StatelessWidget {
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            print(controller.hasMoreFavorites.value);
             if (notification.metrics.pixels >=
                     notification.metrics.maxScrollExtent - 100 &&
                 !controller.isFavoritesLoading.value &&
@@ -264,7 +276,7 @@ class ProfilePage extends StatelessWidget {
           },
           child: _buildFavoriteTemplateGrid(
             controller.favorites,
-            null, // Remove ScrollController
+            null,
             isLoading: controller.isFavoritesLoading.value,
             hasMore: controller.hasMoreFavorites.value,
             onRemoveFromFavorites: controller.removeFromFavorites,
@@ -277,7 +289,7 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildStaggeredTemplateGrid(
     List<CardTemplate> templates,
-    ScrollController scrollController, {
+    ScrollController? scrollController, {
     required bool isDrafts,
     required bool isLoading,
     required bool hasMore,
@@ -297,7 +309,7 @@ class ProfilePage extends StatelessWidget {
             childCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
-              return _ProfessionalTemplateCard(
+              return DraftCard(
                 template: template,
                 isDraft: isDrafts,
                 onTap: () => onEdit?.call(template),
@@ -352,7 +364,7 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildFavoriteTemplateGrid(
     List<CardTemplate> templates,
-    ScrollController? scrollController, { // Made nullable
+    ScrollController? scrollController, {
     required bool isLoading,
     required bool hasMore,
     Function(String)? onRemoveFromFavorites,
@@ -360,7 +372,7 @@ class ProfilePage extends StatelessWidget {
   }) {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      cacheExtent: 1000, // Preload images for better performance
+      cacheExtent: 1000,
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(12),
@@ -371,12 +383,16 @@ class ProfilePage extends StatelessWidget {
             childCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
-              return _FavoriteTemplateCard(
+              return TemplateCard(
+                key: ValueKey(template.id),
                 template: template,
                 onTap: () => onEdit?.call(template),
-                onRemoveFromFavorites: () => _showRemoveFromFavoritesDialog(
-                  template.id,
-                  onRemoveFromFavorites,
+                favoriteButton: FavoriteButton(
+                  isFav: true,
+                  onTap: () => _showRemoveFromFavoritesDialog(
+                    template.id,
+                    onRemoveFromFavorites,
+                  ),
                 ),
               );
             },
@@ -617,13 +633,14 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-class _ProfessionalTemplateCard extends StatelessWidget {
+class DraftCard extends StatelessWidget {
   final CardTemplate template;
   final bool isDraft;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
 
-  const _ProfessionalTemplateCard({
+  const DraftCard({
+    super.key,
     required this.template,
     required this.isDraft,
     required this.onTap,
@@ -814,165 +831,47 @@ class _ProfessionalTemplateCard extends StatelessWidget {
   }
 }
 
-class _FavoriteTemplateCard extends StatelessWidget {
-  final CardTemplate template;
+class FavoriteButton extends StatelessWidget {
+  final bool isFav;
+  final double size;
   final VoidCallback onTap;
-  final VoidCallback? onRemoveFromFavorites;
 
-  const _FavoriteTemplateCard({
-    required this.template,
+  const FavoriteButton({
+    super.key,
+    required this.isFav,
     required this.onTap,
-    this.onRemoveFromFavorites,
+    this.size = 18,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.brandingLight.withValues(alpha: 0.06),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: InkWell(
-                  onTap: onTap,
-                  radius: 12,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                        bottom: Radius.circular(8),
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: template.aspectRatio,
-                        child: _buildThumbnail(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: onRemoveFromFavorites,
-                  child: Container(
-                    // padding: const EdgeInsets.all(6),
-                    // decoration: BoxDecoration(
-                    //   shape: BoxShape.circle,
-                    //   color: Colors.white,
-                    //   boxShadow: [
-                    //     BoxShadow(
-                    //       color: Colors.grey.withOpacity(0.2),
-                    //       blurRadius: 4,
-                    //       offset: const Offset(0, 2),
-                    //     ),
-                    //   ],
-                    // ),
-                    child: Icon(
-                      Icons.favorite,
-                      color: AppColors.red400,
-                      size: 24,
-                    ),
-                  ),
-                ),
+    return Material(
+      color: Colors.white.withOpacity(0.9),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Container(
+          width: size + 12,
+          height: size + 12,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  template.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDate(template.updatedAt ?? template.createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
+          child: Icon(
+            isFav ? Icons.favorite : Icons.favorite_border,
+            size: size,
+            color: isFav ? AppColors.red400 : AppColors.gray400,
           ),
-        ],
+        ),
       ),
     );
-  }
-
-  Widget _buildThumbnail() {
-    if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: template.thumbnailUrl!,
-        fit: BoxFit.contain,
-        placeholder: (context, url) => _buildShimmerPlaceholder(),
-        errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 300),
-      );
-    }
-    return _buildPlaceholder();
-  }
-
-  Widget _buildShimmerPlaceholder() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(color: Colors.white),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: Colors.grey[100],
-      child: Center(
-        child: Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Unknown';
-
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      if (difference.inHours == 0) {
-        return '${difference.inMinutes} min ago';
-      }
-      return '${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inDays < 30) {
-      return '${(difference.inDays / 7).floor()}w ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
   }
 }

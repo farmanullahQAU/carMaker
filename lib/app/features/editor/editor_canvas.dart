@@ -5,11 +5,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
+import 'package:cardmaker/app/features/editor/shape_editor/view.dart';
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/shape_stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -33,47 +35,90 @@ class EditorPage extends GetView<CanvasController> {
     }
   }
 
+  // In your EditorPage, update the buildPanelContent method
+  // In your EditorPage, update the buildPanelContent method
+  // Update your EditorPage buildPanelContent method with this version
+
   Widget buildPanelContent() {
     return GetBuilder<CanvasController>(
       id: 'bottom_sheet',
       builder: (controller) {
         final item = controller.activeItem.value;
+        final activePanel = controller.activePanel.value;
 
         final panels = <Widget>[
-          _StickerPanel(controller: controller), // PanelType.stickers
-          _HueAdjustmentPanel(controller: controller), // PanelType.color
+          // Show ShapeEditorPanel directly when shapes panel is active
+          (activePanel == PanelType.shapes)
+              ? ShapeEditorPanel(
+                  onApply: (shape) {
+                    controller.addShapeItem(shape);
+                    controller.activePanel.value = PanelType.shapeEditor;
+                  },
+                  onClose: () {
+                    controller.activePanel.value = PanelType.none;
+                  },
+                )
+              : const SizedBox.shrink(),
+
+          // Show shape editor when a shape item is selected
+          (activePanel == PanelType.shapeEditor && item is StackShapeItem)
+              ? ShapeEditorPanel(
+                  shapeItem: item,
+                  onApply: (shape) {
+                    controller.updateItem(shape);
+                  },
+                  onClose: () {
+                    controller.activePanel.value = PanelType.none;
+                  },
+                )
+              : const SizedBox.shrink(),
+
+          _StickerPanel(controller: controller),
+          _HueAdjustmentPanel(controller: controller),
           (item is StackTextItem)
               ? _TextEditorPanel(
                   key: ValueKey(item.id),
                   controller: controller,
                   textItem: item,
                 )
-              : const SizedBox.shrink(), // PanelType.text
-
+              : const SizedBox.shrink(),
           (item is StackImageItem)
-              ? AdvancedImagePanel(
-                  key: ValueKey(item.id),
-                  imageItem: item,
-                  onUpdate: () {
-                    // Enhanced update callback for real-time changes
-                    // controller.update([
-                    //   'canvas_stack',
-                    //   'stack_board',
-                    //   'advanced_image_panel_${item.id}',
-                    // ]);
-                  },
-                )
-              : const SizedBox.shrink(), // PanelType.advancedImage
+              ? AdvancedImagePanel(key: ValueKey(item.id), imageItem: item)
+              : const SizedBox.shrink(),
         ];
 
+        // Map PanelType to the correct index
+        int getPanelIndex(PanelType type) {
+          switch (type) {
+            case PanelType.shapes:
+              return 0;
+            case PanelType.shapeEditor:
+              return 1;
+            case PanelType.stickers:
+              return 2;
+            case PanelType.color:
+              return 3;
+            case PanelType.text:
+              return 4;
+            case PanelType.advancedImage:
+              return 5;
+            case PanelType.none:
+              return -1;
+          }
+        }
+
+        final panelIndex = getPanelIndex(activePanel);
+
         return IndexedStack(
-          index: controller.activePanel.value.index - 1,
+          index: panelIndex >= 0 ? panelIndex : 0,
           alignment: Alignment.bottomCenter,
           children: panels,
         );
       },
     );
   }
+
+  // Update your StackBoard customBuilder in the CanvasStack widget
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +134,7 @@ class EditorPage extends GetView<CanvasController> {
               onSaveDraft: controller.saveDraft,
               onSave: () async {
                 try {
-                  await controller.uploadTemplate();
+                  await controller.saveAsPublicProject();
                   // controller.saveDesign();
                   controller.isExporting = false;
                 } catch (err) {
@@ -153,6 +198,24 @@ class EditorPage extends GetView<CanvasController> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // In your EditorPage toolbar buttons
+                    _ProfessionalToolbarButton(
+                      icon: Icons.shape_line_outlined,
+                      activeIcon: Icons.shape_line,
+                      label: 'Shapes',
+                      panelType: PanelType.shapes,
+                      activePanel: controller.activePanel,
+                      onPressed: () {
+                        if (controller.activePanel.value == PanelType.shapes) {
+                          controller.activePanel.value = PanelType.none;
+                        } else {
+                          controller.activePanel.value = PanelType.shapes;
+                          // Clear any selected item when opening shapes panel
+                          controller.activeItem.value = null;
+                        }
+                        controller.update(['bottom_sheet']);
+                      },
+                    ),
                     _ProfessionalToolbarButton(
                       icon: Icons.emoji_emotions_outlined,
                       activeIcon: Icons.emoji_emotions,
@@ -1127,13 +1190,26 @@ class CanvasStack extends StatelessWidget {
                     child: StackBoard(
                       key: stackBoardKey,
                       controller: controller.boardController,
+
                       customBuilder: (StackItem<StackItemContent> item) {
-                        return (item is StackTextItem && item.content != null)
-                            ? StackTextCase(item: item, isFitted: true)
-                            : (item is StackImageItem && item.content != null)
-                            ? StackImageCase(item: item)
-                            : const SizedBox.shrink();
+                        if (item is StackTextItem && item.content != null) {
+                          return StackTextCase(item: item, isFitted: true);
+                        } else if (item is StackImageItem &&
+                            item.content != null) {
+                          return StackImageCase(item: item);
+                        } else if (item is StackShapeItem &&
+                            item.content != null) {
+                          return StackShapeCase(item: item);
+                        }
+                        return const SizedBox.shrink();
                       },
+                      // customBuilder: (StackItem<StackItemContent> item) {
+                      //   return (item is StackTextItem && item.content != null)
+                      //       ? StackTextCase(item: item, isFitted: true)
+                      //       : (item is StackImageItem && item.content != null)
+                      //       ? StackImageCase(item: item)
+                      //       : const SizedBox.shrink();
+                      // },
                       borderBuilder: showBorders
                           ? (status, item) {
                               final CaseStyle style = CaseStyle();
@@ -1171,6 +1247,7 @@ class CanvasStack extends StatelessWidget {
                           await Get.to(() => UpdateTextView(item: item));
                         }
                       },
+
                       onStatusChanged: (item, status) {
                         if (status == StackItemStatus.selected) {
                           controller.activeItem.value = controller
@@ -1181,6 +1258,9 @@ class CanvasStack extends StatelessWidget {
                           } else if (item is StackImageItem) {
                             controller.activePanel.value =
                                 PanelType.advancedImage;
+                          } else if (item is StackShapeItem) {
+                            controller.activePanel.value =
+                                PanelType.shapeEditor;
                           } else {
                             controller.activePanel.value = PanelType.none;
                           }
@@ -1197,6 +1277,32 @@ class CanvasStack extends StatelessWidget {
                         controller.update(['canvas_stack', 'bottom_sheet']);
                         return true;
                       },
+                      // onStatusChanged: (item, status) {
+                      //   if (status == StackItemStatus.selected) {
+                      //     controller.activeItem.value = controller
+                      //         .boardController
+                      //         .getById(item.id);
+                      //     if (item is StackTextItem) {
+                      //       controller.activePanel.value = PanelType.text;
+                      //     } else if (item is StackImageItem) {
+                      //       controller.activePanel.value =
+                      //           PanelType.advancedImage;
+                      //     } else {
+                      //       controller.activePanel.value = PanelType.none;
+                      //     }
+                      //     controller.draggedItem.value = null;
+                      //   } else if (status == StackItemStatus.moving) {
+                      //     controller.activePanel.value = PanelType.none;
+                      //     controller.draggedItem.value = item;
+                      //   } else if (status == StackItemStatus.idle) {
+                      //     controller.activePanel.value = PanelType.none;
+                      //     if (controller.draggedItem.value?.id == item.id) {
+                      //       controller.draggedItem.value = null;
+                      //     }
+                      //   }
+                      //   controller.update(['canvas_stack', 'bottom_sheet']);
+                      //   return true;
+                      // },
                     ),
                   ),
                 ),
@@ -1286,303 +1392,6 @@ class CanvasStack extends StatelessWidget {
   }
 }
 
-/*
-class CanvasStack extends StatelessWidget {
-  final bool showGrid;
-  final bool showBorders;
-  final GlobalKey stackBoardKey;
-  final RxDouble canvasScale;
-  final RxDouble scaledCanvasWidth;
-  final RxDouble scaledCanvasHeight;
-
-  const CanvasStack({
-    super.key,
-    required this.showGrid,
-    required this.showBorders,
-    required this.stackBoardKey,
-    required this.canvasScale,
-    required this.scaledCanvasWidth,
-    required this.scaledCanvasHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder<CanvasController>(
-      id: 'canvas_stack',
-      builder: (controller) {
-        print("Built");
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Background container with hue color when no background image
-            if (controller.selectedBackground.value == null)
-              IgnorePointer(
-                ignoring: true,
-                child: SizedBox(
-                  width: scaledCanvasWidth.value,
-                  height: scaledCanvasHeight.value,
-                  child: Container(
-                    color: controller.backgroundHue.value == 0.0
-                        ? Colors
-                              .transparent // Transparent when hue is 0
-                        : HSLColor.fromAHSL(
-                            1,
-                            controller.backgroundHue.value,
-                            1,
-                            0.5,
-                          ).toColor(),
-                  ),
-                ),
-              ),
-
-            // if (controller.selectedBackground.value != null)
-            //   CachedNetworkImage(
-            //     imageUrl: controller.selectedBackground.value!,
-            //     scale: controller.initialTemplate!.aspectRatio,
-            //   ),
-
-            // Profile images
-            ...controller.profileImageItems.map(
-              (profileItem) => Positioned(
-                left: profileItem.offset.dx * canvasScale.value,
-                top: profileItem.offset.dy * canvasScale.value,
-                child: ClipRect(
-                  child: SizedBox(
-                    width: profileItem.size.width * canvasScale.value,
-                    height: profileItem.size.height * canvasScale.value,
-                    child: PhotoView(
-                      imageProvider: AssetImage(
-                        profileItem.content?.assetName ?? "",
-                      ),
-                      minScale: PhotoViewComputedScale.contained * 0.4,
-                      maxScale: PhotoViewComputedScale.covered * 3.0,
-                      initialScale: PhotoViewComputedScale.contained,
-                      basePosition: Alignment.center,
-                      enablePanAlways: true,
-                      filterQuality: FilterQuality.high,
-                      backgroundDecoration: const BoxDecoration(
-                        color: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Foreground image with transparent hole (only if background image exists)
-            if (controller.selectedBackground.value != null)
-              IgnorePointer(
-                ignoring: true,
-                child: SizedBox(
-                  width: scaledCanvasWidth.value,
-                  height: scaledCanvasHeight.value,
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.matrix(
-                      _hueMatrix(controller.backgroundHue.value),
-                    ),
-                    child:
-                        (controller.selectedBackground.value!.startsWith(
-                              'http',
-                            ) ||
-                            controller.selectedBackground.value!.startsWith(
-                              'https',
-                            ))
-                        ? CachedNetworkImage(
-                            imageUrl: controller.selectedBackground.value!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: Colors.grey[200]),
-                            errorWidget: (context, url, error) =>
-                                Icon(Icons.error, color: Colors.grey[400]),
-                          )
-                        : Image.file(
-                            File(controller.selectedBackground.value!),
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                ),
-              ),
-            // StackBoard with touch handling
-            SizedBox(
-              width: scaledCanvasWidth.value,
-              height: scaledCanvasHeight.value,
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: showGrid
-                    ? (event) {
-                        final localPos = event.localPosition;
-                        final scale = canvasScale.value;
-                        StackImageItem? tappedItem = controller
-                            .profileImageItems
-                            .firstWhereOrNull((item) {
-                              final hole = Rect.fromLTWH(
-                                item.offset.dx * scale,
-                                item.offset.dy * scale,
-                                item.size.width * scale,
-                                item.size.height * scale,
-                              );
-                              return hole.contains(localPos);
-                            });
-                        if (tappedItem != null) {
-                          print(
-                            "Touched inside ${tappedItem.id}, activating PhotoView.",
-                          );
-                          controller.activePhotoItem.value = tappedItem;
-                          controller.allowTouch.value = true;
-                          controller.update(['stack_board']);
-                        } else {
-                          if (controller.allowTouch.value != false) {
-                            //to overcome unncessary rebuilds
-                            controller.allowTouch.value = false;
-                            controller.activePhotoItem.value = null;
-                          }
-                          controller.activeItem.value = null;
-                          controller.activePanel.value = PanelType.none;
-                          controller.update(['stack_board']);
-                        }
-                      }
-                    : null,
-                child: GetBuilder<CanvasController>(
-                  id: 'stack_board',
-                  builder: (controller) => IgnorePointer(
-                    ignoring: controller.allowTouch.value,
-                    child: StackBoard(
-                      key: stackBoardKey,
-                      controller: controller.boardController,
-                      customBuilder: (StackItem<StackItemContent> item) {
-                        return (item is StackTextItem && item.content != null)
-                            ? StackTextCase(item: item, isFitted: true)
-                            : (item is StackImageItem && item.content != null)
-                            ? StackImageCase(item: item)
-                            : const SizedBox.shrink();
-                      },
-                      borderBuilder: showBorders
-                          ? (status, item) {
-                              final CaseStyle style = CaseStyle();
-                              final double leftRight =
-                                  status == StackItemStatus.idle
-                                  ? 0
-                                  : -(style.buttonSize) / 2;
-                              final double topBottom =
-                                  status == StackItemStatus.idle
-                                  ? 0
-                                  : -(style.buttonSize) * 1.5;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 500),
-                                child: Positioned(
-                                  left: -leftRight,
-                                  top: -topBottom,
-                                  right: -leftRight,
-                                  bottom: -topBottom,
-                                  child: IgnorePointer(
-                                    ignoring: true,
-                                    child: CustomPaint(
-                                      painter: BorderPainter(
-                                        dotted: status == StackItemStatus.idle,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-                          : (status, item) => const SizedBox.shrink(),
-                      onDel: (item) =>
-                          controller.boardController.removeById(item.id),
-                      onEdit: (item) async {
-                        if (item is StackTextItem) {
-                          await Get.to(() => UpdateTextView(item: item));
-                        }
-                      },
-                      onStatusChanged: (item, status) {
-                        if (status == StackItemStatus.selected) {
-                          controller.activeItem.value = controller
-                              .boardController
-                              .getById(item.id);
-                          if (item is StackTextItem) {
-                            controller.activePanel.value = PanelType.text;
-                          } else if (item is StackImageItem) {
-                            controller.activePanel.value =
-                                PanelType.advancedImage;
-                          } else {
-                            controller.activePanel.value = PanelType.none;
-                          }
-                          controller.draggedItem.value = null;
-                        } else if (status == StackItemStatus.moving) {
-                          controller.activePanel.value = PanelType.none;
-                          controller.draggedItem.value = item;
-                        } else if (status == StackItemStatus.idle) {
-                          controller.activePanel.value = PanelType.none;
-                          if (controller.draggedItem.value?.id == item.id) {
-                            controller.draggedItem.value = null;
-                          }
-                        }
-                        controller.update(['canvas_stack', 'bottom_sheet']);
-                        return true;
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Alignment guides
-            if (showGrid)
-              IgnorePointer(
-                ignoring: true,
-                child: CustomPaint(
-                  size: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-                  painter: AlignmentGuidePainter(
-                    draggedItem: controller.draggedItem.value,
-                    stackBoardSize: Size(
-                      scaledCanvasWidth.value,
-                      scaledCanvasHeight.value,
-                    ),
-                    showGrid: controller.showGrid.isTrue,
-                    gridSize: 50.0,
-                    guideColor: Colors.blue.withOpacity(0.5),
-                    criticalGuideColor: Colors.red,
-                    centerGuideColor: Colors.green,
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  List<double> _hueMatrix(double degrees) {
-    final radians = degrees * math.pi / 180;
-    final cosVal = math.cos(radians);
-    final sinVal = math.sin(radians);
-
-    const lumR = 0.213;
-    const lumG = 0.715;
-    const lumB = 0.122;
-
-    return [
-      lumR + cosVal * (1 - lumR) + sinVal * (-lumR),
-      lumG + cosVal * (-lumG) + sinVal * (-lumG),
-      lumB + cosVal * (-lumB) + sinVal * (1 - lumB),
-      0,
-      0,
-      lumR + cosVal * (-lumR) + sinVal * 0.143,
-      lumG + cosVal * (1 - lumG) + sinVal * 0.140,
-      lumB + cosVal * (-lumB) + sinVal * -0.283,
-      0,
-      0,
-      lumR + cosVal * (-lumR) + sinVal * (-(1 - lumR)),
-      lumG + cosVal * (-lumG) + sinVal * lumG,
-      lumB + cosVal * (1 - lumB) + sinVal * lumB,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-    ];
-  }
-}
-*/
 class BorderPainter extends CustomPainter {
   final bool dotted;
   final double stroke = 0.2; // Made thinner

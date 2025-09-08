@@ -20,7 +20,6 @@ class CardTemplate {
   final String imagePath;
   final IconData? icon;
   final Color color;
-  final bool isFavorite;
   final bool isDraft;
 
   CardTemplate({
@@ -42,7 +41,6 @@ class CardTemplate {
     required this.imagePath,
     this.icon,
     this.color = Colors.transparent,
-    this.isFavorite = false,
     this.isDraft = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -84,7 +82,6 @@ class CardTemplate {
     color: json['color'] != null
         ? Color(json['color'] is int ? json['color'] : 0xFF000000)
         : Colors.transparent,
-    isFavorite: json['isFavorite'] ?? false,
     isDraft: json['isDraft'] ?? false,
   );
 
@@ -107,7 +104,6 @@ class CardTemplate {
     'imagePath': imagePath,
     if (icon != null) 'icon': icon!.codePoint,
     'color': color.value,
-    'isFavorite': isFavorite,
     'isDraft': isDraft,
   };
 
@@ -132,7 +128,6 @@ class CardTemplate {
     String? imagePath,
     IconData? icon,
     Color? color,
-    bool? isFavorite,
     bool? isDraft,
   }) {
     return CardTemplate(
@@ -154,7 +149,6 @@ class CardTemplate {
       imagePath: imagePath ?? this.imagePath,
       icon: icon ?? this.icon,
       color: color ?? this.color,
-      isFavorite: isFavorite ?? this.isFavorite,
       isDraft: isDraft ?? this.isDraft,
     );
   }

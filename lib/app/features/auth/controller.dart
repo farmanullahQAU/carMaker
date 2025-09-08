@@ -27,7 +27,6 @@ class AuthController extends GetxController {
   final RxBool isLoginMode = true.obs;
   final RxBool obscurePassword = true.obs;
   final RxBool obscureConfirmPassword = true.obs;
-  RxString errorMessage = ''.obs;
 
   // Getters
   AuthService get authService => _authService;
@@ -59,7 +58,6 @@ class AuthController extends GetxController {
     passwordController.clear();
     confirmPasswordController.clear();
     nameController.clear();
-    errorMessage.value = '';
   }
 
   /// Email validation with comprehensive rules
@@ -100,34 +98,27 @@ class AuthController extends GetxController {
     try {
       AppToast.loading(message: "Authenticating...");
 
-      final String? error = await (isLoginMode.value
-          ? _performLogin()
-          : _performSignup());
+      await (isLoginMode.value ? _performLogin() : _performSignup());
 
-      if (error != null) {
-        errorMessage.value = error;
-        AppToast.error(message: error);
-      } else {
-        if (isLoginMode.isFalse) {
-          toggleAuthMode();
-        }
-        _clearForm();
+      if (isLoginMode.isFalse) {
+        toggleAuthMode();
       }
+      _clearForm();
+
+      AppToast.closeLoading();
     } catch (e) {
-      errorMessage.value = 'An unexpected error occurred. Please try again.';
-    } finally {
-      // AppToast.closeLoading();
+      AppToast.error(message: e.toString());
     }
   }
 
   /// Perform login operation
-  Future<String?> _performLogin() => _authService.signInWithEmailAndPassword(
+  Future<void> _performLogin() => _authService.signInWithEmailAndPassword(
     email: emailController.text.trim(),
     password: passwordController.text,
   );
 
   /// Perform signup operation
-  Future<String?> _performSignup() => _authService.signUpWithEmailAndPassword(
+  Future<void> _performSignup() => _authService.signUpWithEmailAndPassword(
     email: emailController.text.trim(),
     password: passwordController.text,
     confirmPassword: confirmPasswordController.text,
@@ -135,20 +126,19 @@ class AuthController extends GetxController {
 
   /// Sign in with Google
   Future<void> signInWithGoogle() async {
-    errorMessage.value = "";
     try {
       AppToast.loading(message: "Loading", showLogo: false);
 
-      final String? error = await _authService.signInWithGoogle();
-      if (error != null) {
-        errorMessage.value = error;
-      } else {
+      await _authService.signInWithGoogle();
+      AppToast.closeLoading();
+
+      // Get.back();
+    } catch (e) {
+      AppToast.error(message: e.toString());
+    } finally {
+      if (authService.user != null) {
         Get.back();
       }
-    } catch (e) {
-      errorMessage.value = 'Google sign-in failed. Please try again.';
-    } finally {
-      AppToast.closeLoading();
     }
   }
 
@@ -157,18 +147,12 @@ class AuthController extends GetxController {
     if (!(resetPasswordFormKey.currentState?.validate() ?? false)) return;
 
     try {
-      final String? error = await _authService.sendPasswordResetEmail(
-        emailController.text.trim(),
-      );
+      await _authService.sendPasswordResetEmail(emailController.text.trim());
 
-      if (error != null) {
-        errorMessage.value = error;
-      } else {
-        Get.back(); // Close dialog
-        _showPasswordResetSuccess();
-      }
+      Get.back(); // Close dialog
+      _showPasswordResetSuccess();
     } catch (e) {
-      errorMessage.value = 'Failed to send reset email. Please try again.';
+      AppToast.error(message: e.toString());
     }
   }
 

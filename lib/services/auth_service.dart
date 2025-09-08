@@ -48,13 +48,12 @@ class AuthService extends GetxController {
       return null;
     } catch (e) {
       isLoading.value = false;
-      final failure = FirebaseErrorHandler.handle(e);
-      return failure.message;
+      throw FirebaseErrorHandler.handle(e).message;
     }
   }
 
   // Email & Password Sign In
-  Future<String?> signInWithEmailAndPassword({
+  Future<void> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
@@ -69,20 +68,18 @@ class AuthService extends GetxController {
       // Check if email is verified
       if (!result.user!.emailVerified) {
         await _auth.signOut();
-        return 'Please verify your email before signing in';
+        throw 'Please verify your email before signing in';
       }
 
       isLoading.value = false;
-      return null;
     } catch (e) {
       isLoading.value = false;
-      final failure = FirebaseErrorHandler.handle(e);
-      return failure.message;
+      throw FirebaseErrorHandler.handle(e).message;
     }
   }
 
   // Google Sign In
-  Future<String?> signInWithGoogle() async {
+  Future<UserCredential> signInWithGoogle() async {
     try {
       isLoading.value = true;
 
@@ -100,15 +97,12 @@ class AuthService extends GetxController {
         idToken: googleAuth.idToken,
         accessToken: googleAuth.idToken, // ✅ kept as you originally had it
       );
-
-      await FirebaseAuth.instance.signInWithCredential(credential);
-
       isLoading.value = false;
-      return null;
+
+      return await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
       isLoading.value = false;
-      final failure = FirebaseErrorHandler.handle(e);
-      return failure.message;
+      throw FirebaseErrorHandler.handle(e).message;
     }
   }
 
@@ -123,16 +117,14 @@ class AuthService extends GetxController {
   }
 
   // Password Reset
-  Future<String?> sendPasswordResetEmail(String email) async {
+  Future<void> sendPasswordResetEmail(String email) async {
     try {
       isLoading.value = true;
       await _auth.sendPasswordResetEmail(email: email.trim());
       isLoading.value = false;
-      return null;
     } catch (e) {
       isLoading.value = false;
-      final failure = FirebaseErrorHandler.handle(e);
-      return failure.message;
+      throw FirebaseErrorHandler.handle(e).message;
     }
   }
 }

@@ -71,7 +71,7 @@ class AppToast {
   static void error({
     required String message,
     bool showLogo = false,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
   }) {
     show(
@@ -140,7 +140,7 @@ class __ToastOverlayState extends State<_ToastOverlay>
     );
 
     _offsetAnimation =
-        Tween<Offset>(begin: const Offset(0.0, -1.0), end: Offset.zero).animate(
+        Tween<Offset>(begin: const Offset(-1.0, 0.0), end: Offset.zero).animate(
           CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
         );
 
@@ -175,7 +175,7 @@ class __ToastOverlayState extends State<_ToastOverlay>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    Color backgroundColor = Colors.white;
+    Color backgroundColor = colorScheme.surfaceContainer;
     IconData iconData;
     Color iconColor;
 
@@ -185,7 +185,7 @@ class __ToastOverlayState extends State<_ToastOverlay>
         iconColor = colorScheme.onPrimary;
         break;
       case ToastType.error:
-        iconData = Icons.error_outline;
+        iconData = Icons.error;
         iconColor = colorScheme.onErrorContainer;
         backgroundColor = colorScheme.errorContainer;
         break;
@@ -250,22 +250,26 @@ class __ToastOverlayState extends State<_ToastOverlay>
                         ),
                       ),
                     // else
-                    //   Icon(iconData, size: 28),
-                    // const SizedBox(width: 12),
-                    Text(
-                      widget.message,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        // color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                    // SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        widget.message,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          // color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     if (widget.type != ToastType.loading)
                       InkWell(
                         onTap: _dismissToast,
 
-                        child: Icon(iconData, color: iconColor, size: 20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(iconData, color: iconColor, size: 20),
+                        ),
                       ),
                   ],
                 ),

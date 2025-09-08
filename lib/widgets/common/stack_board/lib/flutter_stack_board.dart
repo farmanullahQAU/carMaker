@@ -1,4 +1,4 @@
-library stack_board;
+library;
 
 export 'src/core/case_style.dart';
 export 'src/core/stack_board_controller.dart';

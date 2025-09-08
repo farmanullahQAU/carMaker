@@ -33,6 +33,7 @@ abstract class StackItem<T extends StackItemContent> {
     StackItemStatus? status = StackItemStatus.selected,
     bool? lockZOrder = false,
     bool? isProfileImage = false,
+    bool? isNewImage = false,
 
     this.content,
   }) : id = id ?? _genId(),
@@ -42,6 +43,7 @@ abstract class StackItem<T extends StackItemContent> {
 
        isCentered = isCentered = false,
        isProfileImage = isProfileImage ?? false,
+       isNewImage = isNewImage ?? false,
 
        status = status ?? StackItemStatus.selected;
 
@@ -54,6 +56,7 @@ abstract class StackItem<T extends StackItemContent> {
     required this.lockZOrder,
     required this.isCentered,
     required this.isProfileImage,
+    this.isNewImage,
   }) : id = '';
 
   /// id
@@ -74,6 +77,7 @@ abstract class StackItem<T extends StackItemContent> {
 
   final bool lockZOrder;
   final bool isProfileImage;
+  final bool? isNewImage;
 
   /// Content
   final T? content;
@@ -87,6 +91,8 @@ abstract class StackItem<T extends StackItemContent> {
     bool? lockZOrder,
     bool? isCentered,
     bool? isProfileImage,
+    bool? isNewImage,
+
     T? content,
   });
 

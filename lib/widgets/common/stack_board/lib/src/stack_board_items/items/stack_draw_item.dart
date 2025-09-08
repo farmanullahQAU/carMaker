@@ -1,118 +1,175 @@
-// import 'dart:ui';
+import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/widget_style_extension.dart';
+import 'package:flutter/material.dart';
+import 'package:morphable_shape/morphable_shape.dart';
 
-// import 'package:cardmaker/stack_board/lib/stack_board_item.dart';
+class StackShapeItem extends StackItem<ShapeItemContent> {
+  StackShapeItem({
+    super.content,
+    super.id,
+    super.angle = 0,
+    required super.size,
+    required super.offset,
+    super.lockZOrder = false,
+    super.status = StackItemStatus.selected,
+  });
 
-// import '../../../helpers.dart';
+  @override
+  factory StackShapeItem.fromJson(Map<String, dynamic> data) {
+    return StackShapeItem(
+      id: data['id'] == null ? null : asT<String>(data['id']),
+      angle: data['angle'] == null ? 0 : asT<double>(data['angle']),
+      size: jsonToSize(asMap(data['size'])),
+      offset: jsonToOffset(asMap(data['offset'])),
+      status: data['status'] != null
+          ? StackItemStatus.values[data['status'] as int]
+          : StackItemStatus.idle,
+      lockZOrder: asNullT<bool>(data['lockZOrder']) ?? false,
+      content: ShapeItemContent.fromJson(asMap(data['content'])),
+    );
+  }
 
-// class DrawItemContent implements StackItemContent {
-//   DrawItemContent({
-//     required this.size,
-//     required this.paintContents,
-//   });
+  @override
+  StackShapeItem copyWith({
+    double? angle,
+    Size? size,
+    Offset? offset,
+    StackItemStatus? status,
+    bool? lockZOrder,
+    ShapeItemContent? content,
+    bool? isCentered,
+    bool? isProfileImage,
+    bool? isNewImage,
+  }) {
+    return StackShapeItem(
+      id: id,
+      angle: angle ?? this.angle,
+      size: size ?? this.size,
+      offset: offset ?? this.offset,
+      status: status ?? this.status,
+      lockZOrder: lockZOrder ?? this.lockZOrder,
+      content: content ?? this.content,
+    );
+  }
 
-//   factory DrawItemContent.fromJson(
-//     Map<String, dynamic> data, {
-//     PaintContent Function(String type, Map<String, dynamic> jsonStepMap)?
-//         contentFactory,
-//   }) {
-//     return DrawItemContent(
-//       size: data['size'] as double,
-//       paintContents: (data['paintContents'] as List<dynamic>).map((dynamic e) {
-//         final String type = e['type'] as String;
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'angle': angle,
+      'size': {'width': size.width, 'height': size.height},
+      'offset': {'dx': offset.dx, 'dy': offset.dy},
+      'status': status.index,
+      'lockZOrder': lockZOrder,
+      'content': content?.toJson(),
+      'type': 'StackShapeItem',
+    };
+  }
+}
 
-//         final Map<String, dynamic> contentJson = e as Map<String, dynamic>;
+class ShapeItemContent implements StackItemContent {
+  ShapeItemContent({
+    this.shapeBorder,
+    this.fillColor = Colors.blue,
+    this.border = DynamicBorderSide.none,
+    this.shadows = const [],
+  });
 
-//         switch (type) {
-//           case 'Circle':
-//             return Circle.fromJson(contentJson);
-//           case 'Eraser':
-//             return Eraser.fromJson(contentJson);
-//           case 'Rectangle':
-//             return Rectangle.fromJson(contentJson);
-//           case 'SimpleLine':
-//             return SimpleLine.fromJson(contentJson);
-//           case 'SmoothLine':
-//             return SmoothLine.fromJson(contentJson);
-//           case 'StraightLine':
-//             return StraightLine.fromJson(contentJson);
-//         }
+  factory ShapeItemContent.fromJson(Map<String, dynamic> data) {
+    return ShapeItemContent(
+      shapeBorder: parseMorphableShapeBorder(asMap(data['shapeBorder'])),
+      fillColor: data['fillColor'] == null
+          ? Colors.blue
+          : Color(asT<int>(data['fillColor'])),
+      border: data['border'] == null
+          ? DynamicBorderSide.none
+          : DynamicBorderSide.fromJson(asMap(data['border'])),
+      shadows: data['shadows'] == null
+          ? []
+          : List<ShapeShadow>.from(
+              (data['shadows'] as List).map(
+                (e) => ShapeShadow.fromBoxShadow(e),
+              ),
+            ),
+    );
+  }
 
-//         return contentFactory?.call(type, contentJson) ??
-//             EmptyContent.fromJson(contentJson);
-//       }).toList(),
-//     );
-//   }
+  MorphableShapeBorder? shapeBorder;
+  Color fillColor;
+  DynamicBorderSide border;
+  List<ShapeShadow> shadows;
 
-//   double size;
-//   List<PaintContent> paintContents;
+  ShapeItemContent copyWith({
+    MorphableShapeBorder? shapeBorder,
+    Color? fillColor,
+    DynamicBorderSide? border,
+    List<ShapeShadow>? shadows,
+  }) {
+    return ShapeItemContent(
+      shapeBorder: shapeBorder ?? this.shapeBorder,
+      fillColor: fillColor ?? this.fillColor,
+      border: border ?? this.border,
+      shadows: shadows ?? this.shadows,
+    );
+  }
 
-//   @override
-//   Map<String, dynamic> toJson() {
-//     return <String, dynamic>{
-//       'size': size,
-//       'paintContents':
-//           paintContents.map((PaintContent e) => e.toJson()).toList(),
-//     };
-//   }
-// }
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      if (shapeBorder != null) 'shapeBorder': shapeBorder!.toJson(),
+      'fillColor': fillColor.value,
+      'border': border.toJson(),
+      'shadows': shadows.map((e) => e.toJson()).toList(),
+    };
+  }
+}
 
-// /// StackDrawItem
-// class StackDrawItem extends StackItem<DrawItemContent> {
-//   StackDrawItem({
-//     DrawItemContent? content,
-//     String? id,
-//     double? angle,
-//     Size size = const Size(300, 300),
-//     Offset? offset,
-//     bool? lockZOrder,
-//     StackItemStatus? status,
-//   }) : super(
-//             id: id,
-//             size: size,
-//             offset: offset,
-//             angle: angle,
-//             status: status,
-//             lockZOrder: lockZOrder,
-//             content: content ??
-//                 DrawItemContent(
-//                     size: size.shortestSide, paintContents: <PaintContent>[]));
+// Helper function to parse MorphableShapeBorder from JSON
+MorphableShapeBorder? parseMorphableShapeBorder(Map<String, dynamic>? data) {
+  if (data == null) return null;
 
-//   factory StackDrawItem.fromJson(Map<String, dynamic> data) {
-//     return StackDrawItem(
-//       id: data['id'] as String?,
-//       angle: data['angle'] as double?,
-//       size: jsonToSize(data['size'] as Map<String, dynamic>),
-//       offset: jsonToOffset(data['offset'] as Map<String, dynamic>),
-//       status: StackItemStatus.values[data['status'] as int],
-//       lockZOrder: asNullT<bool>(data['lockZOrder']) ?? false,
-//       content:
-//           DrawItemContent.fromJson(data['content'] as Map<String, dynamic>),
-//     );
-//   }
+  final type = data['type'] as String?;
 
-//   /// * 覆盖绘制内容
-//   /// * Override the drawing content
-//   void setContents(List<PaintContent> contents) {
-//     content!.paintContents = contents;
-//   }
+  switch (type) {
+    case 'RectangleShapeBorder':
+      return RectangleShapeBorder.fromJson(data);
+    case 'CircleShapeBorder':
+      return CircleShapeBorder.fromJson(data);
+    case 'PolygonShapeBorder':
+      return PolygonShapeBorder.fromJson(data);
+    case 'StarShapeBorder':
+      return StarShapeBorder.fromJson(data);
+    case 'ArrowShapeBorder':
+      return ArrowShapeBorder.fromJson(data);
+    case 'BubbleShapeBorder':
+      return BubbleShapeBorder.fromJson(data);
+    default:
+      return RectangleShapeBorder();
+  }
+}
 
-//   @override
-//   StackDrawItem copyWith({
-//     Size? size,
-//     Offset? offset,
-//     double? angle,
-//     StackItemStatus? status,
-//     bool? lockZOrder,
-//     DrawItemContent? content,
-//   }) {
-//     return StackDrawItem(
-//       id: id,
-//       size: size ?? this.size,
-//       offset: offset ?? this.offset,
-//       angle: angle ?? this.angle,
-//       status: status ?? this.status,
-//       lockZOrder: lockZOrder ?? this.lockZOrder,
-//       content: content ?? this.content,
-//     );
-//   }
-// }
+// Extension to convert ShapeShadow to BoxShadow for rendering
+extension ShapeShadowExtension on ShapeShadow {
+  static ShapeShadow fromBoxShadow(Map<String, dynamic> data) {
+    return ShapeShadow(
+      color: Color(data['color'] as int),
+      blurRadius: (data['blurRadius'] as num).toDouble(),
+      offset: Offset(
+        (data['offset']['dx'] as num).toDouble(),
+        (data['offset']['dy'] as num).toDouble(),
+      ),
+      spreadRadius: (data['spreadRadius'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'color': color.value,
+      'blurRadius': blurRadius,
+      'offset': {'dx': offset.dx, 'dy': offset.dy},
+      'spreadRadius': spreadRadius,
+    };
+  }
+}

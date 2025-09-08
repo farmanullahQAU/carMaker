@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/bg_remover/view.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
@@ -6,7 +8,6 @@ import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
-import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
@@ -308,15 +309,20 @@ class HorizontalCardList extends GetView<HomeController> {
           }
           return ListView.separated(
             scrollDirection: Axis.horizontal,
-            cacheExtent: 500, // preloads more items ahead
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            // physics: const BouncingScrollPhysics(),
-            itemCount: controller.templates.length.clamp(0, 8) + 1,
+            cacheExtent: 2000,
+            itemCount: min(controller.templates.length, 8) + 1,
             itemBuilder: (context, index) {
-              if (index == controller.templates.length.clamp(0, 8)) {
+              if (index == min(controller.templates.length, 8)) {
                 return _buildViewAllCard();
               }
-              return TemplateCard(template: controller.templates[index]);
+              return OptimizedTemplateCard(
+                template: controller.templates[index],
+                onTap: () =>
+                    controller.onTemplateTap(controller.templates[index]),
+                onFavoriteToggle: () =>
+                    controller.toggleFavorite(controller.templates[index].id),
+              );
             },
             separatorBuilder: (context, index) => const SizedBox(width: 12),
           );
@@ -411,15 +417,19 @@ class TrendingTemplatesList extends GetView<HomeController> {
 
           return ListView.separated(
             scrollDirection: Axis.horizontal,
+            cacheExtent: 2000, // Increased cache extent
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            // physics: const BouncingScrollPhysics(),
-            cacheExtent: 500,
-            itemCount: trendingTemplates.length.clamp(0, 8) + 1,
+            itemCount: trendingTemplates.length + 1,
             itemBuilder: (context, index) {
-              if (index == trendingTemplates.length.clamp(0, 8)) {
+              if (index == trendingTemplates.length) {
                 return _buildViewAllCard();
               }
-              return TemplateCard(template: trendingTemplates[index]);
+              return OptimizedTemplateCard(
+                template: trendingTemplates[index],
+                onTap: () => controller.onTemplateTap(trendingTemplates[index]),
+                onFavoriteToggle: () =>
+                    controller.toggleFavorite(trendingTemplates[index].id),
+              );
             },
             separatorBuilder: (context, index) => const SizedBox(width: 12),
           );
@@ -489,10 +499,17 @@ class TrendingTemplatesList extends GetView<HomeController> {
 }
 
 // --- Professional TemplateCard Widget ---
-class TemplateCard extends GetView<HomeController> {
+class OptimizedTemplateCard extends StatelessWidget {
   final CardTemplate template;
+  final VoidCallback onTap;
+  final VoidCallback onFavoriteToggle;
 
-  const TemplateCard({super.key, required this.template});
+  const OptimizedTemplateCard({
+    super.key,
+    required this.template,
+    required this.onTap,
+    required this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -501,41 +518,39 @@ class TemplateCard extends GetView<HomeController> {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => controller.onTemplateTap(template),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: Get.width * 0.4),
-          child: AspectRatio(
-            aspectRatio: template.aspectRatio,
-            child: Container(
-              width: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Stack(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _buildTemplateImage(),
-                    ),
+        onTap: onTap,
+        child: Container(
+          width: 100,
+          constraints: const BoxConstraints(maxWidth: 100),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Stack(
+            children: [
+              // Image container with fixed aspect ratio
+              Positioned.fill(
+                child: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  _buildFavoriteButton(),
-                ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _buildTemplateImage(),
+                  ),
+                ),
               ),
-            ),
+              _buildFavoriteButton(),
+            ],
           ),
         ),
       ),
@@ -543,33 +558,30 @@ class TemplateCard extends GetView<HomeController> {
   }
 
   Widget _buildTemplateImage() {
-    for (var item in template.items) {
-      if (item['type'] == "StackImageItem") {
-        final img = StackImageItem.fromJson(item);
-        CachedNetworkImage(imageUrl: img.content?.url ?? "");
-      }
-    }
-
     if (template.thumbnailUrl != null) {
       return CachedNetworkImage(
         imageUrl: template.thumbnailUrl!,
         fit: BoxFit.cover,
         fadeInDuration: const Duration(milliseconds: 200),
-        placeholder: (context, url) => Container(
-          color: const Color(0xFFF9FAFB),
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        ),
-        errorWidget: (context, url, error) => Container(
-          color: const Color(0xFFF9FAFB),
-          child: const Icon(
-            Icons.image_outlined,
-            color: Color(0xFFD1D5DB),
-            size: 24,
-          ),
+        memCacheHeight: 150, // Reduced memory usage
+        memCacheWidth: 150,
+        maxHeightDiskCache: 150,
+        maxWidthDiskCache: 150,
+        placeholder: (context, url) => _buildPlaceholder(),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+        imageBuilder: (context, imageProvider) => Image(
+          image: imageProvider,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
         ),
       );
     }
 
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
     return Container(
       color: const Color(0xFFF9FAFB),
       child: const Center(
@@ -589,7 +601,7 @@ class TemplateCard extends GetView<HomeController> {
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: () async => await controller.toggleFavorite(template.id),
+            onTap: onFavoriteToggle,
             child: Container(
               width: 26,
               height: 26,

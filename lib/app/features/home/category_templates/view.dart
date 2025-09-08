@@ -302,7 +302,7 @@
 //                 mainAxisSpacing: 16,
 //                 crossAxisSpacing: 8,
 //                 childCount: controller.templates.length,
-//                 itemBuilder: (context, index) => _ProfessionalTemplateCard(
+//                 itemBuilder: (context, index) => _TemplateCardCategory(
 //                   template: controller.templates[index],
 //                   onTap: () => controller.onTemplateSelected(
 //                     controller.templates[index],
@@ -428,13 +428,13 @@
 //   }
 // }
 
-// class _ProfessionalTemplateCard extends StatelessWidget {
+// class _TemplateCardCategory extends StatelessWidget {
 //   final CardTemplate template;
 //   final VoidCallback onTap;
 //   final VoidCallback onFavoriteToggle;
 //   final Color categoryColor;
 
-//   const _ProfessionalTemplateCard({
+//   const _TemplateCardCategory({
 //     required this.template,
 //     required this.onTap,
 //     required this.onFavoriteToggle,
@@ -588,10 +588,10 @@
 //     );
 //   }
 // }
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/home/category_templates/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/widgets/common/template_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
@@ -921,178 +921,180 @@ class CategoryTemplatesPage extends StatelessWidget {
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 childCount: controller.templates.length,
-                itemBuilder: (context, index) => _ProfessionalTemplateCard(
-                  template: controller.templates[index],
-                  onTap: () => controller.onTemplateSelected(
-                    controller.templates[index],
-                  ),
-                  onFavoriteToggle: () =>
-                      controller.toggleFavorite(controller.templates[index]),
-                  categoryColor: controller.getPageColor(),
-                ),
+                itemBuilder: (context, index) {
+                  final template = controller.templates[index];
+                  return TemplateCard(
+                    template: template,
+                    key: ValueKey('template_${template.id}'), // Add this
+                    // isFavorite: controller.isTemplateFavorite(template.id),
+                    favoriteButton: FavoriteButton(
+                      id: template.id,
+
+                      onTap: () => controller.toggleFavorite(template.id),
+                    ),
+                    onTap: () => controller.onTemplateSelected(template),
+                  );
+                },
               ),
       ),
     );
   }
+}
 
-  Widget _buildLoadingState(CategoryTemplatesController controller) {
-    return Center(
+Widget _buildLoadingState(CategoryTemplatesController controller) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: controller.getPageColor().withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: controller.getPageColor(),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Loading templates...',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildLoadingIndicator(CategoryTemplatesController controller) {
+  return Obx(
+    () => controller.isLoading.value && controller.templates.isNotEmpty
+        ? SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: controller.getPageColor(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Loading more...',
+                        style: TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        : const SliverToBoxAdapter(child: SizedBox.shrink()),
+  );
+}
+
+Widget _buildEmptyState(CategoryTemplatesController controller) {
+  return Center(
+    child: Container(
+      padding: const EdgeInsets.all(40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: controller.getPageColor().withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: controller.getPageColor(),
-                ),
-              ),
+            child: Icon(
+              Icons.search_off_rounded,
+              size: 40,
+              color: controller.getPageColor().withOpacity(0.6),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           const Text(
-            'Loading templates...',
+            'No Templates Found',
             style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            controller.searchQuery.value.isNotEmpty
+                ? 'No templates match your search criteria'
+                : 'No templates available for the selected filters',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               color: Color(0xFF6B7280),
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: controller.clearFilters,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text(
+              'Clear Filters',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: controller.getPageColor(),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLoadingIndicator(CategoryTemplatesController controller) {
-    return Obx(
-      () => controller.isLoading.value && controller.templates.isNotEmpty
-          ? SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: controller.getPageColor(),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Loading more...',
-                          style: TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            )
-          : const SliverToBoxAdapter(child: SizedBox.shrink()),
-    );
-  }
-
-  Widget _buildEmptyState(CategoryTemplatesController controller) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: controller.getPageColor().withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: 40,
-                color: controller.getPageColor().withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'No Templates Found',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF111827),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.searchQuery.value.isNotEmpty
-                  ? 'No templates match your search criteria'
-                  : 'No templates available for the selected filters',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: controller.clearFilters,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text(
-                'Clear Filters',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: controller.getPageColor(),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 class _FilterChip extends StatelessWidget {
@@ -1136,243 +1138,295 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ProfessionalTemplateCard extends StatelessWidget {
-  final CardTemplate template;
-  final VoidCallback onTap;
-  final VoidCallback onFavoriteToggle;
-  final Color categoryColor;
+// class TemplateCardCategory extends StatelessWidget {
+//   final CardTemplate template;
+//   final VoidCallback onTap;
+//   final VoidCallback onFavoriteToggle;
+//   final bool isFavorite;
 
-  const _ProfessionalTemplateCard({
-    required this.template,
+//   const TemplateCardCategory({
+//     super.key,
+//     required this.template,
+//     required this.onTap,
+//     required this.onFavoriteToggle,
+//     required this.isFavorite,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Material(
+//       color: Colors.white,
+//       borderRadius: BorderRadius.circular(16),
+//       child: InkWell(
+//         onTap: onTap,
+//         borderRadius: BorderRadius.circular(16),
+//         child: Container(
+//           decoration: BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.circular(16),
+//             border: Border.all(color: AppColors.gray200, width: 0.4),
+//             boxShadow: [
+//               BoxShadow(
+//                 color: Colors.black.withOpacity(0.04),
+//                 blurRadius: 8,
+//                 offset: const Offset(0, 2),
+//               ),
+//             ],
+//           ),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               // Image Container
+//               Stack(
+//                 children: [
+//                   Container(
+//                     margin: const EdgeInsets.all(8),
+//                     decoration: BoxDecoration(
+//                       borderRadius: BorderRadius.circular(12),
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: Colors.black.withOpacity(0.06),
+//                           blurRadius: 4,
+//                           offset: const Offset(0, 2),
+//                         ),
+//                       ],
+//                     ),
+//                     child: ClipRRect(
+//                       borderRadius: BorderRadius.circular(12),
+//                       child: AspectRatio(
+//                         aspectRatio: template.aspectRatio > 0
+//                             ? template.aspectRatio
+//                             : 1.0,
+//                         child: _buildThumbnail(),
+//                       ),
+//                     ),
+//                   ),
+//                   _buildFavoriteButton(),
+//                   if (template.isPremium) _buildPremiumBadge(),
+//                 ],
+//               ),
+
+//               // Template Info
+//               Padding(
+//                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+//                 child: Column(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     Text(
+//                       template.name,
+//                       style: const TextStyle(
+//                         fontSize: 14,
+//                         fontWeight: FontWeight.w600,
+//                         color: Color(0xFF111827),
+//                       ),
+//                       maxLines: 2,
+//                       overflow: TextOverflow.ellipsis,
+//                     ),
+//                     if (template.category.isNotEmpty) ...[
+//                       const SizedBox(height: 4),
+//                       Container(
+//                         padding: const EdgeInsets.symmetric(
+//                           horizontal: 8,
+//                           vertical: 2,
+//                         ),
+//                         decoration: BoxDecoration(
+//                           color: AppColors.amber400Light,
+//                           borderRadius: BorderRadius.circular(6),
+//                         ),
+//                         child: Text(
+//                           template.category,
+//                           style: TextStyle(
+//                             fontSize: 10,
+//                             fontWeight: FontWeight.w500,
+//                             color: AppColors.amber400,
+//                             letterSpacing: 0.2,
+//                           ),
+//                         ),
+//                       ),
+//                     ],
+//                   ],
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildThumbnail() {
+//     if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
+//       return CachedNetworkImage(
+//         imageUrl: template.thumbnailUrl!,
+//         fit: BoxFit.cover,
+//         width: double.infinity,
+//         height: double.infinity,
+//         placeholder: (context, url) => _buildShimmerPlaceholder(),
+//         errorWidget: (context, url, error) => _buildPlaceholder(),
+//         fadeInDuration: const Duration(milliseconds: 200),
+//         fadeOutDuration: const Duration(milliseconds: 200),
+//       );
+//     }
+//     return _buildPlaceholder();
+//   }
+
+//   Widget _buildShimmerPlaceholder() {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: const Color(0xFFF3F4F6),
+//         borderRadius: BorderRadius.circular(12),
+//       ),
+//       child: const Center(
+//         child: SizedBox(
+//           width: 20,
+//           height: 20,
+//           child: CircularProgressIndicator(
+//             strokeWidth: 2,
+//             color: Color(0xFFD1D5DB),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildPlaceholder() {
+//     return Container(
+//       decoration: BoxDecoration(
+//         color: const Color(0xFFF9FAFB),
+//         borderRadius: BorderRadius.circular(12),
+//       ),
+//       child: const Center(
+//         child: Icon(Icons.image_outlined, size: 32, color: Color(0xFFD1D5DB)),
+//       ),
+//     );
+//   }
+
+//   // In your TemplateCardCategory
+//   Widget _buildFavoriteButton() {
+//     return Positioned(
+//       top: 8,
+//       left: 8,
+//       child: Material(
+//         color: Colors.white.withOpacity(0.9),
+//         borderRadius: BorderRadius.circular(8),
+//         child: InkWell(
+//           borderRadius: BorderRadius.circular(8),
+//           onTap: onFavoriteToggle,
+//           child: Container(
+//             width: 30,
+//             height: 30,
+//             decoration: BoxDecoration(
+//               color: Colors.white.withOpacity(0.9),
+//               borderRadius: BorderRadius.circular(8),
+//               boxShadow: [
+//                 BoxShadow(
+//                   color: Colors.black.withOpacity(0.1),
+//                   blurRadius: 4,
+//                   offset: const Offset(0, 1),
+//                 ),
+//               ],
+//             ),
+//             child: GetBuilder<CategoryTemplatesController>(
+//               id: 'favorite_${template.id}', // Unique ID for this template
+//               builder: (controller) {
+//                 final isFav = controller.favoriteTemplateIds.contains(
+//                   template.id,
+//                 );
+//                 return Icon(
+//                   isFav ? Icons.favorite : Icons.favorite_border,
+//                   size: 16,
+//                   color: isFav ? AppColors.red400 : AppColors.gray400,
+//                 );
+//               },
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildPremiumBadge() {
+//     return Positioned(
+//       top: 6,
+//       right: 6,
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+//         decoration: BoxDecoration(
+//           color: const Color(0xFF7C3AED),
+//           borderRadius: BorderRadius.circular(6),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black.withOpacity(0.15),
+//               blurRadius: 4,
+//               offset: const Offset(0, 1),
+//             ),
+//           ],
+//         ),
+//         child: Row(
+//           mainAxisSize: MainAxisSize.min,
+//           children: const [
+//             Icon(Icons.star_rounded, size: 10, color: Colors.white),
+//             SizedBox(width: 2),
+//             Text(
+//               'PRO',
+//               style: TextStyle(
+//                 color: Colors.white,
+//                 fontSize: 8,
+//                 fontWeight: FontWeight.w700,
+//                 letterSpacing: 0.3,
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+class FavoriteButton extends StatelessWidget {
+  final double size;
+  final VoidCallback onTap;
+  final String id;
+
+  const FavoriteButton({
+    super.key,
     required this.onTap,
-    required this.onFavoriteToggle,
-    required this.categoryColor,
+    this.size = 18,
+    required this.id,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.white.withOpacity(0.9),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
+        borderRadius: BorderRadius.circular(8),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
         child: Container(
+          width: size + 12,
+          height: size + 12,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.gray200, width: 0.4),
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image Container
-              Stack(
-                children: [
-                  Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: template.aspectRatio > 0
-                            ? template.aspectRatio
-                            : 1.0,
-                        child: _buildThumbnail(),
-                      ),
-                    ),
-                  ),
-                  _buildFavoriteButton(),
-                  if (template.isPremium) _buildPremiumBadge(),
-                ],
-              ),
-
-              // Template Info
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      template.name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF111827),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (template.category.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: categoryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          template.category,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: categoryColor,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
+          child: GetBuilder<CategoryTemplatesController>(
+            id: 'favorite_$id',
+            builder: (controller) {
+              final isFav = controller.isTemplateFavorite(id);
+              return Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                size: size,
+                color: isFav ? AppColors.red400 : AppColors.gray400,
+              );
+            },
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThumbnail() {
-    if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: template.thumbnailUrl!,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        placeholder: (context, url) => _buildShimmerPlaceholder(),
-        errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: const Duration(milliseconds: 200),
-        fadeOutDuration: const Duration(milliseconds: 200),
-      );
-    }
-    return _buildPlaceholder();
-  }
-
-  Widget _buildShimmerPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFFD1D5DB),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Icon(Icons.image_outlined, size: 32, color: Color(0xFFD1D5DB)),
-      ),
-    );
-  }
-
-  Widget _buildFavoriteButton() {
-    return Positioned(
-      top: 8,
-      left: 8,
-      child: GetBuilder<CategoryTemplatesController>(
-        builder: (controller) => Material(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: onFavoriteToggle,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Obx(
-                () => Icon(
-                  controller.favoriteTemplateIds.contains(template.id)
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  size: 16,
-                  color: controller.favoriteTemplateIds.contains(template.id)
-                      ? AppColors.red400
-                      : AppColors.gray400,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPremiumBadge() {
-    return Positioned(
-      top: 6,
-      right: 6,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0xFF7C3AED),
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.star_rounded, size: 10, color: Colors.white),
-            SizedBox(width: 2),
-            Text(
-              'PRO',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
         ),
       ),
     );

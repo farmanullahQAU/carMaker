@@ -1,4 +1,4 @@
-library stack_board_helpers;
+library;
 
 export 'src/helpers/as_t.dart';
 export 'src/helpers/ex_enum.dart';
