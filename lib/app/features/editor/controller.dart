@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -96,7 +97,7 @@ class CanvasController extends GetxController {
     profileImageItems.clear();
     for (var itemJson in initialTemplate!.items) {
       if (itemJson['isProfileImage'] == true) {
-        final item = _deserializeItem(itemJson);
+        final item = deserializeItem(itemJson);
         if (item is StackImageItem) {
           profileImageItems.add(item);
         }
@@ -186,7 +187,7 @@ class CanvasController extends GetxController {
         final bool isCentered = itemJson['isCentered'] ?? false;
         final bool isProfileImage = itemJson['isProfileImage'] ?? false;
 
-        final item = _deserializeItem(itemJson);
+        final item = deserializeItem(itemJson);
         if (isProfileImage) {
           if (item is StackImageItem) {
             profileImageItems.add(item);
@@ -218,6 +219,19 @@ class CanvasController extends GetxController {
             isCentered: isCentered,
           );
         } else if (item is StackImageItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
+          final double originalWidth = (itemJson['size']['width']).toDouble();
+          final double originalHeight = (itemJson['size']['height']).toDouble();
+
+          itemSize = Size(originalWidth, originalHeight);
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+          );
+        } else if (item is StackShapeItem) {
           double scaledX = item.offset.dx;
           double scaledY = item.offset.dy;
           final double originalWidth = (itemJson['size']['width']).toDouble();
@@ -341,41 +355,6 @@ class CanvasController extends GetxController {
       imageEditorController.hideImageEditor();
     } catch (e) {
       // ImageEditorController not found, ignore
-    }
-  }
-
-  void updateTextItem(
-    StackTextItem item,
-    StackItemContent content, {
-    Size? newSize,
-  }) {
-    final currentItemJson = boardController.getAllData().firstWhere(
-      (json) => json['id'] == item.id,
-      orElse: () => <String, dynamic>{},
-    );
-
-    if (currentItemJson.isNotEmpty) {
-      final previousItem = _deserializeItem(currentItemJson);
-      _undoStack.add(
-        _ItemState(item: previousItem, action: _ItemAction.update),
-      );
-      _redoStack.clear();
-
-      // Preserve existing text data and merge with new style
-      final currentText = item.content?.data ?? '';
-      final updatedContent = (content as TextItemContent).copyWith(
-        data: currentText, // Keep existing text
-        style: content.style?.merge(item.content?.style), // Merge styles
-      );
-
-      final updatedItem = item.copyWith(
-        content: updatedContent,
-        size: newSize ?? item.size,
-      );
-
-      boardController.updateItem(updatedItem);
-      activeItem.value = updatedItem;
-      update(['canvas_stack', 'bottom_sheet']);
     }
   }
 
@@ -553,46 +532,6 @@ class CanvasController extends GetxController {
       actualStackBoardRenderSize.value.height - itemSize.height,
     );
     return Offset(clampedX, clampedY);
-  }
-
-  StackItem _deserializeItem(Map<String, dynamic> itemJson) {
-    final type = itemJson['type'];
-    if (type == 'StackTextItem') {
-      return StackTextItem.fromJson(itemJson);
-    } else if (type == 'StackImageItem') {
-      return StackImageItem.fromJson(itemJson);
-    } else {
-      throw Exception('Unsupported item type: $type');
-    }
-  }
-
-  void onItemSizeChanged(StackItem item, Size newSize) {
-    final currentItemJson = boardController.getAllData().firstWhere(
-      (json) => json['id'] == item.id,
-      orElse: () => <String, dynamic>{},
-    );
-    if (currentItemJson.isEmpty) return;
-    final previousItem = _deserializeItem(currentItemJson);
-    _undoStack.add(_ItemState(item: previousItem, action: _ItemAction.update));
-    _redoStack.clear();
-    if (item is StackTextItem && item.content != null) {
-      final currentFontSize = item.content!.style?.fontSize ?? 24.0;
-      final scaleFactor = math.min(
-        newSize.width / item.size.width,
-        newSize.height / item.size.height,
-      );
-      final newFontSize = (currentFontSize * scaleFactor).clamp(8.0, 72.0);
-      final updatedContent = item.content!.copyWith(
-        style: item.content!.style?.copyWith(fontSize: newFontSize),
-      );
-      final updatedItem = item.copyWith(size: newSize, content: updatedContent);
-      boardController.updateItem(updatedItem);
-      activeItem.value = updatedItem;
-    } else {
-      final updatedItem = item.copyWith(size: newSize);
-      boardController.updateItem(updatedItem);
-      activeItem.value = updatedItem;
-    }
   }
 
   @override
@@ -881,7 +820,7 @@ class CanvasController extends GetxController {
         categoryId: 'birthday',
         id: initialTemplate!.isDraft ? initialTemplate!.id : Uuid().v4(),
         name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
-        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
+        items: currentItems.map((e) => deserializeItem(e).toJson()).toList(),
         width: initialTemplate!.width,
         height: initialTemplate!.height,
         category: 'birthday',
@@ -908,7 +847,7 @@ class CanvasController extends GetxController {
         categoryId: 'birthday',
         id: Uuid().v4(),
         name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
-        items: currentItems.map((e) => _deserializeItem(e).toJson()).toList(),
+        items: currentItems.map((e) => deserializeItem(e).toJson()).toList(),
         width: initialTemplate!.width,
         height: initialTemplate!.height,
         category: 'birthday',

@@ -50,10 +50,9 @@ class EditorPage extends GetView<CanvasController> {
           // Show ShapeEditorPanel directly when shapes panel is active
           (activePanel == PanelType.shapes)
               ? ShapeEditorPanel(
-                  onApply: (shape) {
-                    controller.addShapeItem(shape);
-                    controller.activePanel.value = PanelType.shapeEditor;
-                  },
+                  // onApply: (shape) {
+                  //   controller.addShapeItem(shape);
+                  // },
                   onClose: () {
                     controller.activePanel.value = PanelType.none;
                   },
@@ -64,9 +63,9 @@ class EditorPage extends GetView<CanvasController> {
           (activePanel == PanelType.shapeEditor && item is StackShapeItem)
               ? ShapeEditorPanel(
                   shapeItem: item,
-                  onApply: (shape) {
-                    controller.updateItem(shape);
-                  },
+                  // onApply: (shape) {
+                  //   controller.updateItem(shape);
+                  // },
                   onClose: () {
                     controller.activePanel.value = PanelType.none;
                   },
