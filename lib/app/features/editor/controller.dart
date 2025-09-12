@@ -13,6 +13,7 @@ import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';

@@ -1,3 +1,4 @@
+import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
@@ -127,10 +128,16 @@ class AuthController extends GetxController {
   /// Sign in with Google
   Future<void> signInWithGoogle() async {
     try {
-      AppToast.loading(message: "Loading", showLogo: false);
+      AppToast.loading(message: "Signing in with Google...", showLogo: false);
 
       await _authService.signInWithGoogle();
       AppToast.closeLoading();
+      if (Get.isRegistered<ProfileController>()) {
+        Future.wait([
+          Get.find<ProfileController>().refreshDrafts(),
+          Get.find<ProfileController>().refreshFavorites(),
+        ]);
+      }
 
       // Get.back();
     } catch (e) {

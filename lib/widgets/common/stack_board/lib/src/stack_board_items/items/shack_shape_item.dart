@@ -1,3 +1,4 @@
+import 'package:cardmaker/core/extensions/extensions.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -80,17 +81,15 @@ class ShapeItemContent implements StackItemContent {
   factory ShapeItemContent.fromJson(Map<String, dynamic> data) {
     return ShapeItemContent(
       shapeBorder: parseMorphableShapeBorder(asMap(data['shapeBorder'])),
-      fillColor: data['fillColor'] == null
-          ? Colors.blue
-          : Color(asT<int>(data['fillColor'])),
+      fillColor: Color(asT<int>(data['fillColor'])),
       border: data['border'] == null
           ? DynamicBorderSide.none
           : DynamicBorderSide.fromJson(asMap(data['border'])),
       shadows: data['shadows'] == null
-          ? []
+          ? <ShapeShadow>[]
           : List<ShapeShadow>.from(
-              (data['shadows'] as List).map(
-                (e) => ShapeShadow.fromBoxShadow(e),
+              (data['shadows'] as List<dynamic>).map(
+                (e) => ShapeShadowJson.fromJson(e as Map<String, dynamic>),
               ),
             ),
     );
@@ -119,57 +118,9 @@ class ShapeItemContent implements StackItemContent {
   Map<String, dynamic> toJson() {
     return {
       if (shapeBorder != null) 'shapeBorder': shapeBorder!.toJson(),
-      'fillColor': fillColor.value,
+      'fillColor': fillColor,
       'border': border.toJson(),
       'shadows': shadows.map((e) => e.toJson()).toList(),
-    };
-  }
-}
-
-// Helper function to parse MorphableShapeBorder from JSON
-MorphableShapeBorder? parseMorphableShapeBorder(Map<String, dynamic>? data) {
-  if (data == null) return null;
-
-  final type = data['type'] as String?;
-
-  switch (type) {
-    case 'RectangleShapeBorder':
-      return RectangleShapeBorder.fromJson(data);
-    case 'CircleShapeBorder':
-      return CircleShapeBorder.fromJson(data);
-    case 'PolygonShapeBorder':
-      return PolygonShapeBorder.fromJson(data);
-    case 'StarShapeBorder':
-      return StarShapeBorder.fromJson(data);
-    case 'ArrowShapeBorder':
-      return ArrowShapeBorder.fromJson(data);
-    case 'BubbleShapeBorder':
-      return BubbleShapeBorder.fromJson(data);
-    default:
-      return RectangleShapeBorder();
-  }
-}
-
-// Extension to convert ShapeShadow to BoxShadow for rendering
-extension ShapeShadowExtension on ShapeShadow {
-  static ShapeShadow fromBoxShadow(Map<String, dynamic> data) {
-    return ShapeShadow(
-      color: Color(data['color'] as int),
-      blurRadius: (data['blurRadius'] as num).toDouble(),
-      offset: Offset(
-        (data['offset']['dx'] as num).toDouble(),
-        (data['offset']['dy'] as num).toDouble(),
-      ),
-      spreadRadius: (data['spreadRadius'] as num?)?.toDouble() ?? 0.0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'color': color.value,
-      'blurRadius': blurRadius,
-      'offset': {'dx': offset.dx, 'dy': offset.dy},
-      'spreadRadius': spreadRadius,
     };
   }
 }

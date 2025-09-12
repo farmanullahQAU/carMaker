@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:morphable_shape/morphable_shape.dart';
 
 extension StringExtension on String {
@@ -48,5 +49,27 @@ extension ShapeSideExtension on ShapeSide {
       default:
         return ShapeSide.bottom;
     }
+  }
+}
+
+extension ShapeShadowJson on ShapeShadow {
+  static ShapeShadow fromJson(Map<String, dynamic> data) {
+    return ShapeShadow(
+      color: data['color'] != null
+          ? Color(asT<int>(data['strokeColor']))
+          : const Color(0xFF000000),
+      offset: data['offset'] != null
+          ? Offset(
+              (data['offset']['dx'] as num).toDouble(),
+              (data['offset']['dy'] as num).toDouble(),
+            )
+          : Offset.zero,
+      blurRadius: (data['blurRadius'] as num?)?.toDouble() ?? 0.0,
+      spreadRadius: (data['spreadRadius'] as num?)?.toDouble() ?? 0.0,
+      blurStyle: data['blurStyle'] != null
+          ? BlurStyle.values[data['blurStyle'] as int]
+          : BlurStyle.normal,
+      // gradient: data['gradient'] != null ? /* parse gradient */ : null,  // Add if using gradients
+    );
   }
 }

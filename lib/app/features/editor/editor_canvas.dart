@@ -12,6 +12,7 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/shape_stack_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';

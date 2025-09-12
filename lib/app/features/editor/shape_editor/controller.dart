@@ -1,7 +1,7 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
-import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:morphable_shape/morphable_shape.dart';
@@ -52,37 +52,20 @@ class ShapeEditorController extends GetxController {
   var bubbleArrowHeight = 12.0.obs;
   var bubbleArrowWidth = 20.0.obs;
   var bubbleCornerRadius = 16.0.obs;
-  //  arc properties to your controller
+
+  // Arc properties
   var arcSide = ShapeSide.bottom.obs;
   var arcHeight = 20.0.obs;
   var arcIsOutward = false.obs;
+  var arcTopLeftRadius = 0.0.obs; // New property
+  var arcBottomLeftRadius = 0.0.obs; // New property
+  // Trapezoid properties
+  var trapezoidSide = ShapeSide.bottom.obs;
+  var trapezoidInset = 20.0.obs;
   // Current shape item reference
   StackShapeItem? currentShapeItem;
   MorphableShapeBorder? _originalTemplateShape;
   String? _currentShapeType;
-
-  String getShapeType() {
-    final shape = currentShapeItem?.content?.shapeBorder;
-
-    if (shape is RectangleShapeBorder) {
-      return 'rectangle';
-    } else if (shape is CircleShapeBorder) {
-      return 'circle';
-    } else if (shape is PolygonShapeBorder) {
-      return 'polygon';
-    } else if (shape is StarShapeBorder) {
-      return 'star';
-    } else if (shape is ArrowShapeBorder) {
-      return 'arrow';
-    } else if (shape is BubbleShapeBorder) {
-      return 'bubble';
-    } else if (shape is ArcShapeBorder) {
-      // Add this
-      return 'arc';
-    } else {
-      return 'rectangle';
-    }
-  }
 
   // Enhanced professional templates with curved shapes
   final List<ShapeTemplate> professionalTemplates = [
@@ -238,8 +221,11 @@ class ShapeEditorController extends GetxController {
     ShapeTemplate(
       name: 'Trapezoid',
       category: 'Curved',
-      type: 'polygon',
-      shape: PolygonShapeBorder(sides: 4, cornerRadius: 5.toPercentLength),
+      type: 'trapezoid', // New type
+      shape: TrapezoidShapeBorder(
+        side: ShapeSide.bottom,
+        inset: const Length(20, unit: LengthUnit.percent),
+      ),
     ),
     ShapeTemplate(
       name: 'Oval',
@@ -297,29 +283,6 @@ class ShapeEditorController extends GetxController {
     ),
   ];
 
-  void _createDefaultShape() {
-    currentShapeItem = StackShapeItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      size: const Size(200, 200),
-      offset: const Offset(100, 100),
-      content: ShapeItemContent(
-        shapeBorder: RectangleShapeBorder(
-          borderRadius: DynamicBorderRadius.all(
-            DynamicRadius.circular(16.toPXLength),
-          ),
-        ),
-        fillColor: fillColor.value,
-        border: DynamicBorderSide(
-          width: borderWidth.value,
-          color: borderColor.value,
-        ),
-        shadows: buildShapeShadows(),
-      ),
-    );
-    _originalTemplateShape = currentShapeItem?.content?.shapeBorder;
-    _currentShapeType = 'rectangle';
-  }
-
   List<ShapeShadow> buildShapeShadows() {
     if (shadowBlur.value > 0) {
       return [
@@ -369,6 +332,7 @@ class ShapeEditorController extends GetxController {
     } else {
       canvasController.boardController.addItem(newShape);
     }
+    print(newShape.toJson());
 
     currentShapeItem = newShape;
     update();
@@ -380,6 +344,8 @@ class ShapeEditorController extends GetxController {
         arcSide.value = ShapeSide.bottom;
         arcHeight.value = 20.0;
         arcIsOutward.value = false;
+        arcTopLeftRadius.value = 0.0; // Reset new property
+        arcBottomLeftRadius.value = 0.0; // Reset new property
         break;
       case 'rectangle':
         cornerRadius.value = 20.0;
@@ -415,10 +381,12 @@ class ShapeEditorController extends GetxController {
       final borderRadius = shape.borderRadius;
       cornerRadius.value = borderRadius.topLeft.x.toPX();
     } else if (shape is ArcShapeBorder) {
-      // Add this
       arcSide.value = shape.side;
       arcHeight.value = shape.arcHeight.toPX() ?? 20.0;
       arcIsOutward.value = shape.isOutward;
+      // For templates, set default corner radius values
+      arcTopLeftRadius.value = 0.0;
+      arcBottomLeftRadius.value = 0.0;
     } else if (shape is PolygonShapeBorder) {
       polygonSides.value = shape.sides;
       cornerRadius.value = shape.cornerRadius.toPX() ?? 10.0;
@@ -434,6 +402,9 @@ class ShapeEditorController extends GetxController {
       bubbleArrowHeight.value = shape.arrowHeight.toPX() ?? 12.0;
       bubbleArrowWidth.value = shape.arrowWidth.toPX() ?? 20.0;
       bubbleCornerRadius.value = shape.borderRadius.toPX() ?? 16.0;
+    } else if (shape is TrapezoidShapeBorder) {
+      trapezoidSide.value = shape.side;
+      trapezoidInset.value = shape.inset.toPX() ?? 20.0;
     }
   }
 
@@ -455,6 +426,12 @@ class ShapeEditorController extends GetxController {
           side: arcSide.value,
           arcHeight: arcHeight.value.toPXLength,
           isOutward: arcIsOutward.value,
+          // borderRadius: DynamicBorderRadius.only(
+          //   topLeft: DynamicRadius.circular(arcTopLeftRadius.value.toPXLength),
+          //   bottomLeft: DynamicRadius.circular(
+          //     arcBottomLeftRadius.value.toPXLength,
+          //   ),
+          // ),
           border: DynamicBorderSide(
             width: borderWidth.value,
             color: borderColor.value,
@@ -497,6 +474,8 @@ class ShapeEditorController extends GetxController {
           borderRadius: bubbleCornerRadius.value.toPXLength,
           arrowHeight: bubbleArrowHeight.value.toPXLength,
           arrowWidth: bubbleArrowWidth.value.toPXLength,
+          // arrowCenterPosition:
+          // arrowHeadPosition: ,
           border: DynamicBorderSide(
             width: borderWidth.value,
             color: borderColor.value,
@@ -505,6 +484,16 @@ class ShapeEditorController extends GetxController {
 
       case 'circle':
         return CircleShapeBorder(
+          border: DynamicBorderSide(
+            width: borderWidth.value,
+            color: borderColor.value,
+          ),
+        );
+
+      case 'trapezoid':
+        return TrapezoidShapeBorder(
+          side: trapezoidSide.value,
+          inset: trapezoidInset.value.toPercentLength,
           border: DynamicBorderSide(
             width: borderWidth.value,
             color: borderColor.value,
@@ -569,8 +558,11 @@ class ShapeEditorController extends GetxController {
     } else if (shape is BubbleShapeBorder) {
       _currentShapeType = 'bubble';
     } else if (shape is ArcShapeBorder) {
-      // Add this
       _currentShapeType = 'arc';
+    }
+
+    if (shape is TrapezoidShapeBorder) {
+      _currentShapeType = 'trapezoid';
     } else {
       _currentShapeType = 'rectangle';
     }
@@ -588,6 +580,17 @@ class ShapeEditorController extends GetxController {
 
   void updateArcIsOutward(bool isOutward) {
     arcIsOutward.value = isOutward;
+    _updateCurrentShapeRealTime();
+  }
+
+  // New methods for arc corner radius
+  void updateArcTopLeftRadius(double radius) {
+    arcTopLeftRadius.value = radius.clamp(0.0, 100.0);
+    _updateCurrentShapeRealTime();
+  }
+
+  void updateArcBottomLeftRadius(double radius) {
+    arcBottomLeftRadius.value = radius.clamp(0.0, 100.0);
     _updateCurrentShapeRealTime();
   }
 
@@ -693,6 +696,16 @@ class ShapeEditorController extends GetxController {
     _updateCurrentShapeRealTime();
   }
 
+  void updateTrapezoidSide(ShapeSide side) {
+    trapezoidSide.value = side;
+    _updateCurrentShapeRealTime();
+  }
+
+  void updateTrapezoidInset(double inset) {
+    trapezoidInset.value = inset.clamp(0.0, 50.0);
+    _updateCurrentShapeRealTime();
+  }
+
   // Real-time update method - updates the shape on canvas immediately
   void _updateCurrentShapeRealTime() {
     if (currentShapeItem != null && currentShapeItem!.content != null) {
@@ -727,14 +740,14 @@ class ShapeEditorController extends GetxController {
             max: 100,
             onChanged: updateCornerRadius,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildCornerStyleSelector(),
         ];
 
       case 'arc':
         return [
           _buildDirectionSelector(updateArcSide, arcSide.value),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.architecture,
             label: 'Arc Height',
@@ -743,7 +756,25 @@ class ShapeEditorController extends GetxController {
             max: 100,
             onChanged: updateArcHeight,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          CompactSlider(
+            icon: Icons.abc_outlined,
+            label: 'Top-Left Radius',
+            value: arcTopLeftRadius.value,
+            min: 0,
+            max: 100,
+            onChanged: updateArcTopLeftRadius,
+          ),
+          const SizedBox(height: 8),
+          CompactSlider(
+            icon: Icons.coronavirus,
+            label: 'Bottom-Left Radius',
+            value: arcBottomLeftRadius.value,
+            min: 0,
+            max: 100,
+            onChanged: updateArcBottomLeftRadius,
+          ),
+          const SizedBox(height: 8),
           _buildArcDirectionToggle(),
         ];
 
@@ -757,7 +788,7 @@ class ShapeEditorController extends GetxController {
             max: 12,
             onChanged: (value) => updatePolygonSides(value.toInt()),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.crop_square,
             label: 'Corner Radius',
@@ -778,7 +809,7 @@ class ShapeEditorController extends GetxController {
             max: 12,
             onChanged: (value) => updateStarPoints(value.toInt()),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.star_half,
             label: 'Star Inset',
@@ -792,7 +823,7 @@ class ShapeEditorController extends GetxController {
       case 'arrow':
         return [
           _buildDirectionSelector(updateArrowDirection, arrowDirection.value),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.arrow_upward,
             label: 'Arrow Height',
@@ -801,7 +832,7 @@ class ShapeEditorController extends GetxController {
             max: 50,
             onChanged: updateArrowHeight,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.arrow_right,
             label: 'Tail Width',
@@ -815,7 +846,7 @@ class ShapeEditorController extends GetxController {
       case 'bubble':
         return [
           _buildDirectionSelector(updateBubbleSide, bubbleSide.value),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.arrow_drop_up,
             label: 'Arrow Height',
@@ -824,7 +855,7 @@ class ShapeEditorController extends GetxController {
             max: 30,
             onChanged: updateBubbleArrowHeight,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.arrow_right,
             label: 'Arrow Width',
@@ -833,7 +864,7 @@ class ShapeEditorController extends GetxController {
             max: 40,
             onChanged: updateBubbleArrowWidth,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.crop_square,
             label: 'Corner Radius',
@@ -843,7 +874,19 @@ class ShapeEditorController extends GetxController {
             onChanged: updateBubbleCornerRadius,
           ),
         ];
-
+      case 'trapezoid':
+        return [
+          _buildDirectionSelector(updateTrapezoidSide, trapezoidSide.value),
+          const SizedBox(height: 8),
+          CompactSlider(
+            icon: Icons.aspect_ratio,
+            label: 'Inset',
+            value: trapezoidInset.value,
+            min: 0,
+            max: 50,
+            onChanged: updateTrapezoidInset,
+          ),
+        ];
       case 'circle':
         return [const SizedBox.shrink()];
 
@@ -888,14 +931,18 @@ class ShapeEditorController extends GetxController {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Corner Style',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 6,
+          runSpacing: 6,
           children: styles.map((styleData) {
             final style = styleData['style'] as CornerStyle;
             final name = styleData['name'] as String;
@@ -906,14 +953,14 @@ class ShapeEditorController extends GetxController {
               onTap: () => updateCornerStyle(style),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.blue.withOpacity(0.1)
                       : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isSelected ? Colors.blue : Colors.grey.shade300,
                   ),
@@ -923,14 +970,14 @@ class ShapeEditorController extends GetxController {
                   children: [
                     Icon(
                       icon,
-                      size: 16,
+                      size: 14,
                       color: isSelected ? Colors.blue : Colors.grey.shade700,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       name,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: isSelected ? Colors.blue : Colors.grey.shade700,
                         fontWeight: isSelected
                             ? FontWeight.w600
@@ -951,20 +998,24 @@ class ShapeEditorController extends GetxController {
   Widget _buildArcDirectionToggle() {
     return Row(
       children: [
-        const Text(
+        Text(
           'Arc Direction:',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         GestureDetector(
           onTap: () => updateArcIsOutward(false),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: !arcIsOutward.value
                   ? Colors.blue.withOpacity(0.1)
                   : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: !arcIsOutward.value ? Colors.blue : Colors.grey.shade300,
               ),
@@ -972,6 +1023,7 @@ class ShapeEditorController extends GetxController {
             child: Text(
               'Inward',
               style: TextStyle(
+                fontSize: 11,
                 color: !arcIsOutward.value ? Colors.blue : Colors.grey.shade700,
                 fontWeight: !arcIsOutward.value
                     ? FontWeight.w600
@@ -980,16 +1032,16 @@ class ShapeEditorController extends GetxController {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         GestureDetector(
           onTap: () => updateArcIsOutward(true),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: arcIsOutward.value
                   ? Colors.blue.withOpacity(0.1)
                   : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: arcIsOutward.value ? Colors.blue : Colors.grey.shade300,
               ),
@@ -997,6 +1049,7 @@ class ShapeEditorController extends GetxController {
             child: Text(
               'Outward',
               style: TextStyle(
+                fontSize: 11,
                 color: arcIsOutward.value ? Colors.blue : Colors.grey.shade700,
                 fontWeight: arcIsOutward.value
                     ? FontWeight.w600
@@ -1027,14 +1080,18 @@ class ShapeEditorController extends GetxController {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Direction',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 6,
+          runSpacing: 6,
           children: directions.map((directionData) {
             final side = directionData['side'] as ShapeSide;
             final name = directionData['name'] as String;
@@ -1045,14 +1102,14 @@ class ShapeEditorController extends GetxController {
               onTap: () => onChanged(side),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.blue.withOpacity(0.1)
                       : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isSelected ? Colors.blue : Colors.grey.shade300,
                   ),
@@ -1062,14 +1119,14 @@ class ShapeEditorController extends GetxController {
                   children: [
                     Icon(
                       icon,
-                      size: 16,
+                      size: 14,
                       color: isSelected ? Colors.blue : Colors.grey.shade700,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       name,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: isSelected ? Colors.blue : Colors.grey.shade700,
                         fontWeight: isSelected
                             ? FontWeight.w600

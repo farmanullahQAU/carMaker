@@ -1,5 +1,6 @@
-import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
+
+import '../items/shack_shape_item.dart';
 
 class StackShapeCase extends StatelessWidget {
   final StackShapeItem item;
