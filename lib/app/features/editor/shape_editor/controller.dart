@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -20,18 +21,21 @@ class ShapeTemplate {
   });
 }
 
-class ShapeEditorController extends GetxController {
+enum ArcDirection { inward, outward }
+
+class ShapeEditorController extends GetxController
+    with GetTickerProviderStateMixin {
   final CanvasController canvasController = Get.find();
 
   // Common properties
-  var fillColor = Colors.white.obs;
+  var fillColor = AppColors.branding.obs;
   var fillOpacity = 1.0.obs;
-  var borderColor = Colors.black.obs;
-  var borderWidth = 2.0.obs;
+  var borderColor = Colors.transparent.obs;
+  var borderWidth = 0.0.obs;
   var shadowBlur = 0.0.obs;
   var shadowOpacity = 0.3.obs;
   var shadowOffset = const Offset(2, 2).obs;
-  var shadowColor = Colors.black.obs;
+  var shadowColor = Colors.white.obs;
 
   // Shape-specific properties
   var cornerRadius = 20.0.obs;
@@ -57,15 +61,20 @@ class ShapeEditorController extends GetxController {
   var arcSide = ShapeSide.bottom.obs;
   var arcHeight = 20.0.obs;
   var arcIsOutward = false.obs;
-  var arcTopLeftRadius = 0.0.obs; // New property
-  var arcBottomLeftRadius = 0.0.obs; // New property
+  var arcTopLeftRadius = 0.0.obs;
+  var arcBottomLeftRadius = 0.0.obs;
+
   // Trapezoid properties
   var trapezoidSide = ShapeSide.bottom.obs;
   var trapezoidInset = 20.0.obs;
+
   // Current shape item reference
   StackShapeItem? currentShapeItem;
-  MorphableShapeBorder? _originalTemplateShape;
   String? _currentShapeType;
+
+  // Tab controller
+  late TabController tabController;
+  final currentTab = 0.obs;
 
   // Enhanced professional templates with curved shapes
   final List<ShapeTemplate> professionalTemplates = [
@@ -75,16 +84,6 @@ class ShapeEditorController extends GetxController {
       category: 'Basic',
       type: 'rectangle',
       shape: RectangleShapeBorder(),
-    ),
-    ShapeTemplate(
-      name: 'Rounded',
-      category: 'Basic',
-      type: 'rectangle',
-      shape: RectangleShapeBorder(
-        borderRadius: DynamicBorderRadius.all(
-          DynamicRadius.circular(16.toPXLength),
-        ),
-      ),
     ),
     ShapeTemplate(
       name: 'Circle',
@@ -217,11 +216,11 @@ class ShapeEditorController extends GetxController {
       ),
     ),
 
-    // Curved/Special Shapes (Custom implementations using existing shapes)
+    // Curved/Special Shapes
     ShapeTemplate(
       name: 'Trapezoid',
       category: 'Curved',
-      type: 'trapezoid', // New type
+      type: 'trapezoid',
       shape: TrapezoidShapeBorder(
         side: ShapeSide.bottom,
         inset: const Length(20, unit: LengthUnit.percent),
@@ -243,7 +242,6 @@ class ShapeEditorController extends GetxController {
       type: 'star',
       shape: StarShapeBorder(corners: 4, inset: 30.toPercentLength),
     ),
-    // Add to your professionalTemplates list in ShapeEditorController
     ShapeTemplate(
       name: 'Top Arc',
       category: 'Curved',
@@ -283,6 +281,23 @@ class ShapeEditorController extends GetxController {
     ),
   ];
 
+  @override
+  void onInit() {
+    super.onInit();
+    tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+  }
+
+  @override
+  void onClose() {
+    tabController.dispose();
+    super.onClose();
+  }
+
+  void updateCurrentTab(int index) {
+    currentTab.value = index;
+    update(['tab_bar']);
+  }
+
   List<ShapeShadow> buildShapeShadows() {
     if (shadowBlur.value > 0) {
       return [
@@ -296,25 +311,21 @@ class ShapeEditorController extends GetxController {
     return [];
   }
 
-  applyTemplate(ShapeTemplate template) {
-    _originalTemplateShape = template.shape;
+  void applyTemplate(ShapeTemplate template) {
     _currentShapeType = template.type;
 
     // Reset to default values for the new shape type
-    _resetToShapeDefaults(template.type);
+    // _resetToShapeDefaults(template.type);
 
-    // Extract properties from the template
-    _extractPropertiesFromShape(template.shape);
-
+    // Create the correct shape based on the template type
     final newShape = StackShapeItem(
-      id:
-          currentShapeItem?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+      id: currentShapeItem?.id,
+
       size: currentShapeItem?.size ?? const Size(200, 200),
-      offset: currentShapeItem?.offset ?? const Offset(100, 100),
+      offset: currentShapeItem?.offset ?? const Offset(222, 222),
       content: ShapeItemContent(
-        shapeBorder: _createCurrentShape(),
-        fillColor: fillColor.value.withOpacity(fillOpacity.value),
+        shapeBorder: template.shape,
+        fillColor: fillColor.value.withValues(alpha: fillOpacity.value),
         border: DynamicBorderSide(
           width: borderWidth.value,
           color: borderColor.value,
@@ -332,80 +343,9 @@ class ShapeEditorController extends GetxController {
     } else {
       canvasController.boardController.addItem(newShape);
     }
-    print(newShape.toJson());
 
     currentShapeItem = newShape;
-    update();
-  }
-
-  void _resetToShapeDefaults(String shapeType) {
-    switch (shapeType) {
-      case 'arc':
-        arcSide.value = ShapeSide.bottom;
-        arcHeight.value = 20.0;
-        arcIsOutward.value = false;
-        arcTopLeftRadius.value = 0.0; // Reset new property
-        arcBottomLeftRadius.value = 0.0; // Reset new property
-        break;
-      case 'rectangle':
-        cornerRadius.value = 20.0;
-        cornerStyle.value = CornerStyle.rounded;
-        break;
-      case 'polygon':
-        polygonSides.value = 6;
-        cornerRadius.value = 10.0;
-        break;
-      case 'star':
-        starPoints.value = 5;
-        starInset.value = 45.0;
-        break;
-      case 'arrow':
-        arrowDirection.value = ShapeSide.right;
-        arrowHeight.value = 25.0;
-        arrowTailWidth.value = 40.0;
-        break;
-      case 'bubble':
-        bubbleSide.value = ShapeSide.bottom;
-        bubbleArrowHeight.value = 12.0;
-        bubbleArrowWidth.value = 20.0;
-        bubbleCornerRadius.value = 16.0;
-        break;
-      case 'circle':
-        // Circles don't need special properties
-        break;
-    }
-  }
-
-  void _extractPropertiesFromShape(MorphableShapeBorder shape) {
-    if (shape is RectangleShapeBorder) {
-      final borderRadius = shape.borderRadius;
-      cornerRadius.value = borderRadius.topLeft.x.toPX();
-    } else if (shape is ArcShapeBorder) {
-      arcSide.value = shape.side;
-      arcHeight.value = shape.arcHeight.toPX() ?? 20.0;
-      arcIsOutward.value = shape.isOutward;
-      // For templates, set default corner radius values
-      arcTopLeftRadius.value = 0.0;
-      arcBottomLeftRadius.value = 0.0;
-    } else if (shape is PolygonShapeBorder) {
-      polygonSides.value = shape.sides;
-      cornerRadius.value = shape.cornerRadius.toPX() ?? 10.0;
-    } else if (shape is StarShapeBorder) {
-      starPoints.value = shape.corners;
-      starInset.value = shape.inset.toPX() ?? 45.0;
-    } else if (shape is ArrowShapeBorder) {
-      arrowDirection.value = shape.side;
-      arrowHeight.value = shape.arrowHeight.toPX() ?? 25.0;
-      arrowTailWidth.value = shape.tailWidth.toPX() ?? 40.0;
-    } else if (shape is BubbleShapeBorder) {
-      bubbleSide.value = shape.side;
-      bubbleArrowHeight.value = shape.arrowHeight.toPX() ?? 12.0;
-      bubbleArrowWidth.value = shape.arrowWidth.toPX() ?? 20.0;
-      bubbleCornerRadius.value = shape.borderRadius.toPX() ?? 16.0;
-    } else if (shape is TrapezoidShapeBorder) {
-      trapezoidSide.value = shape.side;
-      trapezoidInset.value = shape.inset.toPX() ?? 20.0;
-    }
+    update(['customize', 'shape_specific']);
   }
 
   MorphableShapeBorder _createCurrentShape() {
@@ -426,12 +366,6 @@ class ShapeEditorController extends GetxController {
           side: arcSide.value,
           arcHeight: arcHeight.value.toPXLength,
           isOutward: arcIsOutward.value,
-          // borderRadius: DynamicBorderRadius.only(
-          //   topLeft: DynamicRadius.circular(arcTopLeftRadius.value.toPXLength),
-          //   bottomLeft: DynamicRadius.circular(
-          //     arcBottomLeftRadius.value.toPXLength,
-          //   ),
-          // ),
           border: DynamicBorderSide(
             width: borderWidth.value,
             color: borderColor.value,
@@ -446,7 +380,6 @@ class ShapeEditorController extends GetxController {
             color: borderColor.value,
           ),
         );
-
       case 'star':
         return StarShapeBorder(
           corners: starPoints.value,
@@ -456,7 +389,6 @@ class ShapeEditorController extends GetxController {
             color: borderColor.value,
           ),
         );
-
       case 'arrow':
         return ArrowShapeBorder(
           side: arrowDirection.value,
@@ -467,21 +399,17 @@ class ShapeEditorController extends GetxController {
             color: borderColor.value,
           ),
         );
-
       case 'bubble':
         return BubbleShapeBorder(
           side: bubbleSide.value,
           borderRadius: bubbleCornerRadius.value.toPXLength,
           arrowHeight: bubbleArrowHeight.value.toPXLength,
           arrowWidth: bubbleArrowWidth.value.toPXLength,
-          // arrowCenterPosition:
-          // arrowHeadPosition: ,
           border: DynamicBorderSide(
             width: borderWidth.value,
             color: borderColor.value,
           ),
         );
-
       case 'circle':
         return CircleShapeBorder(
           border: DynamicBorderSide(
@@ -489,7 +417,6 @@ class ShapeEditorController extends GetxController {
             color: borderColor.value,
           ),
         );
-
       case 'trapezoid':
         return TrapezoidShapeBorder(
           side: trapezoidSide.value,
@@ -499,7 +426,6 @@ class ShapeEditorController extends GetxController {
             color: borderColor.value,
           ),
         );
-
       default:
         return RectangleShapeBorder(
           borderRadius: DynamicBorderRadius.all(
@@ -513,197 +439,168 @@ class ShapeEditorController extends GetxController {
     }
   }
 
-  void initializeProperties(StackShapeItem shapeItem) {
-    currentShapeItem = shapeItem;
-    _originalTemplateShape = shapeItem.content?.shapeBorder;
-
-    // Detect shape type
-    _detectShapeType(shapeItem.content?.shapeBorder);
-
-    if (shapeItem.content != null) {
-      final content = shapeItem.content!;
-      fillColor.value = content.fillColor;
-      borderColor.value = content.border.color;
-      borderWidth.value = content.border.width;
-
-      _extractPropertiesFromShape(content.shapeBorder!);
-
-      if (content.shadows.isNotEmpty) {
-        final shadow = content.shadows.first;
-        shadowBlur.value = shadow.blurRadius;
-        shadowOpacity.value = shadow.color.opacity;
-        shadowOffset.value = shadow.offset;
-        shadowColor.value = shadow.color.withOpacity(1);
-      }
-    }
-    update();
-  }
-
-  void _detectShapeType(MorphableShapeBorder? shape) {
-    if (shape == null) {
-      _currentShapeType = 'rectangle';
-      return;
-    }
-
-    if (shape is RectangleShapeBorder) {
-      _currentShapeType = 'rectangle';
-    } else if (shape is CircleShapeBorder) {
-      _currentShapeType = 'circle';
-    } else if (shape is PolygonShapeBorder) {
-      _currentShapeType = 'polygon';
-    } else if (shape is StarShapeBorder) {
-      _currentShapeType = 'star';
-    } else if (shape is ArrowShapeBorder) {
-      _currentShapeType = 'arrow';
-    } else if (shape is BubbleShapeBorder) {
-      _currentShapeType = 'bubble';
-    } else if (shape is ArcShapeBorder) {
-      _currentShapeType = 'arc';
-    }
-
-    if (shape is TrapezoidShapeBorder) {
-      _currentShapeType = 'trapezoid';
-    } else {
-      _currentShapeType = 'rectangle';
-    }
-  }
-
-  void updateArcSide(ShapeSide side) {
-    arcSide.value = side;
-    _updateCurrentShapeRealTime();
-  }
-
-  void updateArcHeight(double height) {
-    arcHeight.value = height.clamp(5.0, 100.0);
-    _updateCurrentShapeRealTime();
-  }
-
-  void updateArcIsOutward(bool isOutward) {
-    arcIsOutward.value = isOutward;
-    _updateCurrentShapeRealTime();
-  }
-
-  // New methods for arc corner radius
-  void updateArcTopLeftRadius(double radius) {
-    arcTopLeftRadius.value = radius.clamp(0.0, 100.0);
-    _updateCurrentShapeRealTime();
-  }
-
-  void updateArcBottomLeftRadius(double radius) {
-    arcBottomLeftRadius.value = radius.clamp(0.0, 100.0);
-    _updateCurrentShapeRealTime();
-  }
-
   // Common update methods with real-time updates
   void updateFillColor(Color color) {
-    fillColor.value = color as MaterialColor;
+    fillColor.value = color;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateFillOpacity(double opacity) {
     fillOpacity.value = opacity;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateBorderColor(Color color) {
     borderColor.value = color;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateBorderWidth(double width) {
     borderWidth.value = width;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateShadowBlur(double blur) {
     shadowBlur.value = blur;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateShadowOpacity(double opacity) {
     shadowOpacity.value = opacity;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateShadowOffset(Offset offset) {
     shadowOffset.value = offset;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   void updateShadowColor(Color color) {
     shadowColor.value = color;
     _updateCurrentShapeRealTime();
+    update(['customize']);
   }
 
   // Shape-specific update methods with real-time updates
   void updateCornerRadius(double radius) {
     cornerRadius.value = radius;
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateCornerStyle(CornerStyle style) {
     cornerStyle.value = style;
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updatePolygonSides(int sides) {
     polygonSides.value = sides.clamp(3, 12);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateStarPoints(int points) {
     starPoints.value = points.clamp(3, 12);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateStarInset(double inset) {
     starInset.value = inset.clamp(10.0, 90.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateArrowDirection(ShapeSide direction) {
     arrowDirection.value = direction;
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateArrowHeight(double height) {
     arrowHeight.value = height.clamp(5.0, 50.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateArrowTailWidth(double width) {
     arrowTailWidth.value = width.clamp(10.0, 80.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateBubbleSide(ShapeSide side) {
     bubbleSide.value = side;
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateBubbleArrowHeight(double height) {
     bubbleArrowHeight.value = height.clamp(5.0, 30.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateBubbleArrowWidth(double width) {
     bubbleArrowWidth.value = width.clamp(10.0, 40.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateBubbleCornerRadius(double radius) {
     bubbleCornerRadius.value = radius.clamp(0.0, 50.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
+  }
+
+  void updateArcSide(ShapeSide side) {
+    arcSide.value = side;
+    _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
+  }
+
+  void updateArcHeight(double height) {
+    arcHeight.value = height.clamp(5.0, 100.0);
+    _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
+  }
+
+  void updateArcIsOutward(bool isOutward) {
+    arcIsOutward.value = isOutward;
+    _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
+  }
+
+  void updateArcTopLeftRadius(double radius) {
+    arcTopLeftRadius.value = radius.clamp(0.0, 100.0);
+    _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
+  }
+
+  void updateArcBottomLeftRadius(double radius) {
+    arcBottomLeftRadius.value = radius.clamp(0.0, 100.0);
+    _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateTrapezoidSide(ShapeSide side) {
     trapezoidSide.value = side;
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   void updateTrapezoidInset(double inset) {
     trapezoidInset.value = inset.clamp(0.0, 50.0);
     _updateCurrentShapeRealTime();
+    update(['customize', 'shape_specific']);
   }
 
   // Real-time update method - updates the shape on canvas immediately
@@ -724,7 +621,6 @@ class ShapeEditorController extends GetxController {
       // Update the shape on the canvas in real-time
       canvasController.updateItem(currentShapeItem!);
     }
-    update();
   }
 
   // Get shape-specific controls
@@ -732,91 +628,79 @@ class ShapeEditorController extends GetxController {
     switch (_currentShapeType) {
       case 'rectangle':
         return [
-          CompactSlider(
-            icon: Icons.crop_square,
-            label: 'Corner Radius',
-            value: cornerRadius.value,
-            min: 0,
-            max: 100,
-            onChanged: updateCornerRadius,
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.crop_square,
+                  label: 'Corner',
+                  value: cornerRadius.value,
+                  min: 0,
+                  max: 100,
+                  onChanged: updateCornerRadius,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _buildCornerStyleSelector()),
+            ],
           ),
-          const SizedBox(height: 8),
-          _buildCornerStyleSelector(),
-        ];
-
-      case 'arc':
-        return [
-          _buildDirectionSelector(updateArcSide, arcSide.value),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.architecture,
-            label: 'Arc Height',
-            value: arcHeight.value,
-            min: 5,
-            max: 100,
-            onChanged: updateArcHeight,
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.abc_outlined,
-            label: 'Top-Left Radius',
-            value: arcTopLeftRadius.value,
-            min: 0,
-            max: 100,
-            onChanged: updateArcTopLeftRadius,
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.coronavirus,
-            label: 'Bottom-Left Radius',
-            value: arcBottomLeftRadius.value,
-            min: 0,
-            max: 100,
-            onChanged: updateArcBottomLeftRadius,
-          ),
-          const SizedBox(height: 8),
-          _buildArcDirectionToggle(),
         ];
 
       case 'polygon':
         return [
-          CompactSlider(
-            icon: Icons.polyline,
-            label: 'Number of Sides',
-            value: polygonSides.value.toDouble(),
-            min: 3,
-            max: 12,
-            onChanged: (value) => updatePolygonSides(value.toInt()),
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.crop_square,
-            label: 'Corner Radius',
-            value: cornerRadius.value,
-            min: 0,
-            max: 50,
-            onChanged: updateCornerRadius,
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.polyline,
+                  label: 'Sides',
+                  value: polygonSides.value.toDouble(),
+                  min: 3,
+                  max: 12,
+                  onChanged: (value) => updatePolygonSides(value.toInt()),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.crop_square,
+                  label: 'Corner',
+                  value: cornerRadius.value,
+                  min: 0,
+                  max: 50,
+                  onChanged: updateCornerRadius,
+                ),
+              ),
+            ],
           ),
         ];
 
       case 'star':
         return [
-          CompactSlider(
-            icon: Icons.star,
-            label: 'Number of Points',
-            value: starPoints.value.toDouble(),
-            min: 3,
-            max: 12,
-            onChanged: (value) => updateStarPoints(value.toInt()),
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.star_half,
-            label: 'Star Inset',
-            value: starInset.value,
-            min: 10,
-            max: 90,
-            onChanged: updateStarInset,
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.star,
+                  label: 'Points',
+                  value: starPoints.value.toDouble(),
+                  min: 3,
+                  max: 12,
+                  onChanged: (value) => updateStarPoints(value.toInt()),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.star_half,
+                  label: 'Inset',
+                  value: starInset.value,
+                  min: 10,
+                  max: 90,
+                  onChanged: updateStarInset,
+                ),
+              ),
+            ],
           ),
         ];
 
@@ -824,22 +708,30 @@ class ShapeEditorController extends GetxController {
         return [
           _buildDirectionSelector(updateArrowDirection, arrowDirection.value),
           const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.arrow_upward,
-            label: 'Arrow Height',
-            value: arrowHeight.value,
-            min: 5,
-            max: 50,
-            onChanged: updateArrowHeight,
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.arrow_right,
-            label: 'Tail Width',
-            value: arrowTailWidth.value,
-            min: 10,
-            max: 80,
-            onChanged: updateArrowTailWidth,
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.arrow_upward,
+                  label: 'Height',
+                  value: arrowHeight.value,
+                  min: 5,
+                  max: 50,
+                  onChanged: updateArrowHeight,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.arrow_right,
+                  label: 'Tail Width',
+                  value: arrowTailWidth.value,
+                  min: 10,
+                  max: 80,
+                  onChanged: updateArrowTailWidth,
+                ),
+              ),
+            ],
           ),
         ];
 
@@ -847,33 +739,64 @@ class ShapeEditorController extends GetxController {
         return [
           _buildDirectionSelector(updateBubbleSide, bubbleSide.value),
           const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.arrow_drop_up,
-            label: 'Arrow Height',
-            value: bubbleArrowHeight.value,
-            min: 5,
-            max: 30,
-            onChanged: updateBubbleArrowHeight,
-          ),
-          const SizedBox(height: 8),
-          CompactSlider(
-            icon: Icons.arrow_right,
-            label: 'Arrow Width',
-            value: bubbleArrowWidth.value,
-            min: 10,
-            max: 40,
-            onChanged: updateBubbleArrowWidth,
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.arrow_drop_up,
+                  label: 'Arrow Height',
+                  value: bubbleArrowHeight.value,
+                  min: 5,
+                  max: 30,
+                  onChanged: updateBubbleArrowHeight,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.arrow_right,
+                  label: 'Arrow Width',
+                  value: bubbleArrowWidth.value,
+                  min: 10,
+                  max: 40,
+                  onChanged: updateBubbleArrowWidth,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           CompactSlider(
             icon: Icons.crop_square,
-            label: 'Corner Radius',
+            label: 'Corner',
             value: bubbleCornerRadius.value,
             min: 0,
             max: 50,
             onChanged: updateBubbleCornerRadius,
           ),
         ];
+
+      case 'arc':
+        return [
+          _buildDirectionSelector(updateArcSide, arcSide.value),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: CompactSlider(
+                  icon: Icons.architecture,
+                  label: 'Arc Height',
+                  value: arcHeight.value,
+                  min: 5,
+                  max: 100,
+                  onChanged: updateArcHeight,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _buildCompactArcToggle()),
+            ],
+          ),
+        ];
+
       case 'trapezoid':
         return [
           _buildDirectionSelector(updateTrapezoidSide, trapezoidSide.value),
@@ -887,13 +810,14 @@ class ShapeEditorController extends GetxController {
             onChanged: updateTrapezoidInset,
           ),
         ];
+
       case 'circle':
         return [const SizedBox.shrink()];
 
       default:
         return [
           CompactSlider(
-            label: 'Corner Radius',
+            label: 'Corner',
             icon: Icons.crop_square,
             value: cornerRadius.value,
             min: 0,
@@ -994,9 +918,9 @@ class ShapeEditorController extends GetxController {
     );
   }
 
-  // Add helper method for arc direction toggle
-  Widget _buildArcDirectionToggle() {
-    return Row(
+  Widget _buildCompactArcToggle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Arc Direction:',
@@ -1006,57 +930,30 @@ class ShapeEditorController extends GetxController {
             color: Colors.grey.shade700,
           ),
         ),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: () => updateArcIsOutward(false),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: !arcIsOutward.value
-                  ? Colors.blue.withOpacity(0.1)
-                  : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: !arcIsOutward.value ? Colors.blue : Colors.grey.shade300,
-              ),
-            ),
-            child: Text(
-              'Inward',
-              style: TextStyle(
-                fontSize: 11,
-                color: !arcIsOutward.value ? Colors.blue : Colors.grey.shade700,
-                fontWeight: !arcIsOutward.value
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: () => updateArcIsOutward(true),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: arcIsOutward.value
-                  ? Colors.blue.withOpacity(0.1)
-                  : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: arcIsOutward.value ? Colors.blue : Colors.grey.shade300,
-              ),
-            ),
-            child: Text(
-              'Outward',
-              style: TextStyle(
-                fontSize: 11,
-                color: arcIsOutward.value ? Colors.blue : Colors.grey.shade700,
-                fontWeight: arcIsOutward.value
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
+        const SizedBox(height: 6),
+        ToggleButtons(
+          isSelected: [
+            !arcIsOutward.value, // Inward
+            arcIsOutward.value, // Outward
+          ],
+          onPressed: (index) {
+            if (index == 0) {
+              updateArcIsOutward(false);
+            } else {
+              updateArcIsOutward(true);
+            }
+          },
+          constraints: const BoxConstraints(minWidth: 60, minHeight: 30),
+          borderRadius: BorderRadius.circular(6),
+          selectedBorderColor: Colors.blue,
+          borderColor: Colors.grey.shade300,
+          selectedColor: Colors.blue,
+          color: Colors.grey.shade700,
+          fillColor: Colors.blue.withOpacity(0.1),
+          children: const [
+            Text('Inward', style: TextStyle(fontSize: 11)),
+            Text('Outward', style: TextStyle(fontSize: 11)),
+          ],
         ),
       ],
     );
@@ -1141,5 +1038,93 @@ class ShapeEditorController extends GetxController {
         ),
       ],
     );
+  }
+
+  void initProperties(StackShapeItem shapeItem) {
+    currentShapeItem = shapeItem;
+    final content = shapeItem.content!;
+
+    // Common properties
+    fillColor.value = content.fillColor;
+    fillOpacity.value = content.fillColor.a;
+    borderColor.value = content.border.color;
+    borderWidth.value = content.border.width;
+
+    // Shadow properties
+    shadowBlur.value = content.shadows.isNotEmpty
+        ? content.shadows.first.blurRadius
+        : 0.0;
+    shadowOpacity.value = content.shadows.isNotEmpty
+        ? content.shadows.first.color.a
+        : 0.3;
+    shadowOffset.value = content.shadows.isNotEmpty
+        ? content.shadows.first.offset
+        : const Offset(2, 2);
+    shadowColor.value = content.shadows.isNotEmpty
+        ? content.shadows.first.color
+        : Colors.white;
+
+    // Shape-specific properties
+    final shape = content.shapeBorder;
+    _currentShapeType = _determineShapeType(shape);
+
+    switch (_currentShapeType) {
+      case 'rectangle':
+        final rect = shape as RectangleShapeBorder;
+        cornerRadius.value = rect.borderRadius.topLeft.x.toPX();
+        cornerStyle.value = rect.cornerStyles.topLeft;
+        break;
+      case 'polygon':
+        final poly = shape as PolygonShapeBorder;
+        polygonSides.value = poly.sides;
+        cornerRadius.value = poly.cornerRadius.toPX();
+        break;
+      case 'star':
+        final star = shape as StarShapeBorder;
+        starPoints.value = star.corners;
+        starInset.value = star.inset.toPX();
+        break;
+      case 'arrow':
+        final arrow = shape as ArrowShapeBorder;
+        arrowDirection.value = arrow.side;
+        arrowHeight.value = arrow.arrowHeight.toPX();
+        arrowTailWidth.value = arrow.tailWidth.toPX();
+        break;
+      case 'bubble':
+        final bubble = shape as BubbleShapeBorder;
+        bubbleSide.value = bubble.side;
+        bubbleArrowHeight.value = bubble.arrowHeight.toPX();
+        bubbleArrowWidth.value = bubble.arrowWidth.toPX();
+        bubbleCornerRadius.value = bubble.borderRadius.toPX();
+        break;
+      case 'arc':
+        final arc = shape as ArcShapeBorder;
+        arcSide.value = arc.side;
+        arcHeight.value = arc.arcHeight.toPX();
+        arcIsOutward.value = arc.isOutward;
+        break;
+      case 'trapezoid':
+        final trap = shape as TrapezoidShapeBorder;
+        trapezoidSide.value = trap.side;
+        trapezoidInset.value = trap.inset.toPX();
+        break;
+      default:
+        cornerRadius.value = 20.0;
+        cornerStyle.value = CornerStyle.rounded;
+    }
+
+    update(['customize', 'shape_specific', 'templates']);
+  }
+
+  String? _determineShapeType(MorphableShapeBorder? shape) {
+    if (shape is RectangleShapeBorder) return 'rectangle';
+    if (shape is CircleShapeBorder) return 'circle';
+    if (shape is PolygonShapeBorder) return 'polygon';
+    if (shape is StarShapeBorder) return 'star';
+    if (shape is ArrowShapeBorder) return 'arrow';
+    if (shape is BubbleShapeBorder) return 'bubble';
+    if (shape is ArcShapeBorder) return 'arc';
+    if (shape is TrapezoidShapeBorder) return 'trapezoid';
+    return null;
   }
 }

@@ -24,8 +24,16 @@ class StackShapeCase extends StatelessWidget {
       width: item.size.width,
       height: item.size.height,
       decoration: ShapeDecoration(
+        // image: DecorationImage(
+        //   fit: BoxFit.cover,
+        //   image:
+        //       (Get.find<CanvasController>().activeItem.value as StackImageItem)
+        //           .content!
+        //           .image,
+        // ),
         shape: content.shapeBorder!,
         color: content.fillColor,
+
         shadows: content.shadows.map((shadow) {
           return BoxShadow(
             color: shadow.color,

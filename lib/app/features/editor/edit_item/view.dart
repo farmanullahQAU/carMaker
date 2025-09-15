@@ -1,4 +1,3 @@
-// Add this new route/page in your app
 import 'package:cardmaker/app/features/editor/edit_item/controller.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +13,7 @@ class UpdateTextView extends GetView<TextUpdateController> {
     final controller = Get.put(TextUpdateController(existingItem: item));
 
     return Scaffold(
+      resizeToAvoidBottomInset: true, // ✅ avoids stretching with keyboard
       appBar: AppBar(
         title: Text(item != null ? 'Edit Text' : 'Add Text'),
         centerTitle: true,
@@ -28,111 +28,75 @@ class UpdateTextView extends GetView<TextUpdateController> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
-                : TextButton(
+                : IconButton(
+                    icon: const Icon(Icons.check),
                     onPressed: controller.saveChanges,
-                    child: Text(
-                      'SAVE',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    tooltip: 'Save',
                   ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // Preview card
-
-            // Text input field
-            Expanded(
-              child: TextField(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // 📝 Text editor area
+              TextField(
                 controller: controller.textController,
                 maxLines: null,
-                expands: true,
-                textInputAction: TextInputAction
-                    .newline, // Shows "return" button on keyboard
-
                 keyboardType: TextInputType.multiline,
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.start,
+
                 style: TextStyle(
                   fontSize: 18,
                   color: Theme.of(context).colorScheme.onSurface,
+                  height: 1.5,
                 ),
                 decoration: InputDecoration(
+                  hintMaxLines: 8,
                   hintText: 'Type your text here...',
-                  hintStyle: TextStyle(color: Theme.of(context).hintColor),
+                  filled: true,
+                  fillColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
+                    borderSide: BorderSide.none,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  // contentPadding: const EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(16),
                 ),
                 autofocus: true,
               ),
-            ),
 
-            // Character count
-            // Expanded(
-            //   child: Padding(
-            //     padding: const EdgeInsets.only(top: 8.0),
-            //     child: Obx(
-            //       () => Text(
-            //         '${controller.characterCount.value} characters',
-            //         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            //           color: Theme.of(context).hintColor,
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            SizedBox(height: 16),
-            Expanded(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 16),
+
+              // 🔘 Buttons directly under TextField
+              Obx(
+                () => Row(
                   children: [
-                    // cancel button
-                    Flexible(
-                      fit: FlexFit.tight,
-                      child: SizedBox(
-                        child: OutlinedButton(
-                          onPressed: () => Get.back(),
-                          child: Text('Cancel'),
-                        ),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: controller.isSaving.value
+                            ? null
+                            : () => Get.back(),
+                        child: const Text('Cancel'),
                       ),
                     ),
-                    SizedBox(width: 8),
-
-                    Flexible(
-                      fit: FlexFit.tight,
-
-                      child: SizedBox(
-                        child: FilledButton(
-                          onPressed: controller.saveChanges,
-                          child: Text('Save'),
-                        ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: controller.isSaving.value
+                            ? null
+                            : controller.saveChanges,
+                        child: const Text('Save'),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

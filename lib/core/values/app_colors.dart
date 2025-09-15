@@ -8,7 +8,7 @@ class AppColors {
 
   static const Color highlight = Color.fromARGB(255, 121, 120, 120);
   static const Color backgroundLight = Color(0xFFFAFAFA);
-  static const Color backgroundDark = Color(0xFF121212);
+  static const Color backgroundDark = Color(0xFF1d2025);
 
   //center _guide color
   // Amber

@@ -79,6 +79,7 @@ class ShapeItemContent implements StackItemContent {
   });
 
   factory ShapeItemContent.fromJson(Map<String, dynamic> data) {
+    print("ddddddddddddddddddddddddddd $data");
     return ShapeItemContent(
       shapeBorder: parseMorphableShapeBorder(asMap(data['shapeBorder'])),
       fillColor: Color(asT<int>(data['fillColor'])),
@@ -118,7 +119,7 @@ class ShapeItemContent implements StackItemContent {
   Map<String, dynamic> toJson() {
     return {
       if (shapeBorder != null) 'shapeBorder': shapeBorder!.toJson(),
-      'fillColor': fillColor,
+      'fillColor': fillColor.toARGB32(),
       'border': border.toJson(),
       'shadows': shadows.map((e) => e.toJson()).toList(),
     };

@@ -20,6 +20,8 @@ class CardTemplate {
   final String imagePath;
   final IconData? icon;
   final Color color;
+  final double? backgroundHue;
+
   final bool isDraft;
 
   CardTemplate({
@@ -41,6 +43,7 @@ class CardTemplate {
     required this.imagePath,
     this.icon,
     this.color = Colors.transparent,
+    this.backgroundHue = 0.0,
     this.isDraft = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -79,9 +82,8 @@ class CardTemplate {
             fontFamily: 'MaterialIcons',
           )
         : null,
-    color: json['color'] != null
-        ? Color(json['color'] is int ? json['color'] : 0xFF000000)
-        : Colors.transparent,
+
+    backgroundHue: json['backgroundHue'].toDouble(),
     isDraft: json['isDraft'] ?? false,
   );
 
@@ -103,7 +105,7 @@ class CardTemplate {
     'tags': tags,
     'imagePath': imagePath,
     if (icon != null) 'icon': icon!.codePoint,
-    'color': color.value,
+    'backgroundHue': backgroundHue,
     'isDraft': isDraft,
   };
 
@@ -114,6 +116,7 @@ class CardTemplate {
     String? name,
     String? thumbnailUrl,
     String? backgroundImageUrl,
+    double? backgroundHue,
     List<Map<String, dynamic>>? items,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -127,7 +130,6 @@ class CardTemplate {
     List<String>? tags,
     String? imagePath,
     IconData? icon,
-    Color? color,
     bool? isDraft,
   }) {
     return CardTemplate(
@@ -135,6 +137,7 @@ class CardTemplate {
       name: name ?? this.name,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
+      backgroundHue: backgroundHue ?? this.backgroundHue,
       items: items ?? this.items,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -148,7 +151,7 @@ class CardTemplate {
       tags: tags ?? this.tags,
       imagePath: imagePath ?? this.imagePath,
       icon: icon ?? this.icon,
-      color: color ?? this.color,
+
       isDraft: isDraft ?? this.isDraft,
     );
   }

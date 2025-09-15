@@ -37,9 +37,6 @@ class EditorPage extends GetView<CanvasController> {
   }
 
   // In your EditorPage, update the buildPanelContent method
-  // In your EditorPage, update the buildPanelContent method
-  // Update your EditorPage buildPanelContent method with this version
-
   Widget buildPanelContent() {
     return GetBuilder<CanvasController>(
       id: 'bottom_sheet',
@@ -50,26 +47,32 @@ class EditorPage extends GetView<CanvasController> {
         final panels = <Widget>[
           // Show ShapeEditorPanel directly when shapes panel is active
           (activePanel == PanelType.shapes)
-              ? ShapeEditorPanel(
-                  // onApply: (shape) {
-                  //   controller.addShapeItem(shape);
-                  // },
-                  onClose: () {
-                    controller.activePanel.value = PanelType.none;
+              ? GestureDetector(
+                  onTap: () {
+                    // Allow taps to pass through to the canvas
                   },
+                  behavior: HitTestBehavior.translucent,
+                  child: ShapeEditorPanel(
+                    onClose: () {
+                      controller.activePanel.value = PanelType.none;
+                    },
+                  ),
                 )
               : const SizedBox.shrink(),
 
           // Show shape editor when a shape item is selected
           (activePanel == PanelType.shapeEditor && item is StackShapeItem)
-              ? ShapeEditorPanel(
-                  shapeItem: item,
-                  // onApply: (shape) {
-                  //   controller.updateItem(shape);
-                  // },
-                  onClose: () {
-                    controller.activePanel.value = PanelType.none;
+              ? GestureDetector(
+                  onTap: () {
+                    // Allow taps to pass through to the canvas
                   },
+                  behavior: HitTestBehavior.translucent,
+                  child: ShapeEditorPanel(
+                    shapeItem: item,
+                    onClose: () {
+                      controller.activePanel.value = PanelType.none;
+                    },
+                  ),
                 )
               : const SizedBox.shrink(),
 
@@ -109,14 +112,95 @@ class EditorPage extends GetView<CanvasController> {
 
         final panelIndex = getPanelIndex(activePanel);
 
-        return IndexedStack(
-          index: panelIndex >= 0 ? panelIndex : 0,
-          alignment: Alignment.bottomCenter,
-          children: panels,
+        return IgnorePointer(
+          // Only ignore pointers when the panel is not active
+          ignoring: activePanel == PanelType.none,
+          child: IndexedStack(
+            index: panelIndex >= 0 ? panelIndex : 0,
+            alignment: Alignment.bottomCenter,
+            children: panels,
+          ),
         );
       },
     );
   }
+  // Widget buildPanelContent() {
+  //   return GetBuilder<CanvasController>(
+  //     id: 'bottom_sheet',
+  //     builder: (controller) {
+  //       final item = controller.activeItem.value;
+  //       final activePanel = controller.activePanel.value;
+
+  //       final panels = <Widget>[
+  //         // Show ShapeEditorPanel directly when shapes panel is active
+  //         (activePanel == PanelType.shapes)
+  //             ? ShapeEditorPanel(
+  //                 // onApply: (shape) {
+  //                 //   controller.addShapeItem(shape);
+  //                 // },
+  //                 onClose: () {
+  //                   controller.activePanel.value = PanelType.none;
+  //                 },
+  //               )
+  //             : const SizedBox.shrink(),
+
+  //         // Show shape editor when a shape item is selected
+  //         (activePanel == PanelType.shapeEditor && item is StackShapeItem)
+  //             ? ShapeEditorPanel(
+  //                 shapeItem: item,
+  //                 // onApply: (shape) {
+  //                 //   controller.updateItem(shape);
+  //                 // },
+  //                 onClose: () {
+  //                   controller.activePanel.value = PanelType.none;
+  //                 },
+  //               )
+  //             : const SizedBox.shrink(),
+
+  //         _StickerPanel(controller: controller),
+  //         _HueAdjustmentPanel(controller: controller),
+  //         (item is StackTextItem)
+  //             ? _TextEditorPanel(
+  //                 key: ValueKey(item.id),
+  //                 controller: controller,
+  //                 textItem: item,
+  //               )
+  //             : const SizedBox.shrink(),
+  //         (item is StackImageItem)
+  //             ? AdvancedImagePanel(key: ValueKey(item.id), imageItem: item)
+  //             : const SizedBox.shrink(),
+  //       ];
+
+  //       // Map PanelType to the correct index
+  //       int getPanelIndex(PanelType type) {
+  //         switch (type) {
+  //           case PanelType.shapes:
+  //             return 0;
+  //           case PanelType.shapeEditor:
+  //             return 1;
+  //           case PanelType.stickers:
+  //             return 2;
+  //           case PanelType.color:
+  //             return 3;
+  //           case PanelType.text:
+  //             return 4;
+  //           case PanelType.advancedImage:
+  //             return 5;
+  //           case PanelType.none:
+  //             return -1;
+  //         }
+  //       }
+
+  //       final panelIndex = getPanelIndex(activePanel);
+
+  //       return IndexedStack(
+  //         index: panelIndex >= 0 ? panelIndex : 0,
+  //         alignment: Alignment.bottomCenter,
+  //         children: panels,
+  //       );
+  //     },
+  //   );
+  // }
 
   // Update your StackBoard customBuilder in the CanvasStack widget
 
@@ -126,6 +210,7 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
+          Text(controller.backgroundHue.toString()),
           GetBuilder<CanvasController>(
             id: 'export_button',
             builder: (controller) => _ModernExportButton(
@@ -194,138 +279,7 @@ class EditorPage extends GetView<CanvasController> {
                 ),
               ),
 
-              SafeArea(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // In your EditorPage toolbar buttons
-                    _ProfessionalToolbarButton(
-                      icon: Icons.shape_line_outlined,
-                      activeIcon: Icons.shape_line,
-                      label: 'Shapes',
-                      panelType: PanelType.shapes,
-                      activePanel: controller.activePanel,
-                      onPressed: () {
-                        if (controller.activePanel.value == PanelType.shapes) {
-                          controller.activePanel.value = PanelType.none;
-                        } else {
-                          controller.activePanel.value = PanelType.shapes;
-                          // Clear any selected item when opening shapes panel
-                          controller.activeItem.value = null;
-                        }
-                        controller.update(['bottom_sheet']);
-                      },
-                    ),
-                    _ProfessionalToolbarButton(
-                      icon: Icons.emoji_emotions_outlined,
-                      activeIcon: Icons.emoji_emotions,
-                      label: 'Stickers',
-                      panelType: PanelType.stickers,
-                      activePanel: controller.activePanel,
-                      onPressed: () {
-                        controller.activePanel.value =
-                            controller.activePanel.value == PanelType.stickers
-                            ? PanelType.none
-                            : PanelType.stickers;
-                        controller.update(['bottom_sheet']);
-                      },
-                    ),
-                    _ProfessionalToolbarButton(
-                      icon: Icons.palette_outlined,
-                      activeIcon: Icons.palette,
-                      label: 'Colors',
-                      panelType: PanelType.color,
-                      activePanel: controller.activePanel,
-                      onPressed: () {
-                        controller.activePanel.value =
-                            controller.activePanel.value == PanelType.color
-                            ? PanelType.none
-                            : PanelType.color;
-                        controller.update(['bottom_sheet']);
-                      },
-                    ),
-                    _ProfessionalToolbarButton(
-                      icon: Icons.text_fields_outlined,
-                      activeIcon: Icons.text_fields,
-                      label: 'Text',
-                      panelType: PanelType.text,
-                      activePanel: controller.activePanel,
-                      onPressed: () {
-                        if (controller.activePanel.value == PanelType.text) {
-                          controller.activePanel.value = PanelType.none;
-                        } else {
-                          if (controller.activeItem.value == null ||
-                              controller.activeItem.value is StackTextItem) {
-                            // controller.addText("Tap to edit text");
-
-                            Get.to(() => UpdateTextView());
-                          }
-                          controller.activePanel.value = PanelType.none;
-                        }
-                        controller.update(['bottom_sheet']);
-                      },
-                    ),
-                    _ProfessionalToolbarButton(
-                      icon: Icons.photo_filter_outlined,
-                      activeIcon: Icons.photo_filter,
-                      label: 'Image',
-                      panelType: PanelType.advancedImage,
-                      activePanel: controller.activePanel,
-                      onPressed: () {
-                        if (controller.activePanel.value ==
-                            PanelType.advancedImage) {
-                          controller.activePanel.value = PanelType.none;
-                        } else {
-                          if (controller.activeItem.value != null &&
-                              controller.activeItem.value is StackImageItem) {
-                            controller.activePanel.value =
-                                PanelType.advancedImage;
-                          } else {
-                            // controller.pickAndAddImage();
-
-                            // Show bottom sheet with options
-                            showModalBottomSheet<Widget>(
-                              context: context,
-                              builder: (_) => BottomSheet(
-                                onClosing: () {},
-                                builder: (context) {
-                                  return Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ListTile(
-                                        leading: Icon(
-                                          Icons.add_photo_alternate_outlined,
-                                        ),
-                                        title: Text('Add Image to Canvas'),
-                                        onTap: () {
-                                          Get.back(); // Close bottom sheet
-                                          controller.pickAndAddImage();
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: Icon(Icons.image_outlined),
-                                        title: Text('Change Background Image'),
-                                        onTap: () {
-                                          Get.back(); // Close bottom sheet
-                                          controller.pickAndUpdateBackground();
-                                        },
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                              backgroundColor: Colors.transparent,
-                              isScrollControlled: true,
-                              barrierColor: Colors.transparent,
-                            );
-                          }
-                        }
-                        controller.update(['bottom_sheet']);
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              ProfessionalBottomToolbar(controller: controller),
             ],
           ),
 
@@ -340,6 +294,49 @@ class EditorPage extends GetView<CanvasController> {
   }
 }
 
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StickerPanel extends StatelessWidget {
   final CanvasController controller;
 
@@ -349,29 +346,30 @@ class _StickerPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final categories = {
       'Popular': [
-        '❤️',
         '😍',
-        '🎉',
-        '✨',
-        '🌟',
-        '💝',
-        '🎈',
-        '🎊',
         '🥳',
-        '💕',
-        '🎁',
+        '💝',
         '🌈',
-        '⭐',
         '💎',
-        '🔥',
         '👑',
+        '😎',
+        '🎀',
+        '🥰',
+        '🙌',
+        '💯',
+        '🚀',
+        '🎯',
+        '🏆',
+        '🎖️',
+        '🥇',
+        '🎗️',
+        '😻',
+        '🤩',
+        '🔥',
       ],
       'Emojis': [
         '😀',
         '😂',
-        '🥰',
-        '😎',
-        '🤩',
         '😘',
         '🙂',
         '😊',
@@ -383,6 +381,13 @@ class _StickerPanel extends StatelessWidget {
         '🤪',
         '😴',
         '🥺',
+        '😢',
+        '😉',
+        '🤓',
+        '😣',
+        '😝',
+        '😗',
+        '😙',
       ],
       'Hearts': [
         '❤️',
@@ -400,7 +405,11 @@ class _StickerPanel extends StatelessWidget {
         '💗',
         '💖',
         '💘',
-        '💝',
+        '💟',
+        '❣️',
+        '💌',
+        '💑',
+        '💋',
       ],
       'Party': [
         '🎉',
@@ -409,73 +418,410 @@ class _StickerPanel extends StatelessWidget {
         '🎁',
         '🎂',
         '🍰',
-        '🥳',
         '🪅',
         '🎆',
         '🎇',
-        '✨',
-        '🌟',
-        '💫',
-        '⭐',
-        '🎪',
-        '🎭',
+        '🍾',
+        '🥂',
+        '🎤',
+        '🕺',
+        '💃',
+        '🎸',
+        '🥁',
+        '🎺',
+        '🎻',
+        '🎵',
+        '🎶',
+      ],
+      'Birthdays': [
+        '🧁',
+        '🕯️',
+        '🎠',
+        '🎡',
+        '🎈',
+        '🎁',
+        '🎂',
+        '🥳',
+        '🎊',
+        '🎉',
+        '🎀',
+        '🥂',
+        '🎶',
+        '🧁',
+        '🕯️',
+        '🎠',
+        '🎡',
+        '🎈',
+        '🎁',
+        '🎂',
+      ],
+      'Weddings': [
+        '💍',
+        '👰',
+        '🤵',
+        '💒',
+        '💐',
+        '👰‍♀️',
+        '🤵‍♂️',
+        '🎩',
+        '🌸',
+        '💏',
+        '👩‍❤️‍👨',
+        '👩‍❤️‍👩',
+        '👨‍❤️‍👨',
+        '💐',
+        '💍',
+        '💒',
+        '👰',
+        '🤵',
+        '🎩',
+        '🌸',
+      ],
+      'Holidays': [
+        '🎄',
+        '🎅',
+        '🦌',
+        '❄️',
+        '☃️',
+        '🎃',
+        '👻',
+        '🦃',
+        '🐰',
+        '🥚',
+        '🇺🇳',
+        '🕎',
+        '🎍',
+        '🎑',
+        '🪔',
+        '🎆',
+        '🎇',
+        '🎁',
+        '🧧',
+        '🎄',
+      ],
+      'Leaves': [
+        '🍃',
+        '🌿',
+        '🍂',
+        '🍁',
+        '🌱',
+        '🌾',
+        '🍃',
+        '🌿',
+        '🍂',
+        '🍁',
+        '🌱',
+        '🌾',
+        '🍃',
+        '🌿',
+        '🍂',
+        '🍁',
+        '🌱',
+        '🌾',
+        '🍃',
+        '🌿',
+      ],
+      'Alphabet': [
+        '🇦',
+        '🇧',
+        '🇨',
+        '🇩',
+        '🇪',
+        '🇫',
+        '🇬',
+        '🇭',
+        '🇮',
+        '🇯',
+        '🇰',
+        '🇱',
+        '🇲',
+        '🇳',
+        '🇴',
+        '🇵',
+        '🇶',
+        '🇷',
+        '🇸',
+        '🇹',
       ],
       'Nature': [
-        '🌸',
         '🌺',
         '🌻',
         '🌷',
         '🌹',
-        '🌿',
-        '🍃',
         '🌳',
         '🌲',
         '🌴',
         '🌵',
-        '🌾',
         '🌊',
         '⛅',
-        '🌈',
         '☀️',
+        '🌙',
+        '🌍',
+        '🌬️',
+        '🌪️',
+        '🌼',
+        '🌸',
+        '🌻',
+        '🌷',
+        '🌹',
       ],
-      'Symbols': [
+      'Animals': [
+        '🐶',
+        '🐱',
+        '🐻',
+        '🐼',
+        '🐨',
+        '🦁',
+        '🐯',
+        '🦒',
+        '🦊',
+        '🦄',
+        '🐘',
+        '🦋',
+        '🐝',
+        '🦉',
+        '🐦',
+        '🐳',
+        '🐬',
+        '🦚',
+        '🐢',
+        '🐙',
+      ],
+      'Food': [
+        '🍎',
+        '🍇',
+        '🍓',
+        '🍒',
+        '🍉',
+        '🍍',
+        '🍔',
+        '🍕',
+        '🍟',
+        '🍣',
+        '🍦',
+        '🍩',
+        '☕',
+        '🍵',
+        '🥐',
+        '🥞',
+        '🍜',
+        '🥗',
+        '🍪',
+        '🍫',
+      ],
+      'Travel': [
+        '✈️',
+        '🗺️',
+        '🏖️',
+        '🏝️',
+        '⛰️',
+        '🏕️',
+        '🗽',
+        '🗼',
+        '🏰',
+        '🗻',
+        '🚗',
+        '🚂',
+        '⛵',
+        '🛳️',
+        '🛸',
+        '🎒',
+        '🧳',
+        '🛫',
+        '🛬',
+        '🗿',
+      ],
+      'Motivational': [
+        '💪',
+        '💡',
         '✨',
-        '⭐',
-        '💎',
-        '👑',
-        '🔥',
+        '👊',
+        '🌱',
         '💫',
-        '⚡',
+        '🧠',
+        '🏅',
         '🌟',
-        '💥',
         '🎯',
+        '💯',
+        '⚡',
+        '🌍',
+        '🚀',
         '🏆',
         '🎖️',
-        '🏅',
         '🥇',
-        '🎗️',
+        '🙌',
+        '🌈',
+        '🔥',
+      ],
+      'Social Media': [
+        '📸',
+        '📷',
+        '📱',
+        '💬',
+        '🗣️',
+        '🔗',
+        '📍',
+        '🖼️',
+        '🎥',
+        '🎬',
+        '🔄',
+        '🔃',
+        '👍',
+        '👀',
+        '📩',
+        '📤',
+        '🌐',
+        '📲',
+        '🔔',
+        '📧',
+      ],
+      'Symbols': [
+        '⭐',
+        '⚡',
+        '💥',
         '🎪',
+        '⚙️',
+        '🛠️',
+        '🔮',
+        '🔒',
+        '🔑',
+        '🛡️',
+        '💣',
+        '🎰',
+        '🧩',
+        '🎨',
+        '🖌️',
+        '🖍️',
+        '✂️',
+        '📏',
+        '📐',
+        '🧬',
+      ],
+      'Events': [
+        '🎫',
+        '🎭',
+        '🎤',
+        '🎥',
+        '🎡',
+        '🎢',
+        '🎠',
+        '🎟️',
+        '🏟️',
+        '🎲',
+        '🎿',
+        '🏇',
+        '🏀',
+        '⚽',
+        '🏈',
+        '🎾',
+        '🏓',
+        '🏒',
+        '⛳',
+        '🏸',
+      ],
+      'Baby': [
+        '👶',
+        '🍼',
+        '🧸',
+        '🚼',
+        '👼',
+        '🛁',
+        '👶',
+        '🍼',
+        '🧸',
+        '🚼',
+        '👼',
+        '🛁',
+        '👶',
+        '🍼',
+        '🧸',
+        '🚼',
+        '👼',
+        '🛁',
+        '👶',
+        '🍼',
+      ],
+      'Fitness': [
+        '🏋️',
+        '🤸',
+        '🏃',
+        '🚴',
+        '🏊',
+        '🧘',
+        '🥊',
+        '🏋️‍♀️',
+        '🏋️‍♂️',
+        '🤸‍♀️',
+        '🤸‍♂️',
+        '🏃‍♀️',
+        '🏃‍♂️',
+        '🚴‍♀️',
+        '🚴‍♂️',
+        '🏊‍♀️',
+        '🏊‍♂️',
+        '🧘‍♀️',
+        '🧘‍♂️',
+        '🥊',
+      ],
+      'Daily Used': [
+        '📱',
+        '📧',
+        '📲',
+        '💬',
+        '📞',
+        '📅',
+        '⏰',
+        '🕒',
+        '📍',
+        '📝',
+        '✉️',
+        '📩',
+        '📤',
+        '📥',
+        '🖱️',
+        '💻',
+        '🖨️',
+        '📋',
+        '📊',
+        '📈',
       ],
     };
 
     return Container(
       height: 180,
-      decoration: BoxDecoration(color: Colors.white),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Get.theme.shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, -3),
+          ),
+        ],
+        // borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        color: Get.theme.colorScheme.surfaceContainerHighest,
+      ),
       child: DefaultTabController(
         length: categories.length,
         child: Column(
           children: [
             Container(
+              height: 33,
+              padding: EdgeInsets.symmetric(horizontal: 0),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                color: Get.theme.colorScheme.surfaceContainer,
+                // borderRadius: BorderRadius.circular(25),
               ),
               child: TabBar(
                 isScrollable: true,
+                dividerHeight: 0,
                 tabAlignment: TabAlignment.start,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  // color: AppColors.branding.withOpacity(0.1),
+                ),
                 labelColor: AppColors.branding,
-                // unselectedLabelColor: Colors.grey[600],
-                indicatorColor: AppColors.branding,
                 indicatorWeight: 3,
                 labelStyle: TextStyle(
                   fontWeight: FontWeight.w600,
@@ -493,39 +839,41 @@ class _StickerPanel extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: categories.values.map((stickers) {
-                  return GridView.builder(
+                  return SingleChildScrollView(
                     padding: EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 8,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 1,
-                    ),
-                    itemCount: stickers.length,
-                    itemBuilder: (context, index) {
-                      final sticker = stickers[index];
-                      return GestureDetector(
-                        onTap: () {
-                          controller.addSticker(sticker);
-                          // Haptic feedback
-                          // HapticFeedback.lightImpact();
-                        },
-                        child: AnimatedContainer(
-                          duration: Duration(milliseconds: 150),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Center(
-                            child: Text(
-                              sticker,
-                              style: TextStyle(fontSize: 28),
+                    child: Wrap(
+                      spacing: 8, // Horizontal spacing between stickers
+                      runSpacing: 8, // Vertical spacing between rows
+                      alignment:
+                          WrapAlignment.start, // Align stickers to the start
+                      children: stickers.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final sticker = entry.value;
+                        return GestureDetector(
+                          onTap: () {
+                            controller.addSticker(sticker);
+                            // Haptic feedback
+                            // HapticFeedback.lightImpact();
+                          },
+                          child: AnimatedContainer(
+                            duration: Duration(milliseconds: 150),
+                            width: 48, // Fixed width for each sticker
+                            height: 48, // Fixed height for each sticker
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Center(
+                              child: Text(
+                                sticker,
+                                style: TextStyle(fontSize: 28),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      }).toList(),
+                    ),
                   );
                 }).toList(),
               ),
@@ -537,6 +885,9 @@ class _StickerPanel extends StatelessWidget {
   }
 }
 
+final RxBool useAdvancedGradient = false.obs; // Default to simple gradient
+
+// Update the _HueAdjustmentPanel to its original state but with gradient options
 class _HueAdjustmentPanel extends StatelessWidget {
   final CanvasController controller;
 
@@ -544,36 +895,49 @@ class _HueAdjustmentPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.colorize, size: 20, color: AppColors.branding),
-              const SizedBox(width: 8),
-              Text(
-                'Hue Adjustment',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Obx(
-            () => Column(
+    return Obx(() {
+      final hasBackgroundImage = controller.selectedBackground.value != null;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                // Compact Hue Slider
+                Icon(
+                  hasBackgroundImage ? Icons.colorize : Icons.gradient,
+                  size: 20,
+                  color: AppColors.branding,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  hasBackgroundImage ? 'Hue Adjustment' : 'Gradient Background',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Column(
+              children: [
+                // Compact Hue/Gradient Slider
                 CompactSlider(
-                  icon: Icons.palette,
-                  label: 'Hue',
+                  icon: hasBackgroundImage ? Icons.colorize : Icons.gradient,
+                  label: hasBackgroundImage ? 'Hue' : 'Color Theme',
                   value: controller.backgroundHue.value,
                   min: 0.0,
                   max: 360.0,
@@ -581,61 +945,80 @@ class _HueAdjustmentPanel extends StatelessWidget {
                     controller.updateBackgroundHue(value);
                   },
                 ),
-                // Current Hue Preview
+                const SizedBox(height: 8),
+                // Preview with gradient
                 Container(
                   height: 24,
                   width: double.infinity,
-                  margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    gradient: controller.backgroundHue.value != 0.0
-                        ? LinearGradient(
-                            colors: [
-                              HSLColor.fromAHSL(
-                                1,
-                                controller.backgroundHue.value,
-                                1,
-                                0.5,
-                              ).toColor(),
-                              HSLColor.fromAHSL(
-                                1,
-                                controller.backgroundHue.value,
-                                0.8,
-                                0.7,
-                              ).toColor(),
-                            ],
-                          )
-                        : const LinearGradient(
-                            colors: [Colors.transparent, Colors.transparent],
-                          ),
+                    borderRadius: BorderRadius.circular(6),
+                    gradient: _getPreviewGradient(
+                      controller.backgroundHue.value,
+                      hasBackgroundImage,
+                    ),
                   ),
                   child: Center(
                     child: Text(
-                      '${controller.backgroundHue.value.round()}°',
+                      hasBackgroundImage
+                          ? '${controller.backgroundHue.value.round()}°'
+                          : 'Theme ${(controller.backgroundHue.value / 36).round() + 1}',
                       style: TextStyle(
-                        color: controller.backgroundHue.value != 0.0
-                            ? Colors.white
-                            : Colors.black,
+                        color: _getTextColor(controller.backgroundHue.value),
                         fontWeight: FontWeight.bold,
-                        shadows: controller.backgroundHue.value != 0.0
-                            ? [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ]
-                            : [],
+                        fontSize: 12,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
+                if (!hasBackgroundImage) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Drag to change gradient colors',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                ],
               ],
             ),
-          ),
+          ],
+        ),
+      );
+    });
+  }
+
+  LinearGradient _getPreviewGradient(double hueValue, bool hasBackgroundImage) {
+    if (!hasBackgroundImage) {
+      if (hueValue == 0.0) {
+        return const LinearGradient(colors: [Colors.white, Colors.white]);
+      }
+
+      final baseColor = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
+      final lighterColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor();
+      final darkerColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.3).toColor();
+
+      return LinearGradient(colors: [lighterColor, baseColor, darkerColor]);
+    } else {
+      // For images, show a simple hue preview
+      return LinearGradient(
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor(),
+          HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
         ],
-      ),
-    );
+      );
+    }
+  }
+
+  Color _getTextColor(double hueValue) {
+    // Determine if text should be white or black based on background brightness
+    final color = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
+    final brightness = ThemeData.estimateBrightnessForColor(color);
+    return brightness == Brightness.dark ? Colors.white : Colors.black;
   }
 }
 
@@ -707,6 +1090,167 @@ class ExportPreviewPage extends StatelessWidget {
   }
 }
 
+class ProfessionalBottomToolbar extends StatelessWidget {
+  final CanvasController controller;
+
+  const ProfessionalBottomToolbar({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 72,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
+          ],
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _ProfessionalToolbarButton(
+                icon: Icons.shape_line_outlined,
+                activeIcon: Icons.shape_line,
+                label: 'Shapes',
+                panelType: PanelType.shapes,
+                activePanel: controller.activePanel,
+                onPressed: () {
+                  if (controller.activePanel.value == PanelType.shapes) {
+                    controller.activePanel.value = PanelType.none;
+                  } else {
+                    controller.activePanel.value = PanelType.shapes;
+                    controller.activeItem.value = null;
+                  }
+                  controller.update(['bottom_sheet']);
+                },
+              ),
+              _ProfessionalToolbarButton(
+                icon: Icons.emoji_emotions_outlined,
+                activeIcon: Icons.emoji_emotions,
+                label: 'Stickers',
+                panelType: PanelType.stickers,
+                activePanel: controller.activePanel,
+                onPressed: () {
+                  controller.activePanel.value =
+                      controller.activePanel.value == PanelType.stickers
+                      ? PanelType.none
+                      : PanelType.stickers;
+                  controller.update(['bottom_sheet']);
+                },
+              ),
+              _ProfessionalToolbarButton(
+                icon: Icons.palette_outlined,
+                activeIcon: Icons.palette,
+                label: 'Colors',
+                panelType: PanelType.color,
+                activePanel: controller.activePanel,
+                onPressed: () {
+                  controller.activePanel.value =
+                      controller.activePanel.value == PanelType.color
+                      ? PanelType.none
+                      : PanelType.color;
+                  controller.update(['bottom_sheet']);
+                },
+              ),
+              _ProfessionalToolbarButton(
+                icon: Icons.text_fields_outlined,
+                activeIcon: Icons.text_fields,
+                label: 'Text',
+                panelType: PanelType.text,
+                activePanel: controller.activePanel,
+                onPressed: () {
+                  if (controller.activePanel.value == PanelType.text) {
+                    controller.activePanel.value = PanelType.none;
+                  } else {
+                    if (controller.activeItem.value == null ||
+                        controller.activeItem.value is StackTextItem) {
+                      Get.to(() => UpdateTextView());
+                    }
+                    controller.activePanel.value = PanelType.none;
+                  }
+                  controller.update(['bottom_sheet']);
+                },
+              ),
+              _ProfessionalToolbarButton(
+                icon: Icons.photo_filter_outlined,
+                activeIcon: Icons.photo_filter,
+                label: 'Image',
+                panelType: PanelType.advancedImage,
+                activePanel: controller.activePanel,
+                onPressed: () {
+                  if (controller.activePanel.value == PanelType.advancedImage) {
+                    controller.activePanel.value = PanelType.none;
+                  } else {
+                    if (controller.activeItem.value != null &&
+                        controller.activeItem.value is StackImageItem) {
+                      controller.activePanel.value = PanelType.advancedImage;
+                    } else {
+                      _showImageOptions(context);
+                    }
+                  }
+                  controller.update(['bottom_sheet']);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showImageOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionButton(
+                icon: Icons.add_photo_alternate_outlined,
+                label: "Add Image to Canvas",
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickAndAddImage();
+                },
+              ),
+              const SizedBox(height: 12),
+              _ActionButton(
+                icon: Icons.image_outlined,
+                label: "Change Background Image",
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickAndUpdateBackground();
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _ProfessionalToolbarButton extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -728,39 +1272,57 @@ class _ProfessionalToolbarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final isActive = activePanel.value == panelType;
-      return GestureDetector(
-        onTap: onPressed,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive
-                ? AppColors.branding.withOpacity(0.1)
-                : Colors.transparent,
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+
+      return Tooltip(
+        message: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
             borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedScale(
-                scale: isActive ? 1.1 : 1.0,
-                duration: Duration(milliseconds: 200),
-                child: Icon(
-                  isActive ? activeIcon : icon,
-                  color: isActive ? AppColors.branding : Colors.grey[600],
-                  size: 24,
-                ),
+            child: SizedBox(
+              width: 64,
+              child: Column(
+                spacing: 6,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    padding: EdgeInsets.all(0),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? colorScheme.primary.withOpacity(0.12)
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isActive ? activeIcon : icon,
+                      size: 22,
+                      color: isActive
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  AnimatedDefaultTextStyle(
+                    duration: Duration(milliseconds: 200),
+                    style: theme.textTheme.bodySmall!.copyWith(
+                      fontSize: 10,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: isActive
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              // SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  // fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  // color: isActive ? AppColors.branding : Colors.grey[600],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
@@ -1055,6 +1617,82 @@ class CanvasStack extends StatelessWidget {
     required this.scaledCanvasHeight,
   });
 
+  // Add this method to the CanvasStack class
+
+  // Replace the _getBackgroundGradient method with this professional version
+  // Add this method to the CanvasStack class
+  LinearGradient _getBackgroundGradient(double hueValue) {
+    // Predefined professional gradients for different hue ranges
+    if (hueValue == 0.0) {
+      return const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.transparent, Colors.transparent],
+        stops: [0.0, 1.0],
+      );
+    } else if (hueValue < 60) {
+      // Reds and oranges
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 1, 0.6).toColor(),
+          HSLColor.fromAHSL(1, hueValue + 30, 0.9, 0.4).toColor(),
+        ],
+      );
+    } else if (hueValue < 120) {
+      // Yellows and greens
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 1, 0.7).toColor(),
+          HSLColor.fromAHSL(1, hueValue - 30, 0.9, 0.4).toColor(),
+        ],
+      );
+    } else if (hueValue < 180) {
+      // Greens and teals
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 0.9, 0.6).toColor(),
+          HSLColor.fromAHSL(1, hueValue + 20, 0.8, 0.4).toColor(),
+        ],
+      );
+    } else if (hueValue < 240) {
+      // Blues
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 0.9, 0.7).toColor(),
+          HSLColor.fromAHSL(1, hueValue - 30, 0.8, 0.4).toColor(),
+        ],
+      );
+    } else if (hueValue < 300) {
+      // Purples
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
+          HSLColor.fromAHSL(1, hueValue + 20, 0.9, 0.4).toColor(),
+        ],
+      );
+    } else {
+      // Pinks and magentas
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          HSLColor.fromAHSL(1, hueValue, 0.9, 0.7).toColor(),
+          HSLColor.fromAHSL(1, hueValue - 30, 0.8, 0.4).toColor(),
+        ],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<CanvasController>(
@@ -1072,14 +1710,11 @@ class CanvasStack extends StatelessWidget {
                   width: scaledCanvasWidth.value,
                   height: scaledCanvasHeight.value,
                   child: Container(
-                    color: controller.backgroundHue.value == 0.0
-                        ? Colors.transparent
-                        : HSLColor.fromAHSL(
-                            1,
-                            controller.backgroundHue.value,
-                            1,
-                            0.5,
-                          ).toColor(),
+                    decoration: BoxDecoration(
+                      gradient: _getBackgroundGradient(
+                        controller.backgroundHue.value,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1177,6 +1812,7 @@ class CanvasStack extends StatelessWidget {
                             controller.allowTouch.value = false;
                             controller.activePhotoItem.value = null;
                           }
+
                           controller.activeItem.value = null;
                           controller.activePanel.value = PanelType.none;
                           controller.update(['stack_board']);

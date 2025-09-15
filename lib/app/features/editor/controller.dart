@@ -10,7 +10,6 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
-import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
@@ -30,6 +29,7 @@ import 'package:uuid/uuid.dart';
 class CanvasController extends GetxController {
   final authService = Get.find<AuthService>();
   final firestoreService = FirestoreService();
+  final RxBool useAdvancedGradient = false.obs; // Default to simple gradient
 
   final StackBoardController boardController = StackBoardController();
   final RxString selectedFont = 'Poppins'.obs;
@@ -92,6 +92,7 @@ class CanvasController extends GetxController {
     templateName.value = initialTemplate!.name;
 
     selectedBackground.value = initialTemplate?.backgroundImageUrl;
+    backgroundHue.value = initialTemplate!.backgroundHue!;
     boardController.clear();
 
     // Collect all profile images from initialTemplate
@@ -179,7 +180,7 @@ class CanvasController extends GetxController {
     selectedBackground.value = template.backgroundImageUrl;
     templateName.value = template.name;
 
-    backgroundHue.value = 0.0;
+    backgroundHue.value = template.backgroundHue!.toDouble();
     boardController.clear();
     profileImageItems.clear();
 
@@ -359,6 +360,40 @@ class CanvasController extends GetxController {
     }
   }
 
+  // Future<void> uploadTemplate(CardTemplate template) async {
+  //   try {
+  //     if (authService.user == null) {
+  //       Get.toNamed(Routes.auth);
+  //       return;
+  //     }
+
+  //     final thumbnailFile = await exportAsImage();
+
+  //     // Handle background image
+  //     File? backgroundFile;
+  //     if ((selectedBackground.value?.isNotEmpty ?? false) &&
+  //         selectedBackground.value != template.backgroundImageUrl &&
+  //         (!selectedBackground.value!.startsWith('https') ||
+  //             !selectedBackground.value!.startsWith('http'))) {
+  //       backgroundFile = File(selectedBackground.value!);
+  //     }
+
+  //     // Use TemplateService to upload and save
+  //     await firestoreService.addTemplate(
+  //       template,
+  //       thumbnailFile: thumbnailFile,
+  //       backgroundFile: backgroundFile,
+  //       newImageFlags: newImageFlags,
+  //     );
+
+  //     // Cleanup after successful upload
+
+  //     _cleanupTempFiles(thumbnailFile, backgroundFile);
+  //   } catch (err) {
+  //     AppToast.error(message: err.toString());
+  //   }
+  // }
+
   Future<void> uploadTemplate(CardTemplate template) async {
     try {
       if (authService.user == null) {
@@ -370,23 +405,28 @@ class CanvasController extends GetxController {
 
       // Handle background image
       File? backgroundFile;
-      if ((selectedBackground.value?.isNotEmpty ?? false) &&
-          selectedBackground.value != template.backgroundImageUrl &&
-          (!selectedBackground.value!.startsWith('https') ||
-              !selectedBackground.value!.startsWith('http'))) {
-        backgroundFile = File(selectedBackground.value!);
+      String? backgroundImageUrl = template.backgroundImageUrl;
+
+      // Check if a new background image was selected (local file path)
+      if (selectedBackground.value?.isNotEmpty ?? false) {
+        if (!selectedBackground.value!.startsWith('http')) {
+          // New local image selected
+          backgroundFile = File(selectedBackground.value!);
+        } else {
+          // Retain the selected background URL (if it's a URL)
+          backgroundImageUrl = selectedBackground.value;
+        }
       }
 
       // Use TemplateService to upload and save
       await firestoreService.addTemplate(
-        template,
+        template.copyWith(backgroundImageUrl: backgroundImageUrl),
         thumbnailFile: thumbnailFile,
         backgroundFile: backgroundFile,
         newImageFlags: newImageFlags,
       );
 
       // Cleanup after successful upload
-
       _cleanupTempFiles(thumbnailFile, backgroundFile);
     } catch (err) {
       AppToast.error(message: err.toString());
@@ -430,74 +470,6 @@ class CanvasController extends GetxController {
       actualStackBoardRenderSize.value = size;
       _updateGridSize();
     }
-  }
-
-  Future<void> saveDesign() async {
-    final double originalWidth = initialTemplate!.width.toDouble();
-    final double originalHeight = initialTemplate!.height.toDouble();
-
-    final List<Map<String, dynamic>> exportedItems = [];
-    final currentItems = boardController.getAllData();
-
-    debugPrint('Current Items: $currentItems', wrapWidth: 1000);
-
-    // Include all profile images from profileImageItems
-    if (profileImageItems.isNotEmpty) {
-      for (final profileItem in profileImageItems) {
-        exportedItems.add(profileItem.toJson());
-      }
-    }
-
-    for (final itemJson in currentItems) {
-      final type = itemJson['type'];
-      final Map<String, dynamic> exportedItem = {
-        'type': type,
-        'id': itemJson['id'],
-        'status': itemJson['status'] ?? 0,
-        'isCentered': itemJson['isCentered'] ?? false,
-        'size': {
-          'width': itemJson['size']['width'],
-          'height': itemJson['size']['height'],
-        },
-        'offset': {
-          'dx': itemJson['offset']['dx'],
-          'dy': itemJson['offset']['dy'],
-        },
-        'isProfileImage': false,
-      };
-
-      if (type == 'StackTextItem') {
-        exportedItem['content'] = itemJson['content'];
-      } else if (type == 'StackImageItem') {
-        exportedItem['content'] = StackImageItem.fromJson(
-          itemJson,
-        ).content?.toJson();
-      }
-
-      exportedItems.add(exportedItem);
-    }
-
-    final temp = CardTemplate(
-      id: 'exported_${initialTemplate!.id}_modified_${DateTime.now().millisecondsSinceEpoch}',
-      name: templateName.value.isNotEmpty
-          ? templateName.value
-          : initialTemplate!.name,
-      thumbnailUrl: initialTemplate!.thumbnailUrl,
-      backgroundImageUrl: initialTemplate?.backgroundImageUrl ?? "",
-      items: exportedItems,
-      createdAt: DateTime.now(),
-      updatedAt: null,
-      category: initialTemplate!.category,
-
-      categoryId: initialTemplate!.categoryId,
-      compatibleDesigns: initialTemplate!.compatibleDesigns,
-      width: originalWidth,
-      height: originalHeight,
-      isPremium: initialTemplate!.isPremium,
-      tags: initialTemplate?.tags ?? [],
-      imagePath: "",
-    );
-    await StorageService.addTemplate(temp);
   }
 
   void _updateGridSize() {
@@ -585,7 +557,7 @@ class CanvasController extends GetxController {
           offset: Offset(100, 100),
 
           size: Size(Get.width * 0.3, Get.width * 0.3),
-          lockZOrder: true,
+          lockZOrder: false,
           isNewImage: true,
           content: ImageItemContent(filePath: image.path),
         );
@@ -829,6 +801,7 @@ class CanvasController extends GetxController {
         isPremium: false,
 
         isDraft: true,
+        backgroundHue: backgroundHue.value.roundToDouble(),
       );
 
       uploadTemplate(template);
@@ -856,6 +829,7 @@ class CanvasController extends GetxController {
         isPremium: false,
 
         isDraft: false,
+        backgroundHue: backgroundHue.value.roundToDouble(),
       );
 
       uploadTemplate(template);

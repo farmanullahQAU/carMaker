@@ -29,7 +29,7 @@ class ProfileController extends GetxController
   // Draft count
   final RxInt draftsCount = 0.obs;
 
-  static const int _pageSize = 2;
+  static const int _pageSize = 10;
 
   Timer? _favoritesDebounceTimer;
 
@@ -236,14 +236,6 @@ class ProfileController extends GetxController
     lastFavoriteDocument = null;
     hasMoreFavorites.value = true;
     await loadFavorites();
-    Get.snackbar(
-      'Favorites Refreshed',
-      'Your favorites have been updated.',
-      snackPosition: SnackPosition.TOP,
-      duration: Duration(seconds: 2),
-      backgroundColor: Colors.blue.shade600,
-      colorText: Colors.white,
-    );
   }
 
   @override
