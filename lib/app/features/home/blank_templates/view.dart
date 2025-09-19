@@ -10,11 +10,14 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Get.theme.colorScheme.surface,
+      appBar: AppBar(
+        // title: const Text('Professional Templates'),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 16.0),
               _buildSocialMediaSection(),
               const SizedBox(height: 32.0),
               _buildPhotoDesignsSection(),

@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
-import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
@@ -107,13 +107,6 @@ class CanvasController extends GetxController {
     }
   }
 
-  void addShapeItem(StackShapeItem shapeItem) {
-    boardController.addItem(shapeItem);
-    activeItem.value = shapeItem;
-    activePanel.value = PanelType.shapeEditor;
-    update(['canvas_stack', 'bottom_sheet']);
-  }
-
   void updateItem(StackItem item) {
     final existingItem = boardController.getById(item.id);
     if (existingItem != null) {
@@ -186,7 +179,6 @@ class CanvasController extends GetxController {
 
     for (final itemJson in template.items) {
       try {
-        final bool isCentered = itemJson['isCentered'] ?? false;
         final bool isProfileImage = itemJson['isProfileImage'] ?? false;
 
         final item = deserializeItem(itemJson);
@@ -209,8 +201,8 @@ class CanvasController extends GetxController {
           );
 
           itemSize = Size(
-            itemJson['size']['width'],
-            itemJson['size']['height'],
+            itemJson['size']['width'].toDouble(),
+            itemJson['size']['height'].toDouble(),
           );
 
           updatedItem = item.copyWith(
@@ -218,7 +210,6 @@ class CanvasController extends GetxController {
             size: itemSize,
             status: StackItemStatus.idle,
             content: item.content!.copyWith(style: updatedStyle),
-            isCentered: isCentered,
           );
         } else if (item is StackImageItem) {
           double scaledX = item.offset.dx;
@@ -250,10 +241,6 @@ class CanvasController extends GetxController {
           throw Exception('Unsupported item type: ${item.runtimeType}');
         }
 
-        debugPrint(
-          'Loaded item: ${item.id}, isCentered: $isCentered, size: $itemSize, offset: ${updatedItem.offset}',
-        );
-
         boardController.addItem(updatedItem);
         _undoStack.add(_ItemState(item: updatedItem, action: _ItemAction.add));
       } catch (err) {
@@ -266,12 +253,20 @@ class CanvasController extends GetxController {
     ]); // Trigger rebuild of canvas and bottom sheet
   }
 
-  void addProfileImage(String assetPath, {Offset? offset, Size? size}) {
+  void addProfileImage(
+    String assetPath, {
+    Offset? offset,
+    Size? size,
+    bool isPlaceholder = false,
+  }) {
     final profileImage = StackImageItem(
       id: 'profile_image_${DateTime.now().millisecondsSinceEpoch}',
       offset: offset ?? const Offset(690.0, 115.0),
       size: size ?? const Size(436.0, 574.0),
-      content: ImageItemContent(assetName: assetPath),
+      content: ImageItemContent(
+        assetName: assetPath,
+        isPlaceholder: isPlaceholder, // Set the flag
+      ),
       isProfileImage: true,
       lockZOrder: true,
       status: StackItemStatus.idle,
@@ -360,44 +355,10 @@ class CanvasController extends GetxController {
     }
   }
 
-  // Future<void> uploadTemplate(CardTemplate template) async {
-  //   try {
-  //     if (authService.user == null) {
-  //       Get.toNamed(Routes.auth);
-  //       return;
-  //     }
-
-  //     final thumbnailFile = await exportAsImage();
-
-  //     // Handle background image
-  //     File? backgroundFile;
-  //     if ((selectedBackground.value?.isNotEmpty ?? false) &&
-  //         selectedBackground.value != template.backgroundImageUrl &&
-  //         (!selectedBackground.value!.startsWith('https') ||
-  //             !selectedBackground.value!.startsWith('http'))) {
-  //       backgroundFile = File(selectedBackground.value!);
-  //     }
-
-  //     // Use TemplateService to upload and save
-  //     await firestoreService.addTemplate(
-  //       template,
-  //       thumbnailFile: thumbnailFile,
-  //       backgroundFile: backgroundFile,
-  //       newImageFlags: newImageFlags,
-  //     );
-
-  //     // Cleanup after successful upload
-
-  //     _cleanupTempFiles(thumbnailFile, backgroundFile);
-  //   } catch (err) {
-  //     AppToast.error(message: err.toString());
-  //   }
-  // }
-
   Future<void> uploadTemplate(CardTemplate template) async {
     try {
       if (authService.user == null) {
-        Get.toNamed(Routes.auth);
+        Get.to(() => ProfileTab());
         return;
       }
 
@@ -514,25 +475,102 @@ class CanvasController extends GetxController {
     super.onClose();
   }
 
-  Future<void> replaceImageItem() async {
+  Future<String?>? getImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      return image.path;
+    }
+
+    return null;
+  }
+
+  void toggleZLock(String itemId) {
+    final currentItem = boardController.getById(itemId);
+    if (currentItem != null) {
+      print("Current item zlock ${currentItem.lockZOrder}");
+      final newLockState = !(currentItem.lockZOrder);
+
+      // Create updated item with new lock state
+      final updatedItem = currentItem.copyWith(lockZOrder: newLockState);
+      print("UpdatedItem ${updatedItem.lockZOrder}");
+      print("UpdatedItem ID: ${updatedItem.id}");
+      print("UpdatedItem hashCode: ${updatedItem.hashCode}");
+
+      // Update the item in the board controller
+      boardController.updateItem(updatedItem);
+
+      // IMPORTANT: Force reactive update for activeItem with multiple approaches
+      if (activeItem.value?.id == itemId) {
+        print(
+          "Before update - activeItem hashCode: ${activeItem.value.hashCode}",
+        );
+
+        // First, clear the active item to force a change
+        activeItem.value = null;
+
+        // Then set it to the updated item
+        activeItem.value = updatedItem;
+
+        print(
+          "After update - activeItem hashCode: ${activeItem.value.hashCode}",
+        );
+        print(
+          "Active item zorder after update ${activeItem.value?.lockZOrder}",
+        );
+
+        // Force refresh
+        activeItem.refresh();
+      }
+
+      // Trigger UI updates
+      update(['canvas_stack', 'export_button', 'z_lock_button']);
+    }
+  }
+  // void toggleZLock(String itemId) {
+  //   final currentItem = boardController.getById(itemId);
+  //   if (currentItem != null) {
+  //     print("Current item zlock ${currentItem.lockZOrder}");
+  //     final newLockState = !(currentItem.lockZOrder);
+
+  //     // This will now work correctly!
+  //     final updatedItem = currentItem.copyWith(lockZOrder: newLockState);
+  //     print("UpdatedItem ${updatedItem.lockZOrder}");
+
+  //     boardController.updateItem(updatedItem);
+  //     final bb = boardController.getById(itemId);
+  //     print("board new ${bb?.lockZOrder}");
+
+  //     if (activeItem.value?.id == itemId) {
+  //       activeItem.value = bb; // ✅ Fixed: Proper assignment
+  //       print("Active item zorder ${activeItem.value?.lockZOrder}");
+  //     }
+
+  //     update(['canvas_stack', 'export_button', 'z_lock_button']);
+  //   }
+  // }
+
+  Future<void> replaceImageItem(StackImageItem item) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        var item = activeItem.value as StackImageItem;
-
         final newItem = StackImageItem(
           offset: item.offset,
           size: item.size,
-          content: item.content?.copyWith(filePath: image.path),
+          content: item.content?.copyWith(
+            filePath: image.path, // New image from phone
+            isPlaceholder: false,
+          ),
+          lockZOrder: item.lockZOrder,
           angle: item.angle,
           isProfileImage: item.isProfileImage,
-          isNewImage: true,
+          isNewImage: true, // Mark for upload
         );
         boardController.removeById(item.id);
         boardController.addItem(newItem);
 
         activeItem.value = newItem;
-        newImageFlags[item.id] = true; // Mark as new image
+        newImageFlags[newItem.id] = true; // Mark as new image for upload
 
         update(['canvas_stack']);
       }
@@ -548,22 +586,26 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<void> pickAndAddImage() async {
+  Future<void> pickAndAddImage({bool isPlaceholder = false}) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         final newItem = StackImageItem(
           id: UniqueKey().toString(),
           offset: Offset(100, 100),
-
           size: Size(Get.width * 0.3, Get.width * 0.3),
           lockZOrder: false,
-          isNewImage: true,
-          content: ImageItemContent(filePath: image.path),
+          isNewImage: !isPlaceholder, // Only mark as new if not placeholder
+          content: ImageItemContent(
+            filePath: image.path, // Local image from phone
+            isPlaceholder: isPlaceholder, // Set based on parameter
+          ),
         );
         boardController.addItem(newItem);
-        newImageFlags[newItem.id] = true; // Mark as new image
-
+        if (!isPlaceholder) {
+          newImageFlags[newItem.id] =
+              true; // Mark for upload if not placeholder
+        }
         activeItem.value = newItem;
         update(['canvas_stack']);
       }

@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
+import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/view.dart';
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
@@ -124,85 +125,6 @@ class EditorPage extends GetView<CanvasController> {
       },
     );
   }
-  // Widget buildPanelContent() {
-  //   return GetBuilder<CanvasController>(
-  //     id: 'bottom_sheet',
-  //     builder: (controller) {
-  //       final item = controller.activeItem.value;
-  //       final activePanel = controller.activePanel.value;
-
-  //       final panels = <Widget>[
-  //         // Show ShapeEditorPanel directly when shapes panel is active
-  //         (activePanel == PanelType.shapes)
-  //             ? ShapeEditorPanel(
-  //                 // onApply: (shape) {
-  //                 //   controller.addShapeItem(shape);
-  //                 // },
-  //                 onClose: () {
-  //                   controller.activePanel.value = PanelType.none;
-  //                 },
-  //               )
-  //             : const SizedBox.shrink(),
-
-  //         // Show shape editor when a shape item is selected
-  //         (activePanel == PanelType.shapeEditor && item is StackShapeItem)
-  //             ? ShapeEditorPanel(
-  //                 shapeItem: item,
-  //                 // onApply: (shape) {
-  //                 //   controller.updateItem(shape);
-  //                 // },
-  //                 onClose: () {
-  //                   controller.activePanel.value = PanelType.none;
-  //                 },
-  //               )
-  //             : const SizedBox.shrink(),
-
-  //         _StickerPanel(controller: controller),
-  //         _HueAdjustmentPanel(controller: controller),
-  //         (item is StackTextItem)
-  //             ? _TextEditorPanel(
-  //                 key: ValueKey(item.id),
-  //                 controller: controller,
-  //                 textItem: item,
-  //               )
-  //             : const SizedBox.shrink(),
-  //         (item is StackImageItem)
-  //             ? AdvancedImagePanel(key: ValueKey(item.id), imageItem: item)
-  //             : const SizedBox.shrink(),
-  //       ];
-
-  //       // Map PanelType to the correct index
-  //       int getPanelIndex(PanelType type) {
-  //         switch (type) {
-  //           case PanelType.shapes:
-  //             return 0;
-  //           case PanelType.shapeEditor:
-  //             return 1;
-  //           case PanelType.stickers:
-  //             return 2;
-  //           case PanelType.color:
-  //             return 3;
-  //           case PanelType.text:
-  //             return 4;
-  //           case PanelType.advancedImage:
-  //             return 5;
-  //           case PanelType.none:
-  //             return -1;
-  //         }
-  //       }
-
-  //       final panelIndex = getPanelIndex(activePanel);
-
-  //       return IndexedStack(
-  //         index: panelIndex >= 0 ? panelIndex : 0,
-  //         alignment: Alignment.bottomCenter,
-  //         children: panels,
-  //       );
-  //     },
-  //   );
-  // }
-
-  // Update your StackBoard customBuilder in the CanvasStack widget
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +132,8 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
-          Text(controller.backgroundHue.toString()),
+          _ZLockToggleButton(),
+
           GetBuilder<CanvasController>(
             id: 'export_button',
             builder: (controller) => _ModernExportButton(
@@ -1227,6 +1150,14 @@ class ProfessionalBottomToolbar extends StatelessWidget {
             children: [
               _ActionButton(
                 icon: Icons.add_photo_alternate_outlined,
+                label: "Add img as placeholder",
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickAndAddImage(isPlaceholder: true);
+                },
+              ),
+              _ActionButton(
+                icon: Icons.add_photo_alternate_outlined,
                 label: "Add Image to Canvas",
                 onTap: () {
                   Navigator.pop(context);
@@ -1813,8 +1744,15 @@ class CanvasStack extends StatelessWidget {
                             controller.activePhotoItem.value = null;
                           }
 
+                          if (controller.activeItem.value is StackShapeItem) {
+                            Get.find<ShapeEditorController>().currentShapeItem =
+                                null;
+                          }
+
                           controller.activeItem.value = null;
+
                           controller.activePanel.value = PanelType.none;
+
                           controller.update(['stack_board']);
                         }
                       }
@@ -1832,20 +1770,32 @@ class CanvasStack extends StatelessWidget {
                           return StackTextCase(item: item, isFitted: true);
                         } else if (item is StackImageItem &&
                             item.content != null) {
-                          return StackImageCase(item: item);
+                          return InkWell(
+                            onTap: () async {
+                              // final path = await controller.getImage();
+                              // print(path);
+                              // print("pppppppppppp");
+                              // final oldItem = item;
+                              // final contents = item.content;
+                              // // controller.activeItem.value = item;
+                              // oldItem.copyWith(
+                              //   content: contents?.copyWith(filePath: path),
+                              //   isNewImage: true,
+                              // );
+
+                              // controller.boardController.updateItem(oldItem);
+                              controller.replaceImageItem(item);
+                            },
+
+                            child: StackImageCase(item: item),
+                          );
                         } else if (item is StackShapeItem &&
                             item.content != null) {
                           return StackShapeCase(item: item);
                         }
                         return const SizedBox.shrink();
                       },
-                      // customBuilder: (StackItem<StackItemContent> item) {
-                      //   return (item is StackTextItem && item.content != null)
-                      //       ? StackTextCase(item: item, isFitted: true)
-                      //       : (item is StackImageItem && item.content != null)
-                      //       ? StackImageCase(item: item)
-                      //       : const SizedBox.shrink();
-                      // },
+
                       borderBuilder: showBorders
                           ? (status, item) {
                               final CaseStyle style = CaseStyle();
@@ -1885,10 +1835,12 @@ class CanvasStack extends StatelessWidget {
                       },
 
                       onStatusChanged: (item, status) {
+                        print(item.status);
                         if (status == StackItemStatus.selected) {
                           controller.activeItem.value = controller
                               .boardController
                               .getById(item.id);
+
                           if (item is StackTextItem) {
                             controller.activePanel.value = PanelType.text;
                           } else if (item is StackImageItem) {
@@ -1905,6 +1857,9 @@ class CanvasStack extends StatelessWidget {
                           controller.activePanel.value = PanelType.none;
                           controller.draggedItem.value = item;
                         } else if (status == StackItemStatus.idle) {
+                          print(
+                            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.....................",
+                          );
                           controller.activePanel.value = PanelType.none;
                           if (controller.draggedItem.value?.id == item.id) {
                             controller.draggedItem.value = null;
@@ -1913,6 +1868,7 @@ class CanvasStack extends StatelessWidget {
                         controller.update(['canvas_stack', 'bottom_sheet']);
                         return true;
                       },
+
                       // onStatusChanged: (item, status) {
                       //   if (status == StackItemStatus.selected) {
                       //     controller.activeItem.value = controller
@@ -1957,12 +1913,12 @@ class CanvasStack extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Image.asset(
-                        'assets/icon.png',
+                        'assets/water_mark.png',
                         width: 33, // Adjust size as needed
                         height: 33,
                         fit: BoxFit.contain,
                       ),
-                      Text("Inkkaro", style: TextStyle(fontSize: 11)),
+                      Text("Inkkaro", style: TextStyle(fontSize: 8)),
                     ],
                   ),
                 ),
@@ -2030,11 +1986,15 @@ class CanvasStack extends StatelessWidget {
 
 class BorderPainter extends CustomPainter {
   final bool dotted;
-  final double stroke = 0.2; // Made thinner
-  final double dash = 2; // Smaller dash
-  final double dash2 = 2; // Smaller gap
+  final bool isLocked; // Add this
+  final double stroke = 0.2;
+  final double dash = 2;
+  final double dash2 = 2;
 
-  const BorderPainter({required this.dotted});
+  const BorderPainter({
+    required this.dotted,
+    this.isLocked = false, // Add this
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2049,8 +2009,10 @@ class BorderPainter extends CustomPainter {
 
     if (!dotted) {
       canvas.drawRect(rect, paint);
+
       return;
     }
+
     if (Get.find<CanvasController>().draggedItem.value != null) {
       final Path path = Path()..addRect(rect);
       final Path dashedPath = Path();
@@ -2201,4 +2163,107 @@ class AlignmentGuidePainter extends CustomPainter {
         oldDelegate.showGrid != showGrid ||
         oldDelegate.gridSize != gridSize;
   }
+}
+
+// Add this widget class at the bottom of your file:
+class _ZLockToggleButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final controller = Get.find<CanvasController>();
+      final activeItem = controller.activeItem.value;
+      final isLocked = activeItem?.lockZOrder == true;
+      final hasActiveItem = activeItem != null;
+
+      print(
+        '🔍 ZLockButton rebuild - hasActiveItem: $hasActiveItem, isLocked: $isLocked, itemId: ${activeItem?.id}',
+      );
+
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: hasActiveItem
+            ? Tooltip(
+                message: isLocked
+                    ? 'Unlock from background'
+                    : 'Lock to background',
+                child: IconButton(
+                  key: ValueKey(
+                    '$activeItem-$isLocked',
+                  ), // Better key for debugging
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isLocked
+                          ? Colors.orange.withOpacity(0.2)
+                          : Colors.grey.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isLocked ? Colors.orange : Colors.grey,
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      isLocked ? Icons.lock : Icons.lock_open,
+                      size: 20,
+                      color: isLocked ? Colors.orange : Colors.grey[600],
+                    ),
+                  ),
+                  onPressed: () {
+                    print('👆 ZLock button tapped for item: ${activeItem.id}');
+                    controller.toggleZLock(activeItem.id);
+                  },
+                ),
+              )
+            : const SizedBox(width: 48),
+      );
+    });
+  }
+}
+
+@override
+Widget build(BuildContext context) {
+  return GetBuilder<CanvasController>(
+    id: 'z_lock_button',
+    builder: (controller) {
+      // Force refresh the activeItem to get latest state
+      final activeItem = controller.activeItem.value;
+      final isLocked = activeItem?.lockZOrder == true;
+      final hasActiveItem = activeItem != null;
+
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: hasActiveItem
+            ? Tooltip(
+                message: isLocked
+                    ? 'Unlock from background'
+                    : 'Lock to background',
+                child: IconButton(
+                  key: ValueKey(isLocked),
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isLocked
+                          ? Colors.orange.withOpacity(0.2)
+                          : Colors.grey.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isLocked ? Colors.orange : Colors.grey,
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      isLocked ? Icons.lock : Icons.lock_open,
+                      size: 20,
+                      color: isLocked ? Colors.orange : Colors.grey[600],
+                    ),
+                  ),
+                  onPressed: () {
+                    controller.toggleZLock(activeItem.id);
+                  },
+                ),
+              )
+            : const SizedBox(width: 48),
+      );
+    },
+  );
 }

@@ -334,7 +334,7 @@ class ShapeEditorController extends GetxController
       ),
     );
 
-    if (currentShapeItem != null && newShape.id == currentShapeItem?.id) {
+    if (newShape.id == currentShapeItem?.id) {
       canvasController.boardController.updateItem(newShape);
       canvasController.boardController.updateBasic(
         newShape.id,
@@ -608,7 +608,7 @@ class ShapeEditorController extends GetxController
     if (currentShapeItem != null && currentShapeItem!.content != null) {
       final newContent = currentShapeItem!.content!.copyWith(
         shapeBorder: _createCurrentShape(),
-        fillColor: fillColor.value.withOpacity(fillOpacity.value),
+        fillColor: fillColor.value.withValues(alpha: fillOpacity.value),
         border: DynamicBorderSide(
           width: borderWidth.value,
           color: borderColor.value,

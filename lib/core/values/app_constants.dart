@@ -1,27 +1,3 @@
-const stylishGoogleFonts = [
-  'Playfair Display',
-  'Lobster',
-  'Pacifico',
-  'Dancing Script',
-  'Great Vibes',
-  'Abril Fatface',
-  'Merriweather',
-  'Bebas Neue',
-  'Poppins',
-  'Josefin Sans',
-  'Cormorant Garamond',
-  'Cinzel',
-  'Raleway',
-  'Alfa Slab One',
-  'Fjalla One',
-  'Amatic SC',
-  'Satisfy',
-  'Sacramento',
-  'Tangerine',
-  'Prata',
-  'Cookie',
-  'Caveat',
-  'Architects Daughter',
-  'Kaushan Script',
-  'Roboto Slab',
-];
+const String placeholderPath = 'assets/add-image.png';
+const String kRemoteConfigKey = 'app_config';
+const String kPlaystoreUrl = "";

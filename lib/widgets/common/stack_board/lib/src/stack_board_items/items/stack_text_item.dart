@@ -51,7 +51,6 @@ class StackTextItem extends StackItem<TextItemContent> {
     StackItemStatus? status,
     bool? lockZOrder,
     TextItemContent? content,
-    bool? isCentered,
     bool? isProfileImage, // Added to match base class signature
     bool? isNewImage,
   }) {
@@ -63,8 +62,6 @@ class StackTextItem extends StackItem<TextItemContent> {
       status: status ?? this.status,
       lockZOrder: lockZOrder ?? this.lockZOrder,
       content: content ?? this.content,
-
-      // isProfileImage is ignored as StackTextItem does not use it
     );
   }
 
@@ -78,7 +75,6 @@ class StackTextItem extends StackItem<TextItemContent> {
       'status': status.index,
       'lockZOrder': lockZOrder,
       'content': content?.toJson(),
-      'isCentered': isCentered,
       'type': 'StackTextItem',
     };
   }

@@ -3,19 +3,27 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
+import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/services/storage_service.dart';
+import 'package:cardmaker/services/update_service.dart';
+import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class HomeController extends GetxController {
   final selectedIndex = 0.obs;
-
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;
-  final RxList<String> favoriteTemplateIds =
-      <String>[].obs; // Cached favorite IDs
+  final RxList<CardTemplate> freeTodayTemplates = <CardTemplate>[].obs;
+  final RxList<CardTemplate> trendingTemplates = <CardTemplate>[].obs;
+  final RxList<String> favoriteTemplateIds = <String>[].obs;
   final isLoading = false.obs;
+
   final AuthService authService = Get.find<AuthService>();
   final _firestoreService = FirestoreService();
+  final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
+  final UpdateManager updateManager = UpdateManager(); // Add this
+
+  // Add config values you want to use
 
   final List<QuickAction> quickActions = [
     QuickAction(
@@ -158,28 +166,42 @@ class HomeController extends GetxController {
       thumbnailUrl: 'assets/square_thumbnail.png',
     ),
   ];
-
   @override
   void onInit() {
     super.onInit();
     _initializeData();
+    _checkForUpdates(); // Simple update check on init
   }
+
+  // Modify your HomeController's _initializeData method
 
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
-      await Future.wait([_loadTemplates(), _loadFavoriteTemplateIds()]);
+      // Initialize remote config first
+      await remoteConfig.initialize();
+
+      await Future.wait([
+        _loadTemplates(),
+        _loadFreeTodayTemplates(),
+        _loadTrendingTemplates(),
+        _loadFavoriteTemplateIds(),
+      ]);
     } catch (e) {
       print('Error initializing data: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load data: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
     } finally {
       isLoading.value = false;
+      update(['freeTodayTemplates', 'trendingTemplates']);
+    }
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      if (remoteConfig.config.update.isUpdateAvailable) {
+        await updateManager.checkForUpdates(Get.context!);
+      }
+    } catch (e) {
+      print('Update check failed: $e');
     }
   }
 
@@ -192,6 +214,42 @@ class HomeController extends GetxController {
           .map((doc) => CardTemplate.fromJson(doc.data()))
           .toList(),
     );
+    update(['templates']);
+  }
+
+  Future<void> _loadFreeTodayTemplates() async {
+    try {
+      final snapshot = await _firestoreService.getFreeTodayTemplatesPaginated(
+        limit: 10,
+      );
+      freeTodayTemplates.assignAll(
+        snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
+      );
+      update(['freeTodayTemplates']);
+    } catch (e) {
+      AppToast.error(message: e.toString());
+    }
+  }
+
+  Future<void> _loadTrendingTemplates() async {
+    try {
+      final snapshot = await _firestoreService.getTrendingTemplatesPaginated(
+        limit: 10,
+      );
+      trendingTemplates.assignAll(
+        snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
+      );
+      update(['trendingTemplates']);
+    } catch (e) {
+      print('Error loading trending templates: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load trending templates: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 
   Future<void> _loadFavoriteTemplateIds() async {
@@ -288,6 +346,7 @@ class HomeController extends GetxController {
 
   void refreshData() async {
     await _initializeData();
+    await remoteConfig.refreshConfig();
   }
 
   Future<void> addTemplate(CardTemplate template) async {

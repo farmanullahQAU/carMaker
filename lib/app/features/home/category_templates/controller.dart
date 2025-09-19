@@ -286,8 +286,4 @@ class CategoryTemplatesController extends GetxController {
   String getPageTitle() {
     return category?.name ?? 'All Templates';
   }
-
-  Color getPageColor() {
-    return category?.color ?? AppColors.branding;
-  }
 }

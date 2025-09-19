@@ -81,7 +81,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                 children: [
                   FloatingActionButton.small(
                     onPressed: () {
-                      canvasController.replaceImageItem();
+                      // canvasController.replaceImageItem(controller);
                     },
 
                     child: Icon(Icons.add_a_photo_outlined, size: 16),

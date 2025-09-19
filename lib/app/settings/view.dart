@@ -1,5 +1,5 @@
-import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/services/update_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -12,88 +12,88 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Settings',
-          style: TextStyle(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: 17,
-            color: Colors.black,
           ),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18, color: Colors.black),
-          onPressed: () => Get.back(),
-        ),
         elevation: 0,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // Account Section
-          _buildUserProfile(user),
-          _buildDivider(),
+          _buildUserProfile(user, theme),
+          _buildDivider(theme),
 
           // Settings Options
           _buildSettingsTile(
-            icon: Icons.person_outline,
-            title: 'Account',
-            onTap: () => Get.toNamed('/account'),
-          ),
-
-          _buildSettingsTile(
             icon: Icons.palette_outlined,
             title: 'Appearance',
-            onTap: () => _showAppearanceSheet(context),
+            theme: theme,
+            onTap: () => _showAppearanceSheet(context, theme),
           ),
 
           _buildSettingsTile(
             icon: Icons.language_outlined,
             title: 'Language',
             subtitle: 'English',
-            onTap: () => _showLanguageSheet(context),
+            theme: theme,
+            onTap: () => _showLanguageSheet(context, theme),
           ),
 
-          _buildDivider(),
+          _buildDivider(theme),
 
           _buildSettingsTile(
             icon: Icons.share_outlined,
             title: 'Share App',
+            theme: theme,
             onTap: _shareApp,
           ),
 
           _buildSettingsTile(
             icon: Icons.star_outline,
             title: 'Rate App',
+            theme: theme,
             onTap: _launchAppStore,
           ),
 
-          _buildDivider(),
+          _buildDivider(theme),
 
           _buildSettingsTile(
             icon: Icons.description_outlined,
             title: 'Terms of Service',
+            theme: theme,
             onTap: () => Get.toNamed('/terms'),
           ),
 
           _buildSettingsTile(
             icon: Icons.security_outlined,
             title: 'Privacy Policy',
+            theme: theme,
             onTap: () => Get.toNamed('/privacy'),
           ),
 
-          _buildDivider(),
+          _buildDivider(theme),
 
-          _buildSettingsTile(
-            icon: Icons.logout_outlined,
-            title: 'Sign Out',
-            titleColor: Colors.red.shade600,
-            onTap: _showSignOutConfirmation,
+          Obx(
+            () => user == null
+                ? const SizedBox()
+                : _buildSettingsTile(
+                    icon: Icons.logout_outlined,
+                    title: 'Sign Out',
+                    titleColor: theme.colorScheme.error,
+                    theme: theme,
+                    onTap: _showSignOutConfirmation,
+                  ),
           ),
 
           const SizedBox(height: 32),
@@ -101,10 +101,8 @@ class SettingsPage extends StatelessWidget {
           // Version
           Center(
             child: Text(
-              'Version 1.0.0',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade500,
+              'Version ${UpdateManager().currVer}',
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -116,7 +114,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildUserProfile(User? user) {
+  Widget _buildUserProfile(User? user, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -127,7 +125,7 @@ class SettingsPage extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.grey.shade100,
+              color: theme.cardColor,
             ),
             child: user?.photoURL != null
                 ? ClipOval(
@@ -138,7 +136,7 @@ class SettingsPage extends StatelessWidget {
                       height: 56,
                     ),
                   )
-                : Icon(Icons.person, size: 28, color: Colors.grey.shade600),
+                : Icon(Icons.person, size: 28, color: theme.disabledColor),
           ),
 
           const SizedBox(width: 16),
@@ -150,19 +148,15 @@ class SettingsPage extends StatelessWidget {
               children: [
                 Text(
                   user?.displayName ?? 'Guest User',
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   user?.email ?? 'Not signed in',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w400,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.hintColor,
                   ),
                 ),
               ],
@@ -178,48 +172,50 @@ class SettingsPage extends StatelessWidget {
     required String title,
     String? subtitle,
     Color? titleColor,
+    required ThemeData theme,
     VoidCallback? onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, size: 22, color: titleColor ?? Colors.grey.shade700),
+      leading: Icon(icon, size: 22, color: titleColor ?? theme.iconTheme.color),
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
+        style: theme.textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w500,
-          color: titleColor ?? Colors.black,
+          color: titleColor ?? theme.textTheme.bodyLarge?.color,
         ),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.hintColor,
+              ),
             )
           : null,
       trailing: titleColor == null
-          ? Icon(Icons.chevron_right, size: 18, color: Colors.grey.shade400)
+          ? Icon(Icons.chevron_right, size: 22, color: theme.hintColor)
           : null,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       onTap: onTap,
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(ThemeData theme) {
     return Divider(
       height: 1,
       thickness: 0.5,
-      color: Colors.grey.shade200,
+      color: theme.dividerColor,
       indent: 20,
       endIndent: 20,
     );
   }
 
-  void _showAppearanceSheet(BuildContext context) {
+  void _showAppearanceSheet(BuildContext context, ThemeData theme) {
     final RxString selectedTheme = 'System'.obs;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.dialogBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -229,18 +225,20 @@ class SettingsPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Appearance',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 20),
 
             Obx(
               () => Column(
                 children: [
-                  _buildThemeOption('Light', selectedTheme),
-                  _buildThemeOption('Dark', selectedTheme),
-                  _buildThemeOption('System', selectedTheme),
+                  _buildThemeOption('Light', selectedTheme, theme),
+                  _buildThemeOption('Dark', selectedTheme, theme),
+                  _buildThemeOption('System', selectedTheme, theme),
                 ],
               ),
             ),
@@ -252,30 +250,34 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildThemeOption(String theme, RxString selectedTheme) {
+  Widget _buildThemeOption(
+    String themeOption,
+    RxString selectedTheme,
+    ThemeData theme,
+  ) {
     return ListTile(
       title: Text(
-        theme,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        themeOption,
+        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
       ),
-      trailing: selectedTheme.value == theme
-          ? Icon(Icons.check, color: AppColors.branding, size: 20)
+      trailing: selectedTheme.value == themeOption
+          ? Icon(Icons.check, color: theme.primaryColor, size: 20)
           : null,
       onTap: () {
-        selectedTheme.value = theme;
+        selectedTheme.value = themeOption;
         Get.back();
         // Implement theme change logic
       },
     );
   }
 
-  void _showLanguageSheet(BuildContext context) {
+  void _showLanguageSheet(BuildContext context, ThemeData theme) {
     final languages = ['English', 'Spanish', 'French', 'German'];
     final RxString selectedLanguage = 'English'.obs;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: theme.dialogBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -285,9 +287,11 @@ class SettingsPage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Language',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -295,13 +299,12 @@ class SettingsPage extends StatelessWidget {
               (language) => ListTile(
                 title: Text(
                   language,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 trailing: selectedLanguage.value == language
-                    ? Icon(Icons.check, color: AppColors.branding, size: 20)
+                    ? Icon(Icons.check, color: theme.primaryColor, size: 20)
                     : null,
                 onTap: () {
                   selectedLanguage.value = language;
@@ -319,27 +322,29 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showSignOutConfirmation() {
+    final theme = Theme.of(Get.context!);
+
     Get.dialog(
       AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
+        title: Text(
           'Sign Out',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to sign out?',
-          style: TextStyle(fontSize: 15, color: Colors.black87),
+          style: theme.textTheme.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text(
               'Cancel',
-              style: TextStyle(
-                color: Colors.grey.shade600,
+              style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 15,
               ),
             ),
           ),
@@ -351,10 +356,9 @@ class SettingsPage extends StatelessWidget {
             },
             child: Text(
               'Sign Out',
-              style: TextStyle(
-                color: Colors.red.shade600,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,
-                fontSize: 15,
               ),
             ),
           ),

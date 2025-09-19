@@ -321,7 +321,7 @@ class _StackItemCaseState extends State<StackItemCase> {
             ),
             child: Transform.rotate(
               angle: item.angle,
-              child: item.isCentered ? Center(child: c) : c,
+              child: Center(child: c),
             ),
           ),
         );

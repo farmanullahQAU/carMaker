@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/core/extensions/extensions.dart';
+import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_size.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
@@ -14,6 +15,7 @@ import 'package:flutter/material.dart';
 class ImageItemContent extends StackItemContent {
   ImageItemContent({
     this.url,
+    this.isPlaceholder = false,
     this.assetName,
     this.filePath,
     this.semanticLabel,
@@ -71,6 +73,7 @@ class ImageItemContent extends StackItemContent {
 
   ImageItemContent copyWith({
     String? url,
+    bool? isPlaceholder,
     String? assetName,
     String? filePath,
     String? semanticLabel,
@@ -124,8 +127,9 @@ class ImageItemContent extends StackItemContent {
   }) {
     return ImageItemContent(
       url: url ?? this.url,
+      isPlaceholder: isPlaceholder ?? this.isPlaceholder,
       assetName: assetName ?? this.assetName,
-      filePath: filePath ?? this.filePath,
+      filePath: filePath,
       semanticLabel: semanticLabel ?? this.semanticLabel,
       excludeFromSemantics: excludeFromSemantics ?? this.excludeFromSemantics,
       width: width ?? this.width,
@@ -178,27 +182,19 @@ class ImageItemContent extends StackItemContent {
   }
 
   void _init() {
-    if (url != null && assetName != null && filePath != null) {
-      throw Exception('url and assetName can not be set at the same time');
-    }
-
-    // if (url == null && assetName == null && filePath == null)
-    if (url == null && filePath == null) {
-      throw Exception('url and filePath can not be null at the same time');
-    }
-
-    if (url != null) {
+    if (filePath != null) {
+      _image = FileImage(File(filePath!));
+    } else if (url != null) {
       _image = CachedNetworkImageProvider(url!);
     } else if (assetName != null) {
       _image = AssetImage(assetName!);
-    } else if (filePath != null) {
-      _image = FileImage(File(filePath!));
     }
   }
 
   // Existing properties
   late ImageProvider _image;
   String? url;
+  bool? isPlaceholder;
   String? assetName;
   String? filePath; //when iamge is picked using iamgepicker
   String? semanticLabel;
@@ -261,17 +257,6 @@ class ImageItemContent extends StackItemContent {
 
   //   _init();
   // }
-  void setRes({String? url, String? assetName, String? filePath}) {
-    if (url != null) {
-      this.url = url;
-    } else if (assetName != null) {
-      this.assetName = assetName;
-    } else if (filePath != null) {
-      this.filePath = filePath;
-    }
-
-    _init();
-  }
 
   // Advanced customization methods
   void adjustBrightness(double value) => brightness = value.clamp(-1.0, 1.0);
@@ -322,10 +307,9 @@ class ImageItemContent extends StackItemContent {
   }) {
     return ImageItemContent(
       url: json['url'] != null ? asT<String>(json['url']) : null,
+      isPlaceholder: json['isPlaceholder'],
 
-      assetName: json['assetName'] != null
-          ? asT<String>(json['assetName'])
-          : null,
+      assetName: json['isPlaceholder'] == true ? placeholderPath : null,
       filePath: json['filePath'] != null ? asT<String>(json['filePath']) : null,
       semanticLabel: json['semanticLabel'] != null
           ? asT<String>(json['semanticLabel'])
@@ -394,11 +378,12 @@ class ImageItemContent extends StackItemContent {
   }
 
   @override
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool isUploading = true}) {
     return <String, dynamic>{
       if (url != null) 'url': url,
-      if (assetName != null) 'assetName': assetName,
-      if (filePath != null) 'filePath': filePath,
+      if (isPlaceholder != null) 'isPlaceholder': isPlaceholder,
+      // if (assetName != null) 'assetName': assetName,
+      'filePath': filePath,
       if (semanticLabel != null) 'semanticLabel': semanticLabel,
       'excludeFromSemantics': excludeFromSemantics,
       if (width != null) 'width': width,
@@ -1481,15 +1466,6 @@ class StackImageItem extends StackItem<ImageItemContent> {
     );
   }
 
-  // Existing methods preserved
-  void setUrl(String url) {
-    content?.setRes(url: url);
-  }
-
-  void setAssetName(String assetName) {
-    content?.setRes(assetName: assetName);
-  }
-
   // New advanced customization methods
   void applyColorAdjustments({
     double? brightness,
@@ -1561,6 +1537,8 @@ class StackImageItem extends StackItem<ImageItemContent> {
       id: id,
       size: size ?? this.size,
       offset: offset ?? this.offset,
+      isNewImage: isNewImage ?? this.isNewImage,
+
       angle: angle ?? this.angle,
       status: status ?? this.status,
       lockZOrder: lockZOrder ?? this.lockZOrder,

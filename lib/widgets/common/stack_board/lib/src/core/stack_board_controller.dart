@@ -277,6 +277,7 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
     Offset? offset,
     double? angle,
     StackItemStatus? status,
+    bool? lockZOrder,
   }) {
     if (!_indexMap.containsKey(id)) return;
 
@@ -288,6 +289,7 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
       offset: offset,
       angle: angle,
       status: status,
+      lockZOrder: lockZOrder,
     );
 
     value = value.copyWith(data: data);

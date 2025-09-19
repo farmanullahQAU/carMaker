@@ -41,7 +41,6 @@ abstract class StackItem<T extends StackItemContent> {
        angle = angle ?? 0,
        lockZOrder = lockZOrder ?? false,
 
-       isCentered = isCentered = false,
        isProfileImage = isProfileImage ?? false,
        isNewImage = isNewImage ?? false,
 
@@ -54,7 +53,6 @@ abstract class StackItem<T extends StackItemContent> {
     required this.status,
     required this.content,
     required this.lockZOrder,
-    required this.isCentered,
     required this.isProfileImage,
     this.isNewImage,
   }) : id = '';
@@ -73,7 +71,6 @@ abstract class StackItem<T extends StackItemContent> {
 
   /// Status
   final StackItemStatus status;
-  final bool isCentered;
 
   final bool lockZOrder;
   final bool isProfileImage;
@@ -89,7 +86,6 @@ abstract class StackItem<T extends StackItemContent> {
     double? angle,
     StackItemStatus? status,
     bool? lockZOrder,
-    bool? isCentered,
     bool? isProfileImage,
     bool? isNewImage,
 
@@ -107,7 +103,6 @@ abstract class StackItem<T extends StackItemContent> {
           .toJson(), // This is the absolute offset for runtime, will be ignored for persistence in StackTextItem, StackImageItem, ColorStackItem1
       'status': status.index,
       'lockZOrder': lockZOrder,
-      'isCentered': isCentered,
       'isProfileImage': isProfileImage,
       if (content != null) 'content': content?.toJson(),
     };

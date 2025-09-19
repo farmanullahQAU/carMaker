@@ -36,27 +36,10 @@ class StackImageCase extends StatelessWidget {
   ImageItemContent get content => item.content!;
 
   @override
-  @override
   Widget build(BuildContext context) {
     Widget imageWidget;
 
-    if (content.url != null) {
-      // Only this part changes for network images
-      imageWidget = CachedNetworkImage(
-        imageUrl: content.url!,
-        width: content.width,
-        height: content.height,
-        fit: content.fit,
-        placeholder: (context, url) =>
-            Container(color: AppColors.backgroundLight),
-        errorWidget: (context, url, error) => Container(
-          color: AppColors.red400,
-          child: const Icon(Icons.error_outline, color: Colors.grey),
-        ),
-        fadeInDuration: const Duration(milliseconds: 300),
-      );
-    } else {
-      // Keep everything else EXACTLY the same
+    if (content.filePath != null || content.assetName != null) {
       imageWidget = Image(
         image: content.image,
         width: content.width,
@@ -72,6 +55,21 @@ class StackImageCase extends StatelessWidget {
         excludeFromSemantics: content.excludeFromSemantics,
         semanticLabel: content.semanticLabel,
       );
+    } else {
+      imageWidget = CachedNetworkImage(
+        imageUrl: content.url!,
+        width: content.width,
+        height: content.height,
+        fit: content.fit,
+        placeholder: (context, url) =>
+            Container(color: AppColors.backgroundLight),
+        errorWidget: (context, url, error) => Container(
+          color: AppColors.red400,
+          child: const Icon(Icons.error_outline, color: Colors.grey),
+        ),
+        fadeInDuration: const Duration(milliseconds: 300),
+      );
+      // Keep everything else EXACTLY the same
     }
 
     // EVERYTHING BELOW STAYS EXACTLY THE SAME

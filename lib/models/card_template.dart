@@ -68,12 +68,9 @@ class CardTemplate {
     categoryId: json['categoryId'] ?? 'general',
     isFeatured: json['isFeatured'] ?? false,
     compatibleDesigns: List<String>.from(json['compatibleDesigns'] ?? []),
-    width: (json['width'] is double
-        ? json['width']
-        : (json['width'] ?? 1000).toDouble()),
-    height: (json['height'] is double
-        ? json['height']
-        : (json['height'] ?? 1000).toDouble()),
+    width: (json['width']).toDouble(),
+
+    height: (json['height']).toDouble(),
     isPremium: json['isPremium'] ?? false,
     tags: List<String>.from(json['tags'] ?? []),
     icon: json['icon'] != null

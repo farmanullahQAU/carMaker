@@ -38,7 +38,7 @@ class FirestoreService {
     CardTemplate template, {
     File? thumbnailFile,
     File? backgroundFile,
-    Map<String, bool> newImageFlags = const {}, // New parameter
+    Map<String, bool> newImageFlags = const {},
   }) async {
     if (_isUploading.value) {
       throw const Failure(
@@ -50,18 +50,35 @@ class FirestoreService {
     _isUploading.value = true;
 
     try {
-      // Create a copy of the template's items to modify
-      final updatedItems = <Map<String, dynamic>>[];
-      for (final itemJson in template.items) {
+      // Create a deep copy of template.items to avoid mutating the original
+      final List<Map<String, dynamic>> modifiedItems = List.from(
+        template.items,
+      );
+
+      for (int i = 0; i < modifiedItems.length; i++) {
+        final itemJson = modifiedItems[i];
         final item = deserializeItem(itemJson);
         if (item is StackImageItem && item.content != null) {
           final isNewImage = newImageFlags[item.id] ?? false;
+          final isPlaceholder = item.content!.isPlaceholder ?? false;
           print(
-            'Item ${item.id}: filePath=${item.content?.filePath}, url=${item.content?.url}, isNewImage=$isNewImage',
+            'Item ${item.id}: filePath=${item.content?.filePath}, url=${item.content?.url}, isNewImage=$isNewImage, isPlaceholder=$isPlaceholder',
           );
-          if (isNewImage && item.content?.filePath != null) {
-            print('Uploading new image for item ${item.id}');
-            // Handle new or replaced images (filePath exists and isNewImage is true)
+
+          Map<String, dynamic> processedItemJson;
+
+          if (isPlaceholder) {
+            debugPrint('Processing placeholder item ${item.id}');
+            final updatedContent = item.content!.copyWith(
+              filePath: null,
+              assetName: item.content!.assetName ?? 'assets/icon.png',
+              isPlaceholder: true,
+            );
+            final updatedItem = item.copyWith(content: updatedContent);
+            processedItemJson = updatedItem.toJson();
+            print('After placeholder: filePath=${updatedContent.filePath}');
+          } else if (isNewImage && item.content?.filePath != null) {
+            debugPrint('Uploading new image for item ${item.id}');
             final imageUrl = await _storageService.uploadImage(
               File(item.content!.filePath!),
               template.id,
@@ -69,38 +86,48 @@ class FirestoreService {
               fileName: '${item.id}.webp',
               isDraft: template.isDraft,
             );
-
-            // Update ImageItemContent with the new URL and clear local file path
             final updatedContent = item.content!.copyWith(
-              filePath: null, // Clear local file path
-              url: imageUrl, // Set cloud URL
+              filePath: null,
+              url: imageUrl,
+              isPlaceholder: false,
             );
-
-            // Update the item with the new content
             final updatedItem = item.copyWith(content: updatedContent);
-            updatedItems.add(updatedItem.toJson());
+            processedItemJson = updatedItem.toJson();
+            print(
+              'After upload: filePath=${updatedContent.filePath}, url=${updatedContent.url}',
+            );
           } else if (item.content?.url != null) {
-            print('Reusing existing URL for item ${item.id}');
-            // Handle unchanged images (already have a URL)
-            final updatedItem = item.copyWith(content: item.content);
-            updatedItems.add(updatedItem.toJson());
+            debugPrint('Reusing existing URL for item ${item.id}');
+            final updatedContent = item.content!.copyWith(
+              filePath: null,
+              isPlaceholder: false,
+            );
+            final updatedItem = item.copyWith(content: updatedContent);
+            processedItemJson = updatedItem.toJson();
+            print('After reuse: filePath=${updatedContent.filePath}');
           } else {
-            print('Warning: Item ${item.id} has no filePath or URL');
-            // Edge case: No filePath or URL
-            updatedItems.add(itemJson);
+            debugPrint('No filePath or URL for item ${item.id}');
+            final updatedContent = item.content!.copyWith(
+              filePath: null,
+              isPlaceholder: item.content!.isPlaceholder ?? false,
+            );
+            final updatedItem = item.copyWith(content: updatedContent);
+            processedItemJson = updatedItem.toJson();
+            print('After no filePath/URL: filePath=${updatedContent.filePath}');
           }
+
+          // Replace the item in the modifiedItems list
+          modifiedItems[i] = processedItemJson;
         } else {
-          print('Non-image item or null content for item ${item.id}');
-          // Non-image item
-          updatedItems.add(itemJson);
+          debugPrint('Non-image item or null content for item ${item.id}');
+          // Keep non-image items unchanged
+          modifiedItems[i] = itemJson;
         }
       }
 
-      // Prepare template data with updated items
       final templateData = template.toJson();
-      templateData['items'] = updatedItems;
+      templateData['items'] = modifiedItems;
 
-      // Upload thumbnail if provided
       if (thumbnailFile != null) {
         final thumbnailUrl = await _storageService.uploadImage(
           thumbnailFile,
@@ -112,7 +139,6 @@ class FirestoreService {
         templateData['thumbnailUrl'] = thumbnailUrl;
       }
 
-      // Upload background if provided
       if (backgroundFile != null) {
         final backgroundUrl = await _storageService.uploadImage(
           backgroundFile,
@@ -124,7 +150,6 @@ class FirestoreService {
         templateData['backgroundImageUrl'] = backgroundUrl;
       }
 
-      // Save template to Firestore
       if (template.isDraft) {
         await saveDraft(template.id, templateData);
       } else {
@@ -140,111 +165,6 @@ class FirestoreService {
       _isUploading.value = false;
     }
   }
-  // Future<void> addTemplate(
-  //   CardTemplate template, {
-  //   File? thumbnailFile,
-  //   File? backgroundFile,
-  // }) async {
-  //   if (_isUploading.value) {
-  //     throw const Failure(
-  //       'upload-in-progress',
-  //       'Another upload is in progress',
-  //     );
-  //   }
-
-  //   _isUploading.value = true;
-
-  //   try {
-  //     // Create a copy of the template's items to modify
-  //     final updatedItems = <Map<String, dynamic>>[];
-  //     for (final itemJson in template.items) {
-  //       final item = deserializeItem(itemJson);
-  //       if (item is StackImageItem) {
-  //         print(item.isNewImage);
-
-  //         print(item.content?.filePath);
-  //       }
-  //       if (item is StackImageItem &&
-  //           item.isNewImage == true &&
-  //           item.content?.filePath != null) {
-  //         print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk");
-  //         // Handle new or replaced images (local file path exists and isImageItemChanged is true)
-  //         final imageUrl = await _storageService.uploadImage(
-  //           File(item.content!.filePath!),
-  //           template.id,
-  //           'template_images',
-  //           fileName: '${item.id}.webp',
-  //           isDraft: template.isDraft,
-  //         );
-
-  //         // Update ImageItemContent with the new URL and clear local file path
-  //         final updatedContent = item.content!.copyWith(
-  //           filePath: null, // Clear local file path
-  //           url: imageUrl, // Set cloud URL
-  //           // isImageItemChanged: false, // Reset the flag
-  //         );
-
-  //         // Update the item with the new content
-  //         final updatedItem = item.copyWith(content: updatedContent);
-  //         updatedItems.add(updatedItem.toJson());
-  //       } else if (item is StackImageItem && item.content?.url != null) {
-  //         print("OldOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-  //         // Handle unchanged images (already have a URL)
-  //         final updatedContent = item.content!.copyWith(
-  //           // isImageItemChanged: false, // Ensure flag is reset
-  //         );
-  //         final updatedItem = item.copyWith(content: updatedContent);
-  //         updatedItems.add(updatedItem.toJson());
-  //       } else {
-  //         print("dddddddddddddddddddddddddddddddddddddddddddd");
-  //         // Non-image item or image with no changes, keep as is
-  //         updatedItems.add(itemJson);
-  //       }
-  //     }
-
-  //     // Prepare template data with updated items
-  //     final templateData = template.toJson();
-  //     templateData['items'] = updatedItems;
-
-  //     // Upload thumbnail if provided
-  //     if (thumbnailFile != null) {
-  //       final thumbnailUrl = await _storageService.uploadImage(
-  //         thumbnailFile,
-  //         template.id,
-  //         'thumbnails',
-  //         fileName: 'thumbnail.webp',
-  //         isDraft: template.isDraft,
-  //       );
-  //       templateData['thumbnailUrl'] = thumbnailUrl;
-  //     }
-
-  //     // Upload background if provided
-  //     if (backgroundFile != null) {
-  //       final backgroundUrl = await _storageService.uploadImage(
-  //         backgroundFile,
-  //         template.id,
-  //         'backgrounds',
-  //         fileName: 'background.webp',
-  //         isDraft: template.isDraft,
-  //       );
-  //       templateData['backgroundImageUrl'] = backgroundUrl;
-  //     }
-
-  //     // Save template to Firestore
-  //     if (template.isDraft) {
-  //       await saveDraft(template.id, templateData);
-  //     } else {
-  //       await _firestore
-  //           .collection('templates')
-  //           .doc(template.id)
-  //           .set(templateData);
-  //     }
-  //   } catch (e) {
-  //     throw FirebaseErrorHandler.handle(e).message;
-  //   } finally {
-  //     _isUploading.value = false;
-  //   }
-  // }
 
   // Batch upload templates with progress tracking
   Future<void> uploadTemplatesInBatch(
@@ -287,6 +207,50 @@ class FirestoreService {
       if (tags != null && tags.isNotEmpty) {
         query = query.where('tags', arrayContainsAny: tags);
       }
+      if (startAfterDocument != null) {
+        query = query.startAfterDocument(startAfterDocument);
+      }
+
+      return await query.get();
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Get free and featured templates with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> getFreeTodayTemplatesPaginated({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('templates')
+          .where('isPremium', isEqualTo: false)
+          // .where('isFeatured', isEqualTo: true)
+          .limit(limit);
+
+      if (startAfterDocument != null) {
+        query = query.startAfterDocument(startAfterDocument);
+      }
+
+      return await query.get();
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Get premium and featured templates (Trending) with pagination
+  Future<QuerySnapshot<Map<String, dynamic>>> getTrendingTemplatesPaginated({
+    int limit = 20,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('templates')
+          .where('isPremium', isEqualTo: true)
+          .where('isFeatured', isEqualTo: true)
+          .limit(limit);
+
       if (startAfterDocument != null) {
         query = query.startAfterDocument(startAfterDocument);
       }

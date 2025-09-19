@@ -22,8 +22,11 @@ class ShapeEditorPanel extends StatelessWidget {
       if (shapeItem != null && controller.currentShapeItem != shapeItem) {
         controller.initProperties(shapeItem!);
       } else {
-        print("vvvvvvvvvvvvvvvvvvvvvvvvvv");
-        controller.currentShapeItem = null;
+        controller.currentShapeItem = shapeItem;
+        // if (controller.canvasController.activeItem.value is StackShapeItem) {
+        //   controller.currentShapeItem =
+        //       controller.canvasController.activeItem.value as StackShapeItem;
+        // }
       }
     });
 
