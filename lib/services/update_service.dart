@@ -24,14 +24,14 @@ class UpdateManager {
       final cfg = rc.config.update;
 
       // Nothing to do?
-      if (!cfg.isUpdateAvailable) return;
-      if (!_isLower(currVer, cfg.currentVersion)) {
-        // App is up-to-date; close dialog if open
-        if (Navigator.of(ctx).canPop()) {
-          Navigator.of(ctx).pop();
-        }
-        return;
-      }
+      // if (!cfg.isUpdateAvailable) return;
+      // if (!_isLower(currVer, cfg.currentVersion)) {
+      //   // App is up-to-date; close dialog if open
+      //   if (Navigator.of(ctx).canPop()) {
+      //     Navigator.of(ctx).pop();
+      //   }
+      //   return;
+      // }
 
       // ---- FORCE UPDATE (all platforms) ------------------------------------
       if (cfg.isForceUpdate) {

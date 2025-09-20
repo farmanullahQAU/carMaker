@@ -90,7 +90,7 @@ class CardTemplate {
     if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
     if (backgroundImageUrl != null) 'backgroundImageUrl': backgroundImageUrl,
     'items': items,
-    'createdAt': FieldValue.serverTimestamp(),
+    'createdAt': createdAt.toIso8601String(),
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     'category': category,
     'categoryId': categoryId,

@@ -1,15 +1,17 @@
-import 'dart:io' show File;
+import 'dart:io' show File, FileMode;
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
+import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
+import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
@@ -152,7 +154,7 @@ class CanvasController extends GetxController {
       'Updated StackBoard size: ${scaledCanvasWidth.value} x ${scaledCanvasHeight.value}, Canvas Scale: $canvasScale',
     );
 
-    loadDesignFromStorage(
+    populateData(
       initialTemplate!,
       context,
       scaledCanvasWidth.value,
@@ -163,7 +165,7 @@ class CanvasController extends GetxController {
     update(['canvas_stack']); // Trigger rebuild of canvas stack
   }
 
-  void loadDesignFromStorage(
+  void populateData(
     CardTemplate template,
     BuildContext context,
     double scaledCanvasWidth,
@@ -656,7 +658,7 @@ class CanvasController extends GetxController {
     update(['canvas_stack', 'bottom_sheet']);
   }
 
-  Future<File> exportAsImage() async {
+  Future<File> exportAsImage([String? fileName = "inkaro_card"]) async {
     try {
       isExporting = true;
       update(['export_button']);
@@ -700,8 +702,8 @@ class CanvasController extends GetxController {
       } else {
         // Android: Save to temporary directory
         final output = await getTemporaryDirectory();
-        final file = File("${output.path}/invitation_card.png");
-        await file.writeAsBytes(image);
+        final file = File("${output.path}/$fileName.png");
+        await file.writeAsBytes(image, mode: FileMode.write);
 
         return file;
       }
@@ -755,7 +757,7 @@ class CanvasController extends GetxController {
       );
 
       final tempDir = await getTemporaryDirectory();
-      final imagePath = '${tempDir.path}/temp_invitation_card.png';
+      final imagePath = '${tempDir.path}/myCard.png';
       final imageFile = File(imagePath);
       await imageFile.writeAsBytes(image);
 
@@ -877,6 +879,103 @@ class CanvasController extends GetxController {
       uploadTemplate(template);
     } catch (err) {
       AppToast.error(message: err.toString());
+    }
+  }
+
+  // Add these methods to your CanvasController class
+
+  Future<void> saveToLocalStorage() async {
+    try {
+      final currentItems = boardController.getAllData();
+
+      // Create the template with current state
+      CardTemplate template = CardTemplate(
+        imagePath: "",
+        categoryId: 'birthday',
+        id: initialTemplate?.id ?? Uuid().v4(),
+        name: templateName.value.isEmpty
+            ? 'Untitled Template'
+            : templateName.value,
+        items: currentItems.map((e) {
+          print(e);
+          return deserializeItem(e).toJson();
+        }).toList(),
+        width: initialTemplate?.width ?? 800,
+        height: initialTemplate?.height ?? 600,
+        category: 'birthday',
+        tags: ['default'],
+        isPremium: false,
+        isDraft: true,
+        backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundImageUrl: selectedBackground.value,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        thumbnailUrl: null,
+      );
+
+      final file = await exportAsImage("${template.id}_kkkkk${template.name}");
+      template = template.copyWith(thumbnailUrl: file.path);
+
+      print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${file.path}");
+      print(template.id);
+
+      print("Thummmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm ${template.thumbnailUrl}");
+      // Save to local storage
+      await StorageService.addTemplate(template, type: 'drafts');
+
+      try {
+        final profileController = Get.find<ProfileController>();
+        await profileController.loadLocalDrafts(); // Reload from disk
+        await profileController.refreshDrafts(); // Update UI
+      } catch (e) {
+        // Profile page not open, ignore
+      }
+      AppToast.success(message: 'Template saved locally!');
+    } catch (err) {
+      debugPrint('Error saving to local storage: $err');
+      AppToast.error(
+        message: 'Failed to save template locally: ${err.toString()}',
+      );
+    }
+  }
+
+  Future<void> backupToFirebase() async {
+    try {
+      if (authService.user == null) {
+        AppToast.error(message: 'Please sign in to backup to cloud');
+        return;
+      }
+
+      // Get templates that are only in local storage
+      final localOnlyTemplates = StorageService.getLocalOnlyTemplates([]);
+
+      if (localOnlyTemplates.isEmpty) {
+        AppToast.show(
+          type: ToastType.error,
+          message: 'No local templates to backup',
+        );
+        return;
+      }
+
+      // Show progress dialog
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      // Upload each local template to Firebase
+      for (final template in localOnlyTemplates) {
+        await uploadTemplate(template);
+        // Remove from local storage after successful upload
+        await StorageService.deleteTemplate(template.id, type: 'drafts');
+      }
+
+      Get.back(); // Close progress dialog
+      AppToast.success(message: 'Backup completed successfully!');
+    } catch (err) {
+      Get.back(); // Close progress dialog if open
+      debugPrint('Error during backup: $err');
+      AppToast.error(message: 'Backup failed: ${err.toString()}');
     }
   }
 }

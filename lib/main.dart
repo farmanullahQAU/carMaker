@@ -2,8 +2,6 @@ import 'package:cardmaker/app/bindings/initial.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/firebase_options.dart';
-// main.dart (updated)
-import 'package:cardmaker/services/initialization_service.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -26,39 +24,17 @@ class CardMakerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Get.putAsync(() => InitializationService().initializeApp()),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return MaterialApp(
-            home: Scaffold(
-              // backgroundColor: Colors.white,
-              body: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    Image.asset("assets/water_mark.png", width: 22, height: 22),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        return GetMaterialApp(
-          title: 'Card Maker',
-          debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.system,
-          initialRoute: Routes.home,
-          theme: CardMakerTheme.lightTheme(),
-          darkTheme: CardMakerTheme.darkTheme(),
-          getPages: AppPages.pages,
-          navigatorKey: navigatorKey,
-          initialBinding: InitialBindings(),
-          home: const AppRootWidget(), // Wrap with root widget
-        );
-      },
+    return GetMaterialApp(
+      title: 'Card Maker',
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.system,
+      initialRoute: Routes.splash,
+      theme: CardMakerTheme.lightTheme(),
+      darkTheme: CardMakerTheme.darkTheme(),
+      getPages: AppPages.pages,
+      navigatorKey: navigatorKey,
+      initialBinding: InitialBindings(),
+      home: SplashScreen(),
     );
   }
 }

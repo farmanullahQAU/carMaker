@@ -128,10 +128,16 @@ class EditorPage extends GetView<CanvasController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final chd = Scaffold(
       appBar: AppBar(
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: () {
+              controller.saveToLocalStorage();
+            },
+            icon: Icon(Icons.storage),
+          ),
           _ZLockToggleButton(),
 
           GetBuilder<CanvasController>(
@@ -214,6 +220,7 @@ class EditorPage extends GetView<CanvasController> {
         ],
       ),
     );
+    return chd;
   }
 }
 
@@ -2266,4 +2273,14 @@ Widget build(BuildContext context) {
       );
     },
   );
+}
+
+class ShowDD extends StatelessWidget {
+  final Widget chd;
+  const ShowDD({super.key, required this.chd});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(child: chd);
+  }
 }

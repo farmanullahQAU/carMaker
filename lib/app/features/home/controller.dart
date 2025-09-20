@@ -170,7 +170,6 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeData();
-    _checkForUpdates(); // Simple update check on init
   }
 
   // Modify your HomeController's _initializeData method
@@ -178,15 +177,13 @@ class HomeController extends GetxController {
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
-      // Initialize remote config first
-      await remoteConfig.initialize();
-
       await Future.wait([
         _loadTemplates(),
         _loadFreeTodayTemplates(),
         _loadTrendingTemplates(),
         _loadFavoriteTemplateIds(),
       ]);
+      _checkForUpdates(); // Simple update check on init
     } catch (e) {
       print('Error initializing data: $e');
     } finally {

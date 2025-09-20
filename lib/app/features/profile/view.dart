@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
@@ -186,20 +188,23 @@ class ProfilePage extends StatelessWidget {
     return RefreshIndicator(
       color: Colors.blue.shade600,
       backgroundColor: Colors.white,
-      onRefresh: controller.refreshDrafts,
+      onRefresh: () async {
+        await controller.refreshDrafts();
+      },
       child: Obx(() {
-        if (controller.isDraftsLoading.value && controller.drafts.isEmpty) {
+        // Use allDrafts instead of just drafts
+        if (controller.isDraftsLoading.value && controller.allDrafts.isEmpty) {
           return buildLoading();
         }
 
-        if (controller.hasDraftsError.value && controller.drafts.isEmpty) {
-          return _buildErrorState(
-            'Failed to load drafts',
-            controller.refreshDrafts,
-          );
+        if (controller.hasDraftsError.value && controller.allDrafts.isEmpty) {
+          return _buildErrorState('Failed to load drafts', () async {
+            await controller.refreshDrafts();
+            await controller.loadLocalDrafts();
+          });
         }
 
-        if (controller.drafts.isEmpty) {
+        if (controller.allDrafts.isEmpty) {
           return _buildEmptyState(
             'No drafts yet',
             'Create and save your projects to see them here',
@@ -207,28 +212,36 @@ class ProfilePage extends StatelessWidget {
           );
         }
 
-        return NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            if (notification.metrics.pixels >=
-                    notification.metrics.maxScrollExtent - 100 &&
-                !controller.isDraftsLoading.value &&
-                controller.hasMoreDrafts.value) {
-              debugPrint(
-                'Drafts scroll within 100px of bottom: loading more...',
-              );
-              controller.loadMoreDrafts();
-            }
-            return false; // Allow other listeners to process the notification
-          },
-          child: _buildStaggeredTemplateGrid(
-            controller.drafts,
-            null, // No ScrollController
-            isDrafts: true,
-            isLoading: controller.isDraftsLoading.value,
-            hasMore: controller.hasMoreDrafts.value,
-            onDelete: controller.deleteDraft,
-            onEdit: (template) => _editDraft(template),
-          ),
+        return Column(
+          children: [
+            Expanded(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.metrics.pixels >=
+                          notification.metrics.maxScrollExtent - 100 &&
+                      !controller.isDraftsLoading.value &&
+                      controller.hasMoreDrafts.value) {
+                    debugPrint(
+                      'Drafts scroll within 100px of bottom: loading more...',
+                    );
+                    controller.loadMoreDrafts();
+                  }
+                  return false;
+                },
+                child: _buildStaggeredTemplateGrid(
+                  controller.allDrafts, // Use allDrafts here.
+                  null,
+                  isDrafts: true,
+                  isLoading: controller.isDraftsLoading.value,
+                  hasMore: controller.hasMoreDrafts.value,
+                  onDelete: controller.deleteDraft,
+                  onEdit: (template) => _editDraft(template),
+                  isLocalDraft: (template) =>
+                      controller.isLocalDraft(template.id), // Add this
+                ),
+              ),
+            ),
+          ],
         );
       }),
     );
@@ -295,6 +308,7 @@ class ProfilePage extends StatelessWidget {
     required bool hasMore,
     Function(String)? onDelete,
     Function(CardTemplate)? onEdit,
+    required bool Function(CardTemplate) isLocalDraft, // Add this parameter
   }) {
     return CustomScrollView(
       controller: scrollController,
@@ -312,8 +326,13 @@ class ProfilePage extends StatelessWidget {
               return DraftCard(
                 template: template,
                 isDraft: isDrafts,
+                isLocal: isLocalDraft(template), // Pass local status
                 onTap: () => onEdit?.call(template),
-                onDelete: () => _showDeleteDialog(template.id, onDelete),
+                onDelete: () => _showDeleteDialog(
+                  template.id,
+                  onDelete,
+                  isLocalDraft(template),
+                ), // Update this
               );
             },
           ),
@@ -530,7 +549,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   void _openTemplate(CardTemplate template) {
-    Get.toNamed('/editor', arguments: template);
+    Get.toNamed(Routes.editor, arguments: template);
   }
 
   void _showRemoveFromFavoritesDialog(
@@ -586,16 +605,22 @@ class ProfilePage extends StatelessWidget {
     Get.toNamed(Routes.editor, arguments: template);
   }
 
-  void _showDeleteDialog(String draftId, Function(String)? onDelete) {
+  void _showDeleteDialog(
+    String draftId,
+    Function(String)? onDelete,
+    bool isLocal,
+  ) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Delete Draft',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        title: Text(
+          isLocal ? 'Delete Local Draft' : 'Delete Draft',
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         content: Text(
-          'Are you sure you want to delete this draft? This action cannot be undone.',
+          isLocal
+              ? 'Are you sure you want to delete this local draft? This action cannot be undone.'
+              : 'Are you sure you want to delete this draft from cloud? This action cannot be undone.',
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
         actions: [
@@ -615,16 +640,18 @@ class ProfilePage extends StatelessWidget {
               onDelete?.call(draftId);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: isLocal
+                  ? Colors.orange.shade600
+                  : Colors.red.shade600,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            child: Text(
+              isLocal ? 'Delete Local' : 'Delete',
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -636,6 +663,7 @@ class ProfilePage extends StatelessWidget {
 class DraftCard extends StatelessWidget {
   final CardTemplate template;
   final bool isDraft;
+  final bool isLocal; // Add this
   final VoidCallback onTap;
   final VoidCallback? onDelete;
 
@@ -643,6 +671,7 @@ class DraftCard extends StatelessWidget {
     super.key,
     required this.template,
     required this.isDraft,
+    required this.isLocal, // Add this
     required this.onTap,
     this.onDelete,
   });
@@ -690,6 +719,33 @@ class DraftCard extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Local badge in top-left corner
+              if (isLocal)
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade600,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'LOCAL',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
               if (isDraft)
                 Positioned(
                   top: 0,
@@ -735,13 +791,22 @@ class DraftCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete, size: 16, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
+                            Icon(
+                              Icons.delete,
+                              size: 16,
+                              color: isLocal ? Colors.orange : Colors.red,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Delete',
+                              style: TextStyle(
+                                color: isLocal ? Colors.orange : Colors.red,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -756,21 +821,44 @@ class DraftCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  template.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        template.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Local icon next to title for extra visibility
+                    if (isLocal)
+                      Icon(
+                        Icons.storage,
+                        size: 14,
+                        color: Colors.orange.shade600,
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _formatDate(template.updatedAt ?? template.createdAt),
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
+                // Additional local storage info
+                if (isLocal)
+                  Text(
+                    'Not backed up',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.orange.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -781,14 +869,22 @@ class DraftCard extends StatelessWidget {
 
   Widget _buildThumbnail() {
     if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: template.thumbnailUrl!,
-        fit: BoxFit.contain,
-        placeholder: (context, url) => _buildShimmerPlaceholder(),
-        errorWidget: (context, url, error) => _buildPlaceholder(),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 300),
-      );
+      if (template.thumbnailUrl!.startsWith("http")) {
+        return CachedNetworkImage(
+          imageUrl: template.thumbnailUrl!,
+          fit: BoxFit.contain,
+          placeholder: (context, url) => _buildShimmerPlaceholder(),
+          errorWidget: (context, url, error) => _buildPlaceholder(),
+          fadeInDuration: const Duration(milliseconds: 300),
+          fadeOutDuration: const Duration(milliseconds: 300),
+        );
+      } else {
+        return Image.file(
+          File(template.thumbnailUrl!),
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        );
+      }
     }
     return _buildPlaceholder();
   }
@@ -830,6 +926,204 @@ class DraftCard extends StatelessWidget {
     }
   }
 }
+// class DraftCard extends StatelessWidget {
+//   final CardTemplate template;
+//   final bool isDraft;
+//   final VoidCallback onTap;
+//   final VoidCallback? onDelete;
+
+//   const DraftCard({
+//     super.key,
+//     required this.template,
+//     required this.isDraft,
+//     required this.onTap,
+//     this.onDelete,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+//       decoration: BoxDecoration(
+//         color: AppColors.brandingLight.withValues(alpha: 0.02),
+//         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.center,
+//         children: [
+//           Stack(
+//             children: [
+//               ConstrainedBox(
+//                 constraints: const BoxConstraints(maxHeight: 200),
+//                 child: InkWell(
+//                   onTap: onTap,
+//                   radius: 12,
+//                   borderRadius: BorderRadius.circular(12),
+//                   child: Container(
+//                     decoration: BoxDecoration(
+//                       borderRadius: BorderRadius.circular(12),
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: Colors.grey.withOpacity(0.2),
+//                           blurRadius: 8,
+//                           offset: const Offset(0, 4),
+//                         ),
+//                       ],
+//                     ),
+//                     child: ClipRRect(
+//                       borderRadius: const BorderRadius.vertical(
+//                         top: Radius.circular(8),
+//                         bottom: Radius.circular(8),
+//                       ),
+//                       child: AspectRatio(
+//                         aspectRatio: template.aspectRatio,
+//                         child: _buildThumbnail(),
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               if (isDraft)
+//                 Positioned(
+//                   top: 0,
+//                   right: 0,
+//                   child: PopupMenuButton<String>(
+//                     icon: Container(
+//                       padding: const EdgeInsets.symmetric(
+//                         vertical: 4,
+//                         horizontal: 8,
+//                       ),
+//                       decoration: BoxDecoration(
+//                         color: Colors.white,
+//                         borderRadius: BorderRadius.circular(8),
+//                         boxShadow: [
+//                           BoxShadow(
+//                             color: Colors.grey.withOpacity(0.2),
+//                             blurRadius: 8,
+//                             offset: const Offset(0, 2),
+//                           ),
+//                         ],
+//                       ),
+//                       child: const Icon(
+//                         Icons.more_horiz,
+//                         color: Colors.black87,
+//                         size: 18,
+//                       ),
+//                     ),
+//                     onSelected: (value) {
+//                       if (value == 'delete') {
+//                         onDelete?.call();
+//                       } else if (value == 'edit') {
+//                         onTap();
+//                       }
+//                     },
+//                     itemBuilder: (context) => [
+//                       const PopupMenuItem(
+//                         value: 'edit',
+//                         child: Row(
+//                           children: [
+//                             Icon(Icons.edit, size: 16),
+//                             SizedBox(width: 8),
+//                             Text('Edit'),
+//                           ],
+//                         ),
+//                       ),
+//                       const PopupMenuItem(
+//                         value: 'delete',
+//                         child: Row(
+//                           children: [
+//                             Icon(Icons.delete, size: 16, color: Colors.red),
+//                             SizedBox(width: 8),
+//                             Text('Delete', style: TextStyle(color: Colors.red)),
+//                           ],
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//             ],
+//           ),
+//           const SizedBox(height: 8),
+//           Padding(
+//             padding: const EdgeInsets.symmetric(horizontal: 4),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Text(
+//                   template.name,
+//                   style: const TextStyle(
+//                     fontWeight: FontWeight.w600,
+//                     fontSize: 14,
+//                     color: Colors.black87,
+//                   ),
+//                   maxLines: 2,
+//                   overflow: TextOverflow.ellipsis,
+//                 ),
+//                 const SizedBox(height: 4),
+//                 Text(
+//                   _formatDate(template.updatedAt ?? template.createdAt),
+//                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+// Widget _buildThumbnail() {
+//   if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
+//     return CachedNetworkImage(
+//       imageUrl: template.thumbnailUrl!,
+//       fit: BoxFit.contain,
+//       placeholder: (context, url) => _buildShimmerPlaceholder(),
+//       errorWidget: (context, url, error) => _buildPlaceholder(),
+//       fadeInDuration: const Duration(milliseconds: 300),
+//       fadeOutDuration: const Duration(milliseconds: 300),
+//     );
+//   }
+//   return _buildPlaceholder();
+// }
+
+// Widget _buildShimmerPlaceholder() {
+//   return Shimmer.fromColors(
+//     baseColor: Colors.grey[300]!,
+//     highlightColor: Colors.grey[100]!,
+//     child: Container(color: Colors.white),
+//   );
+// }
+
+// Widget _buildPlaceholder() {
+//   return Container(
+//     color: Colors.grey[100],
+//     child: Center(
+//       child: Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
+//     ),
+//   );
+// }
+
+// String _formatDate(DateTime? date) {
+//   if (date == null) return 'Unknown';
+
+//   final now = DateTime.now();
+//   final difference = now.difference(date);
+
+//   if (difference.inDays == 0) {
+//     if (difference.inHours == 0) {
+//       return '${difference.inMinutes} min ago';
+//     }
+//     return '${difference.inHours}h ago';
+//   } else if (difference.inDays < 7) {
+//     return '${difference.inDays}d ago';
+//   } else if (difference.inDays < 30) {
+//     return '${(difference.inDays / 7).floor()}w ago';
+//   } else {
+//     return '${date.day}/${date.month}/${date.year}';
+//   }
+// }
+
+// }
 
 class FavoriteButton extends StatelessWidget {
   final bool isFav;

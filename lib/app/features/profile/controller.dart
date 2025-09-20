@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/firestore_service.dart';
+import 'package:cardmaker/services/storage_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -28,6 +29,7 @@ class ProfileController extends GetxController
 
   // Draft count
   final RxInt draftsCount = 0.obs;
+  final RxList<CardTemplate> localDrafts = <CardTemplate>[].obs;
 
   static const int _pageSize = 10;
 
@@ -46,9 +48,12 @@ class ProfileController extends GetxController
     });
 
     // Load initial data
-    loadDraftsCount();
-    loadDrafts();
-    loadFavorites();
+    Future.wait([
+      loadDraftsCount(),
+      loadLocalDrafts(),
+      loadDrafts(),
+      loadFavorites(),
+    ]);
   }
 
   Future<void> loadDraftsCount() async {
@@ -60,6 +65,7 @@ class ProfileController extends GetxController
     }
   }
 
+  // Update your loadDrafts method to also load local drafts
   Future<void> loadDrafts() async {
     if (isDraftsLoading.value) return;
 
@@ -204,14 +210,39 @@ class ProfileController extends GetxController
     }
   }
 
+  // Future<void> deleteDraft(String draftId) async {
+  //   try {
+  //     await _firestoreService.deleteDraft(draftId);
+  //     drafts.removeWhere((draft) => draft.id == draftId);
+  //     loadDraftsCount();
+  //   } catch (e) {
+  //     final error = FirebaseErrorHandler.handle(e);
+  //   }
+  // }
+  // Update delete method to handle local drafts
   Future<void> deleteDraft(String draftId) async {
     try {
-      await _firestoreService.deleteDraft(draftId);
-      drafts.removeWhere((draft) => draft.id == draftId);
+      // Check if it's a Firebase draft
+      final isFirebaseDraft = drafts.any((draft) => draft.id == draftId);
+
+      if (isFirebaseDraft) {
+        await _firestoreService.deleteDraft(draftId);
+        drafts.removeWhere((draft) => draft.id == draftId);
+      }
+
+      // Always delete from local storage
+      await StorageService.deleteTemplate(draftId, type: 'drafts');
+      localDrafts.removeWhere((draft) => draft.id == draftId);
+
       loadDraftsCount();
     } catch (e) {
       final error = FirebaseErrorHandler.handle(e);
     }
+  }
+
+  bool isLocalDraft(String draftId) {
+    return localDrafts.any((draft) => draft.id == draftId) &&
+        !drafts.any((draft) => draft.id == draftId);
   }
 
   Future<void> removeFromFavorites(String templateId) async {
@@ -227,6 +258,7 @@ class ProfileController extends GetxController
     if (isDraftsLoading.value) return Future.value();
     lastDraftDocument = null;
     hasMoreDrafts.value = true;
+    loadLocalDrafts();
     await loadDrafts();
     await loadDraftsCount();
   }
@@ -236,6 +268,24 @@ class ProfileController extends GetxController
     lastFavoriteDocument = null;
     hasMoreFavorites.value = true;
     await loadFavorites();
+  }
+
+  // Combine all drafts (Firebase + Local)
+  List<CardTemplate> get allDrafts {
+    final firebaseIds = drafts.map((d) => d.id).toSet();
+    final localOnly = localDrafts
+        .where((local) => !firebaseIds.contains(local.id))
+        .toList();
+    return [...drafts, ...localOnly];
+  }
+
+  Future<void> loadLocalDrafts() async {
+    try {
+      final localTemplates = StorageService.loadTemplates(type: 'drafts');
+      localDrafts.assignAll(localTemplates);
+    } catch (e) {
+      debugPrint('Error loading local drafts: $e');
+    }
   }
 
   @override
