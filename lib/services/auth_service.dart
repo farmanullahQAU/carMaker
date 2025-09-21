@@ -12,10 +12,15 @@ class AuthService extends GetxService {
 
   final RxBool isLoading = false.obs;
 
+  RxBool isSkipped = false.obs;
+
   @override
   void onInit() {
     super.onInit();
     _user.bindStream(_auth.authStateChanges());
+    ever(_user, (d) {
+      isSkipped.value = d == null;
+    });
   }
 
   // Email & Password Sign Up

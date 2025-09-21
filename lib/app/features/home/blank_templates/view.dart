@@ -2,6 +2,7 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
 
 class ProfessionalTemplatesPage extends StatelessWidget {
   const ProfessionalTemplatesPage({super.key});
@@ -36,7 +37,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   Widget _buildSocialMediaSection() {
     final socialMediaTemplates = [
       CardTemplate(
-        id: '1',
+        id: Uuid().v1(),
         name: 'Instagram Post',
         backgroundImageUrl: null,
         items: [],
@@ -49,7 +50,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFE91E63),
       ),
       CardTemplate(
-        id: '2',
+        id: Uuid().v1(),
+
         name: 'Instagram Story',
         backgroundImageUrl: null,
         items: [],
@@ -62,7 +64,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF9C27B0),
       ),
       CardTemplate(
-        id: '3',
+        id: Uuid().v1(),
+
         name: 'Facebook Post',
         backgroundImageUrl: null,
         items: [],
@@ -75,7 +78,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF1976D2),
       ),
       CardTemplate(
-        id: '4',
+        id: Uuid().v1(),
+
         name: 'Twitter Header',
         backgroundImageUrl: null,
         items: [],
@@ -88,7 +92,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF1DA1F2),
       ),
       CardTemplate(
-        id: '5',
+        id: Uuid().v1(),
+
         name: 'LinkedIn Post',
         backgroundImageUrl: null,
         items: [],
@@ -134,7 +139,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   Widget _buildPhotoDesignsSection() {
     final photoDesignTemplates = [
       CardTemplate(
-        id: '6',
+        id: Uuid().v1(),
+
         name: '4x6 Photo',
         backgroundImageUrl: null,
         items: [],
@@ -147,7 +153,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF4CAF50),
       ),
       CardTemplate(
-        id: '7',
+        id: Uuid().v1(),
+
         name: '5x7 Photo',
         backgroundImageUrl: null,
         items: [],
@@ -160,7 +167,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF8BC34A),
       ),
       CardTemplate(
-        id: '8',
+        id: Uuid().v1(),
+
         name: 'Square Photo',
         backgroundImageUrl: null,
         items: [],
@@ -173,7 +181,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF009688),
       ),
       CardTemplate(
-        id: '9',
+        id: Uuid().v1(),
+
         name: 'Polaroid',
         backgroundImageUrl: null,
         items: [],
@@ -219,7 +228,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   Widget _buildPrintDesignsSection() {
     final printDesignTemplates = [
       CardTemplate(
-        id: '10',
+        id: Uuid().v1(),
+
         name: 'A4 Flyer',
         backgroundImageUrl: null,
         items: [],
@@ -232,7 +242,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFFF9800),
       ),
       CardTemplate(
-        id: '11',
+        id: Uuid().v1(),
+
         name: 'Poster',
         backgroundImageUrl: null,
         items: [],
@@ -245,7 +256,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFFF5722),
       ),
       CardTemplate(
-        id: '12',
+        id: Uuid().v1(),
+
         name: 'Brochure',
         backgroundImageUrl: null,
         items: [],
@@ -258,7 +270,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF795548),
       ),
       CardTemplate(
-        id: '13',
+        id: Uuid().v1(),
+
         name: 'Business Card',
         backgroundImageUrl: null,
         items: [],
@@ -304,7 +317,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   Widget _buildInvitationsGreetingsSection() {
     final invitationGreetingTemplates = [
       CardTemplate(
-        id: '18',
+        id: Uuid().v1(),
+
         name: 'A5 Portrait',
         backgroundImageUrl: null,
         items: [],
@@ -317,7 +331,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF9C27B0), // Purple for elegance
       ),
       CardTemplate(
-        id: '19',
+        id: Uuid().v1(),
+
         name: 'A5 Landscape',
         backgroundImageUrl: null,
         items: [],
@@ -330,7 +345,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFF44336), // Red for festive theme
       ),
       CardTemplate(
-        id: '14',
+        id: Uuid().v1(),
+
         name: 'Wedding Invitation',
         backgroundImageUrl: null,
         items: [],
@@ -343,7 +359,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFD81B60), // Pink for wedding theme
       ),
       CardTemplate(
-        id: '15',
+        id: Uuid().v1(),
+
         name: 'Birthday Greeting',
         backgroundImageUrl: null,
         items: [],
@@ -356,7 +373,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFFFFC107), // Amber for festive theme
       ),
       CardTemplate(
-        id: '16',
+        id: Uuid().v1(),
+
         name: 'Party Invitation',
         backgroundImageUrl: null,
         items: [],
@@ -369,7 +387,8 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         color: const Color(0xFF2196F3), // Blue for party theme
       ),
       CardTemplate(
-        id: '17',
+        id: Uuid().v1(),
+
         name: 'Holiday Card',
         backgroundImageUrl: null,
         items: [],

@@ -1,17 +1,24 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
+import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:screenshot/screenshot.dart';
+
+import '../../../services/auth_service.dart';
 
 class ProfileController extends GetxController
     with GetSingleTickerProviderStateMixin {
+  final authService = Get.find<AuthService>();
   late TabController tabController;
   final _firestoreService = FirestoreService();
+  final ScreenshotController screenshotController = ScreenshotController();
 
   // Drafts
   final RxList<CardTemplate> drafts = <CardTemplate>[].obs;
@@ -67,7 +74,7 @@ class ProfileController extends GetxController
 
   // Update your loadDrafts method to also load local drafts
   Future<void> loadDrafts() async {
-    if (isDraftsLoading.value) return;
+    if (isDraftsLoading.value || authService.user == null) return;
 
     isDraftsLoading.value = true;
     hasDraftsError.value = false;
@@ -210,15 +217,81 @@ class ProfileController extends GetxController
     }
   }
 
-  // Future<void> deleteDraft(String draftId) async {
-  //   try {
-  //     await _firestoreService.deleteDraft(draftId);
-  //     drafts.removeWhere((draft) => draft.id == draftId);
-  //     loadDraftsCount();
-  //   } catch (e) {
-  //     final error = FirebaseErrorHandler.handle(e);
-  //   }
-  // }
+  Future<void> backupDraft(CardTemplate template) async {
+    try {
+      if (authService.user == null) {
+        AppToast.error(message: 'You must be logged in to back up drafts.');
+        return;
+      }
+      AppToast.loading(message: 'Backing up draft...', showLogo: true);
+      // Show loading indicator
+      isDraftsLoading.value = true;
+
+      // Upload to Firebase
+      await saveDraft(template);
+      // Remove from local storage
+      drafts.add(template);
+      await StorageService.deleteTemplate(template.id, type: 'drafts');
+
+      localDrafts.removeWhere((draft) => draft.id == template.id);
+
+      // Reload drafts to reflect the change
+      await loadDrafts();
+      await loadDraftsCount();
+
+      AppToast.success(message: 'Draft backed up successfully');
+    } catch (e) {
+      AppToast.error(message: 'Failed to backup draft: ${e.toString()}');
+    } finally {
+      isDraftsLoading.value = false;
+    }
+  }
+
+  /// Save current design as draft to Firebase
+  Future<void> saveDraft(CardTemplate template) async {
+    try {
+      template = template.copyWith(isDraft: true);
+      File? backgroundFile;
+      File? thumbnailFile;
+
+      print(
+        "ccccccccccccccccccccccccccccddddddddddddddddddddddddddddddddddddddddd ${template.thumbnailUrl}",
+      );
+      if (template.thumbnailUrl?.isNotEmpty ?? false) {
+        if (await File(template.thumbnailUrl!).exists()) {
+          thumbnailFile = File(template.thumbnailUrl!);
+        }
+      }
+      String? backgroundImageUrl = template.backgroundImageUrl;
+
+      // Check if a new background image was selected (local file path)
+      if (template.backgroundImageUrl?.isNotEmpty ?? false) {
+        if (!template.backgroundImageUrl!.startsWith('http')) {
+          // New local image selected
+          backgroundFile = File(template.backgroundImageUrl!);
+        } else {
+          // Retain the selected background URL (if it's a URL)
+          backgroundImageUrl = template.backgroundImageUrl;
+        }
+      }
+      print("cccccccccccccccccccccccccccccccccccccccccccccccccc");
+
+      print(thumbnailFile?.path);
+      await _firestoreService.addTemplate(
+        template.copyWith(backgroundImageUrl: backgroundImageUrl),
+        thumbnailFile: thumbnailFile,
+        backgroundFile: backgroundFile,
+      );
+    } catch (err) {
+      AppToast.error(message: err.toString());
+    }
+  }
+
+  bool isBackedUp(CardTemplate template) {
+    // A template is backed up if it exists in Firebase drafts
+    return drafts.any((draft) => draft.id == template.id);
+  }
+
   // Update delete method to handle local drafts
   Future<void> deleteDraft(String draftId) async {
     try {
@@ -245,12 +318,17 @@ class ProfileController extends GetxController
         !drafts.any((draft) => draft.id == draftId);
   }
 
+  bool isLocalOnly(CardTemplate template) {
+    return localDrafts.any((draft) => draft.id == template.id) &&
+        !drafts.any((draft) => draft.id == template.id);
+  }
+
   Future<void> removeFromFavorites(String templateId) async {
     try {
       await _firestoreService.removeFromFavorites(templateId);
       favorites.removeWhere((template) => template.id == templateId);
     } catch (e) {
-      debugPrint('Error removing from favorites: $e');
+      AppToast.error(message: e.toString());
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/update_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -352,7 +353,11 @@ class SettingsPage extends StatelessWidget {
             onPressed: () async {
               Get.back();
               await FirebaseAuth.instance.signOut();
+
               Get.back();
+              if (Get.isRegistered<ProfileController>()) {
+                Get.find<ProfileController>().drafts.clear();
+              }
             },
             child: Text(
               'Sign Out',

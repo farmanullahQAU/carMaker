@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -45,7 +46,10 @@ class AuthWrapper extends StatelessWidget {
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () => Get.back(),
+                onPressed: () {
+                  Get.find<AuthService>().isSkipped.value = true;
+                  Get.back();
+                },
                 child: Text(
                   'Skip',
                   style: TextStyle(

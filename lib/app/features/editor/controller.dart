@@ -913,7 +913,7 @@ class CanvasController extends GetxController {
         thumbnailUrl: null,
       );
 
-      final file = await exportAsImage("${template.id}_kkkkk${template.name}");
+      final file = await exportAsImage("${template.id}_${template.id}");
       template = template.copyWith(thumbnailUrl: file.path);
 
       print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${file.path}");

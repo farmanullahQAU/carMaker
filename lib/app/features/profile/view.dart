@@ -9,14 +9,15 @@ import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/widgets/common/template_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfileTab extends StatelessWidget {
-  bool get isLoggedIn => Get.find<AuthService>().user != null;
+  bool get isLoggedIn =>
+      Get.find<AuthService>().user != null ||
+      Get.find<AuthService>().isSkipped.value;
   const ProfileTab({super.key});
 
   @override
@@ -37,131 +38,136 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(ProfileController());
 
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.brandingLight.withValues(alpha: 0.05),
-        title: const Text(
-          'My Profile',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: 0.5,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                expandedHeight: 150.0,
+                floating: false,
+                // pinned: true,
+                snap: false,
+                // backgroundColor: Colors.white,
+                // elevation: 1,
+                // surfaceTintColor: Colors.white,
+                // leading: IconButton(
+                //   icon: const Icon(
+                //     Icons.arrow_back_ios_new,
+                //     size: 20,
+                //     color: Colors.black87,
+                //   ),
+                //   onPressed: () => Get.back(),
+                // ),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _buildUserHeader(controller),
+                  // titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+                  // centerTitle: false,
+                ),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(48),
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Get.theme.colorScheme.surfaceContainerHighest,
+
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: TabBar(
+                      dividerHeight: 0,
+                      controller: controller.tabController,
+                      indicator: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        color: Get.theme.colorScheme.primary,
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicatorPadding: const EdgeInsets.symmetric(vertical: 0),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.grey.shade600,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                      tabs: const [
+                        Tab(text: 'My Drafts'),
+                        Tab(text: 'Favorites'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: controller.tabController,
+            children: [
+              _buildDraftsTab(controller),
+              _buildFavoritesTab(controller),
+            ],
           ),
         ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Get.back(),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50),
-              color: Get.theme.colorScheme.surface,
-            ),
-            child: TabBar(
-              dividerColor: Colors.transparent,
-              controller: controller.tabController,
-              indicator: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                color: Get.theme.colorScheme.primaryContainer,
-              ),
-              splashBorderRadius: BorderRadius.circular(25),
-              indicatorSize: TabBarIndicatorSize.tab,
-              unselectedLabelColor: Colors.grey.shade500,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-              tabs: const [
-                Tab(text: 'My Drafts'),
-                Tab(text: 'Favorites'),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          _buildUserHeader(controller),
-          Expanded(
-            child: TabBarView(
-              controller: controller.tabController,
-              children: [
-                _buildDraftsTab(controller),
-                _buildFavoritesTab(controller),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildUserHeader(ProfileController controller) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = controller.authService.user;
+
+    final isGuest = user == null || controller.authService.isSkipped.value;
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.brandingLight.withValues(alpha: 0.05),
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade100, width: 1),
-        ),
+      // color: Colors.red,
+      padding: const EdgeInsets.only(
+        // top: kToolbarHeight + 40,
+        left: 16,
+        right: 16,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: Colors.blue.shade50,
+            backgroundColor: AppColors.blue400Light,
             child: user?.photoURL != null
                 ? ClipOval(
                     child: CachedNetworkImage(
-                      imageUrl: user!.photoURL!,
+                      imageUrl: user?.photoURL ?? "",
                       fit: BoxFit.cover,
-                      width: 64,
-                      height: 64,
+                      width: 56,
+                      height: 56,
                       placeholder: (context, url) => _buildShimmerPlaceholder(),
                       errorWidget: (context, url, error) => Icon(
                         Icons.person,
-                        size: 32,
-                        color: Colors.blue.shade600,
+                        size: 28,
+                        color: AppColors.blue400Light,
                       ),
                     ),
                   )
-                : Icon(Icons.person, size: 32, color: Colors.blue.shade600),
+                : Icon(Icons.person),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  user?.displayName ?? 'Anonymous User',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
+                  user?.displayName ?? 'Guest User',
+                  style: const TextStyle(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (user?.email != null)
                   Text(
                     user!.email!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w400,
+                    style: Get.theme.textTheme.labelSmall?.copyWith(
+                      color: Get.theme.hintColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -169,16 +175,36 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: Colors.black54,
-              size: 24,
+          if (isGuest)
+            ElevatedButton(
+              onPressed: () {
+                Get.toNamed(Routes.auth);
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 4,
+                ),
+
+                elevation: 0,
+                shadowColor: Colors.transparent,
+              ),
+              child: const Text(
+                'Login',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            )
+          else
+            IconButton(
+              icon: Icon(
+                Icons.settings_outlined,
+                color: Colors.grey.shade700,
+                size: 24,
+              ),
+              onPressed: () {
+                Get.to(() => SettingsPage());
+              },
             ),
-            onPressed: () {
-              Get.to(() => SettingsPage());
-            },
-          ),
         ],
       ),
     );
@@ -218,7 +244,7 @@ class ProfilePage extends StatelessWidget {
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification.metrics.pixels >=
-                          notification.metrics.maxScrollExtent - 100 &&
+                          notification.metrics.maxScrollExtent &&
                       !controller.isDraftsLoading.value &&
                       controller.hasMoreDrafts.value) {
                     debugPrint(
@@ -229,15 +255,17 @@ class ProfilePage extends StatelessWidget {
                   return false;
                 },
                 child: _buildStaggeredTemplateGrid(
-                  controller.allDrafts, // Use allDrafts here.
+                  controller.allDrafts,
                   null,
                   isDrafts: true,
                   isLoading: controller.isDraftsLoading.value,
                   hasMore: controller.hasMoreDrafts.value,
                   onDelete: controller.deleteDraft,
                   onEdit: (template) => _editDraft(template),
-                  isLocalDraft: (template) =>
-                      controller.isLocalDraft(template.id), // Add this
+                  onBackup: controller.backupDraft, // Add this line
+                  isBackedUp: (template) => controller.isBackedUp(
+                    template,
+                  ), // Changed from isLocalDraft
                 ),
               ),
             ),
@@ -308,10 +336,13 @@ class ProfilePage extends StatelessWidget {
     required bool hasMore,
     Function(String)? onDelete,
     Function(CardTemplate)? onEdit,
-    required bool Function(CardTemplate) isLocalDraft, // Add this parameter
+    Function(CardTemplate)? onBackup, // Add backup callback
+    required bool Function(CardTemplate)
+    isBackedUp, // Changed from isLocalDraft
   }) {
     return CustomScrollView(
       controller: scrollController,
+      cacheExtent: 500,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverPadding(
@@ -324,58 +355,105 @@ class ProfilePage extends StatelessWidget {
             itemBuilder: (context, index) {
               final template = templates[index];
               return DraftCard(
+                key: ValueKey('draft-${template.id}-$index'),
                 template: template,
                 isDraft: isDrafts,
-                isLocal: isLocalDraft(template), // Pass local status
+                isBackedUp: isBackedUp(template), // Changed parameter
                 onTap: () => onEdit?.call(template),
                 onDelete: () => _showDeleteDialog(
                   template.id,
                   onDelete,
-                  isLocalDraft(template),
-                ), // Update this
+                  isBackedUp(template), // Changed parameter
+                ),
+                onBackup: onBackup != null
+                    ? () => onBackup(template)
+                    : null, // Add backup callback
               );
             },
           ),
         ),
-        if (isLoading && hasMore) SliverToBoxAdapter(child: buildLoading()),
+        if (isLoading && hasMore)
+          SliverToBoxAdapter(child: buildLoading("Loading more drafts...")),
       ],
     );
   }
+  // Widget _buildStaggeredTemplateGrid(
+  //   List<CardTemplate> templates,
+  //   ScrollController? scrollController, {
+  //   required bool isDrafts,
+  //   required bool isLoading,
+  //   required bool hasMore,
+  //   Function(String)? onDelete,
+  //   Function(CardTemplate)? onEdit,
+  //   required bool Function(CardTemplate) isLocalDraft, // Add this parameter
+  // }) {
+  //   return CustomScrollView(
+  //     controller: scrollController,
+  //     cacheExtent: 500,
+  //     physics: const AlwaysScrollableScrollPhysics(),
+  //     slivers: [
+  //       SliverPadding(
+  //         padding: const EdgeInsets.all(12),
+  //         sliver: SliverMasonryGrid.count(
+  //           crossAxisCount: 2,
+  //           mainAxisSpacing: 12,
+  //           crossAxisSpacing: 12,
+  //           childCount: templates.length,
+  //           itemBuilder: (context, index) {
+  //             final template = templates[index];
+  //             return DraftCard(
+  //               key: ValueKey('draft-${template.id}-$index'),
+  //               template: template,
+  //               isDraft: isDrafts,
+  //               isLocal: isLocalDraft(template), // Pass local status
+  //               onTap: () => onEdit?.call(template),
+  //               onDelete: () => _showDeleteDialog(
+  //                 template.id,
+  //                 onDelete,
+  //                 isLocalDraft(template),
+  //               ), // Update this
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //       if (isLoading && hasMore)
+  //         SliverToBoxAdapter(child: buildLoading("Loading more drafts...")),
+  //     ],
+  //   );
+  // }
 
-  Widget buildLoading() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+  Widget buildLoading([String? message = "Loading templates..."]) {
+    return Align(
+      alignment: Alignment.center, // or .topCenter, .centerLeft, etc.
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: Get.theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Get.theme.colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min, // 🔑 keeps it tight
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              message!,
+              style: Get.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Loading templates...',
-                style: Get.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -400,10 +478,11 @@ class ProfilePage extends StatelessWidget {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childCount: templates.length,
+
             itemBuilder: (context, index) {
               final template = templates[index];
               return TemplateCard(
-                key: ValueKey(template.id),
+                key: ValueKey('fav-${template.id}-$index'),
                 template: template,
                 onTap: () => onEdit?.call(template),
                 favoriteButton: FavoriteButton(
@@ -421,7 +500,7 @@ class ProfilePage extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.all(12),
-              child: Center(child: buildLoading()),
+              child: Center(child: buildLoading("Loading more...")),
             ),
           ),
       ],
@@ -608,19 +687,19 @@ class ProfilePage extends StatelessWidget {
   void _showDeleteDialog(
     String draftId,
     Function(String)? onDelete,
-    bool isLocal,
+    bool isBackedUp,
   ) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
-          isLocal ? 'Delete Local Draft' : 'Delete Draft',
+          isBackedUp ? 'Delete Draft' : 'Delete Local Draft',
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
         ),
         content: Text(
-          isLocal
-              ? 'Are you sure you want to delete this local draft? This action cannot be undone.'
-              : 'Are you sure you want to delete this draft from cloud? This action cannot be undone.',
+          isBackedUp
+              ? 'Are you sure you want to delete this draft from cloud? This action cannot be undone.'
+              : 'Are you sure you want to delete this local draft? This action cannot be undone.',
           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
         ),
         actions: [
@@ -640,9 +719,9 @@ class ProfilePage extends StatelessWidget {
               onDelete?.call(draftId);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isLocal
-                  ? Colors.orange.shade600
-                  : Colors.red.shade600,
+              backgroundColor: isBackedUp
+                  ? Colors.red.shade600
+                  : Colors.orange.shade600,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -650,7 +729,7 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
             child: Text(
-              isLocal ? 'Delete Local' : 'Delete',
+              isBackedUp ? 'Delete' : 'Delete Local',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -663,17 +742,19 @@ class ProfilePage extends StatelessWidget {
 class DraftCard extends StatelessWidget {
   final CardTemplate template;
   final bool isDraft;
-  final bool isLocal; // Add this
+  final bool isBackedUp; // Changed from isLocal to isBackedUp
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onBackup; // Add backup callback
 
   const DraftCard({
     super.key,
     required this.template,
     required this.isDraft,
-    required this.isLocal, // Add this
+    required this.isBackedUp, // Changed parameter
     required this.onTap,
     this.onDelete,
+    this.onBackup, // Add backup callback
   });
 
   @override
@@ -720,31 +801,30 @@ class DraftCard extends StatelessWidget {
                 ),
               ),
 
-              // Local badge in top-left corner
-              if (isLocal)
-                Positioned(
-                  top: 4,
-                  left: 4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade600,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'LOCAL',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+              // Backup status icon in top-left corner
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
                       ),
-                    ),
+                    ],
+                  ),
+                  child: Icon(
+                    isBackedUp ? Icons.cloud_done : Icons.cloud_off,
+                    size: 14,
+                    color: isBackedUp ? Colors.green : Colors.orange,
                   ),
                 ),
+              ),
 
               if (isDraft)
                 Positioned(
@@ -778,6 +858,8 @@ class DraftCard extends StatelessWidget {
                         onDelete?.call();
                       } else if (value == 'edit') {
                         onTap();
+                      } else if (value == 'backup' && onBackup != null) {
+                        onBackup?.call();
                       }
                     },
                     itemBuilder: (context) => [
@@ -791,22 +873,28 @@ class DraftCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      if (!isBackedUp) // Only show backup option if not backed up
+                        PopupMenuItem(
+                          value: 'backup',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.cloud_upload,
+                                size: 16,
+                                color: Colors.blue,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Backup Now'),
+                            ],
+                          ),
+                        ),
                       PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.delete,
-                              size: 16,
-                              color: isLocal ? Colors.orange : Colors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Delete',
-                              style: TextStyle(
-                                color: isLocal ? Colors.orange : Colors.red,
-                              ),
-                            ),
+                            Icon(Icons.delete, size: 16, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
@@ -826,39 +914,22 @@ class DraftCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         template.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                        style: Get.textTheme.titleSmall,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // Local icon next to title for extra visibility
-                    if (isLocal)
-                      Icon(
-                        Icons.storage,
-                        size: 14,
-                        color: Colors.orange.shade600,
+                    Text(
+                      _formatDate(template.updatedAt ?? template.createdAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Get.theme.hintColor,
                       ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDate(template.updatedAt ?? template.createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-                // Additional local storage info
-                if (isLocal)
-                  Text(
-                    'Not backed up',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.orange.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+
+                // Backup status text
               ],
             ),
           ),
@@ -914,7 +985,9 @@ class DraftCard extends StatelessWidget {
 
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
-        return '${difference.inMinutes} min ago';
+        return difference.inMinutes < 1
+            ? 'just now'
+            : '${difference.inMinutes} min ago';
       }
       return '${difference.inHours}h ago';
     } else if (difference.inDays < 7) {
@@ -926,204 +999,6 @@ class DraftCard extends StatelessWidget {
     }
   }
 }
-// class DraftCard extends StatelessWidget {
-//   final CardTemplate template;
-//   final bool isDraft;
-//   final VoidCallback onTap;
-//   final VoidCallback? onDelete;
-
-//   const DraftCard({
-//     super.key,
-//     required this.template,
-//     required this.isDraft,
-//     required this.onTap,
-//     this.onDelete,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-//       decoration: BoxDecoration(
-//         color: AppColors.brandingLight.withValues(alpha: 0.02),
-//         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         children: [
-//           Stack(
-//             children: [
-//               ConstrainedBox(
-//                 constraints: const BoxConstraints(maxHeight: 200),
-//                 child: InkWell(
-//                   onTap: onTap,
-//                   radius: 12,
-//                   borderRadius: BorderRadius.circular(12),
-//                   child: Container(
-//                     decoration: BoxDecoration(
-//                       borderRadius: BorderRadius.circular(12),
-//                       boxShadow: [
-//                         BoxShadow(
-//                           color: Colors.grey.withOpacity(0.2),
-//                           blurRadius: 8,
-//                           offset: const Offset(0, 4),
-//                         ),
-//                       ],
-//                     ),
-//                     child: ClipRRect(
-//                       borderRadius: const BorderRadius.vertical(
-//                         top: Radius.circular(8),
-//                         bottom: Radius.circular(8),
-//                       ),
-//                       child: AspectRatio(
-//                         aspectRatio: template.aspectRatio,
-//                         child: _buildThumbnail(),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//               if (isDraft)
-//                 Positioned(
-//                   top: 0,
-//                   right: 0,
-//                   child: PopupMenuButton<String>(
-//                     icon: Container(
-//                       padding: const EdgeInsets.symmetric(
-//                         vertical: 4,
-//                         horizontal: 8,
-//                       ),
-//                       decoration: BoxDecoration(
-//                         color: Colors.white,
-//                         borderRadius: BorderRadius.circular(8),
-//                         boxShadow: [
-//                           BoxShadow(
-//                             color: Colors.grey.withOpacity(0.2),
-//                             blurRadius: 8,
-//                             offset: const Offset(0, 2),
-//                           ),
-//                         ],
-//                       ),
-//                       child: const Icon(
-//                         Icons.more_horiz,
-//                         color: Colors.black87,
-//                         size: 18,
-//                       ),
-//                     ),
-//                     onSelected: (value) {
-//                       if (value == 'delete') {
-//                         onDelete?.call();
-//                       } else if (value == 'edit') {
-//                         onTap();
-//                       }
-//                     },
-//                     itemBuilder: (context) => [
-//                       const PopupMenuItem(
-//                         value: 'edit',
-//                         child: Row(
-//                           children: [
-//                             Icon(Icons.edit, size: 16),
-//                             SizedBox(width: 8),
-//                             Text('Edit'),
-//                           ],
-//                         ),
-//                       ),
-//                       const PopupMenuItem(
-//                         value: 'delete',
-//                         child: Row(
-//                           children: [
-//                             Icon(Icons.delete, size: 16, color: Colors.red),
-//                             SizedBox(width: 8),
-//                             Text('Delete', style: TextStyle(color: Colors.red)),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//             ],
-//           ),
-//           const SizedBox(height: 8),
-//           Padding(
-//             padding: const EdgeInsets.symmetric(horizontal: 4),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   template.name,
-//                   style: const TextStyle(
-//                     fontWeight: FontWeight.w600,
-//                     fontSize: 14,
-//                     color: Colors.black87,
-//                   ),
-//                   maxLines: 2,
-//                   overflow: TextOverflow.ellipsis,
-//                 ),
-//                 const SizedBox(height: 4),
-//                 Text(
-//                   _formatDate(template.updatedAt ?? template.createdAt),
-//                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-// Widget _buildThumbnail() {
-//   if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
-//     return CachedNetworkImage(
-//       imageUrl: template.thumbnailUrl!,
-//       fit: BoxFit.contain,
-//       placeholder: (context, url) => _buildShimmerPlaceholder(),
-//       errorWidget: (context, url, error) => _buildPlaceholder(),
-//       fadeInDuration: const Duration(milliseconds: 300),
-//       fadeOutDuration: const Duration(milliseconds: 300),
-//     );
-//   }
-//   return _buildPlaceholder();
-// }
-
-// Widget _buildShimmerPlaceholder() {
-//   return Shimmer.fromColors(
-//     baseColor: Colors.grey[300]!,
-//     highlightColor: Colors.grey[100]!,
-//     child: Container(color: Colors.white),
-//   );
-// }
-
-// Widget _buildPlaceholder() {
-//   return Container(
-//     color: Colors.grey[100],
-//     child: Center(
-//       child: Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
-//     ),
-//   );
-// }
-
-// String _formatDate(DateTime? date) {
-//   if (date == null) return 'Unknown';
-
-//   final now = DateTime.now();
-//   final difference = now.difference(date);
-
-//   if (difference.inDays == 0) {
-//     if (difference.inHours == 0) {
-//       return '${difference.inMinutes} min ago';
-//     }
-//     return '${difference.inHours}h ago';
-//   } else if (difference.inDays < 7) {
-//     return '${difference.inDays}d ago';
-//   } else if (difference.inDays < 30) {
-//     return '${(difference.inDays / 7).floor()}w ago';
-//   } else {
-//     return '${date.day}/${date.month}/${date.year}';
-//   }
-// }
-
-// }
 
 class FavoriteButton extends StatelessWidget {
   final bool isFav;

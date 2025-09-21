@@ -352,7 +352,8 @@ class FirestoreService {
   // Remove a template from favorites
   Future<void> removeFromFavorites(String templateId) async {
     if (userId == null) {
-      throw const Failure('unauthenticated', 'User not authenticated');
+      // throw const Failure('unauthenticated', 'User not authenticated');
+      throw "Login to remove from favorite";
     }
 
     try {
@@ -367,7 +368,7 @@ class FirestoreService {
         'favoriteCount': FieldValue.increment(-1),
       });
     } catch (e) {
-      throw FirebaseErrorHandler.handle(e);
+      throw FirebaseErrorHandler.handle(e).message;
     }
   }
 
