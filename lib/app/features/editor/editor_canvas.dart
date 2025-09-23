@@ -132,12 +132,6 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
-          IconButton(
-            onPressed: () {
-              controller.saveToLocalStorage();
-            },
-            icon: Icon(Icons.storage),
-          ),
           _ZLockToggleButton(),
 
           GetBuilder<CanvasController>(
@@ -145,7 +139,7 @@ class EditorPage extends GetView<CanvasController> {
             builder: (controller) => _ModernExportButton(
               onExportPDF: controller.exportAsPDF,
               onExportImage: controller.exportAsImage,
-              onSaveDraft: controller.saveDraft,
+              onSaveDraft: controller.saveToLocalStorage,
               onSave: () async {
                 try {
                   await controller.saveAsPublicProject();
@@ -923,17 +917,7 @@ class _HueAdjustmentPanel extends StatelessWidget {
   }
 
   LinearGradient _getPreviewGradient(double hueValue, bool hasBackgroundImage) {
-    if (!hasBackgroundImage) {
-      if (hueValue == 0.0) {
-        return const LinearGradient(colors: [Colors.white, Colors.white]);
-      }
-
-      final baseColor = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
-      final lighterColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor();
-      final darkerColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.3).toColor();
-
-      return LinearGradient(colors: [lighterColor, baseColor, darkerColor]);
-    } else {
+    if (hasBackgroundImage) {
       // For images, show a simple hue preview
       return LinearGradient(
         colors: [
@@ -941,8 +925,57 @@ class _HueAdjustmentPanel extends StatelessWidget {
           HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
         ],
       );
+    } else {
+      // Default case: transparent gradient for hueValue == 0
+      if (hueValue == 0.0) {
+        return const LinearGradient(colors: [Colors.white, Colors.white]);
+      }
+
+      // Dynamic gradient generation for all hues
+      final baseColor = HSLColor.fromAHSL(1, hueValue, 0.9, 0.5).toColor();
+      final lighterColor = HSLColor.fromAHSL(
+        1,
+        (hueValue + 20) % 360,
+        0.8,
+        0.7,
+      ).toColor();
+      final darkerColor = HSLColor.fromAHSL(
+        1,
+        (hueValue - 20) % 360,
+        0.8,
+        0.3,
+      ).toColor();
+
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [lighterColor, baseColor, darkerColor],
+        stops: const [0.0, 0.5, 1.0],
+      );
     }
   }
+
+  // LinearGradient _getPreviewGradient(double hueValue, bool hasBackgroundImage) {
+  //   if (!hasBackgroundImage) {
+  //     if (hueValue == 0.0) {
+  //       return const LinearGradient(colors: [Colors.white, Colors.white]);
+  //     }
+
+  //     final baseColor = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
+  //     final lighterColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor();
+  //     final darkerColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.3).toColor();
+
+  //     return LinearGradient(colors: [lighterColor, baseColor, darkerColor]);
+  //   } else {
+  //     // For images, show a simple hue preview
+  //     return LinearGradient(
+  //       colors: [
+  //         HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor(),
+  //         HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
+  //       ],
+  //     );
+  //   }
+  // }
 
   Color _getTextColor(double hueValue) {
     // Determine if text should be white or black based on background brightness
