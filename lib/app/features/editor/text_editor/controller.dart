@@ -179,42 +179,42 @@ class TextStyleController extends GetxController {
     });
   }
 
-  static const predefinedColors = [
-    Colors.transparent,
-    Colors.black,
-    Colors.white,
-    Color(0xFF333333), // Dark grey
-    Color(0xFF666666), // Medium grey
-    Color(0xFF999999), // Light grey
-    Color(0xFFCCCCCC), // Very light grey
-    Colors.red,
-    Color(0xFFFF6B6B), // Light red
-    Color(0xFF8B0000), // Dark red
-    Colors.pink,
-    Color(0xFFFF69B4), // Hot pink
-    Colors.orange,
-    Color(0xFFFF8C00), // Dark orange
-    Colors.amber,
-    Colors.yellow,
-    Color(0xFFFFD700), // Gold
-    Colors.lime,
-    Colors.green,
-    Color(0xFF00FF7F), // Spring green
-    Color(0xFF228B22), // Forest green
-    Colors.teal,
-    Color(0xFF00CED1), // Dark turquoise
-    Colors.cyan,
-    Color(0xFF87CEEB), // Sky blue
-    Colors.blue,
-    Color(0xFF4169E1), // Royal blue
-    Color(0xFF191970), // Midnight blue
-    Colors.indigo,
-    Colors.purple,
-    Color(0xFF9370DB), // Medium purple
-    Color(0xFF8A2BE2), // Blue violet
-    Colors.brown,
-    Color(0xFFD2691E), // Chocolate
-  ];
+  // static const predefinedColors = [
+  //   Colors.transparent,
+  //   Colors.black,
+  //   Colors.white,
+  //   Color(0xFF333333), // Dark grey
+  //   Color(0xFF666666), // Medium grey
+  //   Color(0xFF999999), // Light grey
+  //   Color(0xFFCCCCCC), // Very light grey
+  //   Colors.red,
+  //   Color(0xFFFF6B6B), // Light red
+  //   Color(0xFF8B0000), // Dark red
+  //   Colors.pink,
+  //   Color(0xFFFF69B4), // Hot pink
+  //   Colors.orange,
+  //   Color(0xFFFF8C00), // Dark orange
+  //   Colors.amber,
+  //   Colors.yellow,
+  //   Color(0xFFFFD700), // Gold
+  //   Colors.lime,
+  //   Colors.green,
+  //   Color(0xFF00FF7F), // Spring green
+  //   Color(0xFF228B22), // Forest green
+  //   Colors.teal,
+  //   Color(0xFF00CED1), // Dark turquoise
+  //   Colors.cyan,
+  //   Color(0xFF87CEEB), // Sky blue
+  //   Colors.blue,
+  //   Color(0xFF4169E1), // Royal blue
+  //   Color(0xFF191970), // Midnight blue
+  //   Colors.indigo,
+  //   Colors.purple,
+  //   Color(0xFF9370DB), // Medium purple
+  //   Color(0xFF8A2BE2), // Blue violet
+  //   Colors.brown,
+  //   Color(0xFFD2691E), // Chocolate
+  // ];
 
   static const maskImages = [
     null,

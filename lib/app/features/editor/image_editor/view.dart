@@ -1,8 +1,6 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
-import 'package:cardmaker/app/features/editor/text_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
-import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
@@ -958,7 +956,7 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
                 // Border Radius (only for rounded rectangle)
                 if (controller.selectedMaskShape ==
                     ImageMaskShape.roundedRectangle) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   GetBuilder<ImageEditorController>(
                     id: 'shape_border_radius',
                     builder: (controller) {
@@ -976,19 +974,34 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
                     },
                   ),
                 ],
-
+                SizedBox(height: 8),
                 // Border Color
                 GetBuilder<ImageEditorController>(
                   id: 'shape_border_color',
                   builder: (controller) {
-                    return ColorSelector(
-                      title: 'Border Color',
-                      colors: TextStyleController.predefinedColors,
-                      currentColor:
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+
+                      child: Container(
+                        child: _buildColorPickerRow(
+                          'Border color',
+
                           controller.shapeBorderColor ?? Colors.transparent,
-                      onColorSelected: (color) {
-                        controller.setShapeBorderColor(color);
-                      },
+
+                          (color) {
+                            controller.setShapeBorderColor(color);
+                          },
+
+                          Icons.format_color_fill,
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -996,6 +1009,65 @@ class ShapeSettingsBottomSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildColorPickerRow(
+    String label,
+    Color color,
+    Function(Color) onChanged,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () => _showColorPicker(color, onChanged, label),
+          child: Container(
+            width: 24,
+            height: 20,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: Get.theme.colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showColorPicker(
+    Color currentColor,
+    Function(Color) onChanged,
+    String title,
+  ) {
+    showModalBottomSheet(
+      context: Get.context!,
+      // backgroundColor: Get.theme.colorScheme.surface,
+      barrierColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+      ),
+      builder: (context) => QuickColorPicker(
+        title: title,
+        currentColor: currentColor,
+        onChanged: (color) => onChanged(color!),
       ),
     );
   }
@@ -1551,6 +1623,7 @@ class _BorderPage extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
+
       // backgroundColor: const Color(0xFF1C1C1E),
       builder: (context) => QuickColorPicker(
         title: title,

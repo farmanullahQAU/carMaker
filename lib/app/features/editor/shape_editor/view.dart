@@ -272,6 +272,7 @@ class ShapeEditorPanel extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
+              flex: 2,
               child: CompactSlider(
                 icon: Icons.opacity,
                 label: 'Opacity',
@@ -478,7 +479,8 @@ class ShapeEditorPanel extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: Get.context!,
-      backgroundColor: Get.theme.colorScheme.surface,
+      // backgroundColor: Get.theme.colorScheme.surface,
+      barrierColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(12),

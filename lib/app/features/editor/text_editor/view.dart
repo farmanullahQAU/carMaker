@@ -422,7 +422,7 @@ class _ColorTab extends StatelessWidget {
             title: "Text Color",
             showTitle: false,
             paddingx: 16,
-            colors: TextStyleController.predefinedColors,
+            colors: AppColors.predefinedColors,
             currentColor: controller.textColor.value,
             onColorSelected: (color) {
               controller.textColor.value = color;
@@ -434,8 +434,98 @@ class _ColorTab extends StatelessWidget {
           );
         },
       ),
+
+      // child: GetBuilder<TextStyleController>(
+      //   id: 'text_color',
+      //   builder: (controller) {
+      //     return Container(
+      //       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      //       decoration: BoxDecoration(
+      //         color: Theme.of(context).colorScheme.surface,
+      //         borderRadius: BorderRadius.circular(8),
+      //       ),
+
+      //       child: Container(
+      //         child: _buildColorPickerRow(
+      //           'Border color',
+
+      //           controller.textColor.value,
+
+      //           (color) {
+      //             controller.textColor.value = color;
+      //             controller.textColorOld = color;
+      //             controller.maskImage = null;
+      //             controller.updateTextItem();
+      //             controller.update(['text_color', 'mask']);
+      //           },
+
+      //           Icons.format_color_fill,
+      //         ),
+      //       ),
+      //     );
+      //   },
+      // ),
     );
   }
+
+  // Widget _buildColorPickerRow(
+  //   String label,
+  //   Color color,
+  //   Function(Color) onChanged,
+  //   IconData icon,
+  // ) {
+  //   return Row(
+  //     children: [
+  //       Icon(icon, size: 14),
+  //       const SizedBox(width: 6),
+  //       Expanded(
+  //         child: Text(
+  //           label,
+  //           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 8),
+  //       GestureDetector(
+  //         onTap: () => _showColorPicker(color, onChanged, label),
+  //         child: Container(
+  //           width: 24,
+  //           height: 20,
+  //           decoration: BoxDecoration(
+  //             color: color,
+  //             borderRadius: BorderRadius.circular(4),
+  //             border: Border.all(
+  //               color: Get.theme.colorScheme.onSurface.withOpacity(0.2),
+  //               width: 1,
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+
+  // void _showColorPicker(
+  //   Color currentColor,
+  //   Function(Color) onChanged,
+  //   String title,
+  // ) {
+  //   showModalBottomSheet(
+  //     context: Get.context!,
+  //     // backgroundColor: Get.theme.colorScheme.surface,
+  //     barrierColor: Colors.transparent,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.only(
+  //         topLeft: Radius.circular(12),
+  //         topRight: Radius.circular(12),
+  //       ),
+  //     ),
+  //     builder: (context) => QuickColorPicker(
+  //       title: title,
+  //       currentColor: currentColor,
+  //       onChanged: (color) => onChanged(color!),
+  //     ),
+  //   );
+  // }
 }
 
 // BACKGROUND TAB - Optimized with clear option
@@ -454,7 +544,7 @@ class _BackgroundTab extends StatelessWidget {
             title: "Bg Color",
             showTitle: false,
 
-            colors: TextStyleController.predefinedColors,
+            colors: AppColors.predefinedColors,
             currentColor: controller.backgroundColor.value,
             onColorSelected: (color) {
               controller.backgroundColor.value = color;
@@ -474,7 +564,7 @@ class _BackgroundTab extends StatelessWidget {
           //     childAspectRatio: 1,
           //   ),
           //   itemCount:
-          //       TextStyleController.predefinedColors.length +
+          //       AppColors.predefinedColors.length +
           //       1, // +1 for clear option
           //   itemBuilder: (context, index) {
           //     if (index == 0) {
@@ -509,7 +599,7 @@ class _BackgroundTab extends StatelessWidget {
           //       );
           //     }
 
-          //     final color = TextStyleController.predefinedColors[index - 1];
+          //     final color = AppColors.predefinedColors[index - 1];
           //     final isSelected = color == controller.backgroundColor.value;
 
           //     return GestureDetector(
@@ -1825,7 +1915,7 @@ class TuneBottomSheet extends StatelessWidget {
               ColorSelector(
                 title: "Stroke Color",
 
-                colors: TextStyleController.predefinedColors,
+                colors: AppColors.predefinedColors,
                 currentColor: controller.strokeColor.value,
                 onColorSelected: (color) {
                   controller.strokeColor.value = color;
@@ -1877,7 +1967,7 @@ class TuneBottomSheet extends StatelessWidget {
 
               ColorSelector(
                 title: "Shadow Color",
-                colors: TextStyleController.predefinedColors,
+                colors: AppColors.predefinedColors,
                 currentColor: controller.shadowColor.value,
                 onColorSelected: (color) {
                   controller.shadowColor.value = color;
@@ -2294,7 +2384,7 @@ class DualToneTuneBottomSheet extends StatelessWidget {
                       children: [
                         ColorSelector(
                           title: "Color 1",
-                          colors: TextStyleController.predefinedColors,
+                          colors: AppColors.predefinedColors,
                           currentColor: controller.dualToneColor1 ?? Colors.red,
                           onColorSelected: (color) {
                             controller.dualToneColor1 = color;
@@ -2318,7 +2408,7 @@ class DualToneTuneBottomSheet extends StatelessWidget {
                         ColorSelector(
                           title: "Color 2",
 
-                          colors: TextStyleController.predefinedColors,
+                          colors: AppColors.predefinedColors,
                           currentColor:
                               controller.dualToneColor2 ?? Colors.blue,
                           onColorSelected: (color) {
@@ -3034,7 +3124,7 @@ class _ColorsSubTab extends StatelessWidget {
             subtitle: 'Choose the background color',
             icon: Icons.color_lens_outlined,
             child: ColorSelector(
-              colors: TextStyleController.predefinedColors,
+              colors: AppColors.predefinedColors,
               title: "colors",
               showTitle: false,
               currentColor: controller.backgroundPaintColor.value,

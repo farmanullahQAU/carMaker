@@ -113,12 +113,13 @@ class CanvasController extends GetxController {
     final existingItem = boardController.getById(item.id);
     if (existingItem != null) {
       // Update the item in the board controller
-      boardController.removeById(item.id);
-      boardController.addItem(item);
+      // boardController.removeById(item.id);
+      boardController.updateItem(item);
+      boardController.updateBasic(item.id, status: StackItemStatus.moving);
 
       // Update active item if it's the same
       if (activeItem.value?.id == item.id) {
-        activeItem.value = item;
+        activeItem(item);
       }
 
       update(['canvas_stack', 'stack_board']);
