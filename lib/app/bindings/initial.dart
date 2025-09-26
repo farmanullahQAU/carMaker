@@ -19,7 +19,7 @@ class InitialBindings extends Bindings {
       Get.lazyPut(() => AuthController());
       Get.lazyPut(() => ShapeEditorController());
 
-      Get.lazyPut(() => CategoryTemplatesController(Get.arguments));
+      Get.lazyPut(() => CategoryTemplatesController());
 
       Get.lazyPut(() => AuthService());
       Get.lazyPut(() => InitializationService(), fenix: true);

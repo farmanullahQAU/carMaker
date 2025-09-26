@@ -296,6 +296,10 @@ class HomeController extends GetxController {
     );
   }
 
+  void onTapViewAll(bool isFree) {
+    Get.toNamed(Routes.categoryTemplates, arguments: isFree);
+  }
+
   void onViewAllTemplates() {
     Get.toNamed(Routes.categoryTemplates, arguments: null);
   }

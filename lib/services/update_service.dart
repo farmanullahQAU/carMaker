@@ -14,8 +14,8 @@ class UpdateManager {
   factory UpdateManager() => _instance;
   UpdateManager._internal();
 
-  late final PackageInfo _pkg;
-  String get currVer => _pkg.version;
+  PackageInfo? _pkg;
+  String get currVer => _pkg?.version ?? "..";
 
   Future<void> checkForUpdates(BuildContext ctx) async {
     try {
@@ -24,14 +24,14 @@ class UpdateManager {
       final cfg = rc.config.update;
 
       // Nothing to do?
-      // if (!cfg.isUpdateAvailable) return;
-      // if (!_isLower(currVer, cfg.currentVersion)) {
-      //   // App is up-to-date; close dialog if open
-      //   if (Navigator.of(ctx).canPop()) {
-      //     Navigator.of(ctx).pop();
-      //   }
-      //   return;
-      // }
+      if (!cfg.isUpdateAvailable) return;
+      if (!_isLower(currVer, cfg.currentVersion)) {
+        // App is up-to-date; close dialog if open
+        if (Navigator.of(ctx).canPop()) {
+          Navigator.of(ctx).pop();
+        }
+        return;
+      }
 
       // ---- FORCE UPDATE (all platforms) ------------------------------------
       if (cfg.isForceUpdate) {

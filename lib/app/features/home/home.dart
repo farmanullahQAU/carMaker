@@ -1,5 +1,4 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cardmaker/app/features/bg_remover/view.dart';
 import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
@@ -132,13 +131,11 @@ class HomeTab extends GetView<HomeController> {
               SizedBox(height: 12),
               CategoriesList(),
               SizedBox(height: 20),
-              SectionTitle(title: 'Free today', showSeeAll: true),
-              SizedBox(height: 12),
-              FreeTodayTemplatesList(),
-              SizedBox(height: 20),
-              SectionTitle(title: 'Trending Now', showSeeAll: true),
-              SizedBox(height: 12),
+
               TrendingTemplatesList(),
+
+              SectionTitle(title: 'Free today', showSeeAll: true),
+              FreeTodayTemplatesList(),
               SizedBox(height: 100),
             ],
           ),
@@ -361,7 +358,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Get.to(() => const ProfessionalTemplatesPage()),
+        onTap: () => controller.onTapViewAll(true),
         child: Container(
           width: 100,
           decoration: BoxDecoration(
@@ -457,7 +454,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Get.to(() => const ProfessionalTemplatesPage()),
+        onTap: () => controller.onTapViewAll(false),
         child: Container(
           width: 100,
           decoration: BoxDecoration(
@@ -669,9 +666,7 @@ class SectionTitle extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.comfortable,
               ),
-              onPressed: () {
-                Get.to(() => BackgroundRemovalPage());
-              },
+              onPressed: () {},
               child: Text('See all'),
             ),
         ],
