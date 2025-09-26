@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class TemplateCard extends StatelessWidget {
   final CardTemplate template;
@@ -170,16 +171,16 @@ class TemplateCard extends StatelessWidget {
 
   Widget _buildPremiumBadge() {
     return Positioned(
-      top: 6,
-      right: 6,
+      top: 8,
+      right: 8,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xFF7C3AED),
+          color: AppColors.amber400,
           borderRadius: BorderRadius.circular(6),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Get.theme.colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),

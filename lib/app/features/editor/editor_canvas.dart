@@ -132,6 +132,14 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
+          Obx(
+            () => controller.activeItem.value == null
+                ? SizedBox()
+                : IconButton(
+                    onPressed: controller.duplicateItem,
+                    icon: Icon(Icons.copy_all),
+                  ),
+          ),
           _ZLockToggleButton(),
 
           GetBuilder<CanvasController>(
@@ -139,7 +147,8 @@ class EditorPage extends GetView<CanvasController> {
             builder: (controller) => _ModernExportButton(
               onExportPDF: controller.exportAsPDF,
               onExportImage: controller.exportAsImage,
-              onSaveDraft: controller.saveToLocalStorage,
+              onSaveDraft: controller.saveDraft,
+              onSaveCopy: controller.saveCopy,
               onSave: () async {
                 try {
                   await controller.saveAsPublicProject();
@@ -1304,6 +1313,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
 class _ModernExportButton extends StatelessWidget {
   final VoidCallback onExportPDF;
   final VoidCallback onSaveDraft;
+  final VoidCallback onSaveCopy;
 
   final VoidCallback onExportImage;
   final VoidCallback onSave;
@@ -1315,13 +1325,14 @@ class _ModernExportButton extends StatelessWidget {
     required this.onSave,
     required this.isExporting,
     required this.onSaveDraft,
+    required this.onSaveCopy,
   });
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<CanvasController>(
       id: "export_button",
-      builder: (_) => PopupMenuButton<String>(
+      builder: (controller) => PopupMenuButton<String>(
         offset: Offset(0, 55),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 10,
@@ -1461,6 +1472,40 @@ class _ModernExportButton extends StatelessWidget {
               ],
             ),
           ),
+          if (controller.showSaveCopyBtn)
+            PopupMenuItem<String>(
+              value: 'draft_copy',
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.picture_as_pdf_outlined,
+                      color: Colors.red.shade700,
+                      size: 18,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'save copy',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        'save as a copy',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
         ],
         onSelected: (value) {
           switch (value) {
@@ -1477,6 +1522,9 @@ class _ModernExportButton extends StatelessWidget {
               break;
             case 'image':
               onExportImage();
+              break;
+            case 'draft_copy':
+              onSaveCopy();
               break;
           }
         },
@@ -1807,7 +1855,12 @@ class CanvasStack extends StatelessWidget {
 
                       customBuilder: (StackItem<StackItemContent> item) {
                         if (item is StackTextItem && item.content != null) {
-                          return StackTextCase(item: item, isFitted: true);
+                          return StackTextCase(
+                            item: item,
+                            isFitted: item.content!.data!.length > 20
+                                ? false
+                                : true,
+                          );
                         } else if (item is StackImageItem &&
                             item.content != null) {
                           return InkWell(

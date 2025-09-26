@@ -8,6 +8,7 @@ import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firebase_storage_service.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -38,7 +39,6 @@ class FirestoreService {
     CardTemplate template, {
     File? thumbnailFile,
     File? backgroundFile,
-    Map<String, bool> newImageFlags = const {},
   }) async {
     if (_isUploading.value) {
       throw const Failure(
@@ -59,11 +59,7 @@ class FirestoreService {
         final itemJson = modifiedItems[i];
         final item = deserializeItem(itemJson);
         if (item is StackImageItem && item.content != null) {
-          final isNewImage = newImageFlags[item.id] ?? false;
           final isPlaceholder = item.content!.isPlaceholder ?? false;
-          print(
-            'Item ${item.id}: filePath=${item.content?.filePath}, url=${item.content?.url}, isNewImage=$isNewImage, isPlaceholder=$isPlaceholder',
-          );
 
           Map<String, dynamic> processedItemJson;
 
@@ -77,7 +73,7 @@ class FirestoreService {
             final updatedItem = item.copyWith(content: updatedContent);
             processedItemJson = updatedItem.toJson();
             print('After placeholder: filePath=${updatedContent.filePath}');
-          } else if (isNewImage && item.content?.filePath != null) {
+          } else if (item.content?.filePath != null) {
             debugPrint('Uploading new image for item ${item.id}');
             final imageUrl = await _storageService.uploadImage(
               File(item.content!.filePath!),
@@ -151,7 +147,13 @@ class FirestoreService {
       }
 
       if (template.isDraft) {
-        await saveDraft(template.id, templateData);
+        // await saveDraft(template.id, templateData);
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('drafts')
+            .doc(template.id)
+            .set(templateData);
       } else {
         await _firestore
             .collection('templates')
@@ -469,22 +471,22 @@ class FirestoreService {
   }
 
   // Save a draft
-  Future<void> saveDraft(String id, Map<String, dynamic> templateData) async {
-    if (userId == null) {
-      throw const Failure('unauthenticated', 'User not authenticated');
-    }
+  // Future<void> saveDraft(String id, Map<String, dynamic> templateData) async {
+  //   if (userId == null) {
+  //     throw const Failure('unauthenticated', 'User not authenticated');
+  //   }
 
-    try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('drafts')
-          .doc(id)
-          .set(templateData);
-    } catch (e) {
-      throw FirebaseErrorHandler.handle(e);
-    }
-  }
+  //   try {
+  //     await _firestore
+  //         .collection('users')
+  //         .doc(userId)
+  //         .collection('drafts')
+  //         .doc(id)
+  //         .set(templateData);
+  //   } catch (e) {
+  //     throw FirebaseErrorHandler.handle(e);
+  //   }
+  // }
 
   // Get user's drafts with pagination
   Future<QuerySnapshot<Map<String, dynamic>>> getUserDraftsPaginated({
@@ -539,14 +541,63 @@ class FirestoreService {
     }
 
     try {
-      await _firestore
+      // First, get the draft data to find associated files
+      final draftDoc = await _firestore
           .collection('users')
           .doc(userId)
           .collection('drafts')
           .doc(draftId)
-          .delete();
+          .get();
+
+      if (draftDoc.exists) {
+        final template = CardTemplate.fromJson(draftDoc.data()!);
+
+        // Delete from Firestore
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('drafts')
+            .doc(draftId)
+            .delete();
+
+        // Delete associated files from Firebase Storage
+        await _deleteDraftFiles(draftId, template);
+      }
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Delete all files associated with a draft
+  Future<void> _deleteDraftFiles(String draftId, CardTemplate template) async {
+    final FirebaseStorage storage = FirebaseStorage.instance;
+
+    try {
+      final basePath = 'user_drafts/$userId/$draftId';
+      final storageRef = storage.ref().child(basePath);
+
+      // Delete entire folder recursively (includes thumbnails, backgrounds, template_images)
+      await storageRef.listAll().then((result) {
+        // Delete all items in the folder
+        final deleteFutures = <Future>[];
+
+        // Delete all files in subfolders
+        for (final prefix in result.prefixes) {
+          deleteFutures.add(
+            prefix.listAll().then((subResult) {
+              return Future.wait(subResult.items.map((item) => item.delete()));
+            }),
+          );
+        }
+
+        // Delete all files in root
+        deleteFutures.addAll(result.items.map((item) => item.delete()));
+
+        return Future.wait(deleteFutures);
+      });
+    } catch (e) {
+      debugPrint('Error deleting draft files: $e');
+      // Don't throw here - we want to complete the draft deletion even if file deletion fails
     }
   }
 

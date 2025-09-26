@@ -89,7 +89,7 @@ class StackTextCase extends StatelessWidget {
               ? TextScaler.linear(content!.textScaleFactor!)
               : TextScaler.noScaling,
           maxLines: content?.maxLines ?? 5,
-          overflow: TextOverflow.visible,
+          overflow: TextOverflow.clip,
         ),
       );
     } else if (content?.hasStroke == true) {
@@ -103,6 +103,7 @@ class StackTextCase extends StatelessWidget {
         ),
         child: StrokeText(
           text: content?.data ?? "",
+
           strokeColor: content?.strokeColor ?? Colors.black,
           strokeWidth: content?.strokeWidth ?? 2.0,
           textStyle: textStyle,
@@ -111,8 +112,8 @@ class StackTextCase extends StatelessWidget {
           textScaler: content?.textScaleFactor != null
               ? TextScaler.linear(content!.textScaleFactor!)
               : TextScaler.noScaling,
-          maxLines: content?.maxLines ?? 5,
-          overflow: TextOverflow.visible,
+          maxLines: content?.maxLines,
+          overflow: TextOverflow.clip,
         ),
       );
     } else {
@@ -126,11 +127,11 @@ class StackTextCase extends StatelessWidget {
         locale: content?.locale,
 
         softWrap: true,
-        overflow: TextOverflow.visible,
+        overflow: TextOverflow.clip,
         textScaler: content?.textScaleFactor != null
             ? TextScaler.linear(content!.textScaleFactor!)
             : TextScaler.noScaling,
-        maxLines: content?.maxLines ?? 5,
+        maxLines: content?.maxLines,
         semanticsLabel: content?.semanticsLabel,
         textWidthBasis: content?.textWidthBasis,
         textHeightBehavior: content?.textHeightBehavior,
@@ -178,11 +179,11 @@ class StackTextCase extends StatelessWidget {
                 textDirection: content!.textDirection,
                 locale: content!.locale,
                 softWrap: true,
-                overflow: TextOverflow.visible,
+                overflow: TextOverflow.clip,
                 textScaler: content!.textScaleFactor != null
                     ? TextScaler.linear(content!.textScaleFactor!)
                     : TextScaler.noScaling,
-                maxLines: content!.maxLines ?? 5,
+                maxLines: content?.maxLines,
                 semanticsLabel: content!.semanticsLabel,
                 textWidthBasis: content!.textWidthBasis,
                 textHeightBehavior: content!.textHeightBehavior,

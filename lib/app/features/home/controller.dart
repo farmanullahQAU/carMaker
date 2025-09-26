@@ -4,7 +4,6 @@ import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
-import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/services/update_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
@@ -302,7 +301,10 @@ class HomeController extends GetxController {
   }
 
   void onTemplateTap(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: template);
+    Get.toNamed(
+      Routes.editor,
+      arguments: {"template": template, "showSaveCopyBtn": false},
+    );
   }
 
   void _handlePhotoAction() {
@@ -344,20 +346,5 @@ class HomeController extends GetxController {
   void refreshData() async {
     await _initializeData();
     await remoteConfig.refreshConfig();
-  }
-
-  Future<void> addTemplate(CardTemplate template) async {
-    await StorageService.addTemplate(template);
-    await _loadTemplates();
-  }
-
-  Future<void> updateTemplate(CardTemplate template) async {
-    await StorageService.updateTemplate(template);
-    await _loadTemplates();
-  }
-
-  Future<void> deleteTemplate(String templateId) async {
-    await StorageService.deleteTemplate(templateId);
-    await _loadTemplates();
   }
 }

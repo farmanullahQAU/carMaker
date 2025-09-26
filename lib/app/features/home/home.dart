@@ -954,7 +954,7 @@ Size getTextWidth({required String text, required TextStyle style}) {
   final TextPainter textPainter = TextPainter(
     text: TextSpan(text: text, style: style),
     textDirection: TextDirection.ltr,
-  )..layout(maxWidth: 300);
+  )..layout();
 
   return textPainter.size;
 }

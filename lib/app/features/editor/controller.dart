@@ -31,8 +31,11 @@ import 'package:uuid/uuid.dart';
 class CanvasController extends GetxController {
   final authService = Get.find<AuthService>();
   final firestoreService = FirestoreService();
-  final RxBool useAdvancedGradient = false.obs; // Default to simple gradient
+  late bool isLocaleTemplate =
+      true; //to distinguish local or online user saved drafts
 
+  late bool showSaveCopyBtn =
+      true; // Show "Save a Copy" button only for drafts templates.
   final StackBoardController boardController = StackBoardController();
   final RxString selectedFont = 'Poppins'.obs;
   final RxDouble fontSize = 24.0.obs;
@@ -47,7 +50,7 @@ class CanvasController extends GetxController {
   final Rx<PanelType> activePanel = PanelType.none.obs;
   RxBool isShowEditIcon = false.obs;
   final Rx<Size> actualStackBoardRenderSize = Size(100, 100).obs;
-  final Map<String, bool> newImageFlags = {};
+
   CardTemplate? initialTemplate;
 
   final RxDouble canvasWsidth = 0.0.obs;
@@ -60,8 +63,6 @@ class CanvasController extends GetxController {
   final Rx<Color> guideColor = Colors.black.obs;
   final Rx<OverlayEntry?> activeTextEditorOverlay = Rx<OverlayEntry?>(null);
 
-  final RxList<_ItemState> _undoStack = <_ItemState>[].obs;
-  final RxList<_ItemState> _redoStack = <_ItemState>[].obs;
   Rx<Offset> midYOffset = Rx<Offset>(Offset(0, 0));
   Rx<Size> midSize = Rx<Size>(Size(0, 0));
   bool isDragging = false;
@@ -87,6 +88,8 @@ class CanvasController extends GetxController {
     super.onInit();
     if (Get.arguments is Map<String, dynamic>) {
       initialTemplate = Get.arguments['template'];
+      isLocaleTemplate = Get.arguments['isLocal'] ?? true;
+      showSaveCopyBtn = Get.arguments['showSaveCopyBtn'] ?? true;
     } else {
       initialTemplate = Get.arguments as CardTemplate;
     }
@@ -245,7 +248,6 @@ class CanvasController extends GetxController {
         }
 
         boardController.addItem(updatedItem);
-        _undoStack.add(_ItemState(item: updatedItem, action: _ItemAction.add));
       } catch (err) {
         debugPrint('Error loading item: $err');
       }
@@ -291,8 +293,7 @@ class CanvasController extends GetxController {
       content: content,
     );
     boardController.addItem(textItem);
-    _undoStack.add(_ItemState(item: textItem, action: _ItemAction.add));
-    _redoStack.clear();
+
     activeItem.value = textItem;
     update([
       'canvas_stack',
@@ -387,7 +388,6 @@ class CanvasController extends GetxController {
         template.copyWith(backgroundImageUrl: backgroundImageUrl),
         thumbnailFile: thumbnailFile,
         backgroundFile: backgroundFile,
-        newImageFlags: newImageFlags,
       );
 
       // Cleanup after successful upload
@@ -573,7 +573,6 @@ class CanvasController extends GetxController {
         boardController.addItem(newItem);
 
         activeItem.value = newItem;
-        newImageFlags[newItem.id] = true; // Mark as new image for upload
 
         update(['canvas_stack']);
       }
@@ -605,10 +604,7 @@ class CanvasController extends GetxController {
           ),
         );
         boardController.addItem(newItem);
-        if (!isPlaceholder) {
-          newImageFlags[newItem.id] =
-              true; // Mark for upload if not placeholder
-        }
+
         activeItem.value = newItem;
         update(['canvas_stack']);
       }
@@ -647,8 +643,17 @@ class CanvasController extends GetxController {
         angle: originalItem.angle,
         isProfileImage: originalItem.isProfileImage,
       );
+    } else if (originalItem is StackShapeItem) {
+      final id = UniqueKey().toString();
 
-      newImageFlags[id] = false; // Mark as new image
+      newItem = StackShapeItem(
+        id: id,
+
+        offset: newOffset,
+        size: originalItem.size,
+        content: originalItem.content?.copyWith(),
+        angle: originalItem.angle,
+      );
     } else {
       return; // Unsupported item type
     }
@@ -824,11 +829,28 @@ class CanvasController extends GetxController {
     }
   }
 
-  // Replace the saveDraft method in CanvasController with this simplified version:
+  saveCopy() {
+    if (isLocaleTemplate) {
+      _saveDraftLocale(isCopy: true);
+    } else {
+      _saveDraftLocale(isCopy: true);
+
+      // _saveDraft(isCopy: true);
+    }
+  }
+
+  saveDraft() {
+    if (isLocaleTemplate) {
+      _saveDraftLocale();
+    } else {
+      _saveDraft();
+    }
+  }
 
   /// Save current design as draft to Firebase
-  Future<void> saveDraft() async {
+  Future<void> _saveDraft({bool isCopy = false}) async {
     try {
+      AppToast.loading(message: "uploading changes");
       final currentItems = boardController.getAllData();
 
       print(currentItems);
@@ -836,7 +858,7 @@ class CanvasController extends GetxController {
       CardTemplate template = CardTemplate(
         imagePath: "",
         categoryId: 'birthday',
-        id: initialTemplate!.isDraft ? initialTemplate!.id : Uuid().v4(),
+        id: isCopy == true ? Uuid().v4() : initialTemplate!.id,
         name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
         items: currentItems.map((e) => deserializeItem(e).toJson()).toList(),
         width: initialTemplate!.width,
@@ -849,7 +871,8 @@ class CanvasController extends GetxController {
         backgroundHue: backgroundHue.value.roundToDouble(),
       );
 
-      uploadTemplate(template);
+      await uploadTemplate(template);
+      AppToast.closeLoading();
     } catch (err) {
       print("xxxxxxxxxxxxxxxxxxxx");
       print(err);
@@ -859,6 +882,7 @@ class CanvasController extends GetxController {
 
   Future<void> saveAsPublicProject() async {
     try {
+      AppToast.loading(message: 'Publishing template...');
       final currentItems = boardController.getAllData();
 
       final template = CardTemplate(
@@ -877,7 +901,9 @@ class CanvasController extends GetxController {
         backgroundHue: backgroundHue.value.roundToDouble(),
       );
 
-      uploadTemplate(template);
+      await uploadTemplate(template);
+
+      AppToast.closeLoading();
     } catch (err) {
       AppToast.error(message: err.toString());
     }
@@ -885,7 +911,7 @@ class CanvasController extends GetxController {
 
   // Add these methods to your CanvasController class
 
-  Future<void> saveToLocalStorage() async {
+  Future<void> _saveDraftLocale({bool isCopy = false}) async {
     try {
       final currentItems = boardController.getAllData();
 
@@ -893,12 +919,11 @@ class CanvasController extends GetxController {
       CardTemplate template = CardTemplate(
         imagePath: "",
         categoryId: 'birthday',
-        id: initialTemplate?.id ?? Uuid().v4(),
+        id: isCopy == true ? Uuid().v4() : initialTemplate!.id,
         name: templateName.value.isEmpty
             ? 'Untitled Template'
             : templateName.value,
         items: currentItems.map((e) {
-          print(e);
           return deserializeItem(e).toJson();
         }).toList(),
         width: initialTemplate?.width ?? 800,
@@ -917,12 +942,8 @@ class CanvasController extends GetxController {
       final file = await exportAsImage("${template.id}_${template.id}");
       template = template.copyWith(thumbnailUrl: file.path);
 
-      print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${file.path}");
-      print(template.id);
-
-      print("Thummmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm ${template.thumbnailUrl}");
       // Save to local storage
-      await StorageService.addTemplate(template, type: 'drafts');
+      await StorageService.addDraft(template);
 
       try {
         final profileController = Get.find<ProfileController>();
@@ -939,53 +960,4 @@ class CanvasController extends GetxController {
       );
     }
   }
-
-  Future<void> backupToFirebase() async {
-    try {
-      if (authService.user == null) {
-        AppToast.error(message: 'Please sign in to backup to cloud');
-        return;
-      }
-
-      // Get templates that are only in local storage
-      final localOnlyTemplates = StorageService.getLocalOnlyTemplates([]);
-
-      if (localOnlyTemplates.isEmpty) {
-        AppToast.show(
-          type: ToastType.error,
-          message: 'No local templates to backup',
-        );
-        return;
-      }
-
-      // Show progress dialog
-      Get.dialog(
-        const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
-      );
-
-      // Upload each local template to Firebase
-      for (final template in localOnlyTemplates) {
-        await uploadTemplate(template);
-        // Remove from local storage after successful upload
-        await StorageService.deleteTemplate(template.id, type: 'drafts');
-      }
-
-      Get.back(); // Close progress dialog
-      AppToast.success(message: 'Backup completed successfully!');
-    } catch (err) {
-      Get.back(); // Close progress dialog if open
-      debugPrint('Error during backup: $err');
-      AppToast.error(message: 'Backup failed: ${err.toString()}');
-    }
-  }
 }
-
-class _ItemState {
-  final StackItem item;
-  final _ItemAction action;
-
-  _ItemState({required this.item, required this.action});
-}
-
-enum _ItemAction { add, update }

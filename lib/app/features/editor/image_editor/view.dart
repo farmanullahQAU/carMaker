@@ -77,13 +77,13 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  FloatingActionButton.small(
-                    onPressed: () {
-                      // canvasController.replaceImageItem(controller);
-                    },
+                  // FloatingActionButton.small(
+                  //   onPressed: () {
+                  //     // canvasController.replaceImageItem(controller);
+                  //   },
 
-                    child: Icon(Icons.add_a_photo_outlined, size: 16),
-                  ),
+                  //   child: Icon(Icons.add_a_photo_outlined, size: 16),
+                  // ),
                   Flexible(
                     child: TabBar(
                       controller: _tabController,
@@ -127,13 +127,6 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                         ),
                       ],
                     ),
-                  ),
-                  FloatingActionButton.small(
-                    onPressed: () {
-                      canvasController.duplicateItem();
-                    },
-
-                    child: Icon(Icons.control_point_duplicate, size: 16),
                   ),
                 ],
               ),

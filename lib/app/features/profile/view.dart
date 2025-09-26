@@ -196,11 +196,7 @@ class ProfilePage extends StatelessWidget {
             )
           else
             IconButton(
-              icon: Icon(
-                Icons.settings_outlined,
-                color: Colors.grey.shade700,
-                size: 24,
-              ),
+              icon: Icon(Icons.settings_outlined, size: 24),
               onPressed: () {
                 Get.to(() => SettingsPage());
               },
@@ -218,19 +214,20 @@ class ProfilePage extends StatelessWidget {
         await controller.refreshDrafts();
       },
       child: Obx(() {
-        // Use allDrafts instead of just drafts
-        if (controller.isDraftsLoading.value && controller.allDrafts.isEmpty) {
+        // Use allDrafts which combines both local and cloud drafts
+        final allDrafts = controller.allDrafts;
+
+        if (controller.isDraftsLoading.value && allDrafts.isEmpty) {
           return buildLoading();
         }
 
-        if (controller.hasDraftsError.value && controller.allDrafts.isEmpty) {
+        if (controller.hasDraftsError.value && allDrafts.isEmpty) {
           return _buildErrorState('Failed to load drafts', () async {
             await controller.refreshDrafts();
-            await controller.loadLocalDrafts();
           });
         }
 
-        if (controller.allDrafts.isEmpty) {
+        if (allDrafts.isEmpty) {
           return _buildEmptyState(
             'No drafts yet',
             'Create and save your projects to see them here',
@@ -244,28 +241,34 @@ class ProfilePage extends StatelessWidget {
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
                   if (notification.metrics.pixels >=
-                          notification.metrics.maxScrollExtent &&
+                          notification.metrics.maxScrollExtent - 100 &&
                       !controller.isDraftsLoading.value &&
                       controller.hasMoreDrafts.value) {
-                    debugPrint(
-                      'Drafts scroll within 100px of bottom: loading more...',
-                    );
+                    debugPrint('Loading more drafts...');
                     controller.loadMoreDrafts();
                   }
                   return false;
                 },
                 child: _buildStaggeredTemplateGrid(
-                  controller.allDrafts,
+                  allDrafts, // Use the observable list directly
                   null,
                   isDrafts: true,
                   isLoading: controller.isDraftsLoading.value,
                   hasMore: controller.hasMoreDrafts.value,
                   onDelete: controller.deleteDraft,
-                  onEdit: (template) => _editDraft(template),
-                  onBackup: controller.backupDraft, // Add this line
-                  isBackedUp: (template) => controller.isBackedUp(
+                  onEdit: (template) => _editTemplate(
                     template,
-                  ), // Changed from isLocalDraft
+                    controller.isLocalOnly(
+                      template,
+                    ), // Use isLocalOnly instead of isBackedUp
+                  ),
+                  onBackup: (t) async {
+                    await controller.backupDraft(t);
+                    controller.refreshDrafts();
+                  },
+                  isLocalOnly: (template) => controller.isLocalOnly(
+                    template,
+                  ), // Changed to isLocalOnly
                 ),
               ),
             ),
@@ -321,7 +324,7 @@ class ProfilePage extends StatelessWidget {
             isLoading: controller.isFavoritesLoading.value,
             hasMore: controller.hasMoreFavorites.value,
             onRemoveFromFavorites: controller.removeFromFavorites,
-            onEdit: (template) => _openTemplate(template),
+            onEdit: (template) => _editTemplate(template, false),
           ),
         );
       }),
@@ -336,9 +339,8 @@ class ProfilePage extends StatelessWidget {
     required bool hasMore,
     Function(String)? onDelete,
     Function(CardTemplate)? onEdit,
-    Function(CardTemplate)? onBackup, // Add backup callback
-    required bool Function(CardTemplate)
-    isBackedUp, // Changed from isLocalDraft
+    Function(CardTemplate)? onBackup,
+    required bool Function(CardTemplate) isLocalOnly, // Changed parameter name
   }) {
     return CustomScrollView(
       controller: scrollController,
@@ -354,29 +356,39 @@ class ProfilePage extends StatelessWidget {
             childCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
+              final localOnly = isLocalOnly(template);
+
               return DraftCard(
-                key: ValueKey('draft-${template.id}-$index'),
+                key: ValueKey(
+                  'draft-${template.id}-$index-${localOnly ? 'local' : 'cloud'}',
+                ), // Dynamic key for better rebuilds
                 template: template,
                 isDraft: isDrafts,
-                isBackedUp: isBackedUp(template), // Changed parameter
+                isLocalOnly: localOnly, // Pass local status
                 onTap: () => onEdit?.call(template),
                 onDelete: () => _showDeleteDialog(
                   template.id,
                   onDelete,
-                  isBackedUp(template), // Changed parameter
+                  localOnly, // Use local status
                 ),
-                onBackup: onBackup != null
-                    ? () => onBackup(template)
-                    : null, // Add backup callback
+                onBackup: localOnly
+                    ? () => onBackup?.call(template)
+                    : null, // Only show backup for local drafts
               );
             },
           ),
         ),
         if (isLoading && hasMore)
-          SliverToBoxAdapter(child: buildLoading("Loading more drafts...")),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(child: buildLoading("Loading more drafts...")),
+            ),
+          ),
       ],
     );
   }
+
   // Widget _buildStaggeredTemplateGrid(
   //   List<CardTemplate> templates,
   //   ScrollController? scrollController, {
@@ -627,10 +639,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _openTemplate(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: template);
-  }
-
   void _showRemoveFromFavoritesDialog(
     String templateId,
     Function(String)? onRemove,
@@ -680,8 +688,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _editDraft(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: template);
+  void _editTemplate(CardTemplate template, [bool isLocale = false]) {
+    Get.toNamed(
+      Routes.editor,
+      arguments: {"template": template, "isLocal": isLocale},
+    );
   }
 
   void _showDeleteDialog(
@@ -742,19 +753,19 @@ class ProfilePage extends StatelessWidget {
 class DraftCard extends StatelessWidget {
   final CardTemplate template;
   final bool isDraft;
-  final bool isBackedUp; // Changed from isLocal to isBackedUp
+  final bool isLocalOnly; // Changed from isBackedUp to isLocalOnly
   final VoidCallback onTap;
   final VoidCallback? onDelete;
-  final VoidCallback? onBackup; // Add backup callback
+  final VoidCallback? onBackup;
 
   const DraftCard({
     super.key,
     required this.template,
     required this.isDraft,
-    required this.isBackedUp, // Changed parameter
+    required this.isLocalOnly, // Changed parameter
     required this.onTap,
     this.onDelete,
-    this.onBackup, // Add backup callback
+    this.onBackup,
   });
 
   @override
@@ -768,6 +779,7 @@ class DraftCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Remove the debug Text(template.id) - this might cause layout issues
           Stack(
             children: [
               ConstrainedBox(
@@ -819,9 +831,13 @@ class DraftCard extends StatelessWidget {
                     ],
                   ),
                   child: Icon(
-                    isBackedUp ? Icons.cloud_done : Icons.cloud_off,
+                    isLocalOnly
+                        ? Icons.cloud_off
+                        : Icons.cloud_done, // Inverted logic
                     size: 14,
-                    color: isBackedUp ? Colors.green : Colors.orange,
+                    color: isLocalOnly
+                        ? Colors.orange
+                        : Colors.green, // Inverted colors
                   ),
                 ),
               ),
@@ -873,8 +889,9 @@ class DraftCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (!isBackedUp) // Only show backup option if not backed up
-                        PopupMenuItem(
+                      if (isLocalOnly &&
+                          onBackup != null) // Only show backup for local drafts
+                        const PopupMenuItem(
                           value: 'backup',
                           child: Row(
                             children: [
@@ -905,11 +922,12 @@ class DraftCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
@@ -921,15 +939,20 @@ class DraftCard extends StatelessWidget {
                     ),
                     Text(
                       _formatDate(template.updatedAt ?? template.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Get.theme.hintColor,
-                      ),
+                      style: Get.textTheme.labelSmall,
                     ),
                   ],
                 ),
-
                 // Backup status text
+                if (isLocalOnly)
+                  Text(
+                    'Local only - Tap to backup',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.orange.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),

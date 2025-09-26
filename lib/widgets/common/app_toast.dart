@@ -47,7 +47,7 @@ class AppToast {
   }
 
   // Show loading toast
-  static void loading({String message = 'Loading...', bool showLogo = false}) {
+  static void loading({String message = 'Loading...', bool showLogo = true}) {
     show(type: ToastType.loading, message: message, showLogo: showLogo);
   }
 
@@ -225,28 +225,33 @@ class __ToastOverlayState extends State<_ToastOverlay>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (widget.showLogo) ...[
-                      // App logo - replace with your actual logo
-                      Container(
-                        width: 28,
-                        height: 28,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          // color: iconColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset("assets/icon.png"),
-                      ),
-                    ],
                     if (widget.type == ToastType.loading)
                       Container(
                         margin: EdgeInsets.only(right: 12),
-                        height: 12,
-                        width: 12,
-                        child: CircularProgressIndicator(
-                          // padding: EdgeInsets.all(4),
-                          // valueColor: AlwaysStoppedAnimation<Color>(iconColor),
-                          // strokeWidth: 2.5,
+                        width: 20,
+                        height: 20,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Circular progress indicator
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            ),
+                            // Watermark logo in the center
+                            if (widget.showLogo)
+                              SizedBox(
+                                width: 10,
+                                height: 10,
+                                child: Image.asset(
+                                  "assets/water_mark.png",
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     // else

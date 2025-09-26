@@ -38,7 +38,10 @@ class StackImageCase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget imageWidget;
-
+    print("File path");
+    print(content.filePath);
+    print("url");
+    print(content.url);
     if (content.filePath != null || content.assetName != null) {
       imageWidget = Image(
         image: content.image,
@@ -57,7 +60,7 @@ class StackImageCase extends StatelessWidget {
       );
     } else {
       imageWidget = CachedNetworkImage(
-        imageUrl: content.url!,
+        imageUrl: content.url ?? "",
         width: content.width,
         height: content.height,
         fit: content.fit,
