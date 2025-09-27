@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_panel.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
@@ -13,7 +14,9 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/shape_stack_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/stack_chart_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -46,12 +49,10 @@ class EditorPage extends GetView<CanvasController> {
         final activePanel = controller.activePanel.value;
 
         final panels = <Widget>[
-          // Show ShapeEditorPanel directly when shapes panel is active
+          // Index 0: Shapes panel
           (activePanel == PanelType.shapes)
               ? GestureDetector(
-                  onTap: () {
-                    // Allow taps to pass through to the canvas
-                  },
+                  onTap: () {},
                   behavior: HitTestBehavior.translucent,
                   child: ShapeEditorPanel(
                     onClose: () {
@@ -61,12 +62,10 @@ class EditorPage extends GetView<CanvasController> {
                 )
               : const SizedBox.shrink(),
 
-          // Show shape editor when a shape item is selected
+          // Index 1: Shape editor when shape item is selected
           (activePanel == PanelType.shapeEditor && item is StackShapeItem)
               ? GestureDetector(
-                  onTap: () {
-                    // Allow taps to pass through to the canvas
-                  },
+                  onTap: () {},
                   behavior: HitTestBehavior.translucent,
                   child: ShapeEditorPanel(
                     shapeItem: item,
@@ -77,8 +76,13 @@ class EditorPage extends GetView<CanvasController> {
                 )
               : const SizedBox.shrink(),
 
+          // Index 2: Stickers panel
           _StickerPanel(controller: controller),
+
+          // Index 3: Color panel
           _HueAdjustmentPanel(controller: controller),
+
+          // Index 4: Text editor panel
           (item is StackTextItem)
               ? _TextEditorPanel(
                   key: ValueKey(item.id),
@@ -86,8 +90,38 @@ class EditorPage extends GetView<CanvasController> {
                   textItem: item,
                 )
               : const SizedBox.shrink(),
+
+          // Index 5: Image panel
           (item is StackImageItem)
               ? AdvancedImagePanel(key: ValueKey(item.id), imageItem: item)
+              : const SizedBox.shrink(),
+
+          // Index 6: Charts panel (ADD CHART)
+          (activePanel == PanelType.charts)
+              ? GestureDetector(
+                  onTap: () {},
+                  behavior: HitTestBehavior.translucent,
+                  child: ChartEditorPanel(
+                    chartItem: null, // Null for adding new chart
+                    onClose: () {
+                      controller.activePanel.value = PanelType.none;
+                    },
+                  ),
+                )
+              : const SizedBox.shrink(),
+
+          // Index 7: Chart editor (EDIT EXISTING CHART)
+          (activePanel == PanelType.chartEditor && item is StackChartItem)
+              ? GestureDetector(
+                  onTap: () {},
+                  behavior: HitTestBehavior.translucent,
+                  child: ChartEditorPanel(
+                    chartItem: item,
+                    onClose: () {
+                      controller.activePanel.value = PanelType.none;
+                    },
+                  ),
+                )
               : const SizedBox.shrink(),
         ];
 
@@ -106,6 +140,10 @@ class EditorPage extends GetView<CanvasController> {
               return 4;
             case PanelType.advancedImage:
               return 5;
+            case PanelType.charts:
+              return 6;
+            case PanelType.chartEditor:
+              return 7;
             case PanelType.none:
               return -1;
           }
@@ -114,7 +152,6 @@ class EditorPage extends GetView<CanvasController> {
         final panelIndex = getPanelIndex(activePanel);
 
         return IgnorePointer(
-          // Only ignore pointers when the panel is not active
           ignoring: activePanel == PanelType.none,
           child: IndexedStack(
             index: panelIndex >= 0 ? panelIndex : 0,
@@ -132,13 +169,36 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
+          // Obx(
+          //   () =>
+          //       controller.activeItem.value != null &&
+          //           controller.activeItem.value is StackTextItem
+          //       ? Text(
+          //           (controller.activeItem.value as StackTextItem)
+          //               .content!
+          //               .radius
+          //               .toString(),
+          //         )
+          //       : SizedBox(),
+          // ),
           Obx(
             () => controller.activeItem.value == null
                 ? SizedBox()
                 : IconButton(
                     onPressed: controller.duplicateItem,
-                    icon: Icon(Icons.copy_all),
+                    icon: Icon(Icons.control_point_duplicate),
                   ),
+          ),
+
+          Obx(
+            () =>
+                controller.activeItem.value != null &&
+                    controller.activeItem.value is StackTextItem
+                ? IconButton(
+                    onPressed: controller.editText,
+                    icon: Icon(Icons.edit_note_rounded),
+                  )
+                : SizedBox(),
           ),
           _ZLockToggleButton(),
 
@@ -1087,95 +1147,117 @@ class ProfessionalBottomToolbar extends StatelessWidget {
             topRight: Radius.circular(16),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _ProfessionalToolbarButton(
-                icon: Icons.shape_line_outlined,
-                activeIcon: Icons.shape_line,
-                label: 'Shapes',
-                panelType: PanelType.shapes,
-                activePanel: controller.activePanel,
-                onPressed: () {
-                  if (controller.activePanel.value == PanelType.shapes) {
-                    controller.activePanel.value = PanelType.none;
-                  } else {
-                    controller.activePanel.value = PanelType.shapes;
-                    controller.activeItem.value = null;
-                  }
-                  controller.update(['bottom_sheet']);
-                },
-              ),
-              _ProfessionalToolbarButton(
-                icon: Icons.emoji_emotions_outlined,
-                activeIcon: Icons.emoji_emotions,
-                label: 'Stickers',
-                panelType: PanelType.stickers,
-                activePanel: controller.activePanel,
-                onPressed: () {
-                  controller.activePanel.value =
-                      controller.activePanel.value == PanelType.stickers
-                      ? PanelType.none
-                      : PanelType.stickers;
-                  controller.update(['bottom_sheet']);
-                },
-              ),
-              _ProfessionalToolbarButton(
-                icon: Icons.palette_outlined,
-                activeIcon: Icons.palette,
-                label: 'Colors',
-                panelType: PanelType.color,
-                activePanel: controller.activePanel,
-                onPressed: () {
-                  controller.activePanel.value =
-                      controller.activePanel.value == PanelType.color
-                      ? PanelType.none
-                      : PanelType.color;
-                  controller.update(['bottom_sheet']);
-                },
-              ),
-              _ProfessionalToolbarButton(
-                icon: Icons.text_fields_outlined,
-                activeIcon: Icons.text_fields,
-                label: 'Text',
-                panelType: PanelType.text,
-                activePanel: controller.activePanel,
-                onPressed: () {
-                  if (controller.activePanel.value == PanelType.text) {
-                    controller.activePanel.value = PanelType.none;
-                  } else {
-                    if (controller.activeItem.value == null ||
-                        controller.activeItem.value is StackTextItem) {
-                      Get.to(() => UpdateTextView());
-                    }
-                    controller.activePanel.value = PanelType.none;
-                  }
-                  controller.update(['bottom_sheet']);
-                },
-              ),
-              _ProfessionalToolbarButton(
-                icon: Icons.photo_filter_outlined,
-                activeIcon: Icons.photo_filter,
-                label: 'Image',
-                panelType: PanelType.advancedImage,
-                activePanel: controller.activePanel,
-                onPressed: () {
-                  if (controller.activePanel.value == PanelType.advancedImage) {
-                    controller.activePanel.value = PanelType.none;
-                  } else {
-                    if (controller.activeItem.value != null &&
-                        controller.activeItem.value is StackImageItem) {
-                      controller.activePanel.value = PanelType.advancedImage;
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _ProfessionalToolbarButton(
+                  icon: Icons.shape_line_outlined,
+                  activeIcon: Icons.shape_line,
+                  label: 'Shapes',
+                  panelType: PanelType.shapes,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    if (controller.activePanel.value == PanelType.shapes) {
+                      controller.activePanel.value = PanelType.none;
                     } else {
-                      _showImageOptions(context);
+                      controller.activePanel.value = PanelType.shapes;
+                      controller.activeItem.value = null;
                     }
-                  }
-                  controller.update(['bottom_sheet']);
-                },
-              ),
-            ],
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+                _ProfessionalToolbarButton(
+                  icon: Icons.emoji_emotions_outlined,
+                  activeIcon: Icons.emoji_emotions,
+                  label: 'Stickers',
+                  panelType: PanelType.stickers,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    controller.activePanel.value =
+                        controller.activePanel.value == PanelType.stickers
+                        ? PanelType.none
+                        : PanelType.stickers;
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+                _ProfessionalToolbarButton(
+                  icon: Icons.palette_outlined,
+                  activeIcon: Icons.palette,
+                  label: 'Colors',
+                  panelType: PanelType.color,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    controller.activePanel.value =
+                        controller.activePanel.value == PanelType.color
+                        ? PanelType.none
+                        : PanelType.color;
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+                _ProfessionalToolbarButton(
+                  icon: Icons.text_fields_outlined,
+                  activeIcon: Icons.text_fields,
+                  label: 'Text',
+                  panelType: PanelType.text,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    if (controller.activePanel.value == PanelType.text) {
+                      controller.activePanel.value = PanelType.none;
+                    } else {
+                      if (controller.activeItem.value == null ||
+                          controller.activeItem.value is StackTextItem) {
+                        Get.to(() => UpdateTextView());
+                      }
+                      controller.activePanel.value = PanelType.none;
+                    }
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+                _ProfessionalToolbarButton(
+                  icon: Icons.photo_filter_outlined,
+                  activeIcon: Icons.photo_filter,
+                  label: 'Image',
+                  panelType: PanelType.advancedImage,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    if (controller.activePanel.value ==
+                        PanelType.advancedImage) {
+                      controller.activePanel.value = PanelType.none;
+                    } else {
+                      if (controller.activeItem.value != null &&
+                          controller.activeItem.value is StackImageItem) {
+                        controller.activePanel.value = PanelType.advancedImage;
+                      } else {
+                        _showImageOptions(context);
+                      }
+                    }
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+
+                // Add this button to your toolbar
+                _ProfessionalToolbarButton(
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart,
+                  label: 'Charts',
+                  panelType: PanelType.charts,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    if (controller.activePanel.value == PanelType.charts) {
+                      controller.activePanel.value = PanelType.none;
+                    } else {
+                      controller.activePanel.value = PanelType.charts;
+                      controller.activeItem.value = null;
+                    }
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1885,6 +1967,9 @@ class CanvasStack extends StatelessWidget {
                         } else if (item is StackShapeItem &&
                             item.content != null) {
                           return StackShapeCase(item: item);
+                        } else if (item is StackChartItem &&
+                            item.content != null) {
+                          return StackChartCase(item: item);
                         }
                         return const SizedBox.shrink();
                       },

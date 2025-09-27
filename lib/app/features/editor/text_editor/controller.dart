@@ -353,24 +353,30 @@ class TextStyleController extends GetxController {
         offset: updatedItem.offset,
       );
     } else {
-      // final span = TextSpan(
-      //   text: updatedContent.data,
-      //   style: updatedContent.style,
-      // );
-      // final painter = TextPainter(
-      //   text: span,
-      //   textDirection: TextDirection.ltr,
-      //   textAlign: updatedContent.textAlign ?? TextAlign.left,
-      //   maxLines: null,
-      // );
-      const double maxWidth = 800.0;
-      // painter.layout(maxWidth: maxWidth);
+      final span = TextSpan(
+        text: updatedContent.data,
+        style: updatedContent.style,
+      );
+      final painter = TextPainter(
+        text: span,
+        textDirection: TextDirection.ltr,
+        textAlign: updatedContent.textAlign ?? TextAlign.left,
+        maxLines: null,
+      );
+      double maxWidth = editorController.scaledCanvasWidth.value * 0.9;
+      painter.layout(
+        maxWidth: maxWidth,
+      ); //when there is not break line to the long text then size issues so we have to controll it inside the canvas
       // final width = painter.width.clamp(50.0, maxWidth);
-      // final height = painter.height.clamp(25.0, double.infinity);
+
+      final width = painter.width + 10;
+      final height = painter.height + 10;
+      final size = Size(width, height);
       editorController.boardController.updateBasic(
         updatedItem.id,
         status: StackItemStatus.selected,
-        // size: Size(width, height),
+        size: size,
+
         offset: updatedItem.offset,
       );
     }

@@ -1,4 +1,5 @@
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 
@@ -11,6 +12,8 @@ StackItem deserializeItem(Map<String, dynamic> itemJson) {
     return StackImageItem.fromJson(itemJson);
   } else if (type == 'StackShapeItem') {
     return StackShapeItem.fromJson(itemJson);
+  } else if (type == 'StackChartItem') {
+    return StackChartItem.fromJson(itemJson);
   } else {
     throw Exception('Unsupported item type: $type');
   }

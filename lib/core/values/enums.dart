@@ -9,14 +9,18 @@ enum StartAngleAlignment { start, center, end }
 // Define panel types as an enum
 enum PanelType {
   shapes, // index 0
-  stickers, // index 1
-  color, // index 2
-  text, // index 3
-  advancedImage, // index 4
-  shapeEditor, // index 5
-  none, // index 6
+  shapeEditor, // index 1
+  stickers, // index 2
+  color, // index 3
+  text, // index 4
+  advancedImage, // index 5
+  charts, // index 6
+  chartEditor, // index 7
+  none,
 }
 
 enum Direction { clockwise, counterClockwise }
 
 enum Placement { inside, outside, middle }
+
+enum ChartType { linearProgress, circularProgress, radialProgress }

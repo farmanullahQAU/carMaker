@@ -1,4 +1,3 @@
-import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/text_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
@@ -87,9 +86,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       ),
       child: Row(
         children: [
-          _buildTextEditButton(),
-          const SizedBox(width: 8),
-
           Expanded(
             child: TabBar(
               controller: _tabController,
@@ -123,8 +119,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
               ],
             ),
           ),
-
-          _buildDuplicateButton(),
         ],
       ),
     );
@@ -169,85 +163,25 @@ class _TextStylingEditorState extends State<TextStylingEditor>
   // Update tab heights
   double _getTabHeight(int index) {
     switch (index) {
-      case 0: // Size
+      case 0: // size
         return 80;
-      case 1: // Format (new)
+      case 1: // format (new)
         return 280; // Increased height for comprehensive controls
-      case 2: // Color
+      case 2: // color
         return 80;
-      case 3: // Background
+      case 3: // bg
         return 80;
-      case 4: // Font
+      case 4: // font
         return 250;
-      case 5: // Effects (consolidated)
+      case 5: // effect (consolidated)
         return 120;
-      case 6: // Circular
+      case 6: // mask
         return 80;
-      case 7: // More
+      case 7: // dual
         return 120;
       default:
-        return 120;
+        return 250;
     }
-  }
-
-  // Professional Text Edit Button
-  Widget _buildTextEditButton() {
-    return Tooltip(
-      message: 'Edit Text Content',
-      child: GestureDetector(
-        onTap: () {
-          Get.to(() => UpdateTextView(item: _controller.textItem));
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.branding.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.branding.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: const Icon(
-            Icons.edit_note,
-            color: AppColors.branding,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Professional Duplicate Button
-  Widget _buildDuplicateButton() {
-    return Tooltip(
-      message: 'Duplicate Text',
-      child: GestureDetector(
-        onTap: () {
-          _controller.editorController.duplicateItem();
-          // Show feedback
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: AppColors.accent.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.accent.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: const Icon(
-            Icons.content_copy,
-            color: AppColors.accent,
-            size: 18,
-          ),
-        ),
-      ),
-    );
   }
 }
 
