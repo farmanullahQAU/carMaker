@@ -4,7 +4,6 @@ import 'dart:math' as math;
 
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
-import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
@@ -16,7 +15,6 @@ import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
-import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
@@ -314,54 +312,6 @@ class CanvasController extends GetxController {
     update(['canvas_stack']); // Trigger rebuild of canvas stack
   }
 
-  // Update onItemStatusChanged to handle chart items
-  void onItemStatusChanged(StackItem item, StackItemStatus status) {
-    if (status == StackItemStatus.moving) {
-      draggedItem.value = item;
-      activeItem.value = null;
-    } else if (status == StackItemStatus.selected) {
-      draggedItem.value = null;
-      activeItem.value = item;
-
-      // If the selected item is a chart, show the chart editor
-      if (item is StackChartItem) {
-        activePanel.value = PanelType.chartEditor;
-      } else if (item is StackImageItem && !item.isProfileImage) {
-        _showImageEditor(item);
-      }
-    } else if (status == StackItemStatus.idle) {
-      if (draggedItem.value?.id == item.id) {
-        draggedItem.value = null;
-      }
-      if (activeItem.value?.id == item.id) {
-        activeItem.value = null;
-        activePanel.value = PanelType.none;
-        _hideImageEditor();
-      }
-    }
-    update(['canvas_stack', 'bottom_sheet']);
-  }
-
-  void _showImageEditor(StackImageItem imageItem) {
-    try {
-      final imageEditorController = Get.find<ImageEditorController>();
-      imageEditorController.showImageEditor(imageItem);
-    } catch (e) {
-      // ImageEditorController not found, create it
-      final imageEditorController = Get.put(ImageEditorController());
-      imageEditorController.showImageEditor(imageItem);
-    }
-  }
-
-  void _hideImageEditor() {
-    try {
-      final imageEditorController = Get.find<ImageEditorController>();
-      imageEditorController.hideImageEditor();
-    } catch (e) {
-      // ImageEditorController not found, ignore
-    }
-  }
-
   Future<void> uploadTemplate(CardTemplate template) async {
     try {
       if (authService.user == null) {
@@ -454,24 +404,6 @@ class CanvasController extends GetxController {
       }
     }
     gridSize.value = newGridSize;
-  }
-
-  Offset getCenteredOffset(Size itemSize, {double? existingDy}) {
-    if (actualStackBoardRenderSize.value == Size.zero) {
-      debugPrint("Warning: actualStackBoardRenderSize is zero for centering.");
-      return Offset(0, existingDy ?? 0);
-    }
-    final double centerX =
-        (actualStackBoardRenderSize.value.width - itemSize.width) / 2;
-    final double clampedX = centerX.clamp(
-      0.0,
-      actualStackBoardRenderSize.value.width - itemSize.width,
-    );
-    final double clampedY = (existingDy ?? 0.0).clamp(
-      0.0,
-      actualStackBoardRenderSize.value.height - itemSize.height,
-    );
-    return Offset(clampedX, clampedY);
   }
 
   @override
@@ -965,38 +897,6 @@ class CanvasController extends GetxController {
       AppToast.error(
         message: 'Failed to save template locally: ${err.toString()}',
       );
-    }
-  }
-
-  void addChart(ChartType chartType) {
-    final content = ChartItemContent(
-      chartType: chartType,
-      value: 75.0,
-      maxValue: 100.0,
-      backgroundColor: Colors.grey.shade300,
-      progressColor: Colors.blue,
-      textColor: Colors.black,
-      thickness: chartType == ChartType.linearProgress ? 20.0 : 10.0,
-    );
-
-    final chartItem = StackChartItem(
-      id: UniqueKey().toString(),
-      size: const Size(200, 80),
-      offset: getCenteredOffset(const Size(200, 80)),
-      content: content,
-    );
-
-    boardController.addItem(chartItem);
-    activeItem.value = chartItem;
-    activePanel.value = PanelType.chartEditor; // Switch to edit mode
-    update(['canvas_stack', 'bottom_sheet']);
-  }
-
-  void updateChartItem(StackChartItem item) {
-    final existingItem = boardController.getById(item.id);
-    if (existingItem != null) {
-      boardController.updateItem(item);
-      update(['canvas_stack']);
     }
   }
 }

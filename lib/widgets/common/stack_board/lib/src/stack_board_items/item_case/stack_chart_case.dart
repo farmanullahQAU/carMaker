@@ -20,17 +20,29 @@ class StackChartCase extends StatelessWidget {
     }
 
     final content = item.content!;
+    final widget = item.content?.chartType == ChartType.linearProgress
+        ? SizedBox(
+            width: item.size.width,
+            height: item.size.height,
+            child: CustomPaint(
+              painter: _ChartPainter(content: content),
+              child: content.showValueText
+                  ? _buildValueText(content)
+                  : const SizedBox(),
+            ),
+          )
+        : SizedBox(
+            width: item.size.width,
+            height: item.size.height,
+            child: CustomPaint(
+              painter: _ChartPainter(content: content),
+              child: content.showValueText
+                  ? _buildValueText(content)
+                  : const SizedBox(),
+            ),
+          );
 
-    return SizedBox(
-      width: item.size.width,
-      height: item.size.height,
-      child: CustomPaint(
-        painter: _ChartPainter(content: content),
-        child: content.showValueText
-            ? _buildValueText(content)
-            : const SizedBox(),
-      ),
-    );
+    return widget;
   }
 
   Widget _buildValueText(ChartItemContent content) {
@@ -42,7 +54,7 @@ class StackChartCase extends StatelessWidget {
         '$percentage%',
         style: TextStyle(
           color: content.textColor,
-          fontSize: content.textSize,
+          fontSize: content.textSize * 0.5,
           fontWeight: FontWeight.bold,
         ),
       ),

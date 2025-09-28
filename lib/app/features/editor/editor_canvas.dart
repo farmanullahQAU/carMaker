@@ -48,116 +48,58 @@ class EditorPage extends GetView<CanvasController> {
         final item = controller.activeItem.value;
         final activePanel = controller.activePanel.value;
 
-        final panels = <Widget>[
-          // Index 0: Shapes panel
-          (activePanel == PanelType.shapes)
-              ? GestureDetector(
-                  onTap: () {},
-                  behavior: HitTestBehavior.translucent,
-                  child: ShapeEditorPanel(
-                    onClose: () {
-                      controller.activePanel.value = PanelType.none;
-                    },
-                  ),
-                )
-              : const SizedBox.shrink(),
+        Widget currentPanel = const SizedBox.shrink();
 
-          // Index 1: Shape editor when shape item is selected
-          (activePanel == PanelType.shapeEditor && item is StackShapeItem)
-              ? GestureDetector(
-                  onTap: () {},
-                  behavior: HitTestBehavior.translucent,
-                  child: ShapeEditorPanel(
-                    shapeItem: item,
-                    onClose: () {
-                      controller.activePanel.value = PanelType.none;
-                    },
-                  ),
-                )
-              : const SizedBox.shrink(),
-
-          // Index 2: Stickers panel
-          _StickerPanel(controller: controller),
-
-          // Index 3: Color panel
-          _HueAdjustmentPanel(controller: controller),
-
-          // Index 4: Text editor panel
-          (item is StackTextItem)
-              ? _TextEditorPanel(
-                  key: ValueKey(item.id),
-                  controller: controller,
-                  textItem: item,
-                )
-              : const SizedBox.shrink(),
-
-          // Index 5: Image panel
-          (item is StackImageItem)
-              ? AdvancedImagePanel(key: ValueKey(item.id), imageItem: item)
-              : const SizedBox.shrink(),
-
-          // Index 6: Charts panel (ADD CHART)
-          (activePanel == PanelType.charts)
-              ? GestureDetector(
-                  onTap: () {},
-                  behavior: HitTestBehavior.translucent,
-                  child: ChartEditorPanel(
-                    chartItem: null, // Null for adding new chart
-                    onClose: () {
-                      controller.activePanel.value = PanelType.none;
-                    },
-                  ),
-                )
-              : const SizedBox.shrink(),
-
-          // Index 7: Chart editor (EDIT EXISTING CHART)
-          (activePanel == PanelType.chartEditor && item is StackChartItem)
-              ? GestureDetector(
-                  onTap: () {},
-                  behavior: HitTestBehavior.translucent,
-                  child: ChartEditorPanel(
-                    chartItem: item,
-                    onClose: () {
-                      controller.activePanel.value = PanelType.none;
-                    },
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ];
-
-        // Map PanelType to the correct index
-        int getPanelIndex(PanelType type) {
-          switch (type) {
-            case PanelType.shapes:
-              return 0;
-            case PanelType.shapeEditor:
-              return 1;
-            case PanelType.stickers:
-              return 2;
-            case PanelType.color:
-              return 3;
-            case PanelType.text:
-              return 4;
-            case PanelType.advancedImage:
-              return 5;
-            case PanelType.charts:
-              return 6;
-            case PanelType.chartEditor:
-              return 7;
-            case PanelType.none:
-              return -1;
-          }
+        switch (activePanel) {
+          case PanelType.shapes:
+            currentPanel = ShapeEditorPanel(
+              onClose: () => controller.activePanel.value = PanelType.none,
+            );
+            break;
+          case PanelType.shapeEditor when item is StackShapeItem:
+            currentPanel = ShapeEditorPanel(
+              shapeItem: item,
+              onClose: () => controller.activePanel.value = PanelType.none,
+            );
+            break;
+          case PanelType.stickers:
+            currentPanel = _StickerPanel(controller: controller);
+            break;
+          case PanelType.color:
+            currentPanel = _HueAdjustmentPanel(controller: controller);
+            break;
+          case PanelType.text when item is StackTextItem:
+            currentPanel = _TextEditorPanel(
+              key: ValueKey(item.id),
+              controller: controller,
+              textItem: item,
+            );
+            break;
+          case PanelType.advancedImage when item is StackImageItem:
+            currentPanel = AdvancedImagePanel(
+              key: ValueKey(item.id),
+              imageItem: item,
+            );
+            break;
+          case PanelType.charts:
+            currentPanel = ChartEditorPanel(
+              onClose: () => controller.activePanel.value = PanelType.none,
+              chartItem: controller.activeItem.value as StackChartItem, //TODO
+            );
+            break;
+          case PanelType.chartEditor when item is StackChartItem:
+            currentPanel = ChartEditorPanel(
+              chartItem: item,
+              onClose: () => controller.activePanel.value = PanelType.none,
+            );
+            break;
+          default:
+            currentPanel = const SizedBox.shrink();
         }
-
-        final panelIndex = getPanelIndex(activePanel);
 
         return IgnorePointer(
           ignoring: activePanel == PanelType.none,
-          child: IndexedStack(
-            index: panelIndex >= 0 ? panelIndex : 0,
-            alignment: Alignment.bottomCenter,
-            children: panels,
-          ),
+          child: currentPanel,
         );
       },
     );
@@ -1240,21 +1182,25 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                 ),
 
                 // Add this button to your toolbar
-                _ProfessionalToolbarButton(
-                  icon: Icons.bar_chart_outlined,
-                  activeIcon: Icons.bar_chart,
-                  label: 'Charts',
-                  panelType: PanelType.charts,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    if (controller.activePanel.value == PanelType.charts) {
-                      controller.activePanel.value = PanelType.none;
-                    } else {
-                      controller.activePanel.value = PanelType.charts;
-                      controller.activeItem.value = null;
-                    }
-                    controller.update(['bottom_sheet']);
-                  },
+                Obx(
+                  () => _ProfessionalToolbarButton(
+                    icon: Icons.bar_chart_outlined,
+                    activeIcon: Icons.bar_chart,
+                    label: (controller.activeItem.value is StackChartItem)
+                        ? 'Edit Chart'
+                        : 'Charts',
+                    panelType: PanelType.charts,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activePanel.value == PanelType.charts) {
+                        controller.activePanel.value = PanelType.none;
+                      } else {
+                        controller.activePanel.value = PanelType.charts;
+                        // controller.activeItem.value = null;
+                      }
+                      controller.update(['bottom_sheet']);
+                    },
+                  ),
                 ),
               ],
             ),
@@ -1969,7 +1915,22 @@ class CanvasStack extends StatelessWidget {
                           return StackShapeCase(item: item);
                         } else if (item is StackChartItem &&
                             item.content != null) {
-                          return StackChartCase(item: item);
+                          return GestureDetector(
+                            onTap: () {
+                              controller.activeItem.value = item;
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.setItemStatus(
+                                item.id,
+                                StackItemStatus.selected,
+                              );
+                              controller.activePanel.value =
+                                  PanelType.chartEditor;
+                            },
+
+                            child: StackChartCase(item: item),
+                          );
                         }
                         return const SizedBox.shrink();
                       },
@@ -2027,6 +1988,9 @@ class CanvasStack extends StatelessWidget {
                           } else if (item is StackShapeItem) {
                             controller.activePanel.value =
                                 PanelType.shapeEditor;
+                          } else if (item is StackChartItem) {
+                            // controller.activePanel.value =
+                            //     PanelType.chartEditor;
                           } else {
                             controller.activePanel.value = PanelType.none;
                           }
@@ -2035,9 +1999,6 @@ class CanvasStack extends StatelessWidget {
                           controller.activePanel.value = PanelType.none;
                           controller.draggedItem.value = item;
                         } else if (status == StackItemStatus.idle) {
-                          print(
-                            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.....................",
-                          );
                           controller.activePanel.value = PanelType.none;
                           if (controller.draggedItem.value?.id == item.id) {
                             controller.draggedItem.value = null;
