@@ -90,7 +90,7 @@ class EditorPage extends GetView<CanvasController> {
             break;
           case PanelType.charts:
             currentPanel = ChartEditorPanel(
-              onClose: () => controller.activePanel.value = PanelType.none,
+              onClose: () => controller.setActiveItem(null),
               chartItem:
                   (controller.activeItem.value != null &&
                       (controller.activeItem.value is StackChartItem))
@@ -955,7 +955,7 @@ class _TextEditorPanel extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    controller.activePanel.value = PanelType.none;
+                    controller.setActiveItem(null);
                   },
                   borderRadius: BorderRadius.circular(6),
                   child: Container(

@@ -6,6 +6,7 @@ import 'package:cardmaker/app/features/editor/text_editor/circular_text/widget.d
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_item_case/config_builder.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -68,7 +69,7 @@ class _StackItemCaseState extends State<StackItemCase> {
 
   // double _minSize(BuildContext context) => _caseStyle(context).buttonSize * 2;
 
-  double _minSize(BuildContext context) => 20.0; // Allow smaller sizes
+  double _minSize(BuildContext context) => 3.0; // Allow smaller sizes
 
   /// * 主体鼠标指针样式
   /// * Main body mouse pointer style
@@ -737,7 +738,11 @@ class _StackItemCaseState extends State<StackItemCase> {
               onPanEnd: (_) => _onPanEnd(context, status),
               child: _toolCase(context, style, const Icon(Icons.sync)),
             ),
-            if (item.size.width + item.size.height < style.buttonSize * 6)
+            // if (item.size.width + item.size.height < style.buttonSize * 8)
+            if ((item.size.width + item.size.height < style.buttonSize * 8) ||
+                item
+                    is StackShapeItem) //some times we make the shapes too small in height or width like for divider etc so we have to keep openwith button
+              //for all the cases
               Padding(
                 padding: EdgeInsets.only(left: style.buttonSize / 2),
                 child: GestureDetector(

@@ -911,4 +911,12 @@ class CanvasController extends GetxController {
       );
     }
   }
+
+  void setActiveItem(StackItem? item) {
+    if (item == null && activeItem.value != null) {
+      boardController.setAllItemStatuses(StackItemStatus.idle);
+      activePanel.value = PanelType.none;
+    }
+    activeItem.value = item;
+  }
 }

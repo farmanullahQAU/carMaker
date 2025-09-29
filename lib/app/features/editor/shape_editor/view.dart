@@ -1,6 +1,5 @@
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
-import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
@@ -50,8 +49,7 @@ class ShapeEditorPanel extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    controller.canvasController.activePanel.value =
-                        PanelType.none;
+                    controller.canvasController.setActiveItem(null);
                   },
                   borderRadius: BorderRadius.circular(6),
                   child: Container(

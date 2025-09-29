@@ -387,10 +387,7 @@ class TextStyleController extends GetxController
       editorController.boardController.updateBasic(
         updatedItem.id,
         status: StackItemStatus.selected,
-
-        // size: currentIndex.value != 0
-        //     ? size
-        //     : Get.find<CanvasController>().activeItem.value?.size,
+        size: updatedItem.content!.data!.length < 20 ? size : null,
         offset: updatedItem.offset,
       );
     }
