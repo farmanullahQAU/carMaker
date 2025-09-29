@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
@@ -30,62 +31,79 @@ class ShapeEditorPanel extends StatelessWidget {
       }
     });
 
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-
-      onTap: () {
-        controller.currentShapeItem = null;
-        // Close when tapping outside the panel
-        onClose();
-      },
-      child: Material(
-        color: Colors.red,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 200),
-          child: Material(
-            elevation: 6,
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(0),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Get.theme.colorScheme.surfaceContainer,
+          child: Row(
+            children: [
+              Text(
+                'Text Editor',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildEnhancedTabBar(controller),
-                  Expanded(
-                    child: GetBuilder<ShapeEditorController>(
-                      id: 'tab_view',
-                      builder: (controller) {
-                        return TabBarView(
-                          controller: controller.tabController,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: [
-                            _buildTemplatesTab(controller),
-                            _buildCustomizeTab(controller),
-                          ],
-                        );
-                      },
-                    ),
+              Spacer(),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    controller.canvasController.activePanel.value =
+                        PanelType.none;
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.close_rounded, size: 16),
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
+        ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 200),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(0),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildEnhancedTabBar(controller),
+                Expanded(
+                  child: GetBuilder<ShapeEditorController>(
+                    id: 'tab_view',
+                    builder: (controller) {
+                      return TabBarView(
+                        controller: controller.tabController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          _buildTemplatesTab(controller),
+                          _buildCustomizeTab(controller),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildEnhancedTabBar(ShapeEditorController controller) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       child: Container(
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(25),
+          color: Get.theme.colorScheme.surface,
+          // borderRadius: BorderRadius.circular(25),
         ),
         height: 36,
         child: GetBuilder<ShapeEditorController>(
@@ -93,15 +111,20 @@ class ShapeEditorPanel extends StatelessWidget {
           builder: (controller) {
             return TabBar(
               controller: controller.tabController,
-              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorSize: TabBarIndicatorSize.label,
+
               dividerHeight: 0,
               onTap: (index) {
                 controller.updateCurrentTab(index);
               },
-              indicator: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceBright,
-                borderRadius: BorderRadius.circular(25),
-              ),
+              // indicator: BoxDecoration(
+              //   color: Get.theme.colorScheme.surface,
+              //   borderRadius: BorderRadius.only(
+              //     topLeft: Radius.circular(25),
+
+              //     topRight: Radius.circular(25),
+              //   ),
+              // ),
               tabs: [
                 _buildProfessionalTab('Templates', 0, Icons.grid_view_rounded),
                 _buildProfessionalTab('Customize', 1, Icons.tune_rounded),

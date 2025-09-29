@@ -27,13 +27,11 @@ class TextStylingEditor extends StatefulWidget {
 
 class _TextStylingEditorState extends State<TextStylingEditor>
     with TickerProviderStateMixin {
-  late final TabController _tabController;
   late final TabController _circularSubTabController;
   final TextStyleController _controller = Get.put(TextStyleController());
 
   @override
   void dispose() {
-    _tabController.dispose();
     _circularSubTabController.dispose();
     super.dispose();
   }
@@ -41,9 +39,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surfaceContainerHigh,
-      ),
+      decoration: BoxDecoration(color: Get.theme.colorScheme.surface),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [_buildTabBar(), _buildTabView()],
@@ -61,17 +57,6 @@ class _TextStylingEditorState extends State<TextStylingEditor>
     _circularSubTabController.addListener(() {
       _controller.circularSubTabIndex.value = _circularSubTabController.index;
     });
-
-    // Reduce from 11 to 8 tabs by combining related features
-    _tabController = TabController(
-      length: 9, // Reduced from 11
-      vsync: this,
-      initialIndex: _controller.currentIndex.value,
-    );
-    _tabController.addListener(() {
-      _controller.currentIndex.value = _tabController.index;
-      _controller.update(['tab_view']);
-    });
   }
 
   // Updated tab bar with Format tab
@@ -88,7 +73,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         children: [
           Expanded(
             child: TabBar(
-              controller: _tabController,
+              controller: _controller.tabController,
               tabAlignment: TabAlignment.start,
               isScrollable: true,
               indicator: const BoxDecoration(),
@@ -135,7 +120,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
             child: SafeArea(
               child: TabBarView(
                 physics: const NeverScrollableScrollPhysics(),
-                controller: _tabController,
+                controller: controller.tabController,
                 children: [
                   _SizeTab(controller: controller),
                   _FormatTab(controller: controller), // New Format tab

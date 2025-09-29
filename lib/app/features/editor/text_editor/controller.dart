@@ -8,8 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class TextStyleController extends GetxController {
+class TextStyleController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   final editorController = Get.find<CanvasController>();
+  late final TabController tabController;
 
   // Tab control
   final currentIndex = 0.obs;
@@ -82,6 +84,16 @@ class TextStyleController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    tabController = TabController(
+      length: 9, // Reduced from 11
+      vsync: this,
+      initialIndex: currentIndex.value,
+    );
+    tabController.addListener(() {
+      currentIndex.value = tabController.index;
+      update(['tab_view']);
+    });
     _initializeGoogleFonts();
     _loadInitialFonts();
   }
@@ -375,8 +387,10 @@ class TextStyleController extends GetxController {
       editorController.boardController.updateBasic(
         updatedItem.id,
         status: StackItemStatus.selected,
-        size: size,
 
+        // size: currentIndex.value != 0
+        //     ? size
+        //     : Get.find<CanvasController>().activeItem.value?.size,
         offset: updatedItem.offset,
       );
     }
@@ -399,5 +413,11 @@ class TextStyleController extends GetxController {
       default:
         return 'Regular';
     }
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    tabController.dispose();
   }
 }

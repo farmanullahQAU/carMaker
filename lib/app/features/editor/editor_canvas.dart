@@ -5,13 +5,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_panel.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
+import 'package:cardmaker/app/features/editor/hue_adjustment/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/view.dart';
+import 'package:cardmaker/app/features/editor/stickers/stickers_panel.dart';
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
-import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/shape_stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/stack_chart_case.dart';
@@ -54,6 +55,12 @@ class EditorPage extends GetView<CanvasController> {
           case PanelType.shapes:
             currentPanel = ShapeEditorPanel(
               onClose: () => controller.activePanel.value = PanelType.none,
+
+              shapeItem:
+                  (controller.activeItem.value != null &&
+                      (controller.activeItem.value is StackShapeItem))
+                  ? controller.activeItem.value as StackShapeItem
+                  : null,
             );
             break;
           case PanelType.shapeEditor when item is StackShapeItem:
@@ -63,10 +70,10 @@ class EditorPage extends GetView<CanvasController> {
             );
             break;
           case PanelType.stickers:
-            currentPanel = _StickerPanel(controller: controller);
+            currentPanel = StickerPanel(controller: controller);
             break;
           case PanelType.color:
-            currentPanel = _HueAdjustmentPanel(controller: controller);
+            currentPanel = HueAdjustmentPanel(controller: controller);
             break;
           case PanelType.text when item is StackTextItem:
             currentPanel = _TextEditorPanel(
@@ -84,15 +91,19 @@ class EditorPage extends GetView<CanvasController> {
           case PanelType.charts:
             currentPanel = ChartEditorPanel(
               onClose: () => controller.activePanel.value = PanelType.none,
-              chartItem: controller.activeItem.value as StackChartItem, //TODO
+              chartItem:
+                  (controller.activeItem.value != null &&
+                      (controller.activeItem.value is StackChartItem))
+                  ? controller.activeItem.value as StackChartItem
+                  : null,
             );
             break;
-          case PanelType.chartEditor when item is StackChartItem:
-            currentPanel = ChartEditorPanel(
-              chartItem: item,
-              onClose: () => controller.activePanel.value = PanelType.none,
-            );
-            break;
+          // case PanelType.chartEditor when item is StackChartItem:
+          //   currentPanel = ChartEditorPanel(
+          //     chartItem: item,
+          //     onClose: () => controller.activePanel.value = PanelType.none,
+          //   );
+          //   break;
           default:
             currentPanel = const SizedBox.shrink();
         }
@@ -272,730 +283,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _StickerPanel extends StatelessWidget {
-  final CanvasController controller;
-
-  const _StickerPanel({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final categories = {
-      'Popular': [
-        '😍',
-        '🥳',
-        '💝',
-        '🌈',
-        '💎',
-        '👑',
-        '😎',
-        '🎀',
-        '🥰',
-        '🙌',
-        '💯',
-        '🚀',
-        '🎯',
-        '🏆',
-        '🎖️',
-        '🥇',
-        '🎗️',
-        '😻',
-        '🤩',
-        '🔥',
-      ],
-      'Emojis': [
-        '😀',
-        '😂',
-        '😘',
-        '🙂',
-        '😊',
-        '😇',
-        '🤗',
-        '🤔',
-        '😋',
-        '😜',
-        '🤪',
-        '😴',
-        '🥺',
-        '😢',
-        '😉',
-        '🤓',
-        '😣',
-        '😝',
-        '😗',
-        '😙',
-      ],
-      'Hearts': [
-        '❤️',
-        '🧡',
-        '💛',
-        '💚',
-        '💙',
-        '💜',
-        '🖤',
-        '🤍',
-        '🤎',
-        '💕',
-        '💞',
-        '💓',
-        '💗',
-        '💖',
-        '💘',
-        '💟',
-        '❣️',
-        '💌',
-        '💑',
-        '💋',
-      ],
-      'Party': [
-        '🎉',
-        '🎊',
-        '🎈',
-        '🎁',
-        '🎂',
-        '🍰',
-        '🪅',
-        '🎆',
-        '🎇',
-        '🍾',
-        '🥂',
-        '🎤',
-        '🕺',
-        '💃',
-        '🎸',
-        '🥁',
-        '🎺',
-        '🎻',
-        '🎵',
-        '🎶',
-      ],
-      'Birthdays': [
-        '🧁',
-        '🕯️',
-        '🎠',
-        '🎡',
-        '🎈',
-        '🎁',
-        '🎂',
-        '🥳',
-        '🎊',
-        '🎉',
-        '🎀',
-        '🥂',
-        '🎶',
-        '🧁',
-        '🕯️',
-        '🎠',
-        '🎡',
-        '🎈',
-        '🎁',
-        '🎂',
-      ],
-      'Weddings': [
-        '💍',
-        '👰',
-        '🤵',
-        '💒',
-        '💐',
-        '👰‍♀️',
-        '🤵‍♂️',
-        '🎩',
-        '🌸',
-        '💏',
-        '👩‍❤️‍👨',
-        '👩‍❤️‍👩',
-        '👨‍❤️‍👨',
-        '💐',
-        '💍',
-        '💒',
-        '👰',
-        '🤵',
-        '🎩',
-        '🌸',
-      ],
-      'Holidays': [
-        '🎄',
-        '🎅',
-        '🦌',
-        '❄️',
-        '☃️',
-        '🎃',
-        '👻',
-        '🦃',
-        '🐰',
-        '🥚',
-        '🇺🇳',
-        '🕎',
-        '🎍',
-        '🎑',
-        '🪔',
-        '🎆',
-        '🎇',
-        '🎁',
-        '🧧',
-        '🎄',
-      ],
-      'Leaves': [
-        '🍃',
-        '🌿',
-        '🍂',
-        '🍁',
-        '🌱',
-        '🌾',
-        '🍃',
-        '🌿',
-        '🍂',
-        '🍁',
-        '🌱',
-        '🌾',
-        '🍃',
-        '🌿',
-        '🍂',
-        '🍁',
-        '🌱',
-        '🌾',
-        '🍃',
-        '🌿',
-      ],
-      'Alphabet': [
-        '🇦',
-        '🇧',
-        '🇨',
-        '🇩',
-        '🇪',
-        '🇫',
-        '🇬',
-        '🇭',
-        '🇮',
-        '🇯',
-        '🇰',
-        '🇱',
-        '🇲',
-        '🇳',
-        '🇴',
-        '🇵',
-        '🇶',
-        '🇷',
-        '🇸',
-        '🇹',
-      ],
-      'Nature': [
-        '🌺',
-        '🌻',
-        '🌷',
-        '🌹',
-        '🌳',
-        '🌲',
-        '🌴',
-        '🌵',
-        '🌊',
-        '⛅',
-        '☀️',
-        '🌙',
-        '🌍',
-        '🌬️',
-        '🌪️',
-        '🌼',
-        '🌸',
-        '🌻',
-        '🌷',
-        '🌹',
-      ],
-      'Animals': [
-        '🐶',
-        '🐱',
-        '🐻',
-        '🐼',
-        '🐨',
-        '🦁',
-        '🐯',
-        '🦒',
-        '🦊',
-        '🦄',
-        '🐘',
-        '🦋',
-        '🐝',
-        '🦉',
-        '🐦',
-        '🐳',
-        '🐬',
-        '🦚',
-        '🐢',
-        '🐙',
-      ],
-      'Food': [
-        '🍎',
-        '🍇',
-        '🍓',
-        '🍒',
-        '🍉',
-        '🍍',
-        '🍔',
-        '🍕',
-        '🍟',
-        '🍣',
-        '🍦',
-        '🍩',
-        '☕',
-        '🍵',
-        '🥐',
-        '🥞',
-        '🍜',
-        '🥗',
-        '🍪',
-        '🍫',
-      ],
-      'Travel': [
-        '✈️',
-        '🗺️',
-        '🏖️',
-        '🏝️',
-        '⛰️',
-        '🏕️',
-        '🗽',
-        '🗼',
-        '🏰',
-        '🗻',
-        '🚗',
-        '🚂',
-        '⛵',
-        '🛳️',
-        '🛸',
-        '🎒',
-        '🧳',
-        '🛫',
-        '🛬',
-        '🗿',
-      ],
-      'Motivational': [
-        '💪',
-        '💡',
-        '✨',
-        '👊',
-        '🌱',
-        '💫',
-        '🧠',
-        '🏅',
-        '🌟',
-        '🎯',
-        '💯',
-        '⚡',
-        '🌍',
-        '🚀',
-        '🏆',
-        '🎖️',
-        '🥇',
-        '🙌',
-        '🌈',
-        '🔥',
-      ],
-      'Social Media': [
-        '📸',
-        '📷',
-        '📱',
-        '💬',
-        '🗣️',
-        '🔗',
-        '📍',
-        '🖼️',
-        '🎥',
-        '🎬',
-        '🔄',
-        '🔃',
-        '👍',
-        '👀',
-        '📩',
-        '📤',
-        '🌐',
-        '📲',
-        '🔔',
-        '📧',
-      ],
-      'Symbols': [
-        '⭐',
-        '⚡',
-        '💥',
-        '🎪',
-        '⚙️',
-        '🛠️',
-        '🔮',
-        '🔒',
-        '🔑',
-        '🛡️',
-        '💣',
-        '🎰',
-        '🧩',
-        '🎨',
-        '🖌️',
-        '🖍️',
-        '✂️',
-        '📏',
-        '📐',
-        '🧬',
-      ],
-      'Events': [
-        '🎫',
-        '🎭',
-        '🎤',
-        '🎥',
-        '🎡',
-        '🎢',
-        '🎠',
-        '🎟️',
-        '🏟️',
-        '🎲',
-        '🎿',
-        '🏇',
-        '🏀',
-        '⚽',
-        '🏈',
-        '🎾',
-        '🏓',
-        '🏒',
-        '⛳',
-        '🏸',
-      ],
-      'Baby': [
-        '👶',
-        '🍼',
-        '🧸',
-        '🚼',
-        '👼',
-        '🛁',
-        '👶',
-        '🍼',
-        '🧸',
-        '🚼',
-        '👼',
-        '🛁',
-        '👶',
-        '🍼',
-        '🧸',
-        '🚼',
-        '👼',
-        '🛁',
-        '👶',
-        '🍼',
-      ],
-      'Fitness': [
-        '🏋️',
-        '🤸',
-        '🏃',
-        '🚴',
-        '🏊',
-        '🧘',
-        '🥊',
-        '🏋️‍♀️',
-        '🏋️‍♂️',
-        '🤸‍♀️',
-        '🤸‍♂️',
-        '🏃‍♀️',
-        '🏃‍♂️',
-        '🚴‍♀️',
-        '🚴‍♂️',
-        '🏊‍♀️',
-        '🏊‍♂️',
-        '🧘‍♀️',
-        '🧘‍♂️',
-        '🥊',
-      ],
-      'Daily Used': [
-        '📱',
-        '📧',
-        '📲',
-        '💬',
-        '📞',
-        '📅',
-        '⏰',
-        '🕒',
-        '📍',
-        '📝',
-        '✉️',
-        '📩',
-        '📤',
-        '📥',
-        '🖱️',
-        '💻',
-        '🖨️',
-        '📋',
-        '📊',
-        '📈',
-      ],
-    };
-
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Get.theme.shadowColor.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, -3),
-          ),
-        ],
-        // borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-        color: Get.theme.colorScheme.surfaceContainerHighest,
-      ),
-      child: DefaultTabController(
-        length: categories.length,
-        child: Column(
-          children: [
-            Container(
-              height: 33,
-              padding: EdgeInsets.symmetric(horizontal: 0),
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainer,
-                // borderRadius: BorderRadius.circular(25),
-              ),
-              child: TabBar(
-                isScrollable: true,
-                dividerHeight: 0,
-                tabAlignment: TabAlignment.start,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  // color: AppColors.branding.withOpacity(0.1),
-                ),
-                labelColor: AppColors.branding,
-                indicatorWeight: 3,
-                labelStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                tabs: categories.keys.map((category) {
-                  return Tab(text: category);
-                }).toList(),
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: categories.values.map((stickers) {
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
-                    child: Wrap(
-                      spacing: 8, // Horizontal spacing between stickers
-                      runSpacing: 8, // Vertical spacing between rows
-                      alignment:
-                          WrapAlignment.start, // Align stickers to the start
-                      children: stickers.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final sticker = entry.value;
-                        return GestureDetector(
-                          onTap: () {
-                            controller.addSticker(sticker);
-                            // Haptic feedback
-                            // HapticFeedback.lightImpact();
-                          },
-                          child: AnimatedContainer(
-                            duration: Duration(milliseconds: 150),
-                            width: 48, // Fixed width for each sticker
-                            height: 48, // Fixed height for each sticker
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Center(
-                              child: Text(
-                                sticker,
-                                style: TextStyle(fontSize: 28),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final RxBool useAdvancedGradient = false.obs; // Default to simple gradient
-
-// Update the _HueAdjustmentPanel to its original state but with gradient options
-class _HueAdjustmentPanel extends StatelessWidget {
-  final CanvasController controller;
-
-  const _HueAdjustmentPanel({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final hasBackgroundImage = controller.selectedBackground.value != null;
-
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  hasBackgroundImage ? Icons.colorize : Icons.gradient,
-                  size: 20,
-                  color: AppColors.branding,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  hasBackgroundImage ? 'Hue Adjustment' : 'Gradient Background',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Column(
-              children: [
-                // Compact Hue/Gradient Slider
-                CompactSlider(
-                  icon: hasBackgroundImage ? Icons.colorize : Icons.gradient,
-                  label: hasBackgroundImage ? 'Hue' : 'Color Theme',
-                  value: controller.backgroundHue.value,
-                  min: 0.0,
-                  max: 360.0,
-                  onChanged: (value) {
-                    controller.updateBackgroundHue(value);
-                  },
-                ),
-                const SizedBox(height: 8),
-                // Preview with gradient
-                Container(
-                  height: 24,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    gradient: _getPreviewGradient(
-                      controller.backgroundHue.value,
-                      hasBackgroundImage,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      hasBackgroundImage
-                          ? '${controller.backgroundHue.value.round()}°'
-                          : 'Theme ${(controller.backgroundHue.value / 36).round() + 1}',
-                      style: TextStyle(
-                        color: _getTextColor(controller.backgroundHue.value),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (!hasBackgroundImage) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Drag to change gradient colors',
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  LinearGradient _getPreviewGradient(double hueValue, bool hasBackgroundImage) {
-    if (hasBackgroundImage) {
-      // For images, show a simple hue preview
-      return LinearGradient(
-        colors: [
-          HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor(),
-          HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
-        ],
-      );
-    } else {
-      // Default case: transparent gradient for hueValue == 0
-      if (hueValue == 0.0) {
-        return const LinearGradient(colors: [Colors.white, Colors.white]);
-      }
-
-      // Dynamic gradient generation for all hues
-      final baseColor = HSLColor.fromAHSL(1, hueValue, 0.9, 0.5).toColor();
-      final lighterColor = HSLColor.fromAHSL(
-        1,
-        (hueValue + 20) % 360,
-        0.8,
-        0.7,
-      ).toColor();
-      final darkerColor = HSLColor.fromAHSL(
-        1,
-        (hueValue - 20) % 360,
-        0.8,
-        0.3,
-      ).toColor();
-
-      return LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [lighterColor, baseColor, darkerColor],
-        stops: const [0.0, 0.5, 1.0],
-      );
-    }
-  }
-
-  // LinearGradient _getPreviewGradient(double hueValue, bool hasBackgroundImage) {
-  //   if (!hasBackgroundImage) {
-  //     if (hueValue == 0.0) {
-  //       return const LinearGradient(colors: [Colors.white, Colors.white]);
-  //     }
-
-  //     final baseColor = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
-  //     final lighterColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor();
-  //     final darkerColor = HSLColor.fromAHSL(1, hueValue, 0.8, 0.3).toColor();
-
-  //     return LinearGradient(colors: [lighterColor, baseColor, darkerColor]);
-  //   } else {
-  //     // For images, show a simple hue preview
-  //     return LinearGradient(
-  //       colors: [
-  //         HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor(),
-  //         HSLColor.fromAHSL(1, hueValue, 0.8, 0.7).toColor(),
-  //       ],
-  //     );
-  //   }
-  // }
-
-  Color _getTextColor(double hueValue) {
-    // Determine if text should be white or black based on background brightness
-    final color = HSLColor.fromAHSL(1, hueValue, 1, 0.5).toColor();
-    final brightness = ThemeData.estimateBrightnessForColor(color);
-    return brightness == Brightness.dark ? Colors.white : Colors.black;
-  }
-}
-
 class ExportPreviewPage extends StatelessWidget {
   final String imagePath;
   final String pdfPath;
@@ -1096,23 +383,32 @@ class ProfessionalBottomToolbar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                Obx(() {
+                  bool isShapeActive =
+                      controller.activeItem.value is StackShapeItem ||
+                      controller.activePanel.value == PanelType.shapes;
+
+                  return _ProfessionalToolbarButton(
+                    isActive: isShapeActive,
+                    icon: Icons.shape_line_outlined,
+                    activeIcon: Icons.shape_line,
+                    label: controller.activeItem.value is StackShapeItem
+                        ? 'Edit'
+                        : 'Shapes',
+                    panelType: PanelType.shapes,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activePanel.value == PanelType.shapes) {
+                        controller.activePanel.value = PanelType.none;
+                      } else {
+                        controller.activePanel.value = PanelType.shapes;
+                      }
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
                 _ProfessionalToolbarButton(
-                  icon: Icons.shape_line_outlined,
-                  activeIcon: Icons.shape_line,
-                  label: 'Shapes',
-                  panelType: PanelType.shapes,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    if (controller.activePanel.value == PanelType.shapes) {
-                      controller.activePanel.value = PanelType.none;
-                    } else {
-                      controller.activePanel.value = PanelType.shapes;
-                      controller.activeItem.value = null;
-                    }
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
-                _ProfessionalToolbarButton(
+                  isActive: false,
                   icon: Icons.emoji_emotions_outlined,
                   activeIcon: Icons.emoji_emotions,
                   label: 'Stickers',
@@ -1127,6 +423,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   },
                 ),
                 _ProfessionalToolbarButton(
+                  isActive: false,
                   icon: Icons.palette_outlined,
                   activeIcon: Icons.palette,
                   label: 'Colors',
@@ -1140,27 +437,30 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     controller.update(['bottom_sheet']);
                   },
                 ),
-                _ProfessionalToolbarButton(
-                  icon: Icons.text_fields_outlined,
-                  activeIcon: Icons.text_fields,
-                  label: 'Text',
-                  panelType: PanelType.text,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    if (controller.activePanel.value == PanelType.text) {
-                      controller.activePanel.value = PanelType.none;
-                    } else {
-                      if (controller.activeItem.value == null ||
-                          controller.activeItem.value is StackTextItem) {
+                Obx(() {
+                  bool isActive = controller.activeItem.value is StackTextItem;
+                  return _ProfessionalToolbarButton(
+                    isActive: isActive,
+                    icon: Icons.text_fields_outlined,
+                    activeIcon: Icons.text_fields,
+                    label: 'Text',
+                    panelType: PanelType.text,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activeItem.value == null) {
                         Get.to(() => UpdateTextView());
+                      } else {
+                        if (isActive) {
+                          controller.editText();
+                        }
                       }
-                      controller.activePanel.value = PanelType.none;
-                    }
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
                 _ProfessionalToolbarButton(
                   icon: Icons.photo_filter_outlined,
+                  isActive: false,
                   activeIcon: Icons.photo_filter,
                   label: 'Image',
                   panelType: PanelType.advancedImage,
@@ -1182,12 +482,17 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                 ),
 
                 // Add this button to your toolbar
-                Obx(
-                  () => _ProfessionalToolbarButton(
-                    icon: Icons.bar_chart_outlined,
-                    activeIcon: Icons.bar_chart,
-                    label: (controller.activeItem.value is StackChartItem)
-                        ? 'Edit Chart'
+                Obx(() {
+                  bool isChartActive =
+                      controller.activeItem.value is StackChartItem ||
+                      controller.activePanel.value == PanelType.charts;
+
+                  return _ProfessionalToolbarButton(
+                    isActive: isChartActive,
+                    icon: Icons.bar_chart_rounded,
+                    activeIcon: Icons.bar_chart_rounded,
+                    label: controller.activeItem.value is StackChartItem
+                        ? 'Edit'
                         : 'Charts',
                     panelType: PanelType.charts,
                     activePanel: controller.activePanel,
@@ -1196,12 +501,11 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                         controller.activePanel.value = PanelType.none;
                       } else {
                         controller.activePanel.value = PanelType.charts;
-                        // controller.activeItem.value = null;
                       }
                       controller.update(['bottom_sheet']);
                     },
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),
@@ -1259,6 +563,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
   }
 }
 
+// Replace the existing _ProfessionalToolbarButton class with this enhanced version
 class _ProfessionalToolbarButton extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
@@ -1266,6 +571,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
   final PanelType panelType;
   final Rx<PanelType> activePanel;
   final VoidCallback onPressed;
+  final bool isActive;
 
   const _ProfessionalToolbarButton({
     required this.icon,
@@ -1274,67 +580,65 @@ class _ProfessionalToolbarButton extends StatelessWidget {
     required this.panelType,
     required this.activePanel,
     required this.onPressed,
+    required this.isActive,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isActive = activePanel.value == panelType;
-      final theme = Theme.of(context);
-      final colorScheme = theme.colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-      return Tooltip(
-        message: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 64,
-              child: Column(
-                spacing: 6,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    padding: EdgeInsets.all(0),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? colorScheme.primary.withOpacity(0.12)
-                          : Colors.transparent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isActive ? activeIcon : icon,
-                      size: 22,
-                      color: isActive
-                          ? colorScheme.primary
-                          : colorScheme.onSurface.withOpacity(0.7),
-                    ),
+    return Tooltip(
+      message: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            width: 64,
+            child: Column(
+              spacing: 6,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  padding: EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.branding.withOpacity(0.12)
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
                   ),
-                  AnimatedDefaultTextStyle(
-                    duration: Duration(milliseconds: 200),
-                    style: theme.textTheme.bodySmall!.copyWith(
-                      fontSize: 10,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                      color: isActive
-                          ? colorScheme.primary
-                          : colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  child: Icon(
+                    isActive ? activeIcon : icon,
+                    size: 22,
+                    color: isActive
+                        ? AppColors.branding
+                        : colorScheme.onSurface.withOpacity(0.7),
                   ),
-                ],
-              ),
+                ),
+                AnimatedDefaultTextStyle(
+                  duration: Duration(milliseconds: 200),
+                  style: theme.textTheme.bodySmall!.copyWith(
+                    fontSize: 10,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    color: isActive
+                        ? AppColors.branding
+                        : colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 }
 
@@ -1629,11 +933,40 @@ class _TextEditorPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      // clipBehavior: Clip.none,
 
-      alignment: Alignment.topRight,
+      // alignment: Alignment.topRight,
       children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          color: Get.theme.colorScheme.surfaceContainer,
+          child: Row(
+            children: [
+              Text(
+                'Text Editor',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              Spacer(),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    controller.activePanel.value = PanelType.none;
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.close_rounded, size: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         TextStylingEditor(
           key: key,
           textItem: textItem,
@@ -1893,17 +1226,6 @@ class CanvasStack extends StatelessWidget {
                             item.content != null) {
                           return InkWell(
                             onTap: () async {
-                              // final path = await controller.getImage();
-                              // print(path);
-                              // print("pppppppppppp");
-                              // final oldItem = item;
-                              // final contents = item.content;
-                              // // controller.activeItem.value = item;
-                              // oldItem.copyWith(
-                              //   content: contents?.copyWith(filePath: path),
-                              //   isNewImage: true,
-                              // );
-
                               // controller.boardController.updateItem(oldItem);
                               controller.replaceImageItem(item);
                             },
@@ -1912,7 +1234,22 @@ class CanvasStack extends StatelessWidget {
                           );
                         } else if (item is StackShapeItem &&
                             item.content != null) {
-                          return StackShapeCase(item: item);
+                          return InkWell(
+                            onTap: () {
+                              controller.activeItem.value = item;
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.setItemStatus(
+                                item.id,
+                                StackItemStatus.selected,
+                              );
+                              controller.activePanel.value =
+                                  PanelType.shapeEditor;
+                            },
+
+                            child: StackShapeCase(item: item),
+                          );
                         } else if (item is StackChartItem &&
                             item.content != null) {
                           return GestureDetector(
@@ -1925,8 +1262,7 @@ class CanvasStack extends StatelessWidget {
                                 item.id,
                                 StackItemStatus.selected,
                               );
-                              controller.activePanel.value =
-                                  PanelType.chartEditor;
+                              controller.activePanel.value = PanelType.charts;
                             },
 
                             child: StackChartCase(item: item),
@@ -1986,8 +1322,8 @@ class CanvasStack extends StatelessWidget {
                             controller.activePanel.value =
                                 PanelType.advancedImage;
                           } else if (item is StackShapeItem) {
-                            controller.activePanel.value =
-                                PanelType.shapeEditor;
+                            // controller.activePanel.value =
+                            //     PanelType.shapeEditor;
                           } else if (item is StackChartItem) {
                             // controller.activePanel.value =
                             //     PanelType.chartEditor;
@@ -2405,14 +1741,4 @@ Widget build(BuildContext context) {
       );
     },
   );
-}
-
-class ShowDD extends StatelessWidget {
-  final Widget chd;
-  const ShowDD({super.key, required this.chd});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(child: chd);
-  }
 }

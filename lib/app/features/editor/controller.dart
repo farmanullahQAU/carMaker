@@ -15,6 +15,7 @@ import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
@@ -548,8 +549,8 @@ class CanvasController extends GetxController {
     }
   }
 
-  void editText() {
-    Get.to(() => UpdateTextView(item: activeItem.value as StackTextItem));
+  void editText() async {
+    await Get.to(() => UpdateTextView(item: activeItem.value as StackTextItem));
   }
 
   void duplicateItem() {
@@ -586,6 +587,17 @@ class CanvasController extends GetxController {
       final id = UniqueKey().toString();
 
       newItem = StackShapeItem(
+        id: id,
+
+        offset: newOffset,
+        size: originalItem.size,
+        content: originalItem.content?.copyWith(),
+        angle: originalItem.angle,
+      );
+    } else if (originalItem is StackChartItem) {
+      final id = UniqueKey().toString();
+
+      newItem = StackChartItem(
         id: id,
 
         offset: newOffset,
