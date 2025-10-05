@@ -17,8 +17,8 @@ class HomeController extends GetxController {
   final RxList<String> favoriteTemplateIds = <String>[].obs;
   final isLoading = false.obs;
 
-  final AuthService authService = Get.find<AuthService>();
-  final _firestoreService = FirestoreService();
+  final authService = Get.put(AuthService());
+  final _firestoreService = FirestoreServices();
   final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
   final UpdateManager updateManager = UpdateManager(); // Add this
 

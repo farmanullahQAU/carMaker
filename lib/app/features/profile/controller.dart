@@ -29,7 +29,7 @@ class ProfileController extends GetxController
     with GetSingleTickerProviderStateMixin {
   final authService = Get.find<AuthService>();
   late TabController tabController;
-  final _firestoreService = FirestoreService();
+  final _firestoreService = FirestoreServices();
   final ScreenshotController screenshotController = ScreenshotController();
 
   // Drafts
@@ -411,7 +411,7 @@ class ProfileController extends GetxController
 //     with GetSingleTickerProviderStateMixin {
 //   final authService = Get.find<AuthService>();
 //   late TabController tabController;
-//   final _firestoreService = FirestoreService();
+//   final _firestoreService = FirestoreServices();
 //   final ScreenshotController screenshotController = ScreenshotController();
 
 //   // Drafts

@@ -447,13 +447,15 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     panelType: PanelType.text,
                     activePanel: controller.activePanel,
                     onPressed: () {
-                      if (controller.activeItem.value == null) {
-                        Get.to(() => UpdateTextView());
+                      if (isActive) {
+                        controller.editText();
                       } else {
-                        if (isActive) {
-                          controller.editText();
-                        }
+                        //shape or chart is selected but user has pressed text
+                        controller.setActiveItem(null);
+
+                        Get.to(() => UpdateTextView());
                       }
+
                       controller.update(['bottom_sheet']);
                     },
                   );

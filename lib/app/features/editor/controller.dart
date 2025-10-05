@@ -1,4 +1,3 @@
-import 'dart:io' show File, FileMode;
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -11,6 +10,7 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
+import 'package:cardmaker/services/permission_handler.dart';
 import 'package:cardmaker/services/storage_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
@@ -20,18 +20,21 @@ import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:universal_html/html.dart' as html; // For web support
 import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
   final authService = Get.find<AuthService>();
-  final firestoreService = FirestoreService();
+  final firestoreService = FirestoreServices();
   late bool isLocaleTemplate =
       true; //to distinguish local or online user saved drafts
 
@@ -53,7 +56,7 @@ class CanvasController extends GetxController {
   final Rx<Size> actualStackBoardRenderSize = Size(100, 100).obs;
 
   CardTemplate? initialTemplate;
-
+  var exportProgress = 0.0.obs;
   final RxDouble canvasWsidth = 0.0.obs;
   final List<StackItem<StackItemContent>> itemsToLoad = [];
 
@@ -343,9 +346,10 @@ class CanvasController extends GetxController {
         thumbnailFile: thumbnailFile,
         backgroundFile: backgroundFile,
       );
-
-      // Cleanup after successful upload
-      _cleanupTempFiles(thumbnailFile, backgroundFile);
+      if (thumbnailFile != null) {
+        // Cleanup after successful upload
+        _cleanupTempFiles(thumbnailFile, backgroundFile);
+      }
     } catch (err) {
       AppToast.error(message: err.toString());
     }
@@ -615,19 +619,41 @@ class CanvasController extends GetxController {
     update(['canvas_stack', 'bottom_sheet']);
   }
 
-  Future<File> exportAsImage([String? fileName = "inkaro_card"]) async {
+  // In CanvasController class, add:
+  final PermissionService permissionService = Get.find<PermissionService>();
+
+  // Updated exportAsImage method
+
+  Future<File?> exportAsImage([String fileName = "inkaro_card"]) async {
     try {
       isExporting = true;
       update(['export_button']);
       boardController.unSelectAll();
-      final exportKey = GlobalKey();
+      _showProgressDialog();
+      exportProgress.value = 0.0;
 
-      // Capture the widget as an image
+      if (kDebugMode) debugPrint('Starting image export: $fileName');
+
+      // Stage 1: Permission check (10%)
+      exportProgress.value = 10.0;
+      if (!kIsWeb) {
+        final permissionStatus = await permissionService
+            .requestPhotosPermission();
+        if (!permissionStatus.isGranted && !permissionStatus.isLimited) {
+          throw Exception('Photos permission not granted: $permissionStatus');
+        }
+        if (kDebugMode) {
+          debugPrint('Photos permission status: $permissionStatus');
+        }
+      }
+
+      // Stage 2: Capture widget (30%)
+      exportProgress.value = 20.0;
+      final exportKey = GlobalKey();
       final image = await screenshotController.captureFromWidget(
         Material(
           elevation: 0,
           color: Colors.white,
-
           child: SizedBox(
             width: scaledCanvasWidth.value,
             height: scaledCanvasHeight.value,
@@ -645,24 +671,54 @@ class CanvasController extends GetxController {
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
         pixelRatio: 2,
       );
+      exportProgress.value = 50.0;
+      if (kDebugMode) debugPrint('Widget captured successfully');
 
       if (kIsWeb) {
-        // Web: Trigger a browser download
+        // Stage 3: Web download (50%)
+        exportProgress.value = 60.0;
         final blob = html.Blob([image]);
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'invitation_card.png')
+          ..setAttribute('download', '$fileName.png')
           ..click();
         html.Url.revokeObjectUrl(url);
-
-        return File('invitation_card.png'); // Dummy file for web
+        exportProgress.value = 100.0;
+        AppToast.success(message: 'Image downloaded');
+        if (kDebugMode) debugPrint('Web download triggered');
+        return File('$fileName.png'); // Dummy file for web
       } else {
-        // Android: Save to temporary directory
-        final output = await getTemporaryDirectory();
-        final file = File("${output.path}/$fileName.png");
-        await file.writeAsBytes(image, mode: FileMode.write);
+        // Stage 3: Save to temporary file (20%)
+        exportProgress.value = 60.0;
+        final tempDir = await getTemporaryDirectory();
+        final tempPath = '${tempDir.path}/$fileName.png';
+        final tempFile = File(tempPath);
+        await tempFile.writeAsBytes(image);
+        exportProgress.value = 80.0;
+        if (kDebugMode) debugPrint('Image saved to temp file: $tempPath');
 
-        return file;
+        // Stage 4: Save to gallery (20%)
+        exportProgress.value = 90.0;
+        final success = await GallerySaver.saveImage(
+          tempPath,
+          albumName: 'Canva',
+        );
+
+        // Delay to ensure gallery save is fully processed
+        await Future.delayed(const Duration(milliseconds: 500));
+        exportProgress.value = 100.0;
+
+        if (success == true) {
+          AppToast.success(
+            message: Platform.isAndroid
+                ? 'Image saved to Pictures in Gallery'
+                : 'Image saved to Photos',
+          );
+          if (kDebugMode) debugPrint('Image saved to gallery successfully');
+          return tempFile;
+        } else {
+          throw Exception('Failed to save image to gallery');
+        }
       }
     } catch (e, s) {
       debugPrint('Export Image failed: $e\nStack trace: $s');
@@ -673,23 +729,155 @@ class CanvasController extends GetxController {
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
       );
-      rethrow;
+      return null;
     } finally {
       isExporting = false;
+      _closeProgressDialog();
       update(['export_button']);
+      if (kDebugMode) debugPrint('Export image cleanup completed');
     }
   }
 
-  Future<void> exportAsPDF() async {
+  // Add this to your CanvasController class
+  // Progress tracking property
+
+  // Optimized _showProgressDialog
+  // Progress tracking property
+
+  // Optimized _showProgressDialog
+  void _showProgressDialog() {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: ObxValue<RxDouble>(
+          (progress) => Container(
+            constraints: BoxConstraints(
+              minWidth: 200,
+              maxWidth: MediaQuery.of(Get.context!).size.width * 0.6,
+            ),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFFA855F7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: CircularProgressIndicator(
+                        value: progress.value / 100,
+                        strokeWidth: 6,
+                        backgroundColor: Colors.white.withOpacity(0.3),
+                        valueColor: const AlwaysStoppedAnimation(Colors.white),
+                        semanticsLabel:
+                            'Export progress: ${progress.value.toStringAsFixed(0)} percent',
+                      ),
+                    ),
+                    Text(
+                      '${progress.value.toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontFamily: 'Roboto',
+                      ),
+                      semanticsLabel:
+                          '${progress.value.toStringAsFixed(0)} percent complete',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Exporting Your Design...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                    fontFamily: 'Roboto',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          exportProgress,
+        ),
+      ),
+    );
+  }
+
+  // Optimized _closeProgressDialog
+  void _closeProgressDialog() {
+    try {
+      if (Get.isDialogOpen ?? false) {
+        Get.back(result: true);
+      }
+      exportProgress.value = 0.0;
+      if (kDebugMode) {
+        debugPrint('Progress dialog closed and exportProgress reset to 0.0');
+      }
+    } catch (e) {
+      debugPrint('Error closing progress dialog: $e');
+      exportProgress.value = 0.0;
+    }
+  }
+
+  Future<bool> requestPhotosPermission() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      if (await Permission.photos.request().isGranted) {
+        return true;
+      }
+      Get.snackbar(
+        'Permission Denied',
+        'Photos permission is required to save images to the gallery.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+      return false;
+    }
+    return true; // Web doesn't require permissions
+  }
+
+  Future<void> exportAsPDF([String fileName = "invitation_card"]) async {
     try {
       isExporting = true;
       update(['export_button']);
       boardController.unSelectAll();
       final exportKey = GlobalKey();
+      _showProgressDialog();
+      exportProgress.value = 0.0;
+
+      // Stage 1: Capture widget (40%)
+      exportProgress.value = 10.0;
       final image = await screenshotController.captureFromWidget(
         Material(
           shadowColor: Colors.transparent,
-
           elevation: 0,
           color: Colors.white,
           child: SizedBox(
@@ -712,12 +900,10 @@ class CanvasController extends GetxController {
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
         pixelRatio: 2,
       );
+      exportProgress.value = 40.0;
 
-      final tempDir = await getTemporaryDirectory();
-      final imagePath = '${tempDir.path}/myCard.png';
-      final imageFile = File(imagePath);
-      await imageFile.writeAsBytes(image);
-
+      // Stage 2: Create PDF (30%)
+      exportProgress.value = 50.0;
       final pdf = pw.Document();
       final imageProvider = pw.MemoryImage(image);
       pdf.addPage(
@@ -731,33 +917,60 @@ class CanvasController extends GetxController {
           },
         ),
       );
+      final pdfBytes = await pdf.save();
+      exportProgress.value = 70.0;
 
-      final pdfPath = '${tempDir.path}/invitation_card.pdf';
-      final pdfFile = File(pdfPath);
-      await pdfFile.writeAsBytes(await pdf.save());
-
-      if (await pdfFile.exists()) {
-        Get.to(() => ExportPreviewPage(imagePath: imagePath, pdfPath: pdfPath));
+      if (kIsWeb) {
+        // Stage 3: Web download (30%)
+        exportProgress.value = 80.0;
+        final blob = html.Blob([pdfBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', '$fileName.pdf')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        exportProgress.value = 100.0;
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to create PDF file',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade900,
+        // Stage 3: Save to temporary file and share (30%)
+        exportProgress.value = 80.0;
+        final tempDir = await getTemporaryDirectory();
+        final pdfPath = '${tempDir.path}/$fileName.pdf';
+        final pdfFile = File(pdfPath);
+        await pdfFile.writeAsBytes(pdfBytes);
+        exportProgress.value = 90.0;
+
+        // Share the PDF
+        final params = ShareParams(
+          text: 'Save or open your PDF',
+          files: [XFile(pdfFile.path)],
+          subject: '$fileName.pdf',
         );
+        final result = await SharePlus.instance.share(params);
+
+        if (result.status == ShareResultStatus.success) {
+          AppToast.success(message: 'PDF ready to save or open');
+        }
+        exportProgress.value = 100.0;
+        _closeProgressDialog();
+
+        if (await pdfFile.exists()) {
+          // Get.to(() => ExportPreviewPage(imagePath: "", pdfPath: pdfPath));
+        } else {
+          throw Exception('Failed to create PDF file');
+        }
       }
     } catch (e, s) {
       debugPrint('Export PDF failed: $e\n$s');
       Get.snackbar(
         'Error',
-        'Failed to export PDF due to widget issue',
+        'Failed to export PDF: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
       );
     } finally {
       isExporting = false;
+      _closeProgressDialog();
       update(['export_button']);
     }
   }
@@ -891,19 +1104,22 @@ class CanvasController extends GetxController {
       );
 
       final file = await exportAsImage("${template.id}_${template.id}");
-      template = template.copyWith(thumbnailUrl: file.path);
 
-      // Save to local storage
-      await StorageService.addDraft(template);
+      if (file != null) {
+        template = template.copyWith(thumbnailUrl: file.path);
 
-      try {
-        final profileController = Get.find<ProfileController>();
-        await profileController.loadLocalDrafts(); // Reload from disk
-        await profileController.refreshDrafts(); // Update UI
-      } catch (e) {
-        // Profile page not open, ignore
+        // Save to local storage
+        await StorageService.addDraft(template);
+
+        try {
+          final profileController = Get.find<ProfileController>();
+          await profileController.loadLocalDrafts(); // Reload from disk
+          await profileController.refreshDrafts(); // Update UI
+        } catch (e) {
+          // Profile page not open, ignore
+        }
+        AppToast.success(message: 'Template saved locally!');
       }
-      AppToast.success(message: 'Template saved locally!');
     } catch (err) {
       debugPrint('Error saving to local storage: $err');
       AppToast.error(
@@ -915,6 +1131,10 @@ class CanvasController extends GetxController {
   void setActiveItem(StackItem? item) {
     if (item == null && activeItem.value != null) {
       boardController.setAllItemStatuses(StackItemStatus.idle);
+      activePanel.value = PanelType.none;
+    }
+
+    if (item == null) {
       activePanel.value = PanelType.none;
     }
     activeItem.value = item;

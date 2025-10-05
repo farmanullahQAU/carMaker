@@ -11,7 +11,7 @@
 // import 'package:get/get.dart';
 
 // class CategoryTemplatesController extends GetxController {
-//   final _firestoreService = FirestoreService();
+//   final _firestoreService = FirestoreServices();
 
 //   final CategoryModel? category;
 //   final AuthService authService = Get.find<AuthService>();
@@ -310,7 +310,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class CategoryTemplatesController extends GetxController {
-  final _firestoreService = FirestoreService();
+  final _firestoreService = FirestoreServices();
   final AuthService authService = Get.find<AuthService>();
 
   final RxList<CardTemplate> templates = <CardTemplate>[].obs;

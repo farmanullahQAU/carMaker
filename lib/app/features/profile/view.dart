@@ -119,7 +119,7 @@ class ProfilePage extends StatelessWidget {
   Widget _buildUserHeader(ProfileController controller) {
     final user = controller.authService.user;
 
-    final isGuest = user == null || controller.authService.isSkipped.value;
+    final isGuest = user == null;
 
     return Container(
       // color: Colors.red,

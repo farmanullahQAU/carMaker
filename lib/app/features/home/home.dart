@@ -133,6 +133,7 @@ class HomeTab extends GetView<HomeController> {
               SizedBox(height: 20),
 
               TrendingTemplatesList(),
+              SizedBox(height: 12),
 
               SectionTitle(title: 'Free today', showSeeAll: true),
               FreeTodayTemplatesList(),
@@ -570,7 +571,7 @@ class OptimizedTemplateCard extends StatelessWidget {
         errorWidget: (context, url, error) => _buildPlaceholder(),
         imageBuilder: (context, imageProvider) => Image(
           image: imageProvider,
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
           // width: double.infinity,
           // height: double.infinity,
         ),
@@ -660,15 +661,6 @@ class SectionTitle extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (showSeeAll)
-            TextButton(
-              style: TextButton.styleFrom(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.comfortable,
-              ),
-              onPressed: () {},
-              child: Text('See all'),
-            ),
         ],
       ),
     );

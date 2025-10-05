@@ -12,15 +12,15 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class FirestoreService {
+class FirestoreServices {
   // 🔹 Private constructor
-  FirestoreService._internal();
+  FirestoreServices._internal();
 
   // 🔹 The single instance
-  static final FirestoreService _instance = FirestoreService._internal();
+  static final FirestoreServices _instance = FirestoreServices._internal();
 
   // 🔹 Public accessor
-  factory FirestoreService() => _instance;
+  factory FirestoreServices() => _instance;
 
   // 🔹 Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
