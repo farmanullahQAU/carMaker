@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/features/auth/controller.dart';
 import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/app/features/editor/icon_picker/controller.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/app/features/home/category_templates/controller.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
@@ -21,6 +22,7 @@ class InitialBindings extends Bindings {
       Get.lazyPut(() => ProfileController());
       Get.lazyPut(() => AuthController());
       Get.lazyPut(() => ShapeEditorController());
+      Get.lazyPut<IconPickerController>(() => IconPickerController());
 
       Get.lazyPut(() => CategoryTemplatesController());
 

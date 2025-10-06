@@ -15,6 +15,7 @@ enum PanelType {
   text, // index 4
   advancedImage, // index 5
   charts, // index 6
+  icons,
   // chartEditor, // index 7
   none,
 }

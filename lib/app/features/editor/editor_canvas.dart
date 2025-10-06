@@ -6,6 +6,7 @@ import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_panel.da
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/hue_adjustment/view.dart';
+import 'package:cardmaker/app/features/editor/icon_picker/view.dart';
 import 'package:cardmaker/app/features/editor/image_editor/view.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/view.dart';
@@ -16,8 +17,10 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/shape_stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/stack_chart_case.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/item_case/stack_icon_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_icon_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_case.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -98,12 +101,15 @@ class EditorPage extends GetView<CanvasController> {
                   : null,
             );
             break;
-          // case PanelType.chartEditor when item is StackChartItem:
-          //   currentPanel = ChartEditorPanel(
-          //     chartItem: item,
-          //     onClose: () => controller.activePanel.value = PanelType.none,
-          //   );
-          //   break;
+          case PanelType.icons:
+            currentPanel = IconPickerPanel(
+              onClose: () => controller.activePanel.value = PanelType.none,
+              iconItem:
+                  (controller.activeItem.value != null &&
+                      (controller.activeItem.value is StackIconItem))
+                  ? controller.activeItem.value as StackIconItem
+                  : null,
+            );
           default:
             currentPanel = const SizedBox.shrink();
         }
@@ -503,6 +509,30 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                         controller.activePanel.value = PanelType.none;
                       } else {
                         controller.activePanel.value = PanelType.charts;
+                      }
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
+                Obx(() {
+                  bool isIconActive =
+                      controller.activeItem.value is StackIconItem ||
+                      controller.activePanel.value == PanelType.icons;
+
+                  return _ProfessionalToolbarButton(
+                    isActive: isIconActive,
+                    icon: Icons.emoji_objects_outlined,
+                    activeIcon: Icons.emoji_objects,
+                    label: controller.activeItem.value is StackIconItem
+                        ? 'Edit'
+                        : 'Icons',
+                    panelType: PanelType.icons,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activePanel.value == PanelType.icons) {
+                        controller.activePanel.value = PanelType.none;
+                      } else {
+                        controller.activePanel.value = PanelType.icons;
                       }
                       controller.update(['bottom_sheet']);
                     },
@@ -1269,6 +1299,23 @@ class CanvasStack extends StatelessWidget {
 
                             child: StackChartCase(item: item),
                           );
+                        } else if (item is StackIconItem &&
+                            item.content != null) {
+                          return GestureDetector(
+                            onTap: () {
+                              controller.activeItem.value = item;
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.setItemStatus(
+                                item.id,
+                                StackItemStatus.selected,
+                              );
+                              controller.activePanel.value = PanelType.icons;
+                            },
+
+                            child: StackIconCase(item: item),
+                          );
                         }
                         return const SizedBox.shrink();
                       },
@@ -1327,6 +1374,9 @@ class CanvasStack extends StatelessWidget {
                             // controller.activePanel.value =
                             //     PanelType.shapeEditor;
                           } else if (item is StackChartItem) {
+                            // controller.activePanel.value =
+                            //     PanelType.chartEditor;
+                          } else if (item is StackShapeItem) {
                             // controller.activePanel.value =
                             //     PanelType.chartEditor;
                           } else {
@@ -1665,7 +1715,7 @@ class _ZLockToggleButton extends StatelessWidget {
                     : 'Lock to background',
                 child: IconButton(
                   key: ValueKey(
-                    '$activeItem-$isLocked',
+                    '${activeItem.id}-$isLocked',
                   ), // Better key for debugging
                   icon: Container(
                     padding: const EdgeInsets.all(6),

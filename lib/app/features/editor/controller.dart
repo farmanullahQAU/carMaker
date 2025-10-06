@@ -5,7 +5,6 @@ import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
-import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -16,11 +15,11 @@ import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_icon_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -133,6 +132,43 @@ class CanvasController extends GetxController {
     }
   }
 
+  // Add to CanvasController class
+  void addIcon(IconData icon) {
+    final content = IconItemContent(
+      icon: icon,
+      color: Colors.black,
+      size: 24.0,
+    );
+
+    final iconItem = StackIconItem(
+      id: UniqueKey().toString(),
+      size: const Size(80, 80),
+      offset: Offset(200, 200),
+      content: content,
+    );
+
+    boardController.addItem(iconItem);
+    activeItem.value = iconItem;
+    activePanel.value = PanelType.icons;
+  }
+
+  // Update deserializeItem method
+  StackItem deserializeItem(Map<String, dynamic> itemJson) {
+    final type = itemJson['type'];
+    if (type == 'StackTextItem') {
+      return StackTextItem.fromJson(itemJson);
+    } else if (type == 'StackImageItem') {
+      return StackImageItem.fromJson(itemJson);
+    } else if (type == 'StackShapeItem') {
+      return StackShapeItem.fromJson(itemJson);
+    } else if (type == 'StackChartItem') {
+      return StackChartItem.fromJson(itemJson);
+    } else if (type == 'StackIconItem') {
+      return StackIconItem.fromJson(itemJson);
+    } else {
+      throw Exception('Unsupported item type: $type');
+    }
+  }
   // Add this to your PanelType enum (if not already present)
 
   void updateCanvasAndLoadTemplate(
@@ -699,26 +735,45 @@ class CanvasController extends GetxController {
 
         // Stage 4: Save to gallery (20%)
         exportProgress.value = 90.0;
-        final success = await GallerySaver.saveImage(
-          tempPath,
-          albumName: 'Canva',
-        );
 
-        // Delay to ensure gallery save is fully processed
-        await Future.delayed(const Duration(milliseconds: 500));
+        final params = ShareParams(
+          text: 'Save or share image',
+          title: "Share Image",
+          files: [XFile(tempFile.path)],
+        );
+        final result = await SharePlus.instance.share(params);
+
+        if (result.status == ShareResultStatus.success) {
+          AppToast.success(message: 'PDF ready to save or open');
+        }
+        exportProgress.value = 100.0;
+        _closeProgressDialog();
+
+        if (await tempFile.exists()) {
+          // Get.to(() => ExportPreviewPage(imagePath: "", pdfPath: pdfPath));
+        } else {
+          throw Exception('Failed to save image');
+        }
+        // final success = await GallerySaver.saveImage(
+        //   tempPath,
+        //   albumName: 'Canva',
+        // );
+
+        // // Delay to ensure gallery save is fully processed
+        // await Future.delayed(const Duration(milliseconds: 500));
         exportProgress.value = 100.0;
 
-        if (success == true) {
-          AppToast.success(
-            message: Platform.isAndroid
-                ? 'Image saved to Pictures in Gallery'
-                : 'Image saved to Photos',
-          );
-          if (kDebugMode) debugPrint('Image saved to gallery successfully');
-          return tempFile;
-        } else {
-          throw Exception('Failed to save image to gallery');
-        }
+        // if (success == true) {
+        //   AppToast.success(
+        //     message: Platform.isAndroid
+        //         ? 'Image saved to Pictures in Gallery'
+        //         : 'Image saved to Photos',
+        //   );
+        //   if (kDebugMode) debugPrint('Image saved to gallery successfully');
+        //   return tempFile;
+        // } else {
+        //   throw Exception('Failed to save image to gallery');
+        // }
       }
     } catch (e, s) {
       debugPrint('Export Image failed: $e\nStack trace: $s');
@@ -729,6 +784,8 @@ class CanvasController extends GetxController {
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade900,
       );
+      _closeProgressDialog();
+
       return null;
     } finally {
       isExporting = false;
@@ -736,6 +793,7 @@ class CanvasController extends GetxController {
       update(['export_button']);
       if (kDebugMode) debugPrint('Export image cleanup completed');
     }
+    return null;
   }
 
   // Add this to your CanvasController class
@@ -993,7 +1051,7 @@ class CanvasController extends GetxController {
     }
   }
 
-  saveCopy() {
+  void saveCopy() {
     if (isLocaleTemplate) {
       _saveDraftLocale(isCopy: true);
     } else {
@@ -1003,7 +1061,7 @@ class CanvasController extends GetxController {
     }
   }
 
-  saveDraft() {
+  void saveDraft() {
     if (isLocaleTemplate) {
       _saveDraftLocale();
     } else {

@@ -13,6 +13,7 @@ import 'app/routes/app_pages.dart'; // You need to create this file
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await GetStorage.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
