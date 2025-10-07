@@ -1,4 +1,4 @@
-package com.example.cardmaker
+package com.inkkaro.app
 
 import io.flutter.embedding.android.FlutterActivity
 

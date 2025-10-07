@@ -48,17 +48,17 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCCk3Pc32ptEtfgDWTT9Is4x8ym4q-mJTo',
-    appId: '1:370527194012:web:9943ec48c689af2dda1659',
+    appId: '1:370527194012:web:f7ce02e67f332262da1659',
     messagingSenderId: '370527194012',
     projectId: 'inkkaro-33115',
     authDomain: 'inkkaro-33115.firebaseapp.com',
     storageBucket: 'inkkaro-33115.firebasestorage.app',
-    measurementId: 'G-4SJ1668LTZ',
+    measurementId: 'G-KBNNJZM6BC',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDe2PEwNI6MfZqL-sErRkJ5EfGzoc_TPag',
-    appId: '1:370527194012:android:8f56289e48f924ccda1659',
+    appId: '1:370527194012:android:a753f2b5243e780bda1659',
     messagingSenderId: '370527194012',
     projectId: 'inkkaro-33115',
     storageBucket: 'inkkaro-33115.firebasestorage.app',
@@ -66,10 +66,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCtLA0Wn8h25whIOu81tkP7e09QKF9PTss',
-    appId: '1:370527194012:ios:22ba94eeba304670da1659',
+    appId: '1:370527194012:ios:19b0d5f31b2b8e89da1659',
     messagingSenderId: '370527194012',
     projectId: 'inkkaro-33115',
     storageBucket: 'inkkaro-33115.firebasestorage.app',
-    iosBundleId: 'com.example.cardmaker',
+    androidClientId: '370527194012-rdkf97rk7p4l3c4h25u9buigefblfad8.apps.googleusercontent.com',
+    iosClientId: '370527194012-5vlfu0ov18cibabqr0sj0aoivsdqrq9e.apps.googleusercontent.com',
+    iosBundleId: 'com.inkkaro.app',
   );
+
 }

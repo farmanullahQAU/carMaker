@@ -10,6 +10,8 @@ abstract class Routes {
   static const editor = _Paths.editor;
 
   static const categoryTemplates = _Paths.categoryTemplates;
+  static const accountDeletion = _Paths.accountDeletion;
+  static const webLanding = _Paths.webLanding;
 }
 
 abstract class _Paths {
@@ -17,6 +19,8 @@ abstract class _Paths {
   static const splash = '/';
 
   static const onboarding = '/onboarding';
+  static const accountDeletion = '/delete-account';
+  static const webLanding = '/homes';
 
   static const home = '/home';
   static const auth = "/auth";

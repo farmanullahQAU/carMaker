@@ -1,3 +1,4 @@
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 
 // Toast types
@@ -192,6 +193,8 @@ class __ToastOverlayState extends State<_ToastOverlay>
       case ToastType.success:
         iconData = Icons.check;
         iconColor = colorScheme.onPrimaryContainer;
+        backgroundColor = AppColors.green400;
+
         break;
     }
 

@@ -1,1 +1,31 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"inkkaro-33115","appId":"1:370527194012:android:8f56289e48f924ccda1659","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"inkkaro-33115","configurations":{"android":"1:370527194012:android:8f56289e48f924ccda1659","ios":"1:370527194012:ios:22ba94eeba304670da1659","web":"1:370527194012:web:9943ec48c689af2dda1659"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "inkkaro-33115",
+          "appId": "1:370527194012:android:a753f2b5243e780bda1659",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "inkkaro-33115",
+          "configurations": {
+            "android": "1:370527194012:android:a753f2b5243e780bda1659",
+            "ios": "1:370527194012:ios:19b0d5f31b2b8e89da1659",
+            "web": "1:370527194012:web:f7ce02e67f332262da1659"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

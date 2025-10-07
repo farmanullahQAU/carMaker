@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:370527194012:android:8f56289e48f924ccda1659",
+        "mobilesdk_app_id": "1:370527194012:android:a753f2b5243e780bda1659",
         "android_client_info": {
-          "package_name": "com.example.cardmaker"
+          "package_name": "com.inkkaro.app"
         }
       },
       "oauth_client": [

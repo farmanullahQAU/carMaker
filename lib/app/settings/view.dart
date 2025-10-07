@@ -1,6 +1,17 @@
+// import 'package:cardmaker/app/features/profile/controller.dart';
+// import 'package:cardmaker/services/auth_service.dart';
+// import 'package:cardmaker/services/update_service.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:share_plus/share_plus.dart';
+// import 'package:url_launcher/url_launcher.dart';
+
 import 'package:cardmaker/app/features/profile/controller.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/update_service.dart';
+import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,27 +43,27 @@ class SettingsPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // Account Section
-          _buildUserProfile(user, theme),
-          _buildDivider(theme),
-
-          // Settings Options
-          _buildSettingsTile(
-            icon: Icons.palette_outlined,
-            title: 'Appearance',
-            theme: theme,
-            onTap: () => _showAppearanceSheet(context, theme),
-          ),
-
-          _buildSettingsTile(
-            icon: Icons.language_outlined,
-            title: 'Language',
-            subtitle: 'English',
-            theme: theme,
-            onTap: () => _showLanguageSheet(context, theme),
-          ),
+          Obx(() => _buildUserProfile(user, theme)),
 
           _buildDivider(theme),
 
+          // // Settings Options
+          // _buildSettingsTile(
+          //   icon: Icons.palette_outlined,
+          //   title: 'Appearance',
+          //   theme: theme,
+          //   onTap: () => _showAppearanceSheet(context, theme),
+          // ),
+
+          // _buildSettingsTile(
+          //   icon: Icons.language_outlined,
+          //   title: 'Language',
+          //   subtitle: 'English',
+          //   theme: theme,
+          //   onTap: () => _showLanguageSheet(context, theme),
+          // ),
+
+          // _buildDivider(theme),
           _buildSettingsTile(
             icon: Icons.share_outlined,
             title: 'Share App',
@@ -87,13 +98,33 @@ class SettingsPage extends StatelessWidget {
 
           Obx(
             () => user == null
-                ? const SizedBox()
-                : _buildSettingsTile(
-                    icon: Icons.logout_outlined,
-                    title: 'Sign Out',
+                ? _buildSettingsTile(
+                    icon: Icons.login_outlined,
+
+                    title: 'Login',
                     titleColor: theme.colorScheme.error,
                     theme: theme,
-                    onTap: _showSignOutConfirmation,
+                    onTap: () async {
+                      await Get.toNamed(Routes.auth);
+                    },
+                  )
+                : Column(
+                    children: [
+                      _buildSettingsTile(
+                        icon: Icons.logout_outlined,
+                        title: 'Sign Out',
+                        titleColor: theme.colorScheme.error,
+                        theme: theme,
+                        onTap: _showSignOutConfirmation,
+                      ),
+                      _buildSettingsTile(
+                        icon: Icons.delete_outline,
+                        title: 'Delete Account',
+                        titleColor: Colors.red[700],
+                        theme: theme,
+                        onTap: () => _showDeleteAccountConfirmation(context),
+                      ),
+                    ],
                   ),
           ),
 
@@ -366,6 +397,244 @@ class SettingsPage extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final authService = Get.find<AuthService>();
+    final user = authService.user;
+
+    if (user == null) return;
+
+    // Check if user signed in with email/password
+    final isEmailUser = user.providerData.any(
+      (info) => info.providerId == 'password',
+    );
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: theme.dialogBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red[700], size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Delete Account',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.red[700],
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This action cannot be undone. All your data including:',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            _buildDeleteWarningItem('• All your saved drafts', theme),
+            _buildDeleteWarningItem('• Your favorites', theme),
+            _buildDeleteWarningItem('• Your account information', theme),
+            const SizedBox(height: 12),
+            Text(
+              'will be permanently deleted.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              if (isEmailUser) {
+                _showPasswordConfirmation(context);
+              } else {
+                _showFinalDeleteConfirmation(context);
+              }
+            },
+            child: Text(
+              'Continue',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: Colors.red[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteWarningItem(String text, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Text(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+      ),
+    );
+  }
+
+  void _showPasswordConfirmation(BuildContext context) {
+    final theme = Theme.of(context);
+    final passwordController = TextEditingController();
+    final RxBool obscurePassword = true.obs;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: theme.dialogBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Confirm Password',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Please enter your password to continue',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Obx(
+              () => TextField(
+                controller: passwordController,
+                obscureText: obscurePassword.value,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword.value
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    onPressed: () => obscurePassword.toggle(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              passwordController.dispose();
+              Get.back();
+            },
+            child: Text(
+              'Cancel',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final password = passwordController.text;
+              passwordController.dispose();
+              Get.back();
+              _showFinalDeleteConfirmation(context, password: password);
+            },
+            child: Text(
+              'Continue',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: Colors.red[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalDeleteConfirmation(BuildContext context, {String? password}) {
+    final theme = Theme.of(context);
+    final authService = Get.find<AuthService>();
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: theme.dialogBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Final Confirmation',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.red[700],
+          ),
+        ),
+        content: Text(
+          'Are you absolutely sure you want to delete your account? This action is permanent and irreversible.',
+          style: theme.textTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Obx(
+            () => authService.isLoading.value
+                ? const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : TextButton(
+                    onPressed: () async {
+                      try {
+                        await authService.deleteAccount(password: password);
+                        Get.back(); // Close dialog
+                        Get.back();
+
+                        AppToast.success(
+                          message: 'Account deleted successfully',
+                        );
+                      } catch (e) {
+                        Get.back(); // Close dialog
+                        AppToast.error(message: e.toString());
+                      }
+                    },
+                    child: Text(
+                      'Delete Account',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: Colors.red[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

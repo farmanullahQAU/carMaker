@@ -569,14 +569,16 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   controller.pickAndAddImage(isPlaceholder: true);
                 },
               ),
-              _ActionButton(
-                icon: Icons.add_photo_alternate_outlined,
-                label: "Add Image to Canvas",
-                onTap: () {
-                  Navigator.pop(context);
-                  controller.pickAndAddImage();
-                },
-              ),
+
+              if (controller.isOwner)
+                _ActionButton(
+                  icon: Icons.add_photo_alternate_outlined,
+                  label: "Add Image to Canvas",
+                  onTap: () {
+                    Navigator.pop(context);
+                    controller.pickAndAddImage();
+                  },
+                ),
               const SizedBox(height: 12),
               _ActionButton(
                 icon: Icons.image_outlined,
@@ -702,40 +704,43 @@ class _ModernExportButton extends StatelessWidget {
         elevation: 10,
         enabled: !isExporting,
         itemBuilder: (context) => [
-          PopupMenuItem<String>(
-            value: 'save',
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.save_outlined,
-                    color: AppColors.accent,
-                    size: 18,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Save Project',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+          if (controller.isOwner)
+            PopupMenuItem<String>(
+              value: 'save',
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    Text(
-                      'Save current design',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    child: Icon(
+                      Icons.save_outlined,
+                      color: AppColors.accent,
+                      size: 18,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Save Project',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        'Save current design',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          PopupMenuDivider(),
+          if (controller.authService.user?.uid ==
+              "aP3FVBY7kWgBnJorqVrYha3lFaa2")
+            PopupMenuDivider(),
           PopupMenuItem<String>(
             value: 'pdf',
             child: Row(
@@ -1730,7 +1735,7 @@ class _ZLockToggleButton extends StatelessWidget {
                       ),
                     ),
                     child: Icon(
-                      isLocked ? Icons.lock : Icons.lock_open,
+                      isLocked ? Icons.layers : Icons.layers_outlined,
                       size: 20,
                       color: isLocked ? Colors.orange : Colors.grey[600],
                     ),

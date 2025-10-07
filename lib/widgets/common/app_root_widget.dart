@@ -88,14 +88,6 @@ class _SplashScreenState extends State<SplashScreen>
     Get.offAllNamed(Routes.home);
   }
 
-  void _retryInitialization() {
-    setState(() {
-      _isLoading = true;
-      _statusMessage = 'Retrying...';
-    });
-    _initializeApp();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

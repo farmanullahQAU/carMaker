@@ -79,7 +79,7 @@ class IconItemContent implements StackItemContent {
   factory IconItemContent.fromJson(Map<String, dynamic> data) {
     return IconItemContent(
       icon: IconData(data['icon'] as int, fontFamily: 'MaterialIcons'),
-      color: Color(data['color'] as int),
+      color: Color(asT<int>(data['color'])),
       size: (data['size'] ?? 24.0).toDouble(),
     );
   }
@@ -98,6 +98,6 @@ class IconItemContent implements StackItemContent {
 
   @override
   Map<String, dynamic> toJson() {
-    return {'icon': icon.codePoint, 'color': color, 'size': size};
+    return {'icon': icon.codePoint, 'color': color.toARGB32(), 'size': size};
   }
 }

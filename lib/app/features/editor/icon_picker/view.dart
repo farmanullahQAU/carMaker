@@ -42,6 +42,7 @@ class IconPickerPanel extends GetView<IconPickerController> {
           _buildTabBar(),
           Expanded(child: _buildTabView()),
           _buildColorSection(),
+          SizedBox(height: 16),
         ],
       ),
     );
@@ -104,24 +105,25 @@ class IconPickerPanel extends GetView<IconPickerController> {
       child: TabBar(
         controller: controller.tabController,
         isScrollable: true,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        tabAlignment: TabAlignment.start,
         indicatorWeight: 2.0,
-        indicatorColor: AppColors.branding,
+        // indicatorColor: AppColors.branding,
         indicatorSize: TabBarIndicatorSize.label,
         labelPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        labelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.1,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.1,
-          color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
-        ),
-        labelColor: AppColors.branding,
-        unselectedLabelColor: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+        // labelStyle: const TextStyle(
+        //   fontSize: 12,
+        //   fontWeight: FontWeight.w600,
+        //   letterSpacing: 0.1,
+        // ),
+        // unselectedLabelStyle: TextStyle(
+        //   fontSize: 12,
+        //   fontWeight: FontWeight.w500,
+        //   letterSpacing: 0.1,
+        //   color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+        // ),
+        // labelColor: AppColors.branding,
+        // unselectedLabelColor: Get.theme.colorScheme.onSurface.withOpacity(0.7),
         dividerColor: Colors.transparent,
         tabs: controller.categories.map((category) {
           return Tab(text: category);
@@ -198,17 +200,7 @@ class IconPickerPanel extends GetView<IconPickerController> {
   }
 
   Widget _buildColorSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-      decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surfaceContainer.withOpacity(0.95),
-        border: Border(
-          top: BorderSide(
-            color: Get.theme.colorScheme.outline.withOpacity(0.12),
-            width: 1,
-          ),
-        ),
-      ),
+    return SafeArea(
       child: Obx(
         () => ColorSelector(
           title: "Icon Color",

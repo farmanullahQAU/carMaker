@@ -5,6 +5,7 @@ import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
+import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -85,7 +86,7 @@ class CanvasController extends GetxController {
   final RxDouble canvasScale = 1.0.obs;
   final RxDouble scaledCanvasWidth = 0.0.obs;
   final RxDouble scaledCanvasHeight = 0.0.obs;
-
+  bool get isOwner => authService.user?.uid == "aP3FVBY7kWgBnJorqVrYha3lFaa2";
   @override
   void onInit() {
     super.onInit();
@@ -152,23 +153,6 @@ class CanvasController extends GetxController {
     activePanel.value = PanelType.icons;
   }
 
-  // Update deserializeItem method
-  StackItem deserializeItem(Map<String, dynamic> itemJson) {
-    final type = itemJson['type'];
-    if (type == 'StackTextItem') {
-      return StackTextItem.fromJson(itemJson);
-    } else if (type == 'StackImageItem') {
-      return StackImageItem.fromJson(itemJson);
-    } else if (type == 'StackShapeItem') {
-      return StackShapeItem.fromJson(itemJson);
-    } else if (type == 'StackChartItem') {
-      return StackChartItem.fromJson(itemJson);
-    } else if (type == 'StackIconItem') {
-      return StackIconItem.fromJson(itemJson);
-    } else {
-      throw Exception('Unsupported item type: $type');
-    }
-  }
   // Add this to your PanelType enum (if not already present)
 
   void updateCanvasAndLoadTemplate(
@@ -271,6 +255,19 @@ class CanvasController extends GetxController {
             status: StackItemStatus.idle,
           );
         } else if (item is StackShapeItem) {
+          double scaledX = item.offset.dx;
+          double scaledY = item.offset.dy;
+          final double originalWidth = (itemJson['size']['width']).toDouble();
+          final double originalHeight = (itemJson['size']['height']).toDouble();
+
+          itemSize = Size(originalWidth, originalHeight);
+
+          updatedItem = item.copyWith(
+            offset: Offset(scaledX, scaledY),
+            size: itemSize,
+            status: StackItemStatus.idle,
+          );
+        } else if (item is StackIconItem) {
           double scaledX = item.offset.dx;
           double scaledY = item.offset.dy;
           final double originalWidth = (itemJson['size']['width']).toDouble();
@@ -672,16 +669,16 @@ class CanvasController extends GetxController {
 
       // Stage 1: Permission check (10%)
       exportProgress.value = 10.0;
-      if (!kIsWeb) {
-        final permissionStatus = await permissionService
-            .requestPhotosPermission();
-        if (!permissionStatus.isGranted && !permissionStatus.isLimited) {
-          throw Exception('Photos permission not granted: $permissionStatus');
-        }
-        if (kDebugMode) {
-          debugPrint('Photos permission status: $permissionStatus');
-        }
-      }
+      // if (!kIsWeb) {
+      //   final permissionStatus = await permissionService
+      //       .requestPhotosPermission();
+      //   if (!permissionStatus.isGranted && !permissionStatus.isLimited) {
+      //     throw Exception('Photos permission not granted: $permissionStatus');
+      //   }
+      //   if (kDebugMode) {
+      //     debugPrint('Photos permission status: $permissionStatus');
+      //   }
+      // }
 
       // Stage 2: Capture widget (30%)
       exportProgress.value = 20.0;
@@ -734,7 +731,7 @@ class CanvasController extends GetxController {
         if (kDebugMode) debugPrint('Image saved to temp file: $tempPath');
 
         // Stage 4: Save to gallery (20%)
-        exportProgress.value = 90.0;
+        exportProgress.value = 100.0;
 
         final params = ShareParams(
           text: 'Save or share image',
@@ -744,9 +741,9 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'PDF ready to save or open');
+          AppToast.success(message: 'Shared Successfully');
         }
-        exportProgress.value = 100.0;
+        // exportProgress.value = 100.0;
         _closeProgressDialog();
 
         if (await tempFile.exists()) {
@@ -995,7 +992,7 @@ class CanvasController extends GetxController {
         final pdfPath = '${tempDir.path}/$fileName.pdf';
         final pdfFile = File(pdfPath);
         await pdfFile.writeAsBytes(pdfBytes);
-        exportProgress.value = 90.0;
+        exportProgress.value = 100.0;
 
         // Share the PDF
         final params = ShareParams(
@@ -1006,7 +1003,7 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'PDF ready to save or open');
+          AppToast.success(message: 'PDF shared successfully');
         }
         exportProgress.value = 100.0;
         _closeProgressDialog();
@@ -1135,19 +1132,18 @@ class CanvasController extends GetxController {
 
   Future<void> _saveDraftLocale({bool isCopy = false}) async {
     try {
+      AppToast.loading(message: 'Saving template...');
       final currentItems = boardController.getAllData();
 
       // Create the template with current state
       CardTemplate template = CardTemplate(
         imagePath: "",
         categoryId: 'birthday',
-        id: isCopy == true ? Uuid().v4() : initialTemplate!.id,
+        id: isCopy ? Uuid().v4() : initialTemplate!.id,
         name: templateName.value.isEmpty
             ? 'Untitled Template'
             : templateName.value,
-        items: currentItems.map((e) {
-          return deserializeItem(e).toJson();
-        }).toList(),
+        items: currentItems.map((e) => deserializeItem(e).toJson()).toList(),
         width: initialTemplate?.width ?? 800,
         height: initialTemplate?.height ?? 600,
         category: 'birthday',
@@ -1161,7 +1157,10 @@ class CanvasController extends GetxController {
         thumbnailUrl: null,
       );
 
-      final file = await exportAsImage("${template.id}_${template.id}");
+      // Generate thumbnail without sharing
+      final file = await _exportAsImageForDraft(
+        "${template.id}_${template.id}",
+      );
 
       if (file != null) {
         template = template.copyWith(thumbnailUrl: file.path);
@@ -1177,12 +1176,89 @@ class CanvasController extends GetxController {
           // Profile page not open, ignore
         }
         AppToast.success(message: 'Template saved locally!');
+      } else {
+        throw Exception('Failed to generate thumbnail');
       }
     } catch (err) {
       debugPrint('Error saving to local storage: $err');
       AppToast.error(
         message: 'Failed to save template locally: ${err.toString()}',
       );
+    } finally {
+      AppToast.closeLoading();
+    }
+  }
+
+  Future<File?> _exportAsImageForDraft(String fileName) async {
+    try {
+      isExporting = true;
+      update(['export_button']);
+      boardController.unSelectAll();
+      _showProgressDialog();
+      exportProgress.value = 0.0;
+
+      if (kDebugMode) debugPrint('Starting image export for draft: $fileName');
+
+      // Stage 1: Capture widget (50%)
+      exportProgress.value = 10.0;
+      final exportKey = GlobalKey();
+      final image = await screenshotController.captureFromWidget(
+        Material(
+          elevation: 0,
+          color: Colors.white,
+          child: SizedBox(
+            width: scaledCanvasWidth.value,
+            height: scaledCanvasHeight.value,
+            key: exportKey,
+            child: CanvasStack(
+              showGrid: false,
+              showBorders: false,
+              stackBoardKey: GlobalKey(),
+              canvasScale: canvasScale,
+              scaledCanvasWidth: scaledCanvasWidth,
+              scaledCanvasHeight: scaledCanvasHeight,
+            ),
+          ),
+        ),
+        targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
+        pixelRatio: 2,
+      );
+      exportProgress.value = 50.0;
+      if (kDebugMode) debugPrint('Widget captured successfully');
+
+      if (kIsWeb) {
+        // Stage 2: Web handling (50%)
+        exportProgress.value = 60.0;
+        final blob = html.Blob([image]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', '$fileName.png');
+        anchor.click();
+        html.Url.revokeObjectUrl(url);
+        exportProgress.value = 100.0;
+        AppToast.success(message: 'Image saved for draft');
+        if (kDebugMode) debugPrint('Web download triggered');
+        return File('$fileName.png'); // Dummy file for web
+      } else {
+        // Stage 2: Save to temporary file (50%)
+        exportProgress.value = 60.0;
+        final tempDir = await getTemporaryDirectory();
+        final tempPath = '${tempDir.path}/$fileName.png';
+        final tempFile = File(tempPath);
+        await tempFile.writeAsBytes(image);
+        exportProgress.value = 100.0;
+        if (kDebugMode) debugPrint('Image saved to temp file: $tempPath');
+        return tempFile;
+      }
+    } catch (e, s) {
+      debugPrint('Export Image failed: $e\nStack trace: $s');
+      AppToast.error(message: 'Failed to export image: ${e.toString()}');
+      return null;
+    } finally {
+      isExporting = false;
+      _closeProgressDialog();
+      update(['export_button']);
+      if (kDebugMode) debugPrint('Export image cleanup completed');
     }
   }
 
