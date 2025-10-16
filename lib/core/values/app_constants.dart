@@ -1,3 +1,9 @@
 const String placeholderPath = 'assets/add-image.png';
 const String kRemoteConfigKey = 'app_config';
 const String kPlaystoreUrl = "";
+const String kAppstoreUrl = "";
+const String kPrivacyPolicyUrl =
+    "https://www.notion.so/Inkkaro-Privacy-Policy-28b351fcbdff802f8614eddc7a6e35c4?source=copy_link";
+const String kTermsOfServiceUrl =
+    "https://www.notion.so/Inkkaro-Terms-of-Service-28b351fcbdff808090dbde9b6f3c0ffb?source=copy_link";
+const String kContactEmail = "";

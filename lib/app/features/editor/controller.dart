@@ -355,8 +355,7 @@ class CanvasController extends GetxController {
         Get.to(() => ProfileTab());
         return;
       }
-
-      final thumbnailFile = await exportAsImage();
+      File? thumbnailFile;
 
       // Handle background image
       File? backgroundFile;
@@ -371,6 +370,10 @@ class CanvasController extends GetxController {
           // Retain the selected background URL (if it's a URL)
           backgroundImageUrl = selectedBackground.value;
         }
+      }
+
+      if (template.thumbnailUrl != null) {
+        thumbnailFile = File(template.thumbnailUrl!);
       }
 
       // Use TemplateService to upload and save
@@ -1104,6 +1107,16 @@ class CanvasController extends GetxController {
       AppToast.loading(message: 'Publishing template...');
       final currentItems = boardController.getAllData();
 
+      // Generate thumbnail for the public project
+      final thumbnailFile = await _exportAsImageForDraft(
+        "public_project_${Uuid().v4()}",
+      );
+
+      if (thumbnailFile == null) {
+        throw Exception('Failed to generate thumbnail for public project');
+      }
+
+      // Create the template with current state
       final template = CardTemplate(
         imagePath: "",
         categoryId: 'birthday',
@@ -1115,19 +1128,25 @@ class CanvasController extends GetxController {
         category: 'birthday',
         tags: ['default'],
         isPremium: false,
-
         isDraft: false,
         backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundImageUrl: selectedBackground.value,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        thumbnailUrl: kIsWeb ? null : thumbnailFile.path, // Set thumbnail URL
       );
 
+      // Upload template to Firebase
       await uploadTemplate(template);
 
       AppToast.closeLoading();
+      AppToast.success(message: 'Template published successfully');
     } catch (err) {
-      AppToast.error(message: err.toString());
+      debugPrint('Error publishing template: $err');
+      AppToast.closeLoading();
+      AppToast.error(message: 'Failed to publish template: ${err.toString()}');
     }
   }
-
   // Add these methods to your CanvasController class
 
   Future<void> _saveDraftLocale({bool isCopy = false}) async {

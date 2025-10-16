@@ -9,6 +9,7 @@
 
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/update_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
@@ -45,7 +46,7 @@ class SettingsPage extends StatelessWidget {
           // Account Section
           Obx(() => _buildUserProfile(user, theme)),
 
-          _buildDivider(theme),
+          // _buildDivider(theme),
 
           // // Settings Options
           // _buildSettingsTile(
@@ -64,34 +65,33 @@ class SettingsPage extends StatelessWidget {
           // ),
 
           // _buildDivider(theme),
-          _buildSettingsTile(
-            icon: Icons.share_outlined,
-            title: 'Share App',
-            theme: theme,
-            onTap: _shareApp,
-          ),
+          // _buildSettingsTile(
+          //   icon: Icons.share_outlined,
+          //   title: 'Share App',
+          //   theme: theme,
+          //   onTap: _shareApp,
+          // ),
 
-          _buildSettingsTile(
-            icon: Icons.star_outline,
-            title: 'Rate App',
-            theme: theme,
-            onTap: _launchAppStore,
-          ),
-
+          // _buildSettingsTile(
+          //   icon: Icons.star_outline,
+          //   title: 'Rate App',
+          //   theme: theme,
+          //   onTap:()=> _launchUrl('https://play.google.com/store/apps/details?id=com.example.inkkaro'),
+          // ),
           _buildDivider(theme),
 
           _buildSettingsTile(
             icon: Icons.description_outlined,
             title: 'Terms of Service',
             theme: theme,
-            onTap: () => Get.toNamed('/terms'),
+            onTap: () => _launchUrl(kTermsOfServiceUrl),
           ),
 
           _buildSettingsTile(
             icon: Icons.security_outlined,
             title: 'Privacy Policy',
             theme: theme,
-            onTap: () => Get.toNamed('/privacy'),
+            onTap: () => _launchUrl(kPrivacyPolicyUrl),
           ),
 
           _buildDivider(theme),
@@ -641,12 +641,15 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _launchAppStore() async {
-    const url =
-        'https://play.google.com/store/apps/details?id=com.example.inkkaro';
-
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
+  void _launchUrl(String url) async {
+    try {
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } else {
+        print("cannot launch");
+      }
+    } catch (err) {
+      print(err);
     }
   }
 

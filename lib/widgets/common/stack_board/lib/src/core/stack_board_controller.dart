@@ -85,6 +85,9 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
   /// * 添加 item
   /// * add item
   void addItem(StackItem<StackItemContent> item, {bool selectIt = false}) {
+    if (innerData.length > 100) {
+      throw Exception("too many items"); //TODO avoid too much adding
+    }
     if (innerData.contains(item)) {
       print('StackBoardController addItem: item already exists');
       return;
