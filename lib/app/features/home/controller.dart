@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
@@ -8,6 +10,7 @@ import 'package:cardmaker/services/update_service.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class HomeController extends GetxController {
   final selectedIndex = 0.obs;
@@ -16,12 +19,12 @@ class HomeController extends GetxController {
   final RxList<CardTemplate> trendingTemplates = <CardTemplate>[].obs;
   final RxList<String> favoriteTemplateIds = <String>[].obs;
   final isLoading = false.obs;
-
+  final _storage = GetStorage();
   final authService = Get.put(AuthService());
   final _firestoreService = FirestoreServices();
   final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
   final UpdateManager updateManager = UpdateManager(); // Add this
-
+  static const String _favoriteIdsKey = 'favorite_template_ids';
   // Add config values you want to use
 
   final List<QuickAction> quickActions = [
@@ -173,6 +176,23 @@ class HomeController extends GetxController {
 
   // Modify your HomeController's _initializeData method
 
+  // Future<void> _initializeData() async {
+  //   isLoading.value = true;
+  //   try {
+  //     await Future.wait([
+  //       _loadTemplates(),
+  //       _loadFreeTodayTemplates(),
+  //       _loadTrendingTemplates(),
+  //       _loadFavoriteTemplateIds(),
+  //     ]);
+  //     _checkForUpdates(); // Simple update check on init
+  //   } catch (e) {
+  //     print('Error initializing data: $e');
+  //   } finally {
+  //     isLoading.value = false;
+  //     update(['freeTodayTemplates', 'trendingTemplates']);
+  //   }
+  // }
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
@@ -182,12 +202,94 @@ class HomeController extends GetxController {
         _loadTrendingTemplates(),
         _loadFavoriteTemplateIds(),
       ]);
-      _checkForUpdates(); // Simple update check on init
+      // Sync local favorites with Firebase if user is logged in
+      await syncLocalFavoritesWithFirebase();
+      _checkForUpdates();
     } catch (e) {
       print('Error initializing data: $e');
     } finally {
       isLoading.value = false;
-      update(['freeTodayTemplates', 'trendingTemplates']);
+      update([
+        'freeTodayTemplates',
+        'trendingTemplates',
+        'favoriteTemplateIds',
+      ]);
+    }
+  }
+
+  Future<void> _toggleLocalFavorite(String templateId) async {
+    try {
+      List<String> localFavorites = await _loadLocalFavoriteIds();
+      if (localFavorites.contains(templateId)) {
+        localFavorites.remove(templateId);
+        favoriteTemplateIds.remove(templateId);
+      } else {
+        localFavorites.add(templateId);
+        favoriteTemplateIds.add(templateId);
+      }
+      await _saveLocalFavoriteIds(localFavorites);
+    } catch (e) {
+      debugPrint('Error toggling local favorite: $e');
+      rethrow;
+    }
+  }
+
+  // Load favorite template IDs from local storage
+  Future<List<String>> _loadLocalFavoriteIds() async {
+    try {
+      final jsonString = _storage.read(_favoriteIdsKey);
+      if (jsonString == null || jsonString.isEmpty) return [];
+      return List<String>.from(jsonDecode(jsonString));
+    } catch (e) {
+      debugPrint('Error loading local favorite IDs: $e');
+      return [];
+    }
+  }
+
+  // Save favorite template IDs to local storage
+  Future<void> _saveLocalFavoriteIds(List<String> favoriteIds) async {
+    try {
+      await _storage.write(_favoriteIdsKey, jsonEncode(favoriteIds));
+    } catch (e) {
+      debugPrint('Error saving local favorite IDs: $e');
+      rethrow;
+    }
+  }
+
+  // Modified _loadFavoriteTemplateIds to include local storage
+  Future<void> _loadFavoriteTemplateIds() async {
+    try {
+      if (authService.user != null) {
+        // Load from Firebase if user is logged in
+        final favorites = await _firestoreService.getFavoriteTemplateIds();
+        favoriteTemplateIds.assignAll(favorites);
+      } else {
+        // Load from local storage if user is logged out
+        final localFavorites = await _loadLocalFavoriteIds();
+        favoriteTemplateIds.assignAll(localFavorites);
+      }
+    } catch (e) {
+      debugPrint('Error loading favorite template IDs: $e');
+    }
+  }
+
+  // Optional: Sync local favorites with Firebase when user logs in
+  Future<void> syncLocalFavoritesWithFirebase() async {
+    if (authService.user == null) return;
+    try {
+      final localFavorites = await _loadLocalFavoriteIds();
+      if (localFavorites.isNotEmpty) {
+        for (var templateId in localFavorites) {
+          if (!favoriteTemplateIds.contains(templateId)) {
+            await _firestoreService.addToFavorites(templateId);
+            favoriteTemplateIds.add(templateId);
+          }
+        }
+        // Clear local favorites after syncing
+        await _saveLocalFavoriteIds([]);
+      }
+    } catch (e) {
+      debugPrint('Error syncing local favorites with Firebase: $e');
     }
   }
 
@@ -248,25 +350,22 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _loadFavoriteTemplateIds() async {
-    final favorites = await _firestoreService.getFavoriteTemplateIds();
-    favoriteTemplateIds.assignAll(favorites);
-  }
-
   Future<void> toggleFavorite(String templateId) async {
     try {
-      if (authService.user == null) {
-        Get.toNamed(Routes.auth);
-        return;
-      }
-
-      if (favoriteTemplateIds.contains(templateId)) {
-        await _firestoreService.removeFromFavorites(templateId);
-        favoriteTemplateIds.remove(templateId);
+      if (authService.user != null) {
+        // User is logged in, handle favorites with Firebase
+        if (favoriteTemplateIds.contains(templateId)) {
+          _firestoreService.removeFromFavorites(templateId);
+          favoriteTemplateIds.remove(templateId);
+        } else {
+          _firestoreService.addToFavorites(templateId);
+          favoriteTemplateIds.add(templateId);
+        }
       } else {
-        await _firestoreService.addToFavorites(templateId);
-        favoriteTemplateIds.add(templateId);
+        // User is logged out, handle favorites in local storage
+        await _toggleLocalFavorite(templateId);
       }
+      update(['favoriteTemplateIds']);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -277,6 +376,30 @@ class HomeController extends GetxController {
       );
     }
   }
+  // Future<void> toggleFavorite(String templateId) async {
+  //   try {
+  //     if (authService.user == null) {
+  //       Get.toNamed(Routes.auth);
+  //       return;
+  //     }
+
+  //     if (favoriteTemplateIds.contains(templateId)) {
+  //       await _firestoreService.removeFromFavorites(templateId);
+  //       favoriteTemplateIds.remove(templateId);
+  //     } else {
+  //       await _firestoreService.addToFavorites(templateId);
+  //       favoriteTemplateIds.add(templateId);
+  //     }
+  //   } catch (e) {
+  //     Get.snackbar(
+  //       'Error',
+  //       'Failed to update favorites: $e',
+  //       snackPosition: SnackPosition.BOTTOM,
+  //       backgroundColor: Colors.red.shade100,
+  //       colorText: Colors.red.shade900,
+  //     );
+  //   }
+  // }
 
   void onPageChanged(int index) {
     selectedIndex.value = index;

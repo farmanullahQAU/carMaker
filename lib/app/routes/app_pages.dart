@@ -27,6 +27,7 @@ class AppPages {
     GetPage(
       name: Routes.categoryTemplates,
       page: () => CategoryTemplatesPage(),
+
       binding: InitialBindings(),
     ),
 

@@ -14,6 +14,7 @@ class CategoryTemplatesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<CategoryTemplatesController>(
       autoRemove: false,
+
       builder: (controller) {
         return Scaffold(
           body: RefreshIndicator(
