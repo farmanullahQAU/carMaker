@@ -113,10 +113,20 @@ class AuthController extends GetxController {
   }
 
   /// Perform login operation
-  Future<void> _performLogin() => _authService.signInWithEmailAndPassword(
-    email: emailController.text.trim(),
-    password: passwordController.text,
-  );
+  Future<void> _performLogin() async {
+    await authService.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
+
+    if (Get.isRegistered<ProfileController>()) {
+      Future.wait([
+        Get.find<ProfileController>().refreshDrafts(),
+        Get.find<ProfileController>().refreshFavorites(),
+      ]);
+    }
+    Get.back();
+  }
 
   /// Perform signup operation
   Future<void> _performSignup() => _authService.signUpWithEmailAndPassword(

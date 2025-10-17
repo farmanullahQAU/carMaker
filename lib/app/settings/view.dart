@@ -38,7 +38,7 @@ class SettingsPage extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        // backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -157,7 +157,7 @@ class SettingsPage extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: theme.cardColor,
+              color: theme.colorScheme.surfaceContainer,
             ),
             child: user?.photoURL != null
                 ? ClipOval(
@@ -168,7 +168,21 @@ class SettingsPage extends StatelessWidget {
                       height: 56,
                     ),
                   )
-                : Icon(Icons.person, size: 28, color: theme.disabledColor),
+                : Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.colorScheme.surfaceContainer,
+                    ),
+                    child: ClipOval(
+                      child: Icon(
+                        Icons.person,
+                        size: 28,
+                        color: theme.disabledColor,
+                      ),
+                    ),
+                  ),
           ),
 
           const SizedBox(width: 16),
@@ -179,7 +193,8 @@ class SettingsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.displayName ?? 'Guest User',
+                  user == null ? "Guest User" : user.displayName ?? "----",
+
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),

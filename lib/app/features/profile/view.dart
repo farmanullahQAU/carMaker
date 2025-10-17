@@ -158,7 +158,7 @@ class ProfilePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  user?.displayName ?? 'Guest User',
+                  isGuest ? "Guest User" : user.displayName ?? "----",
                   style: const TextStyle(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -369,7 +369,7 @@ class ProfilePage extends StatelessWidget {
                 onDelete: () => _showDeleteDialog(
                   template.id,
                   onDelete,
-                  localOnly, // Use local status
+                  !localOnly, // Use local status
                 ),
                 onBackup: localOnly
                     ? () => onBackup?.call(template)
@@ -524,15 +524,6 @@ class ProfilePage extends StatelessWidget {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: Container(color: Colors.white),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: Colors.grey[100],
-      child: Center(
-        child: Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
-      ),
     );
   }
 

@@ -737,8 +737,8 @@ class CanvasController extends GetxController {
         exportProgress.value = 100.0;
 
         final params = ShareParams(
-          text: 'Save or share image',
-          title: "Share Image",
+          text: "$fileName card",
+          title: fileName,
           files: [XFile(tempFile.path)],
         );
         final result = await SharePlus.instance.share(params);
@@ -1057,7 +1057,7 @@ class CanvasController extends GetxController {
     } else {
       _saveDraftLocale(isCopy: true);
 
-      // _saveDraft(isCopy: true);
+      // _saveToFirestore(isCopy: true);
     }
   }
 
@@ -1065,17 +1065,15 @@ class CanvasController extends GetxController {
     if (isLocaleTemplate) {
       _saveDraftLocale();
     } else {
-      _saveDraft();
+      _saveToFirestore();
     }
   }
 
   /// Save current design as draft to Firebase
-  Future<void> _saveDraft({bool isCopy = false}) async {
+  Future<void> _saveToFirestore({bool isCopy = false}) async {
     try {
       AppToast.loading(message: "uploading changes");
       final currentItems = boardController.getAllData();
-
-      print(currentItems);
 
       CardTemplate template = CardTemplate(
         imagePath: "",
@@ -1092,7 +1090,11 @@ class CanvasController extends GetxController {
         isDraft: true,
         backgroundHue: backgroundHue.value.roundToDouble(),
       );
+      final file = await _generateThumbnail("${template.id}_${template.id}");
 
+      if (file != null) {
+        template = template.copyWith(thumbnailUrl: file.path);
+      }
       await uploadTemplate(template);
       AppToast.closeLoading();
     } catch (err) {
@@ -1108,7 +1110,7 @@ class CanvasController extends GetxController {
       final currentItems = boardController.getAllData();
 
       // Generate thumbnail for the public project
-      final thumbnailFile = await _exportAsImageForDraft(
+      final thumbnailFile = await _generateThumbnail(
         "public_project_${Uuid().v4()}",
       );
 
@@ -1177,9 +1179,7 @@ class CanvasController extends GetxController {
       );
 
       // Generate thumbnail without sharing
-      final file = await _exportAsImageForDraft(
-        "${template.id}_${template.id}",
-      );
+      final file = await _generateThumbnail("${template.id}_${template.id}");
 
       if (file != null) {
         template = template.copyWith(thumbnailUrl: file.path);
@@ -1208,7 +1208,7 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<File?> _exportAsImageForDraft(String fileName) async {
+  Future<File?> _generateThumbnail(String fileName) async {
     try {
       isExporting = true;
       update(['export_button']);

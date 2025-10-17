@@ -93,7 +93,7 @@ class HomePage extends GetView<HomeController> {
         BottomNavigationBarItem(
           icon: Icon(Icons.apps_rounded),
           activeIcon: Icon(Icons.apps, size: 22),
-          label: 'Templates',
+          label: 'Canvas',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline_rounded),

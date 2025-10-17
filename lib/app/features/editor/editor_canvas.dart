@@ -165,7 +165,9 @@ class EditorPage extends GetView<CanvasController> {
             id: 'export_button',
             builder: (controller) => _ModernExportButton(
               onExportPDF: controller.exportAsPDF,
-              onExportImage: controller.exportAsImage,
+              onExportImage: () => controller.exportAsImage(
+                controller.initialTemplate!.category,
+              ),
               onSaveDraft: controller.saveDraft,
               onSaveCopy: controller.saveCopy,
               onSave: () async {
