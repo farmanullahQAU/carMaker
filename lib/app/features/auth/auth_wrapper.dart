@@ -108,7 +108,7 @@ class AuthWrapper extends StatelessWidget {
                   height: isPortrait ? 52 : 48,
                   child: ElevatedButton(
                     onPressed: () {
-                      Get.toNamed(Routes.auth);
+                      Get.toNamed(AppRoutes.auth);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
@@ -216,7 +216,7 @@ class AuthWrapper extends StatelessWidget {
           height: 56,
           child: ElevatedButton(
             onPressed: () {
-              Get.toNamed(Routes.auth);
+              Get.toNamed(AppRoutes.auth);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
@@ -290,7 +290,7 @@ class AuthWrapper extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    Get.toNamed(Routes.auth);
+                    Get.toNamed(AppRoutes.auth);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
@@ -402,7 +402,7 @@ class AuthWrapper extends StatelessWidget {
                       height: 60,
                       child: ElevatedButton(
                         onPressed: () {
-                          Get.toNamed(Routes.auth);
+                          Get.toNamed(AppRoutes.auth);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,
@@ -705,7 +705,7 @@ class AuthWrapper extends StatelessWidget {
 //               height: isPortrait ? 56 : 50,
 //               child: FilledButton.icon(
 //                 onPressed: () {
-//                   Get.toNamed(Routes.auth);
+//                   Get.toNamed(AppRoutes.auth);
 //                 },
 //                 icon: Text(
 //                   'Get Started',
@@ -815,7 +815,7 @@ class AuthWrapper extends StatelessWidget {
 //           height: 60,
 //           child: ElevatedButton(
 //             onPressed: () {
-//               Get.toNamed(Routes.auth);
+//               Get.toNamed(AppRoutes.auth);
 //             },
 //             style: ElevatedButton.styleFrom(
 //               backgroundColor: Colors.black,
@@ -917,7 +917,7 @@ class AuthWrapper extends StatelessWidget {
 //                 height: 60,
 //                 child: ElevatedButton(
 //                   onPressed: () {
-//                     Get.toNamed(Routes.auth);
+//                     Get.toNamed(AppRoutes.auth);
 //                   },
 //                   style: ElevatedButton.styleFrom(
 //                     backgroundColor: Colors.black,
@@ -1057,7 +1057,7 @@ class AuthWrapper extends StatelessWidget {
 //                       height: 64,
 //                       child: ElevatedButton(
 //                         onPressed: () {
-//                           Get.toNamed(Routes.auth);
+//                           Get.toNamed(AppRoutes.auth);
 //                         },
 //                         style: ElevatedButton.styleFrom(
 //                           backgroundColor: Colors.black,

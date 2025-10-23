@@ -511,52 +511,57 @@ class OptimizedTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: template.aspectRatio,
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 100),
-            decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surfaceContainerLowest,
+    return Stack(
+      children: [
+        AspectRatio(
+          aspectRatio: template.aspectRatio,
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              // border: Border.all(
-              //   color: Get.theme.colorScheme.outlineVariant,
-              //   width: 0,
-              // ),
-            ),
-            child: Stack(
-              children: [
-                // Image container with fixed aspect ratio
-                Positioned.fill(
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: _buildTemplateImage(),
-                    ),
-                  ),
+              onTap: onTap,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 100),
+                decoration: BoxDecoration(
+                  color: Get.theme.colorScheme.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  // border: Border.all(
+                  //   color: Get.theme.colorScheme.outlineVariant,
+                  //   width: 0,
+                  // ),
                 ),
-                _buildFavoriteButton(),
-              ],
+                child: Stack(
+                  children: [
+                    // Image container with fixed aspect ratio
+                    Positioned.fill(
+                      child: Container(
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _buildTemplateImage(),
+                        ),
+                      ),
+                    ),
+                    _buildFavoriteButton(),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        Text(template.id),
+      ],
     );
   }
 
@@ -825,7 +830,7 @@ class CanvasSizesRow extends GetView<HomeController> {
       children: [
         GestureDetector(
           onTap: () {
-            Get.toNamed(Routes.editor, arguments: template);
+            Get.toNamed(AppRoutes.editor, arguments: template);
           },
           child: Container(
             decoration: BoxDecoration(

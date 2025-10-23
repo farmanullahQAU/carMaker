@@ -178,7 +178,7 @@ class ProfilePage extends StatelessWidget {
           if (isGuest)
             ElevatedButton(
               onPressed: () {
-                Get.toNamed(Routes.auth);
+                Get.toNamed(AppRoutes.auth);
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
@@ -681,7 +681,7 @@ class ProfilePage extends StatelessWidget {
 
   void _editTemplate(CardTemplate template, [bool isLocale = false]) {
     Get.toNamed(
-      Routes.editor,
+      AppRoutes.editor,
       arguments: {"template": template, "isLocal": isLocale},
     );
   }

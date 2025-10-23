@@ -266,7 +266,7 @@ class CategoryTemplatesController extends GetxController {
   }
 
   void onTemplateSelected(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: {'template': template});
+    Get.toNamed(AppRoutes.editor, arguments: {'template': template});
   }
 
   Future<void> loadMoreTemplates() async {
@@ -573,7 +573,7 @@ class CategoryTemplatesController extends GetxController {
   Future<void> toggleFavorite(String templateId) async {
     try {
       if (authService.user == null) {
-        Get.toNamed(Routes.auth);
+        Get.toNamed(AppRoutes.auth);
         return;
       }
 
@@ -604,7 +604,7 @@ class CategoryTemplatesController extends GetxController {
   }
 
   void onTemplateSelected(CardTemplate template) {
-    Get.toNamed(Routes.editor, arguments: {'template': template});
+    Get.toNamed(AppRoutes.editor, arguments: {'template': template});
   }
 
   Future<void> onRefresh() async {

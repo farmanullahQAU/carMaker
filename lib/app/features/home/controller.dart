@@ -379,7 +379,7 @@ class HomeController extends GetxController {
   // Future<void> toggleFavorite(String templateId) async {
   //   try {
   //     if (authService.user == null) {
-  //       Get.toNamed(Routes.auth);
+  //       Get.toNamed(AppRoutes.auth);
   //       return;
   //     }
 
@@ -413,23 +413,23 @@ class HomeController extends GetxController {
 
   void onCategoryTap(CategoryModel category) {
     Get.toNamed(
-      Routes.categoryTemplates,
+      AppRoutes.categoryTemplates,
       preventDuplicates: true,
       arguments: category,
     );
   }
 
   void onTapViewAll(bool isFree) {
-    Get.toNamed(Routes.categoryTemplates, arguments: isFree);
+    Get.toNamed(AppRoutes.categoryTemplates, arguments: isFree);
   }
 
   void onViewAllTemplates() {
-    Get.toNamed(Routes.categoryTemplates, arguments: null);
+    Get.toNamed(AppRoutes.categoryTemplates, arguments: null);
   }
 
   void onTemplateTap(CardTemplate template) {
     Get.toNamed(
-      Routes.editor,
+      AppRoutes.editor,
       arguments: {"template": template, "showSaveCopyBtn": false},
     );
   }

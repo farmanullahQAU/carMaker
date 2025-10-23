@@ -105,7 +105,7 @@ class SettingsPage extends StatelessWidget {
                     titleColor: theme.colorScheme.error,
                     theme: theme,
                     onTap: () async {
-                      await Get.toNamed(Routes.auth);
+                      await Get.toNamed(AppRoutes.auth);
                     },
                   )
                 : Column(
@@ -399,8 +399,8 @@ class SettingsPage extends StatelessWidget {
             onPressed: () async {
               Get.back();
               await FirebaseAuth.instance.signOut();
-
               Get.back();
+
               if (Get.isRegistered<ProfileController>()) {
                 Get.find<ProfileController>().drafts.clear();
               }

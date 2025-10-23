@@ -1,4 +1,4 @@
-// lib/widgets/common/splash_screen.dart
+import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/services/remote_config.dart';
@@ -23,33 +23,44 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+    _initializeApp();
+  }
 
-    // Initialize animations
+  void _setupAnimations() {
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1000),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
       ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
       ),
     );
 
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+          ),
+        );
+
     _animationController.forward();
-    _initializeApp();
   }
 
   @override
@@ -60,20 +71,16 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     try {
-      // Step 1: Initialize Remote Config
       setState(() => _statusMessage = 'Loading configuration...');
+      Get.find<HomeController>();
       await _remoteConfigService.initialize();
 
-      // Step 2: Check for updates
-      // setState(() => _statusMessage = 'Checking for updates...');
-      // await _checkForUpdates();
+      await Future.delayed(Duration(milliseconds: 800));
 
-      // Step 3: If no update required or after update check, proceed to main app
       if (mounted) {
         _navigateToMainApp();
       }
     } catch (error) {
-      // Handle initialization errors gracefully
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -84,152 +91,188 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _navigateToMainApp() {
-    // Navigate to the main app screen
-    Get.offAllNamed(Routes.home);
+    Get.offAllNamed(AppRoutes.home);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Scaffold(
-      // backgroundColor: colorScheme.primary,
-      body: Stack(
-        children: [
-          // Background with subtle gradient
-          // Container(
-          //   decoration: BoxDecoration(
-          //     gradient: LinearGradient(
-          //       begin: Alignment.topCenter,
-          //       end: Alignment.bottomCenter,
-          //       colors: [
-          //         colorScheme.primary,
-          //         colorScheme.primary.withOpacity(0.9),
-          //         colorScheme.primary.withOpacity(0.8),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-
-          // Decorative elements
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                color: AppColors.brandingLight.withOpacity(0.1),
-                shape: BoxShape.circle,
+      body: Container(
+        // decoration: BoxDecoration(
+        //   gradient: LinearGradient(
+        //     begin: Alignment.topLeft,
+        //     end: Alignment.bottomRight,
+        //     colors: [
+        //       colorScheme.primary,
+        //       colorScheme.primary.withOpacity(0.95),
+        //       colorScheme.primary.withOpacity(0.85),
+        //     ],
+        //   ),
+        // ),
+        child: Stack(
+          children: [
+            // Decorative background elements
+            Positioned(
+              top: -100,
+              right: -100,
+              child: _buildDecorativeCircle(
+                size: 250,
+                opacity: 0.08,
+                color: Get.theme.colorScheme.surfaceContainer,
               ),
             ),
-          ),
-
-          Positioned(
-            bottom: -80,
-            left: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                color: AppColors.brandingLight.withOpacity(0.1),
-                shape: BoxShape.circle,
+            Positioned(
+              bottom: -120,
+              left: -80,
+              child: _buildDecorativeCircle(
+                size: 300,
+                opacity: 0.06,
+                color: Get.theme.colorScheme.surfaceContainer,
               ),
             ),
-          ),
 
-          Center(
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Opacity(opacity: _fadeAnimation.value, child: child),
-                );
-              },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // App logo with container for better presentation
-                  Container(
-                    // padding: const EdgeInsets.all(20),
-                    // decoration: BoxDecoration(
-                    //   color: colorScheme.surfaceContainerHigh,
-                    //   borderRadius: BorderRadius.circular(20),
-                    //   boxShadow: [
-                    //     BoxShadow(
-                    //       color: colorScheme.shadow.withOpacity(0.1),
-                    //       blurRadius: 10,
-                    //       spreadRadius: 2,
-                    //       offset: const Offset(0, 5),
-                    //     ),
-                    //   ],
-                    // ),
-                    child: Image.asset("assets/icon.png", width: 80),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // App name text
-                  Text(
-                    'Inkkaro',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+            // Main content
+            Center(
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: child,
+                      ),
                     ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Tagline
-                  Text(
-                    'Create Beautiful Cards Effortlessly',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w300),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Loading indicator or status message
-                  if (_isLoading)
-                    Column(
-                      children: [
-                        SizedBox(
-                          width: 30,
-                          height: 30,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                  );
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App logo container
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Get.theme.colorScheme.surfaceContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(18),
+                        child: Image.asset(
+                          "assets/icon.png",
+                          fit: BoxFit.contain,
                         ),
-                        // const SizedBox(height: 20),
-                        // Text(
-                        //   _statusMessage,
-                        //   style: TextStyle(
-                        //     fontSize: 16,
-                        //     fontWeight: FontWeight.w400,
-                        //   ),
-                        //   textAlign: TextAlign.center,
-                        // ),
-                      ],
+                      ),
                     ),
-                ],
+
+                    const SizedBox(height: 16),
+
+                    // App name with shader mask
+                    ShaderMask(
+                      shaderCallback: (bounds) {
+                        return LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.branding,
+                            AppColors.brandingLight,
+                            AppColors.blue400,
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ).createShader(bounds);
+                      },
+                      child: Text(
+                        'Inkkaro',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+
+                    // const SizedBox(height: 12),
+
+                    // Tagline
+                    Text(
+                      'Create Beautiful Cards Effortlessly',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+
+                    const SizedBox(height: 60),
+
+                    // Loading indicator with status
+                    if (_isLoading) ...[
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(strokeWidth: 4),
+                      ),
+                      // const SizedBox(height: 24),
+                      // Text(
+                      //   _statusMessage,
+                      //   style: TextStyle(
+                      //     fontSize: 13,
+                      //     fontWeight: FontWeight.w400,
+
+                      //     letterSpacing: 0.2,
+                      //   ),
+                      //   textAlign: TextAlign.center,
+                      // ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Footer with version info
-          // Positioned(
-          //   bottom: 20,
-          //   left: 0,
-          //   right: 0,
-          //   child: Column(
-          //     children: [
-          //       Text(UpdateManager().currVer, style: TextStyle(fontSize: 12)),
-          //       const SizedBox(height: 4),
-          //       Text('© 2023 CardMaker App', style: TextStyle(fontSize: 10)),
-          //     ],
-          //   ),
-          // ),
-        ],
+            // Footer
+            // Positioned(
+            //   bottom: 24,
+            //   left: 0,
+            //   right: 0,
+            //   child: Column(
+            //     children: [
+            //       Text(
+            //         'v${UpdateManager().currVer}',
+            //         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+            //       ),
+            //       const SizedBox(height: 6),
+            //       Text(
+            //         '© 2025 Inkkaro. All rights reserved.',
+            //         style: TextStyle(
+            //           fontSize: 11,
+            //           fontWeight: FontWeight.w300,
+
+            //           letterSpacing: 0.2,
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDecorativeCircle({
+    required double size,
+    required double opacity,
+    required Color color,
+  }) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(opacity),
+        shape: BoxShape.circle,
       ),
     );
   }

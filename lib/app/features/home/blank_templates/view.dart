@@ -477,7 +477,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Get.toNamed(
-          Routes.editor,
+          AppRoutes.editor,
           arguments: {"isblank": true, "template": template},
         );
       },

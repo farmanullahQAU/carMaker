@@ -1255,11 +1255,14 @@ class CanvasStack extends StatelessWidget {
 
                       customBuilder: (StackItem<StackItemContent> item) {
                         if (item is StackTextItem && item.content != null) {
-                          return StackTextCase(
-                            item: item,
-                            isFitted: item.content!.data!.length > 20
-                                ? false
-                                : true,
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: StackTextCase(
+                              item: item,
+                              isFitted: item.content!.data!.length > 20
+                                  ? false
+                                  : true,
+                            ),
                           );
                         } else if (item is StackImageItem &&
                             item.content != null) {

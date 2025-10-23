@@ -60,15 +60,15 @@ class CardMakerApp extends StatelessWidget {
         themeMode: ThemeMode.dark,
         // Define only the deletion route
         getPages: [
-          GetPage(name: Routes.webLanding, page: () => const LandingPage()),
+          GetPage(name: AppRoutes.webLanding, page: () => const LandingPage()),
         ],
         // Start directly at deletion page
-        initialRoute: Routes.webLanding,
+        initialRoute: AppRoutes.webLanding,
         // Block navigation to other routes
         onUnknownRoute: (RouteSettings settings) {
           return GetPageRoute(
             page: () => const AccountDeletionPage(),
-            routeName: Routes.webLanding,
+            routeName: AppRoutes.webLanding,
           );
         },
       );
@@ -79,9 +79,10 @@ class CardMakerApp extends StatelessWidget {
       title: 'Inkkaro',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.light,
-      initialRoute: Routes.splash,
+      initialRoute: AppRoutes.splash,
       theme: CardMakerTheme.lightTheme(),
       darkTheme: CardMakerTheme.darkTheme(),
+
       getPages: AppPages.pages,
       navigatorKey: navigatorKey,
       initialBinding: InitialBindings(),

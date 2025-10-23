@@ -6,7 +6,6 @@ import 'package:cardmaker/app/features/editor/text_editor/circular_text/widget.d
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
-import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_item_case/config_builder.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -628,10 +627,15 @@ class _StackItemCaseState extends State<StackItemCase> {
         child: _toolCase(
           context,
           style,
-          decoration: BoxDecoration(
-            color: AppColors.brandingLight,
-            shape: BoxShape.circle,
-          ),
+          decoration:
+              status ==
+                  StackItemStatus
+                      .moving //hide handler when moving for better alignment of item
+              ? BoxDecoration()
+              : BoxDecoration(
+                  color: AppColors.brandingLight,
+                  shape: BoxShape.circle,
+                ),
           null,
           width: 18,
           height: 18,
@@ -736,24 +740,29 @@ class _StackItemCaseState extends State<StackItemCase> {
               onPanUpdate: (DragUpdateDetails dud) =>
                   _onRotateUpdate(dud, context, status),
               onPanEnd: (_) => _onPanEnd(context, status),
-              child: _toolCase(context, style, const Icon(Icons.sync)),
+              child: item.size.width + item.size.height < style.buttonSize * 8
+                  ? SizedBox.shrink()
+                  : _toolCase(context, style, const Icon(Icons.sync)),
             ),
             // if (item.size.width + item.size.height < style.buttonSize * 8)
-            if ((item.size.width + item.size.height < style.buttonSize * 8) ||
-                item
-                    is StackShapeItem) //some times we make the shapes too small in height or width like for divider etc so we have to keep openwith button
-              //for all the cases
-              Padding(
-                padding: EdgeInsets.only(left: style.buttonSize / 2),
-                child: GestureDetector(
-                  onPanStart: (DragStartDetails details) =>
-                      _onPanStart(details, context, StackItemStatus.moving),
-                  onPanUpdate: (DragUpdateDetails dud) =>
-                      _onPanUpdate(dud, context),
-                  onPanEnd: (_) => _onPanEnd(context, status),
-                  child: _toolCase(context, style, const Icon(Icons.open_with)),
-                ),
+            // if ((item.size.width + item.size.height < style.buttonSize * 8) ||
+            //     item is StackShapeItem ||
+            //     item
+            //         is StackIconItem)
+
+            //some times we make the shapes too small in height or width like for divider etc so we have to keep openwith button
+            //for all the cases
+            Padding(
+              padding: EdgeInsets.only(left: style.buttonSize / 2),
+              child: GestureDetector(
+                onPanStart: (DragStartDetails details) =>
+                    _onPanStart(details, context, StackItemStatus.moving),
+                onPanUpdate: (DragUpdateDetails dud) =>
+                    _onPanUpdate(dud, context),
+                onPanEnd: (_) => _onPanEnd(context, status),
+                child: _toolCase(context, style, const Icon(Icons.open_with)),
               ),
+            ),
           ],
         ),
       ),
