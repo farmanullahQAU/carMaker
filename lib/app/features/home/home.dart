@@ -166,24 +166,24 @@ class HomeTab extends GetView<HomeController> {
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16),
-          child: Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
+          child: Card(
+            elevation: 0,
+            // color: Colors.white,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+            ),
+
+            child: GestureDetector(
               onTap: () {
                 Get.to(() => SettingsPage());
               },
-              child: Container(
+              child: SizedBox(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
+
                 child: const Icon(
                   Icons.settings,
-                  color: Color(0xFF6B7280),
+                  // color: Color(0xFF6B7280),
                   size: 20,
                 ),
               ),
@@ -451,7 +451,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
 
   Widget _buildViewAllCard() {
     return Material(
-      color: Colors.white,
+      // color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -524,10 +524,10 @@ class OptimizedTemplateCard extends StatelessWidget {
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 100),
                 decoration: BoxDecoration(
-                  color: Get.theme.colorScheme.surfaceContainerLowest,
+                  color: context.theme.colorScheme.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(16),
                   // border: Border.all(
-                  //   color: Get.theme.colorScheme.outlineVariant,
+                  //   color: context.theme.colorScheme.outlineVariant,
                   //   width: 0,
                   // ),
                 ),
@@ -560,7 +560,7 @@ class OptimizedTemplateCard extends StatelessWidget {
             ),
           ),
         ),
-        Text(template.id),
+        // Text(template.id),
       ],
     );
   }
@@ -659,14 +659,7 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: Get.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+        children: [Text(title)],
       ),
     );
   }
@@ -772,12 +765,12 @@ class CanvasSizesRow extends GetView<HomeController> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [_buildBasicCanvasSection()],
+        children: [_buildBasicCanvasSection(context)],
       ),
     );
   }
 
-  Widget _buildBasicCanvasSection() {
+  Widget _buildBasicCanvasSection(BuildContext context) {
     // Define list of CardTemplate constructors
     final basicTemplates = [
       CardTemplate(
@@ -816,13 +809,13 @@ class CanvasSizesRow extends GetView<HomeController> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: basicTemplates.asMap().entries.map((entry) {
           final template = entry.value;
-          return Expanded(child: _buildBasicCanvasCard(template));
+          return Expanded(child: _buildBasicCanvasCard(template, context));
         }).toList(),
       ),
     );
   }
 
-  Widget _buildBasicCanvasCard(CardTemplate template) {
+  Widget _buildBasicCanvasCard(CardTemplate template, BuildContext context) {
     return Stack(
       fit: StackFit.passthrough,
       clipBehavior: Clip.none,
@@ -834,7 +827,7 @@ class CanvasSizesRow extends GetView<HomeController> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surfaceContainer,
+              color: context.theme.colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: Column(
@@ -846,7 +839,7 @@ class CanvasSizesRow extends GetView<HomeController> {
                     width: 55.0,
                     height: 55.0 / template.aspectRatio,
                     decoration: BoxDecoration(
-                      color: Get.theme.colorScheme.surface,
+                      color: context.theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: Icon(
@@ -904,37 +897,37 @@ class _CategoryChip extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: () => controller.onCategoryTap(category),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        decoration: BoxDecoration(
-          color: Get.theme.colorScheme.surfaceContainerLowest,
-          border: Border.all(width: 0.1),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: category.color,
-                // border: Border.all(
-                //   color: Colors.white.withOpacity(0.3),
-                //   width: 1,
-                // ),
+      child: Card(
+        // padding: const EdgeInsets.symmetric(horizontal: 15),
+        color: context.theme.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: category.color,
+                  // border: Border.all(
+                  //   color: Colors.white.withOpacity(0.3),
+                  //   width: 1,
+                  // ),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              category.name,
-              style: Get.textTheme.bodySmall?.copyWith(
-                color: Get.theme.colorScheme.onSurface,
-                letterSpacing: 0.2,
+              const SizedBox(width: 10),
+              Text(
+                category.name,
+                style: Get.textTheme.bodySmall?.copyWith(
+                  color: context.theme.colorScheme.onSurface,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

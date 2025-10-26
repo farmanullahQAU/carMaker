@@ -72,6 +72,7 @@ dependencies:
   permission_handler: ^12.0.1
   font_awesome_flutter: ^10.10.0
   flutter_iconpicker: ^4.0.3
+  archive: ^4.0.7
   # gallery_saver_plus: ^3.2.9
   # stack_board: ^0.2.6+1
 flutter_native_splash:
@@ -132,17 +133,14 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+  fonts:
+    # Local Urdu Fonts
+    - family: AadilAadil
+      fonts:
+        - asset: assets/fonts/urdu/AadilAadil.ttf
+    - family: GandharaSulsRegular
+      fonts:
+        - asset: assets/fonts/urdu/GandharaSulsRegular.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

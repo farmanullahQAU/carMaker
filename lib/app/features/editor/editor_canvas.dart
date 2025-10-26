@@ -740,9 +740,7 @@ class _ModernExportButton extends StatelessWidget {
                 ],
               ),
             ),
-          if (controller.authService.user?.uid ==
-              "aP3FVBY7kWgBnJorqVrYha3lFaa2")
-            PopupMenuDivider(),
+          if (controller.isOwner) PopupMenuDivider(),
           PopupMenuItem<String>(
             value: 'pdf',
             child: Row(
@@ -915,42 +913,39 @@ class _ModernExportButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isExporting) ...[
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Exporting...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ] else ...[
-                Icon(
-                  Icons.file_download_outlined,
+              // if (isExporting) ...[
+              //   SizedBox(
+              //     width: 18,
+              //     height: 18,
+              //     child: CircularProgressIndicator(
+              //       strokeWidth: 2,
+              //       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              //     ),
+              //   ),
+              //   SizedBox(width: 8),
+              //   Text(
+              //     'Exporting...',
+              //     style: TextStyle(
+              //       color: Colors.white,
+              //       fontWeight: FontWeight.w600,
+              //       fontSize: 14,
+              //     ),
+              //   ),
+              // ] else ...
+
+              // [
+              Icon(Icons.file_download_outlined, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Export',
+                style: TextStyle(
                   color: Colors.white,
-                  size: 18,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Export',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Icon(Icons.expand_more, size: 18, color: Colors.white),
-              ],
+              ),
+              SizedBox(width: 4),
+              Icon(Icons.expand_more, size: 18, color: Colors.white),
             ],
           ),
         ),

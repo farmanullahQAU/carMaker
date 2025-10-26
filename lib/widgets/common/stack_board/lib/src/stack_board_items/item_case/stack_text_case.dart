@@ -61,7 +61,10 @@ class StackTextCase extends StatelessWidget {
 
   Widget _buildNormal(BuildContext context) {
     final textStyle = content?.style?.copyWith(
-      fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
+      fontFamily: content?.isArabicFont == true
+          ? content?.googleFont
+          : GoogleFonts.getFont(content?.googleFont ?? 'Roboto').fontFamily,
+      // fontFamily: GoogleFonts.getFont(content?.googleFont ?? "").fontFamily,
       height: content?.style?.height,
       color: content?.style?.color ?? Colors.black,
     );

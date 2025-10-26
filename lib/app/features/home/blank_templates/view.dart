@@ -10,8 +10,12 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Get.theme.colorScheme.surface,
+      backgroundColor: context.theme.colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text('Canvass Sizes'),
         // title: const Text('Professional Templates'),
         centerTitle: true,
       ),
@@ -19,13 +23,13 @@ class ProfessionalTemplatesPage extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildSocialMediaSection(),
+              _buildSocialMediaSection(context),
               const SizedBox(height: 32.0),
-              _buildPhotoDesignsSection(),
+              _buildPhotoDesignsSection(context),
               const SizedBox(height: 32.0),
-              _buildPrintDesignsSection(),
+              _buildPrintDesignsSection(context),
               const SizedBox(height: 32.0),
-              _buildInvitationsGreetingsSection(), // New section added
+              _buildInvitationsGreetingsSection(context), // New section added
               const SizedBox(height: 32.0),
             ],
           ),
@@ -34,7 +38,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialMediaSection() {
+  Widget _buildSocialMediaSection(BuildContext context) {
     final socialMediaTemplates = [
       CardTemplate(
         id: Uuid().v1(),
@@ -117,6 +121,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
             'Instagram, Facebook, Twitter & more',
             Icons.share_outlined,
             const Color(0xFFE91E63),
+            context,
           ),
           const SizedBox(height: 16.0),
           SizedBox(
@@ -127,7 +132,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               itemCount: socialMediaTemplates.length,
               separatorBuilder: (context, index) => const SizedBox(width: 16.0),
               itemBuilder: (context, index) {
-                return _buildTemplateCard(socialMediaTemplates[index]);
+                return _buildTemplateCard(socialMediaTemplates[index], context);
               },
             ),
           ),
@@ -136,7 +141,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPhotoDesignsSection() {
+  Widget _buildPhotoDesignsSection(BuildContext context) {
     final photoDesignTemplates = [
       CardTemplate(
         id: Uuid().v1(),
@@ -206,6 +211,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
             'Perfect for printing and sharing',
             Icons.photo_outlined,
             const Color(0xFF4CAF50),
+            context,
           ),
           const SizedBox(height: 16.0),
           SizedBox(
@@ -216,7 +222,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               itemCount: photoDesignTemplates.length,
               separatorBuilder: (context, index) => const SizedBox(width: 16.0),
               itemBuilder: (context, index) {
-                return _buildTemplateCard(photoDesignTemplates[index]);
+                return _buildTemplateCard(photoDesignTemplates[index], context);
               },
             ),
           ),
@@ -225,7 +231,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPrintDesignsSection() {
+  Widget _buildPrintDesignsSection(BuildContext context) {
     final printDesignTemplates = [
       CardTemplate(
         id: Uuid().v1(),
@@ -295,6 +301,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
             'Flyers, posters, brochures & more',
             Icons.print_outlined,
             const Color(0xFFFF9800),
+            context,
           ),
           const SizedBox(height: 16.0),
           SizedBox(
@@ -305,7 +312,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               itemCount: printDesignTemplates.length,
               separatorBuilder: (context, index) => const SizedBox(width: 16.0),
               itemBuilder: (context, index) {
-                return _buildTemplateCard(printDesignTemplates[index]);
+                return _buildTemplateCard(printDesignTemplates[index], context);
               },
             ),
           ),
@@ -314,7 +321,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInvitationsGreetingsSection() {
+  Widget _buildInvitationsGreetingsSection(BuildContext context) {
     final invitationGreetingTemplates = [
       CardTemplate(
         id: Uuid().v1(),
@@ -412,6 +419,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
             'Weddings, birthdays, parties & more',
             Icons.card_giftcard,
             const Color(0xFFD81B60),
+            context,
           ),
           const SizedBox(height: 16.0),
           SizedBox(
@@ -422,7 +430,10 @@ class ProfessionalTemplatesPage extends StatelessWidget {
               itemCount: invitationGreetingTemplates.length,
               separatorBuilder: (context, index) => const SizedBox(width: 16.0),
               itemBuilder: (context, index) {
-                return _buildTemplateCard(invitationGreetingTemplates[index]);
+                return _buildTemplateCard(
+                  invitationGreetingTemplates[index],
+                  context,
+                );
               },
             ),
           ),
@@ -436,6 +447,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     String subtitle,
     IconData icon,
     Color color,
+    BuildContext context,
   ) {
     return Row(
       children: [
@@ -456,14 +468,14 @@ class ProfessionalTemplatesPage extends StatelessWidget {
                 title,
                 style: Get.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: Get.theme.colorScheme.onSurface,
+                  color: context.theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2.0),
               Text(
                 subtitle,
                 style: Get.textTheme.bodyMedium?.copyWith(
-                  color: Get.theme.colorScheme.onSurfaceVariant,
+                  color: context.theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -473,7 +485,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTemplateCard(CardTemplate template) {
+  Widget _buildTemplateCard(CardTemplate template, BuildContext context) {
     return GestureDetector(
       onTap: () {
         Get.toNamed(
@@ -516,7 +528,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
                     aspectRatio: template.aspectRatio,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Get.theme.colorScheme.surface,
+                        color: context.theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(8.0),
                         boxShadow: [
                           BoxShadow(
@@ -603,7 +615,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
                   Text(
                     template.name,
                     style: Get.textTheme.labelMedium?.copyWith(
-                      color: Get.theme.colorScheme.onSurface,
+                      color: context.theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
@@ -614,7 +626,7 @@ class ProfessionalTemplatesPage extends StatelessWidget {
                   Text(
                     '${template.width.toInt()} x ${template.height.toInt()}',
                     style: Get.textTheme.bodySmall?.copyWith(
-                      color: Get.theme.colorScheme.onSurfaceVariant,
+                      color: context.theme.colorScheme.onSurfaceVariant,
                       fontSize: 10.0,
                     ),
                     textAlign: TextAlign.center,
@@ -628,13 +640,13 @@ class ProfessionalTemplatesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContentLine({required double width}) {
+  Widget _buildContentLine({required double width, BuildContext? context}) {
     return FractionallySizedBox(
       widthFactor: width == double.infinity ? 1.0 : width,
       child: Container(
         height: 1.0,
         decoration: BoxDecoration(
-          color: Get.theme.colorScheme.outline.withOpacity(0.2),
+          color: context?.theme.colorScheme.outline.withOpacity(0.2),
           borderRadius: BorderRadius.circular(1.0),
         ),
       ),

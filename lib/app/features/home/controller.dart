@@ -20,7 +20,7 @@ class HomeController extends GetxController {
   final RxList<String> favoriteTemplateIds = <String>[].obs;
   final isLoading = false.obs;
   final _storage = GetStorage();
-  final authService = Get.put(AuthService());
+  final authService = Get.find<AuthService>();
   final _firestoreService = FirestoreServices();
   final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
   final UpdateManager updateManager = UpdateManager(); // Add this
@@ -196,6 +196,9 @@ class HomeController extends GetxController {
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
+      print("home controller is initializing....................");
+      _checkForUpdates();
+
       await Future.wait([
         _loadTemplates(),
         _loadFreeTodayTemplates(),
@@ -204,7 +207,6 @@ class HomeController extends GetxController {
       ]);
       // Sync local favorites with Firebase if user is logged in
       await syncLocalFavoritesWithFirebase();
-      _checkForUpdates();
     } catch (e) {
       print('Error initializing data: $e');
     } finally {
@@ -295,9 +297,7 @@ class HomeController extends GetxController {
 
   Future<void> _checkForUpdates() async {
     try {
-      if (remoteConfig.config.update.isUpdateAvailable) {
-        await updateManager.checkForUpdates(Get.context!);
-      }
+      await updateManager.checkForUpdates(Get.context!);
     } catch (e) {
       print('Update check failed: $e');
     }
@@ -332,7 +332,7 @@ class HomeController extends GetxController {
   Future<void> _loadTrendingTemplates() async {
     try {
       final snapshot = await _firestoreService.getTrendingTemplatesPaginated(
-        limit: 10,
+        limit: 20,
       );
       trendingTemplates.assignAll(
         snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),

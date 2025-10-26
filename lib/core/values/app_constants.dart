@@ -1,5 +1,7 @@
 const String placeholderPath = 'assets/add-image.png';
 const String kRemoteConfigKey = 'app_config';
+const String themeKey = 'app_theme_mode';
+
 const String kPlaystoreUrl = "";
 const String kAppstoreUrl = "";
 const String kPrivacyPolicyUrl =

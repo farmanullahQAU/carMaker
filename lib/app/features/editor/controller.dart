@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
@@ -20,6 +21,7 @@ import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/i
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
+// Modern Minimalist Progress Dialog - Professional Design
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -506,28 +508,6 @@ class CanvasController extends GetxController {
       update(['canvas_stack', 'export_button', 'z_lock_button']);
     }
   }
-  // void toggleZLock(String itemId) {
-  //   final currentItem = boardController.getById(itemId);
-  //   if (currentItem != null) {
-  //     print("Current item zlock ${currentItem.lockZOrder}");
-  //     final newLockState = !(currentItem.lockZOrder);
-
-  //     // This will now work correctly!
-  //     final updatedItem = currentItem.copyWith(lockZOrder: newLockState);
-  //     print("UpdatedItem ${updatedItem.lockZOrder}");
-
-  //     boardController.updateItem(updatedItem);
-  //     final bb = boardController.getById(itemId);
-  //     print("board new ${bb?.lockZOrder}");
-
-  //     if (activeItem.value?.id == itemId) {
-  //       activeItem.value = bb; // ✅ Fixed: Proper assignment
-  //       print("Active item zorder ${activeItem.value?.lockZOrder}");
-  //     }
-
-  //     update(['canvas_stack', 'export_button', 'z_lock_button']);
-  //   }
-  // }
 
   Future<void> replaceImageItem(StackImageItem item) async {
     try {
@@ -672,19 +652,7 @@ class CanvasController extends GetxController {
 
       // Stage 1: Permission check (10%)
       exportProgress.value = 10.0;
-      // if (!kIsWeb) {
-      //   final permissionStatus = await permissionService
-      //       .requestPhotosPermission();
-      //   if (!permissionStatus.isGranted && !permissionStatus.isLimited) {
-      //     throw Exception('Photos permission not granted: $permissionStatus');
-      //   }
-      //   if (kDebugMode) {
-      //     debugPrint('Photos permission status: $permissionStatus');
-      //   }
-      // }
 
-      // Stage 2: Capture widget (30%)
-      exportProgress.value = 20.0;
       final exportKey = GlobalKey();
       final image = await screenshotController.captureFromWidget(
         Material(
@@ -705,7 +673,8 @@ class CanvasController extends GetxController {
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 2,
+        pixelRatio: 4,
+        delay: Duration(seconds: 4),
       );
       exportProgress.value = 50.0;
       if (kDebugMode) debugPrint('Widget captured successfully');
@@ -749,11 +718,6 @@ class CanvasController extends GetxController {
         // exportProgress.value = 100.0;
         _closeProgressDialog();
 
-        if (await tempFile.exists()) {
-          // Get.to(() => ExportPreviewPage(imagePath: "", pdfPath: pdfPath));
-        } else {
-          throw Exception('Failed to save image');
-        }
         // final success = await GallerySaver.saveImage(
         //   tempPath,
         //   albumName: 'Canva',
@@ -762,17 +726,6 @@ class CanvasController extends GetxController {
         // // Delay to ensure gallery save is fully processed
         // await Future.delayed(const Duration(milliseconds: 500));
         exportProgress.value = 100.0;
-
-        // if (success == true) {
-        //   AppToast.success(
-        //     message: Platform.isAndroid
-        //         ? 'Image saved to Pictures in Gallery'
-        //         : 'Image saved to Photos',
-        //   );
-        //   if (kDebugMode) debugPrint('Image saved to gallery successfully');
-        //   return tempFile;
-        // } else {
-        //   throw Exception('Failed to save image to gallery');
         // }
       }
     } catch (e, s) {
@@ -796,96 +749,14 @@ class CanvasController extends GetxController {
     return null;
   }
 
-  // Add this to your CanvasController class
-  // Progress tracking property
-
-  // Optimized _showProgressDialog
-  // Progress tracking property
-
-  // Optimized _showProgressDialog
   void _showProgressDialog() {
     Get.dialog(
-      Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: ObxValue<RxDouble>(
-          (progress) => Container(
-            constraints: BoxConstraints(
-              minWidth: 200,
-              maxWidth: MediaQuery.of(Get.context!).size.width * 0.6,
-            ),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF3B82F6), Color(0xFFA855F7)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: CircularProgressIndicator(
-                        value: progress.value / 100,
-                        strokeWidth: 6,
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        valueColor: const AlwaysStoppedAnimation(Colors.white),
-                        semanticsLabel:
-                            'Export progress: ${progress.value.toStringAsFixed(0)} percent',
-                      ),
-                    ),
-                    Text(
-                      '${progress.value.toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        fontFamily: 'Roboto',
-                      ),
-                      semanticsLabel:
-                          '${progress.value.toStringAsFixed(0)} percent complete',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Exporting Your Design...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                    fontFamily: 'Roboto',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          exportProgress,
-        ),
+      ModernProgressDialog(
+        progress: exportProgress,
+        title: 'Exporting Your Design',
+        message: 'This may take a moment...',
       ),
+      barrierDismissible: false,
     );
   }
 
@@ -933,6 +804,7 @@ class CanvasController extends GetxController {
 
       // Stage 1: Capture widget (40%)
       exportProgress.value = 10.0;
+
       final image = await screenshotController.captureFromWidget(
         Material(
           shadowColor: Colors.transparent,
@@ -942,23 +814,20 @@ class CanvasController extends GetxController {
             width: scaledCanvasWidth.value,
             height: scaledCanvasHeight.value,
             key: exportKey,
-            child: Transform.scale(
-              scale: 1,
-              child: CanvasStack(
-                showGrid: false,
-                showBorders: false,
-                stackBoardKey: GlobalKey(),
-                canvasScale: canvasScale,
-                scaledCanvasWidth: scaledCanvasWidth,
-                scaledCanvasHeight: scaledCanvasHeight,
-              ),
+            child: CanvasStack(
+              showGrid: false,
+              showBorders: false,
+              stackBoardKey: GlobalKey(),
+              canvasScale: canvasScale,
+              scaledCanvasWidth: scaledCanvasWidth,
+              scaledCanvasHeight: scaledCanvasHeight,
             ),
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 2,
+        pixelRatio: 5,
+        delay: Duration(seconds: 4),
       );
-      exportProgress.value = 40.0;
 
       // Stage 2: Create PDF (30%)
       exportProgress.value = 50.0;
@@ -1008,7 +877,6 @@ class CanvasController extends GetxController {
         if (result.status == ShareResultStatus.success) {
           AppToast.success(message: 'PDF shared successfully');
         }
-        exportProgress.value = 100.0;
         _closeProgressDialog();
 
         if (await pdfFile.exists()) {
@@ -1090,7 +958,10 @@ class CanvasController extends GetxController {
         isDraft: true,
         backgroundHue: backgroundHue.value.roundToDouble(),
       );
-      final file = await _generateThumbnail("${template.id}_${template.id}");
+      final file = await _generateThumbnail(
+        "${template.id}_${template.id}",
+        showDialog: false,
+      );
 
       if (file != null) {
         template = template.copyWith(thumbnailUrl: file.path);
@@ -1151,7 +1022,10 @@ class CanvasController extends GetxController {
   }
   // Add these methods to your CanvasController class
 
-  Future<void> _saveDraftLocale({bool isCopy = false}) async {
+  Future<void> _saveDraftLocale({
+    bool isCopy = false,
+    bool showDialog = false,
+  }) async {
     try {
       AppToast.loading(message: 'Saving template...');
       final currentItems = boardController.getAllData();
@@ -1179,7 +1053,10 @@ class CanvasController extends GetxController {
       );
 
       // Generate thumbnail without sharing
-      final file = await _generateThumbnail("${template.id}_${template.id}");
+      final file = await _generateThumbnail(
+        "${template.id}_${template.id}",
+        showDialog: showDialog,
+      );
 
       if (file != null) {
         template = template.copyWith(thumbnailUrl: file.path);
@@ -1208,12 +1085,17 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<File?> _generateThumbnail(String fileName) async {
+  Future<File?> _generateThumbnail(
+    String fileName, {
+    bool showDialog = false,
+  }) async {
     try {
       isExporting = true;
       update(['export_button']);
       boardController.unSelectAll();
-      _showProgressDialog();
+      if (showDialog) {
+        _showProgressDialog();
+      }
       exportProgress.value = 0.0;
 
       if (kDebugMode) debugPrint('Starting image export for draft: $fileName');
@@ -1292,4 +1174,293 @@ class CanvasController extends GetxController {
     }
     activeItem.value = item;
   }
+}
+
+// Enterprise-Grade Progress Dialog
+
+class ModernProgressDialog extends StatelessWidget {
+  final RxDouble progress;
+  final String? title;
+  final String? message;
+
+  const ModernProgressDialog({
+    super.key,
+    required this.progress,
+    this.title,
+    this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: ObxValue<RxDouble>(
+          (progressValue) => Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF000000).withOpacity(0.04),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                  spreadRadius: 0,
+                ),
+                BoxShadow(
+                  color: const Color(0xFF000000).withOpacity(0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title != null)
+                      Text(
+                        title!,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                    if (message != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        message!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF6B7280),
+                          letterSpacing: -0.2,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 32),
+                // Progress Bar Section
+                Column(
+                  children: [
+                    // Main Progress Bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(
+                        height: 6,
+                        child: Stack(
+                          children: [
+                            // Background track
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE5E7EB),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            // Progress fill
+                            AnimatedFractionallySizedBox(
+                              widthFactor: progressValue.value / 100,
+                              alignment: Alignment.centerLeft,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF2563EB),
+                                      const Color(0xFF1D4ED8),
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Progress Info
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Processing...',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6B7280),
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                        Text(
+                          '${progressValue.value.toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111827),
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          progress,
+        ),
+      ),
+    );
+  }
+}
+
+// Usage in CanvasController - Replace _showProgressDialog() with:
+/*
+void _showProgressDialog() {
+  Get.dialog(
+    ModernProgressDialog(
+      progress: exportProgress,
+      title: 'Preparing Your Export',
+      message: 'Your file is being processed and will be ready shortly.',
+    ),
+    barrierDismissible: false,
+  );
+}
+*/
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+
+  _ProgressRingPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 3.5;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Background ring - very subtle
+    final bgPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress ring with smooth gradient
+    final progressPaint = Paint()
+      ..shader = SweepGradient(
+        colors: [
+          Colors.blue.shade300,
+          Colors.blue.shade500,
+          Colors.blue.shade400,
+        ],
+        stops: const [0.0, 0.6, 1.0],
+        transform: GradientRotation(-math.pi / 2 + (progress * math.pi * 2)),
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      progress * math.pi * 2,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ProgressRingPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+
+// Usage in CanvasController - Replace _showProgressDialog() with:
+/*
+void _showProgressDialog() {
+  Get.dialog(
+    ModernProgressDialog(
+      progress: exportProgress,
+      title: 'Exporting Your Design',
+      message: 'This may take a moment...',
+    ),
+    barrierDismissible: false,
+  );
+}
+*/
+class ProgressRingPainter extends CustomPainter {
+  final double progress;
+
+  ProgressRingPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 4.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Background ring
+    final bgPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress ring with gradient
+    final progressPaint = Paint()
+      ..shader = SweepGradient(
+        colors: [
+          Colors.blue.shade300,
+          Colors.blue.shade500,
+          Colors.purple.shade400,
+        ],
+        stops: const [0.0, 0.5, 1.0],
+        transform: GradientRotation(progress * math.pi * 2),
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      progress * math.pi * 2,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(ProgressRingPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
+}
+
+class ProgressStep {
+  final String label;
+
+  ProgressStep({required this.label});
 }

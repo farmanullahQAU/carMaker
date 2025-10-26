@@ -33,5 +33,11 @@ class AppPages {
       page: () => AuthScreen(),
       binding: InitialBindings(),
     ),
+
+    GetPage(
+      name: AppRoutes.editor,
+      page: () => EditorPage(),
+      binding: InitialBindings(),
+    ),
   ];
 }

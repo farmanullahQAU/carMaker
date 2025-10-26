@@ -5,17 +5,31 @@ import 'package:flutter/foundation.dart';
 import 'package:get_storage/get_storage.dart';
 
 class StorageService {
+  // Singleton instance
+  static final StorageService _instance = StorageService._internal();
+
+  // Factory constructor to return the singleton instance
+  factory StorageService() {
+    return _instance;
+  }
+
+  // Private constructor
+  StorageService._internal();
+
+  // Static storage keys
   static const String _draftsKey = 'drafts';
   static const String _favoriteIdsKey = 'favorite_template_ids';
+
+  // GetStorage instance
   static final GetStorage _storage = GetStorage();
 
-  /// Initialize GetStorage
-  static Future<void> init() async {
+  // Initialize GetStorage (called once during app startup)
+  Future<void> init() async {
     await GetStorage.init();
   }
 
   /// Save drafts to local storage (automatically handles duplicates by ID)
-  static Future<void> saveDrafts(List<CardTemplate> drafts) async {
+  Future<void> saveDrafts(List<CardTemplate> drafts) async {
     try {
       // Convert to map with ID as key for automatic duplicate handling
       final draftsMap = {for (var draft in drafts) draft.id: draft.toJson()};
@@ -84,7 +98,7 @@ class StorageService {
   }
 
   /// Get draft by ID (direct map lookup - O(1))
-  static CardTemplate? getDraft(String draftId) {
+  CardTemplate? getDraft(String draftId) {
     final jsonString = _storage.read(_draftsKey);
     if (jsonString == null || jsonString.isEmpty) return null;
 
@@ -103,9 +117,7 @@ class StorageService {
   }
 
   /// Get drafts that are only in local storage (not synced to Firebase)
-  static List<CardTemplate> getLocalOnlyDrafts(
-    List<CardTemplate> firebaseDrafts,
-  ) {
+  List<CardTemplate> getLocalOnlyDrafts(List<CardTemplate> firebaseDrafts) {
     final localDrafts = loadDrafts();
     final firebaseIds = firebaseDrafts.map((draft) => draft.id).toSet();
     return localDrafts
@@ -157,7 +169,7 @@ class StorageService {
       favoriteIds.remove(favoriteId);
       await saveFavoriteIds(favoriteIds);
     } catch (e) {
-      debugPrint('Error removing favorite ID from storage: $e');
+      debugPrint('Error removing favorite ID to storage: $e');
       rethrow;
     }
   }
@@ -166,5 +178,25 @@ class StorageService {
   static bool isFavorite(String favoriteId) {
     final favoriteIds = loadFavoriteIds();
     return favoriteIds.contains(favoriteId);
+  }
+
+  /// Write generic data to storage
+  Future<void> write(String key, String value) async {
+    try {
+      await _storage.write(key, value);
+    } catch (e) {
+      debugPrint('Error writing to storage: $e');
+      rethrow;
+    }
+  }
+
+  /// Read generic data from storage
+  dynamic read(String key) {
+    try {
+      return _storage.read(key);
+    } catch (e) {
+      debugPrint('Error reading from storage: $e');
+      return null;
+    }
   }
 }

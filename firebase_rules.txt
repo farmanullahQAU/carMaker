@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------
+    // 1. Templates (public)
+    // ----------------------
+    match /templates/{templateId} {
+      allow read: if true; // everyone can read
+      allow write: if request.auth != null 
+                   && (request.auth.uid=="LTRhJmbufLQP0hrJj5xNKwOfDc53" || request.auth.uid=="aP3FVBY7kWgBnJorqVrYha3lFaa2"); 
+                   // only your UID can write
+    }
+
+    // ----------------------
+    // 2. User drafts (private to owner)
+    // ----------------------
+    match /users/{userId}/drafts/{draftId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ----------------------
+    // 3. User favorites (private to owner)
+    // ----------------------
+    match /users/{userId}/favorites/{favId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ----------------------
+    // 4. Deletion Requests (unauthenticated write, restricted read)
+    // ----------------------
+    match /deletion_requests/{requestId} {
+      // Allow anyone to write (submit deletion request)
+      allow write: if true;
+      // Allow reading only if the email in the request matches the document's email
+      allow read: if resource.data.email == request.query.email;
+    }
+  }
+}
+
+// ----------------------
+// Firebase Storage Rules
+// ----------------------
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ----------------------
+    // 1. Fonts (public read access)
+    // ----------------------
+    match /fonts/{allPaths=**} {
+      allow read: if true; // Allow anyone to read font files
+      allow write: if request.auth != null 
+                   && (request.auth.uid=="LTRhJmbufLQP0hrJj5xNKwOfDc53" || request.auth.uid=="aP3FVBY7kWgBnJorqVrYha3lFaa2");
+                   // Only your UID can upload/manage fonts
+    }
+    
+    // ----------------------
+    // 2. User uploads (private to owner)
+    // ----------------------
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ----------------------
+    // 3. Public assets (read-only for everyone)
+    // ----------------------
+    match /public/{allPaths=**} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null 
+                   && (request.auth.uid=="LTRhJmbufLQP0hrJj5xNKwOfDc53" || request.auth.uid=="aP3FVBY7kWgBnJorqVrYha3lFaa2");
+                   // Only your UID can manage public assets
+    }
+  }
+}

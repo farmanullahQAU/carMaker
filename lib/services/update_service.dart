@@ -21,9 +21,13 @@ class UpdateManager {
   Future<void> checkForUpdates(BuildContext ctx) async {
     try {
       _pkg = await PackageInfo.fromPlatform();
+
+      print("Current version: ${_pkg?.version}");
       final rc = RemoteConfigService();
       final cfg = rc.config.update;
-
+      if (!rc.config.update.isUpdateAvailable) {
+        return;
+      }
       // Nothing to do?
       if (!cfg.isUpdateAvailable) return;
       if (!_isLower(currVer, cfg.currentVersion)) {

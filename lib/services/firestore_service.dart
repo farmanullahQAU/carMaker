@@ -869,7 +869,7 @@ class FirestoreServices {
       Query<Map<String, dynamic>> query = _firestore
           .collection('templates')
           .where('isPremium', isEqualTo: true)
-          .where('isFeatured', isEqualTo: true)
+          // .where('isFeatured', isEqualTo: true)
           .limit(limit);
 
       if (startAfterDocument != null) {

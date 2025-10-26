@@ -1,6 +1,8 @@
 import 'package:cardmaker/app/features/editor/text_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/text_editor/font_management/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
+import 'package:cardmaker/services/urdu_font_service.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -10,6 +12,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'fonts_search/view.dart';
+import 'urdu_font_search/view.dart';
 
 class TextStylingEditor extends StatefulWidget {
   final StackTextItem textItem;
@@ -95,7 +98,9 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 Tab(icon: Icon(Icons.palette, size: 16), text: 'Color'),
                 Tab(icon: Icon(Icons.format_color_fill, size: 16), text: 'BG'),
                 Tab(icon: Icon(Icons.font_download, size: 16), text: 'Font'),
+                Tab(icon: Icon(Icons.translate, size: 16), text: 'Urdu'),
                 Tab(icon: Icon(Icons.gradient, size: 16), text: 'Effects'),
+
                 Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),
                 Tab(icon: Icon(Icons.gradient, size: 16), text: 'Dual'),
 
@@ -127,6 +132,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                   _ColorTab(controller: controller),
                   _BackgroundTab(controller: controller),
                   _FontTab(controller: controller),
+                  _UrduFontTab(controller: controller),
                   _EffectsTab(controller: controller), // Consolidated effects
 
                   _MaskTab(controller: controller),
@@ -158,11 +164,13 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         return 80;
       case 4: // font
         return 250;
-      case 5: // effect (consolidated)
+      case 5: // urdu font
+        return 300; // Height for Urdu font tab
+      case 6: // effect (consolidated)
         return 120;
-      case 6: // mask
+      case 7: // mask
         return 80;
-      case 7: // dual
+      case 8: // dual
         return 120;
       default:
         return 250;
@@ -946,98 +954,8 @@ class _ColorTab extends StatelessWidget {
           );
         },
       ),
-
-      // child: GetBuilder<TextStyleController>(
-      //   id: 'text_color',
-      //   builder: (controller) {
-      //     return Container(
-      //       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      //       decoration: BoxDecoration(
-      //         color: Theme.of(context).colorScheme.surface,
-      //         borderRadius: BorderRadius.circular(8),
-      //       ),
-
-      //       child: Container(
-      //         child: _buildColorPickerRow(
-      //           'Border color',
-
-      //           controller.textColor.value,
-
-      //           (color) {
-      //             controller.textColor.value = color;
-      //             controller.textColorOld = color;
-      //             controller.maskImage = null;
-      //             controller.updateTextItem();
-      //             controller.update(['text_color', 'mask']);
-      //           },
-
-      //           Icons.format_color_fill,
-      //         ),
-      //       ),
-      //     );
-      //   },
-      // ),
     );
   }
-
-  // Widget _buildColorPickerRow(
-  //   String label,
-  //   Color color,
-  //   Function(Color) onChanged,
-  //   IconData icon,
-  // ) {
-  //   return Row(
-  //     children: [
-  //       Icon(icon, size: 14),
-  //       const SizedBox(width: 6),
-  //       Expanded(
-  //         child: Text(
-  //           label,
-  //           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-  //         ),
-  //       ),
-  //       const SizedBox(width: 8),
-  //       GestureDetector(
-  //         onTap: () => _showColorPicker(color, onChanged, label),
-  //         child: Container(
-  //           width: 24,
-  //           height: 20,
-  //           decoration: BoxDecoration(
-  //             color: color,
-  //             borderRadius: BorderRadius.circular(4),
-  //             border: Border.all(
-  //               color: Get.theme.colorScheme.onSurface.withOpacity(0.2),
-  //               width: 1,
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // void _showColorPicker(
-  //   Color currentColor,
-  //   Function(Color) onChanged,
-  //   String title,
-  // ) {
-  //   showModalBottomSheet(
-  //     context: Get.context!,
-  //     // backgroundColor: Get.theme.colorScheme.surface,
-  //     barrierColor: Colors.transparent,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.only(
-  //         topLeft: Radius.circular(12),
-  //         topRight: Radius.circular(12),
-  //       ),
-  //     ),
-  //     builder: (context) => QuickColorPicker(
-  //       title: title,
-  //       currentColor: currentColor,
-  //       onChanged: (color) => onChanged(color!),
-  //     ),
-  //   );
-  // }
 }
 
 // BACKGROUND TAB - Optimized with clear option
@@ -1146,281 +1064,6 @@ class _BackgroundTab extends StatelessWidget {
           // );
         },
       ),
-    );
-  }
-}
-
-// STYLE TAB - Compact button layout
-class _StyleTab extends StatelessWidget {
-  final TextStyleController controller;
-  const _StyleTab({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-      child: GetBuilder<TextStyleController>(
-        id: 'text_style',
-        builder: (controller) {
-          return Column(
-            children: [
-              // Font weights - radio buttons
-              Row(
-                spacing: 12,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: _fontWeights.map((weight) {
-                  final isSelected = weight == controller.fontWeight.value;
-                  return GestureDetector(
-                    onTap: () {
-                      controller.fontWeight.value = weight;
-                      controller.updateTextItem();
-                      controller.update(['text_style']);
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.branding
-                                  : AppColors.highlight.withOpacity(0.5),
-                              width: 2,
-                            ),
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? AppColors.branding
-                                    : Colors.transparent,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _getWeightLabel(weight),
-                          style: TextStyle(
-                            color: AppColors.highlight,
-                            fontWeight: weight,
-                            fontSize: 12.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 8.0),
-              // Style buttons (italic/underline)
-              Row(
-                children: [
-                  _buildStyleButton(
-                    icon: Icons.format_italic_rounded,
-                    label: 'Italic',
-                    isActive: controller.isItalic.value,
-                    onTap: () {
-                      controller.isItalic.value = !controller.isItalic.value;
-                      controller.updateTextItem();
-                      controller.update(['text_style']);
-                    },
-                  ),
-                  const SizedBox(width: 8.0),
-                  _buildStyleButton(
-                    icon: Icons.format_underline_rounded,
-                    label: 'Underline',
-                    isActive: controller.isUnderlined.value,
-                    onTap: () {
-                      controller.isUnderlined.value =
-                          !controller.isUnderlined.value;
-                      controller.updateTextItem();
-                      controller.update(['text_style']);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStyleButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 36.0,
-          decoration: BoxDecoration(
-            color: isActive
-                ? AppColors.accent
-                : AppColors.highlight.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(6.0),
-            border: Border.all(
-              color: isActive
-                  ? AppColors.accent
-                  : AppColors.highlight.withOpacity(0.1),
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16.0,
-                color: isActive ? Colors.white : AppColors.highlight,
-              ),
-              const SizedBox(width: 4.0),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive ? Colors.white : AppColors.highlight,
-                  fontSize: 12.0,
-                  fontStyle: label == 'Italic' && isActive
-                      ? FontStyle.italic
-                      : FontStyle.normal,
-                  decoration: label == 'Underline' && isActive
-                      ? TextDecoration.underline
-                      : null,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static const List<FontWeight> _fontWeights = [
-    FontWeight.w300,
-    FontWeight.normal,
-    FontWeight.w500,
-    FontWeight.bold,
-  ];
-
-  String _getWeightLabel(FontWeight weight) {
-    switch (weight) {
-      case FontWeight.w300:
-        return 'Light';
-      case FontWeight.normal:
-        return 'Regular';
-      case FontWeight.w500:
-        return 'Medium';
-      case FontWeight.bold:
-        return 'Bold';
-      default:
-        return '';
-    }
-  }
-}
-// SPACING TAB - Compact sliders
-
-class _SpacingTab extends StatelessWidget {
-  // Spacing constants
-  static const double _sectionSpacing = 8.0;
-  static const double _cardPaddingH = 16.0;
-  static const double _cardPaddingV = 12.0;
-  static const double _cardBorderRadius = 12.0;
-
-  final TextStyleController controller;
-
-  const _SpacingTab({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          spacing: 8,
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            GetBuilder<TextStyleController>(
-              id: 'letter_spacing',
-
-              builder: (context) {
-                return CompactSlider(
-                  icon: Icons.space_bar_rounded,
-                  label: 'Letter Spacing',
-                  value: controller.letterSpacing.value,
-                  min: -3,
-                  max: 32.0,
-
-                  onChanged: (value) {
-                    controller.letterSpacing.value = value;
-                    controller.updateTextItem();
-                    controller.update(['letter_spacing']);
-                  },
-                );
-              },
-            ),
-
-            GetBuilder<TextStyleController>(
-              id: 'line_height',
-
-              builder: (context) {
-                return CompactSlider(
-                  icon: Icons.height_rounded,
-                  label: 'Line Height',
-                  value: controller.lineHeight.value,
-                  min: 0.8,
-                  max: 3.0,
-
-                  onChanged: (value) {
-                    controller.lineHeight.value = value;
-                    controller.updateTextItem();
-                    controller.update(['line_height']);
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSliderCard({
-    required BuildContext context,
-    required Widget child,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: _cardPaddingH,
-        vertical: _cardPaddingV,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(_cardBorderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 6.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
     );
   }
 }
@@ -3809,4 +3452,801 @@ Widget _buildCompactToggle({
       ),
     ),
   );
+}
+
+class _UrduFontTab extends StatefulWidget {
+  final TextStyleController controller;
+  const _UrduFontTab({required this.controller});
+
+  @override
+  State<_UrduFontTab> createState() => _UrduFontTabState();
+}
+
+class _UrduFontTabState extends State<_UrduFontTab> {
+  @override
+  void initState() {
+    super.initState();
+    _loadRemoteFonts();
+  }
+
+  Future<void> _loadRemoteFonts() async {
+    // All fonts are now local and compressed
+    // No loading needed
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Filter to show only downloaded fonts
+    final downloadedFonts = UrduFontService.allFonts
+        .where((font) => font.isLocal)
+        .toList();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: downloadedFonts.length + 1, // +1 for manage button
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          // First item is the manage button
+          return _buildUrduFontCard(
+            downloadedFonts.isNotEmpty ? downloadedFonts[0] : null,
+          );
+        }
+        final font = downloadedFonts[index - 1];
+        return _buildUrduFontCardOld(font);
+      },
+    );
+  }
+
+  Widget _buildUrduFontCard(UrduFont? font) {
+    // Build the manage button (doesn't need font parameter)
+    if (font == null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.branding.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.branding.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.font_download_rounded,
+              color: AppColors.branding,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Download Urdu Fonts',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Get.theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    'No fonts downloaded yet',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_rounded,
+              color: AppColors.branding,
+              size: 20,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: () {
+        // Open font management page for selection and download
+        Get.to(
+          () => FontManagementPage(
+            onFontSelected: (String selectedFont) {
+              widget.controller.updateFont(selectedFont, isRTL: true);
+            },
+            currentSelectedFont: widget.controller.selectedFont.value,
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.branding.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.branding.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.font_download_rounded,
+              color: AppColors.branding,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Manage Urdu Fonts',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Get.theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    'Browse and download more fonts',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_rounded,
+              color: AppColors.branding,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUrduFontCardOld(UrduFont font) {
+    final isSelected = widget.controller.selectedFont.value == font.family;
+
+    return GestureDetector(
+      onTap: () {
+        widget.controller.updateFont(font.family, isRTL: true);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    AppColors.branding.withOpacity(0.1),
+                    AppColors.branding.withOpacity(0.05),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(color: AppColors.branding.withOpacity(0.3), width: 1)
+              : Border.all(
+                  color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                  width: 1,
+                ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                font.previewText,
+                style: TextStyle(
+                  fontFamily: font.family,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                  letterSpacing: 0.1,
+                ),
+                textDirection: font.isRTL
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.branding : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.branding : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Get.theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        onChanged: (value) {
+          // Handle search functionality
+        },
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Get.theme.colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search Urdu fonts...',
+          hintStyle: TextStyle(
+            color: Get.theme.colorScheme.onSurface.withOpacity(0.5),
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(
+              Icons.search_rounded,
+              size: 20,
+              color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchButton() {
+    return GestureDetector(
+      onTap: () => _openUrduFontSearch(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.branding,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.branding.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(Icons.search_rounded, size: 20, color: Colors.white),
+      ),
+    );
+  }
+
+  void _openUrduFontSearch() {
+    Get.to(
+      () => UrduFontSearchPage(
+        currentSelectedFont: widget.controller.selectedFont.value,
+        onFontSelected: (String selectedFont) {
+          widget.controller.updateFont(selectedFont, isRTL: true);
+        },
+      ),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  Widget _buildUrduFontCategories() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      physics: const BouncingScrollPhysics(),
+      children: [
+        _buildLocalFontsSection(),
+        const SizedBox(height: 24),
+        ...UrduFontCategory.values.map((category) {
+          final fonts = UrduFontService.getFontsByCategory(category);
+          return Column(
+            children: [
+              _buildCategorySection(category, fonts),
+              const SizedBox(height: 24),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildLocalFontsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextButton(
+          onPressed: () {
+            Get.to(FontManagementPage());
+          },
+          child: Text('manage'),
+        ),
+        _buildCategoryHeader(
+          'Available Fonts',
+          'All fonts are included and ready to use',
+          Colors.blue,
+        ),
+        const SizedBox(height: 12),
+        _buildFontsGrid(),
+      ],
+    );
+  }
+
+  Widget _buildFontsGrid() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: UrduFontService.allFonts.length,
+      itemBuilder: (context, index) {
+        final font = UrduFontService.allFonts[index];
+        return _buildFontCard(font);
+      },
+    );
+  }
+
+  Widget _buildFontCard(UrduFont font) {
+    final isSelected = widget.controller.selectedFont.value == font.family;
+
+    return GestureDetector(
+      onTap: () {
+        widget.controller.updateFont(font.family, isRTL: true);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    AppColors.branding.withOpacity(0.1),
+                    AppColors.branding.withOpacity(0.05),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(color: AppColors.branding.withOpacity(0.3), width: 1)
+              : Border.all(
+                  color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                  width: 1,
+                ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Font Preview Text
+                  Text(
+                    font.family,
+                    style: UrduFontService.getTextStyle(
+                      fontFamily: font.family,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                      letterSpacing: 0.1,
+                    ),
+                    textDirection: font.isRTL
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  // Font Name
+                  Text(
+                    font.displayName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? AppColors.branding
+                          : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // Selection Indicator (Tick Switch)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.branding : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.branding : Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDownloadButton(UrduFont font, bool isDownloaded) {
+    if (isDownloaded) {
+      return Row(
+        children: [
+          Icon(Icons.check_circle_rounded, size: 12, color: Colors.green),
+          const SizedBox(width: 3),
+          Expanded(
+            child: Text(
+              'Ready',
+              style: TextStyle(
+                fontSize: 9,
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return GestureDetector(
+        onTap: () => _downloadFont(font),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.branding,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.download_rounded, size: 12, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                'Download',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  void _downloadFont(UrduFont font) async {
+    if (font.remoteFont == null) return;
+
+    try {
+      // Show loading indicator
+      Get.dialog(
+        AlertDialog(
+          backgroundColor: Get.theme.colorScheme.surface,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Downloading ${font.displayName}...',
+                style: TextStyle(
+                  color: Get.theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        barrierDismissible: false,
+      );
+
+      final bool success = await UrduFontService.downloadFont(font);
+
+      Get.back(); // Close loading dialog
+
+      if (success) {
+        Get.snackbar(
+          'Success',
+          '${font.displayName} downloaded successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+
+        // Refresh the UI
+        setState(() {});
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to download ${font.displayName}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.back(); // Close loading dialog
+      Get.snackbar(
+        'Error',
+        'Download failed: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Widget _buildCategorySection(
+    UrduFontCategory category,
+    List<UrduFont> fonts,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildCategoryHeaderFromEnum(category),
+        const SizedBox(height: 12),
+        ...fonts.map((font) => _buildUrduFontItem(font)),
+      ],
+    );
+  }
+
+  Widget _buildCategoryHeader(String title, String description, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Get.theme.colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryHeaderFromEnum(UrduFontCategory category) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              color: AppColors.branding,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.displayName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Get.theme.colorScheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  category.description,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUrduFontItem(UrduFont font) {
+    final isSelected = widget.controller.selectedFont.value == font.family;
+
+    return GestureDetector(
+      onTap: () {
+        widget.controller.updateFont(font.family, isRTL: true);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    AppColors.branding.withOpacity(0.15),
+                    AppColors.branding.withOpacity(0.05),
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(color: AppColors.branding.withOpacity(0.3), width: 1)
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Font Preview
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                font.family,
+                style: UrduFontService.getTextStyle(
+                  fontFamily: font.family,
+                  fontSize: 22,
+                  color: Get.theme.colorScheme.onSurface,
+                ),
+                textDirection: font.isRTL
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Font Info
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        font.family,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? AppColors.branding
+                              : Get.theme.colorScheme.onSurface,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              font.description,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Get.theme.colorScheme.onSurface
+                                    .withOpacity(0.6),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (!font.isLocal) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.cloud_download_rounded,
+                              size: 14,
+                              color: Colors.blue.withOpacity(0.7),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Selection Indicator
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.branding : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.branding
+                          : Get.theme.colorScheme.outline.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -1,14 +1,6 @@
-// import 'package:cardmaker/app/features/profile/controller.dart';
-// import 'package:cardmaker/services/auth_service.dart';
-// import 'package:cardmaker/services/update_service.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-// import 'package:share_plus/share_plus.dart';
-// import 'package:url_launcher/url_launcher.dart';
-
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/app/settings/controller.dart';
 import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/update_service.dart';
@@ -16,7 +8,6 @@ import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -25,8 +16,10 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final updateManger = UpdateManager();
+
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final settingsController = Get.find<SettingsController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +31,6 @@ class SettingsPage extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
-        // backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -46,40 +38,20 @@ class SettingsPage extends StatelessWidget {
           // Account Section
           Obx(() => _buildUserProfile(user, theme)),
 
-          // _buildDivider(theme),
-
-          // // Settings Options
-          // _buildSettingsTile(
-          //   icon: Icons.palette_outlined,
-          //   title: 'Appearance',
-          //   theme: theme,
-          //   onTap: () => _showAppearanceSheet(context, theme),
-          // ),
-
-          // _buildSettingsTile(
-          //   icon: Icons.language_outlined,
-          //   title: 'Language',
-          //   subtitle: 'English',
-          //   theme: theme,
-          //   onTap: () => _showLanguageSheet(context, theme),
-          // ),
-
-          // _buildDivider(theme),
-          // _buildSettingsTile(
-          //   icon: Icons.share_outlined,
-          //   title: 'Share App',
-          //   theme: theme,
-          //   onTap: _shareApp,
-          // ),
-
-          // _buildSettingsTile(
-          //   icon: Icons.star_outline,
-          //   title: 'Rate App',
-          //   theme: theme,
-          //   onTap:()=> _launchUrl('https://play.google.com/store/apps/details?id=com.example.inkkaro'),
-          // ),
           _buildDivider(theme),
 
+          // Appearance Section
+          _buildSettingsTile(
+            icon: Icons.palette_outlined,
+            title: 'Appearance',
+            theme: theme,
+            onTap: () =>
+                _showAppearanceSheet(context, theme, settingsController),
+          ),
+
+          _buildDivider(theme),
+
+          // Terms and Privacy
           _buildSettingsTile(
             icon: Icons.description_outlined,
             title: 'Terms of Service',
@@ -96,11 +68,11 @@ class SettingsPage extends StatelessWidget {
 
           _buildDivider(theme),
 
+          // Authentication Options
           Obx(
             () => user == null
                 ? _buildSettingsTile(
                     icon: Icons.login_outlined,
-
                     title: 'Login',
                     titleColor: theme.colorScheme.error,
                     theme: theme,
@@ -133,7 +105,7 @@ class SettingsPage extends StatelessWidget {
           // Version
           Center(
             child: Text(
-              'Version ${UpdateManager().currVer}',
+              'Version ${updateManger.currVer}',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w400,
               ),
@@ -194,7 +166,6 @@ class SettingsPage extends StatelessWidget {
               children: [
                 Text(
                   user == null ? "Guest User" : user.displayName ?? "----",
-
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -257,12 +228,13 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showAppearanceSheet(BuildContext context, ThemeData theme) {
-    final RxString selectedTheme = 'System'.obs;
-
+  void _showAppearanceSheet(
+    BuildContext context,
+    ThemeData theme,
+    SettingsController controller,
+  ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.dialogBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -274,22 +246,51 @@ class SettingsPage extends StatelessWidget {
           children: [
             Text(
               'Appearance',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-
             Obx(
               () => Column(
                 children: [
-                  _buildThemeOption('Light', selectedTheme, theme),
-                  _buildThemeOption('Dark', selectedTheme, theme),
-                  _buildThemeOption('System', selectedTheme, theme),
+                  _buildThemeOption(
+                    context: context,
+                    theme: theme,
+                    title: 'System',
+                    value: ThemeMode.system,
+                    groupValue: controller.themeMode.value,
+                    onChanged: (value) {
+                      if (value != null) {
+                        controller.setThemeMode(value);
+                      }
+                    },
+                  ),
+                  _buildThemeOption(
+                    context: context,
+                    theme: theme,
+                    title: 'Light',
+                    value: ThemeMode.light,
+                    groupValue: controller.themeMode.value,
+                    onChanged: (value) {
+                      if (value != null) {
+                        controller.setThemeMode(value);
+                      }
+                    },
+                  ),
+                  _buildThemeOption(
+                    context: context,
+                    theme: theme,
+                    title: 'Dark',
+                    value: ThemeMode.dark,
+                    groupValue: controller.themeMode.value,
+                    onChanged: (value) {
+                      if (value != null) {
+                        controller.setThemeMode(value);
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
           ],
         ),
@@ -297,74 +298,21 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildThemeOption(
-    String themeOption,
-    RxString selectedTheme,
-    ThemeData theme,
-  ) {
-    return ListTile(
-      title: Text(
-        themeOption,
-        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-      ),
-      trailing: selectedTheme.value == themeOption
-          ? Icon(Icons.check, color: theme.primaryColor, size: 20)
-          : null,
-      onTap: () {
-        selectedTheme.value = themeOption;
-        Get.back();
-        // Implement theme change logic
-      },
-    );
-  }
-
-  void _showLanguageSheet(BuildContext context, ThemeData theme) {
-    final languages = ['English', 'Spanish', 'French', 'German'];
-    final RxString selectedLanguage = 'English'.obs;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: theme.dialogBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Language',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            ...languages.map(
-              (language) => ListTile(
-                title: Text(
-                  language,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                trailing: selectedLanguage.value == language
-                    ? Icon(Icons.check, color: theme.primaryColor, size: 20)
-                    : null,
-                onTap: () {
-                  selectedLanguage.value = language;
-                  Get.back();
-                  // Implement language change logic
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required ThemeData theme,
+    required String title,
+    required ThemeMode value,
+    required ThemeMode groupValue,
+    required ValueChanged<ThemeMode?> onChanged,
+  }) {
+    return RadioListTile<ThemeMode>(
+      title: Text(title),
+      value: value,
+      groupValue: groupValue,
+      onChanged: onChanged,
+      activeColor: theme.primaryColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
 
@@ -375,12 +323,7 @@ class SettingsPage extends StatelessWidget {
       AlertDialog(
         backgroundColor: theme.dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Sign Out',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
         content: Text(
           'Are you sure you want to sign out?',
           style: theme.textTheme.bodyMedium,
@@ -425,7 +368,6 @@ class SettingsPage extends StatelessWidget {
 
     if (user == null) return;
 
-    // Check if user signed in with email/password
     final isEmailUser = user.providerData.any(
       (info) => info.providerId == 'password',
     );
@@ -631,14 +573,13 @@ class SettingsPage extends StatelessWidget {
                     onPressed: () async {
                       try {
                         await authService.deleteAccount(password: password);
-                        Get.back(); // Close dialog
                         Get.back();
-
+                        Get.back();
                         AppToast.success(
                           message: 'Account deleted successfully',
                         );
                       } catch (e) {
-                        Get.back(); // Close dialog
+                        Get.back();
                         AppToast.error(message: e.toString());
                       }
                     },
@@ -661,16 +602,10 @@ class SettingsPage extends StatelessWidget {
       if (await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
-        print("cannot launch");
+        AppToast.error(message: 'Cannot launch URL');
       }
     } catch (err) {
-      print(err);
+      AppToast.error(message: err.toString());
     }
-  }
-
-  void _shareApp() {
-    Share.share(
-      'Check out Inkkaro - Create stunning cards and invitations! https://play.google.com/store/apps/details?id=com.example.inkkaro',
-    );
   }
 }

@@ -67,7 +67,6 @@ class ProfileController extends GetxController
 
   Future<void> _initializeData() async {
     try {
-      await StorageService.init();
       await loadLocalDrafts();
       await loadDraftsCount();
       // Load initial tab data based on which tab is active

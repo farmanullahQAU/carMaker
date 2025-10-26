@@ -69,7 +69,8 @@ class TextStyleController extends GetxController
   // Arc text properties (NEW)
 
   //
-
+  final isArabicFont = false.obs; // Add this
+  final textDirection = TextDirection.ltr.obs; // Add this
   final searchController = TextEditingController();
   final searchQuery = ''.obs;
   List<String> _filteredFonts = [];
@@ -86,7 +87,7 @@ class TextStyleController extends GetxController
     super.onInit();
 
     tabController = TabController(
-      length: 9, // Reduced from 11
+      length: 10, // Increased to include Arabic font tab
       vsync: this,
       initialIndex: currentIndex.value,
     );
@@ -235,15 +236,21 @@ class TextStyleController extends GetxController
     'assets/gliter3.jpeg',
     'assets/gliter4.jpeg',
   ];
-
-  // Add or update these properties
   final isArc = false.obs;
   final arcCurvature = 0.0.obs; // Changed to RxDouble for reactive updates
 
-  // Update the initializeProperties method to include arc properties
   void initializeProperties(StackTextItem? item) {
     textItem = item;
     final textContent = item?.content;
+    selectedFont.value = textContent?.googleFont ?? 'Roboto';
+    isArabicFont.value = textContent?.isArabicFont ?? false; // Initialize
+    textDirection.value =
+        textContent?.textDirection ??
+        (textContent?.isArabicFont == true
+            ? TextDirection.rtl
+            : TextDirection.ltr);
+    // ... initialize other properties ...
+    textItem = item;
     selectedFont.value = textContent?.googleFont ?? 'Roboto';
     fontSize.value = textContent?.style?.fontSize ?? 16.0;
     letterSpacing.value = textContent?.style?.letterSpacing ?? 0.0;
@@ -287,6 +294,14 @@ class TextStyleController extends GetxController
     arcCurvature.value = textContent.arcCurvature ?? 0.0; // Add this line
   }
 
+  void updateFont(String fontFamily, {bool isRTL = false}) {
+    selectedFont.value = fontFamily;
+    isArabicFont.value = isRTL;
+    textDirection.value = isRTL ? TextDirection.rtl : TextDirection.ltr;
+    updateTextItem();
+    update(['font_family', 'urdu_font']);
+  }
+
   // Update the updateTextItem method to include arc properties
   void updateTextItem() {
     final updatedContent = textItem?.content?.copyWith(
@@ -297,8 +312,14 @@ class TextStyleController extends GetxController
       dualTonePosition: dualTonePosition.value,
       data: textItem?.content?.data,
       googleFont: selectedFont.value,
+
+      isArabicFont: isArabicFont.value, // Set isArabicFont
+      textDirection: textDirection.value, // Set textDirection
       style: TextStyle(
-        fontFamily: GoogleFonts.getFont(selectedFont.value).fontFamily,
+        fontFamily: isArabicFont.value
+            ? selectedFont.value
+            : GoogleFonts.getFont(selectedFont.value).fontFamily,
+
         fontSize: fontSize.value,
         letterSpacing: letterSpacing.value,
         height: lineHeight.value,
@@ -393,7 +414,7 @@ class TextStyleController extends GetxController
     }
   }
 
-  resetStrok() {
+  void resetStrok() {
     textColor(textColorOld);
   }
 

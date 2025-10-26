@@ -1,7 +1,9 @@
 import 'package:cardmaker/app/bindings/initial.dart';
+import 'package:cardmaker/app/routes/app_pages.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/firebase_options.dart';
+import 'package:cardmaker/services/app_locale_settings_service.dart';
 import 'package:cardmaker/web/delete_ac.dart';
 import 'package:cardmaker/web/web_home.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
@@ -12,14 +14,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import 'app/routes/app_pages.dart'; // You need to create this file
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Initialize SettingsController
+
+  await initServices();
+
   runApp(const CardMakerApp());
+}
+
+Future<void> initServices() async {
+  await Get.putAsync(() async {
+    final appSettings = AppLocaleSettingsService();
+    await appSettings.initialize();
+
+    return appSettings;
+  });
 }
 
 class CardMakerApp extends StatelessWidget {
@@ -27,7 +40,6 @@ class CardMakerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For web, only show AccountDeletionPage
     if (kIsWeb) {
       return GetMaterialApp(
         theme: ThemeData(
@@ -55,16 +67,13 @@ class CardMakerApp extends StatelessWidget {
         ),
         title: 'Inkkaro - Account Deletion',
         debugShowCheckedModeBanner: false,
-        // theme: CardMakerTheme.lightTheme(),
         darkTheme: CardMakerTheme.darkTheme(),
+
         themeMode: ThemeMode.dark,
-        // Define only the deletion route
         getPages: [
           GetPage(name: AppRoutes.webLanding, page: () => const LandingPage()),
         ],
-        // Start directly at deletion page
         initialRoute: AppRoutes.webLanding,
-        // Block navigation to other routes
         onUnknownRoute: (RouteSettings settings) {
           return GetPageRoute(
             page: () => const AccountDeletionPage(),
@@ -74,15 +83,12 @@ class CardMakerApp extends StatelessWidget {
       );
     }
 
-    // For mobile, use full app routing
     return GetMaterialApp(
       title: 'Inkkaro',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.light,
-      initialRoute: AppRoutes.splash,
+      themeMode: AppLocaleSettingsService().getThemeMode(),
       theme: CardMakerTheme.lightTheme(),
       darkTheme: CardMakerTheme.darkTheme(),
-
       getPages: AppPages.pages,
       navigatorKey: navigatorKey,
       initialBinding: InitialBindings(),
