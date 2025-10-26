@@ -159,6 +159,33 @@ class EditorPage extends GetView<CanvasController> {
                   )
                 : SizedBox(),
           ),
+
+          // Layer controls
+          Obx(
+            () =>
+                controller.activeItem.value != null &&
+                    !controller.activeItem.value!.lockZOrder
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Tooltip(
+                        message: 'Send to Back',
+                        child: IconButton(
+                          onPressed: controller.sendToBack,
+                          icon: Icon(Icons.flip_to_back_rounded),
+                        ),
+                      ),
+                      Tooltip(
+                        message: 'Bring to Front',
+                        child: IconButton(
+                          onPressed: controller.bringToFront,
+                          icon: Icon(Icons.flip_to_front_rounded),
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(),
+          ),
           _ZLockToggleButton(),
 
           GetBuilder<CanvasController>(

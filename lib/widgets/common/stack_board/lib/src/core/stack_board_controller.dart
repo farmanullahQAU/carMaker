@@ -232,7 +232,7 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
     value = value.copyWith(data: data, indexMap: _newIndexMap);
   }
 
-  /// * move item on top
+  /// * move item on top (bring to front)
   void moveItemOnTop(String id, {bool force = false}) {
     if (!_indexMap.containsKey(id)) return;
 
@@ -244,6 +244,25 @@ class StackBoardController extends SafeValueNotifier<StackConfig> {
     if (!item.lockZOrder || force) {
       data.removeAt(_indexMap[id]!);
       data.add(item);
+    }
+
+    _reorder(data);
+
+    value = value.copyWith(data: data, indexMap: _newIndexMap);
+  }
+
+  /// * move item to back (send to bottom)
+  void moveItemToBack(String id, {bool force = false}) {
+    if (!_indexMap.containsKey(id)) return;
+
+    final List<StackItem<StackItemContent>> data =
+        List<StackItem<StackItemContent>>.from(innerData);
+
+    final StackItem<StackItemContent> item = data[_indexMap[id]!];
+
+    if (!item.lockZOrder || force) {
+      data.removeAt(_indexMap[id]!);
+      data.insert(0, item);
     }
 
     _reorder(data);

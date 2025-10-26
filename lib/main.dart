@@ -4,6 +4,7 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/firebase_options.dart';
 import 'package:cardmaker/services/app_locale_settings_service.dart';
+import 'package:cardmaker/services/firebase_font_service.dart';
 import 'package:cardmaker/web/delete_ac.dart';
 import 'package:cardmaker/web/web_home.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
@@ -33,6 +34,18 @@ Future<void> initServices() async {
 
     return appSettings;
   });
+
+  // Initialize font cache in background (non-blocking)
+  _initializeFontCache();
+}
+
+Future<void> _initializeFontCache() async {
+  try {
+    // Import FirebaseFontService and initialize cache
+    await FirebaseFontService.initializeFontCache();
+  } catch (e) {
+    // Silently handle errors - fonts will load when needed
+  }
 }
 
 class CardMakerApp extends StatelessWidget {

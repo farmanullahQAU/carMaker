@@ -509,6 +509,32 @@ class CanvasController extends GetxController {
     }
   }
 
+  /// Bring item to front (move to top of stack)
+  void bringToFront() {
+    if (activeItem.value != null) {
+      final itemId = activeItem.value!.id;
+      final currentItem = boardController.getById(itemId);
+      if (currentItem != null && !currentItem.lockZOrder) {
+        boardController.moveItemOnTop(itemId, force: true);
+        activeItem.value = boardController.getById(itemId);
+        update(['stack_board']);
+      }
+    }
+  }
+
+  /// Send item to back (move to bottom of stack)
+  void sendToBack() {
+    if (activeItem.value != null) {
+      final itemId = activeItem.value!.id;
+      final currentItem = boardController.getById(itemId);
+      if (currentItem != null && !currentItem.lockZOrder) {
+        boardController.moveItemToBack(itemId, force: true);
+        activeItem.value = boardController.getById(itemId);
+        update(['stack_board']);
+      }
+    }
+  }
+
   Future<void> replaceImageItem(StackImageItem item) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);

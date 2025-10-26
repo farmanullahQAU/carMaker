@@ -15,9 +15,50 @@ class FirebaseFontService {
   // Font registry - tracks all available fonts
   static final Map<String, RemoteFont> _fontRegistry = {};
 
+  // Flag to track if cache has been initialized
+  static bool _cacheInitialized = false;
+
+  /// Initialize the cache by scanning the fonts directory
+  static Future<void> _initializeCache() async {
+    if (_cacheInitialized) return;
+
+    try {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String fontsDir = path.join(appDir.path, 'fonts', 'urdu');
+      final Directory dir = Directory(fontsDir);
+
+      if (await dir.exists()) {
+        final List<FileSystemEntity> files = await dir.list().toList();
+        for (final file in files) {
+          if (file is File && file.path.endsWith('.ttf')) {
+            // Extract font family from filename
+            final String fileName = path.basename(file.path);
+            final String fontFamily = _getFontFamily(fileName);
+            _downloadedFonts[fontFamily] = file.path;
+
+            // Re-register the font with Flutter's font system
+            await _registerDownloadedFont(fontFamily, file);
+          }
+        }
+      }
+      _cacheInitialized = true;
+      print('✅ Font cache initialized with ${_downloadedFonts.length} fonts');
+    } catch (e) {
+      print('❌ Error initializing font cache: $e');
+    }
+  }
+
+  /// Public method to initialize font cache (called on app startup)
+  static Future<void> initializeFontCache() async {
+    await _initializeCache();
+  }
+
   /// Get list of available fonts from Firebase Storage
   static Future<List<RemoteFont>> getAvailableFonts() async {
     try {
+      // Initialize cache on first call
+      await _initializeCache();
+
       // If already loaded, return cached fonts
       if (_fontRegistry.isNotEmpty) {
         return _fontRegistry.values.toList();
@@ -125,26 +166,12 @@ class FirebaseFontService {
 
   /// Check if a font is already downloaded
   static Future<bool> _isFontDownloaded(String fontFamily) async {
+    // Initialize cache if not already done
+    await _initializeCache();
+
+    // Check if already in cache
     if (_downloadedFonts.containsKey(fontFamily)) {
       return true;
-    }
-
-    try {
-      final Directory appDir = await getApplicationDocumentsDirectory();
-      final String fontsDir = path.join(appDir.path, 'fonts', 'urdu');
-      final Directory dir = Directory(fontsDir);
-
-      if (await dir.exists()) {
-        final List<FileSystemEntity> files = await dir.list().toList();
-        for (final file in files) {
-          if (file is File && file.path.contains(fontFamily)) {
-            _downloadedFonts[fontFamily] = file.path;
-            return true;
-          }
-        }
-      }
-    } catch (e) {
-      print('Error checking downloaded font: $e');
     }
 
     return false;
