@@ -155,7 +155,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
   double _getTabHeight(int index) {
     switch (index) {
       case 0: // size
-        return 80;
+        return 100; // Professional ruler height
       case 1: // format (new)
         return 280; // Increased height for comprehensive controls
       case 2: // color
@@ -190,39 +190,27 @@ class _SizeTab extends StatelessWidget {
       child: GetBuilder<TextStyleController>(
         id: 'font_size',
         builder: (controller) {
-          return SizedBox(
-            child: RulerSlider(
-              rulerHeight: 80.0,
-              minValue: 8.0,
-              maxValue: 72.0,
-              initialValue: controller.fontSize.value,
-
-              selectedBarColor: AppColors.brandingLight,
-              unselectedBarColor: AppColors.highlight.withOpacity(0.3),
-              // tickSpacing: 8.0,
-              fixedBarColor: AppColors.accent,
-              fixedLabelColor: AppColors.brandingLight,
-              labelBuilder: (value) => '${value.round()}px',
-              onChanged: (value) {
-                controller.fontSize.value = value;
-                controller.updateTextItem();
-                controller.update(['font_size']);
-              },
-              // showFixedBar: true,
-              // showFixedLabel: false,
-              // scrollSensitivity: 0.9,
-              // enableSnapping: false,
-              // majorTickInterval: 10,
-              // labelInterval: 10,
-              // labelVerticalOffset: 16.0,
-              // showBottomLabels: true,
-              // labelTextStyle: Get.theme.textTheme.labelSmall!.copyWith(
-              //   fontSize: 10,
-              //   color: AppColors.highlight,
-              // ),
-              majorTickHeight: 12.0,
-              // minorTickHeight: 6.0,
-            ),
+          return RulerSlider(
+            rulerHeight: 80.0,
+            minValue: 8.0,
+            maxValue: 72.0,
+            initialValue: controller.fontSize.value,
+            selectedBarColor: Theme.of(context).colorScheme.primary,
+            unselectedBarColor: Theme.of(
+              context,
+            ).colorScheme.outline.withOpacity(0.3),
+            fixedBarColor: Theme.of(context).colorScheme.primary,
+            fixedLabelColor: Theme.of(context).colorScheme.primary,
+            labelBuilder: (value) => '${value.round()}px',
+            onChanged: (value) {
+              controller.fontSize.value = value;
+              controller.updateTextItem();
+              controller.update(['font_size']);
+            },
+            majorTickHeight: 12.0,
+            minorTickHeight: 6.0,
+            majorTickInterval: 10,
+            labelInterval: 10,
           );
         },
       ),

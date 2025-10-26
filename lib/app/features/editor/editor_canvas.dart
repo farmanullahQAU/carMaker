@@ -128,24 +128,28 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
-          // Obx(
-          //   () =>
-          //       controller.activeItem.value != null &&
-          //           controller.activeItem.value is StackTextItem
-          //       ? Text(
-          //           (controller.activeItem.value as StackTextItem)
-          //               .content!
-          //               .radius
-          //               .toString(),
-          //         )
-          //       : SizedBox(),
-          // ),
           Obx(
             () => controller.activeItem.value == null
                 ? SizedBox()
-                : IconButton(
-                    onPressed: controller.duplicateItem,
-                    icon: Icon(Icons.control_point_duplicate),
+                : Tooltip(
+                    message: 'Duplicate',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: controller.duplicateItem,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.control_point_duplicate,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
           ),
 
@@ -153,9 +157,25 @@ class EditorPage extends GetView<CanvasController> {
             () =>
                 controller.activeItem.value != null &&
                     controller.activeItem.value is StackTextItem
-                ? IconButton(
-                    onPressed: controller.editText,
-                    icon: Icon(Icons.edit_note_rounded),
+                ? Tooltip(
+                    message: 'Edit Text',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: controller.editText,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.edit_note_rounded,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
                   )
                 : SizedBox(),
           ),
@@ -170,16 +190,42 @@ class EditorPage extends GetView<CanvasController> {
                     children: [
                       Tooltip(
                         message: 'Send to Back',
-                        child: IconButton(
-                          onPressed: controller.sendToBack,
-                          icon: Icon(Icons.flip_to_back_rounded),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: controller.sendToBack,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.flip_to_back_rounded,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                size: 20,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       Tooltip(
                         message: 'Bring to Front',
-                        child: IconButton(
-                          onPressed: controller.bringToFront,
-                          icon: Icon(Icons.flip_to_front_rounded),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: controller.bringToFront,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.flip_to_front_rounded,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                                size: 20,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -187,6 +233,7 @@ class EditorPage extends GetView<CanvasController> {
                 : SizedBox(),
           ),
           _ZLockToggleButton(),
+          SizedBox(width: 16),
 
           GetBuilder<CanvasController>(
             id: 'export_button',
@@ -723,183 +770,131 @@ class _ModernExportButton extends StatelessWidget {
     required this.onSaveCopy,
   });
 
+  Widget _buildVerticalMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconColor,
+    required Color bgColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              SizedBox(height: 1),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  letterSpacing: 0,
+                  height: 1.3,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<CanvasController>(
       id: "export_button",
       builder: (controller) => PopupMenuButton<String>(
         offset: Offset(0, 55),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 10,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 8,
         enabled: !isExporting,
+        clipBehavior: Clip.antiAlias,
+        surfaceTintColor: Colors.transparent,
         itemBuilder: (context) => [
           if (controller.isOwner)
             PopupMenuItem<String>(
               value: 'save',
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.save_outlined,
-                      color: AppColors.accent,
-                      size: 18,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Save Project',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        'Save current design',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ],
+              height: 52,
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: _buildVerticalMenuItem(
+                icon: Icons.save_rounded,
+                title: 'Save Project',
+                subtitle: 'Save current design',
+                iconColor: AppColors.accent,
+                bgColor: AppColors.accent.withOpacity(0.1),
               ),
             ),
-          if (controller.isOwner) PopupMenuDivider(),
+          if (controller.isOwner) PopupMenuDivider(height: 6),
           PopupMenuItem<String>(
             value: 'pdf',
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.picture_as_pdf_outlined,
-                    color: Colors.red.shade700,
-                    size: 18,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Export as PDF',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'High-quality PDF format',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
+            height: 52,
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: _buildVerticalMenuItem(
+              icon: Icons.picture_as_pdf_rounded,
+              title: 'Export as PDF',
+              subtitle: 'High-quality PDF format',
+              iconColor: Colors.red.shade700,
+              bgColor: Colors.red.shade50,
             ),
           ),
           PopupMenuItem<String>(
             value: 'image',
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.purple.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.image_outlined,
-                    color: Colors.purple.shade700,
-                    size: 18,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Export as Image',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'PNG format for sharing',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
+            height: 52,
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: _buildVerticalMenuItem(
+              icon: Icons.image_rounded,
+              title: 'Export as Image',
+              subtitle: 'PNG format for sharing',
+              iconColor: Colors.purple.shade700,
+              bgColor: Colors.purple.shade50,
             ),
           ),
-
+          PopupMenuDivider(height: 6),
           PopupMenuItem<String>(
             value: 'draft',
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.picture_as_pdf_outlined,
-                    color: Colors.red.shade700,
-                    size: 18,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'save draft',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'save as a draft',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ],
+            height: 52,
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: _buildVerticalMenuItem(
+              icon: Icons.drafts_rounded,
+              title: 'Save Draft',
+              subtitle: 'Save as draft for later',
+              iconColor: Colors.orange.shade700,
+              bgColor: Colors.orange.shade50,
             ),
           ),
           if (controller.showSaveCopyBtn)
             PopupMenuItem<String>(
               value: 'draft_copy',
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.picture_as_pdf_outlined,
-                      color: Colors.red.shade700,
-                      size: 18,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'save copy',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        'save as a copy',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ],
+              height: 52,
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: _buildVerticalMenuItem(
+                icon: Icons.copy_rounded,
+                title: 'Save Copy',
+                subtitle: 'Duplicate as new project',
+                iconColor: Colors.blue.shade700,
+                bgColor: Colors.blue.shade50,
               ),
             ),
         ],
@@ -907,8 +902,6 @@ class _ModernExportButton extends StatelessWidget {
           switch (value) {
             case 'save':
               onSave();
-              // Show success feedback
-
               break;
             case 'pdf':
               onExportPDF();
@@ -924,55 +917,30 @@ class _ModernExportButton extends StatelessWidget {
               break;
           }
         },
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: AppColors.branding,
-            // gradient: LinearGradient(
-            //   colors: [
-            //     AppColors.branding,
-            //     AppColors.accent.withValues(alpha: 0.5),
-            //   ],
-            // ),
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.branding.withOpacity(0.3),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // if (isExporting) ...[
-              //   SizedBox(
-              //     width: 18,
-              //     height: 18,
-              //     child: CircularProgressIndicator(
-              //       strokeWidth: 2,
-              //       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              //     ),
-              //   ),
-              //   SizedBox(width: 8),
-              //   Text(
-              //     'Exporting...',
-              //     style: TextStyle(
-              //       color: Colors.white,
-              //       fontWeight: FontWeight.w600,
-              //       fontSize: 14,
-              //     ),
-              //   ),
-              // ] else ...
-
-              // [
-              Icon(Icons.file_download_outlined, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Export',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+              Icon(Icons.file_download_outlined, color: Colors.white, size: 20),
+              SizedBox(width: 6),
+              Icon(
+                Icons.arrow_drop_down_rounded,
+                size: 18,
+                color: Colors.white.withOpacity(0.95),
               ),
-              SizedBox(width: 4),
-              Icon(Icons.expand_more, size: 18, color: Colors.white),
             ],
           ),
         ),
@@ -1745,32 +1713,46 @@ class _ZLockToggleButton extends StatelessWidget {
                 message: isLocked
                     ? 'Unlock from background'
                     : 'Lock to background',
-                child: IconButton(
-                  key: ValueKey(
-                    '${activeItem.id}-$isLocked',
-                  ), // Better key for debugging
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isLocked
-                          ? Colors.orange.withOpacity(0.2)
-                          : Colors.grey.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isLocked ? Colors.orange : Colors.grey,
-                        width: 1,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      print(
+                        '👆 ZLock button tapped for item: ${activeItem.id}',
+                      );
+                      controller.toggleZLock(activeItem.id);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isLocked
+                            ? Colors.orange.withOpacity(0.1)
+                            : Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isLocked
+                              ? Colors.orange.withOpacity(0.3)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.outline.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        isLocked ? Icons.layers : Icons.layers_outlined,
+                        size: 20,
+                        color: isLocked
+                            ? Colors.orange.shade700
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
-                    child: Icon(
-                      isLocked ? Icons.layers : Icons.layers_outlined,
-                      size: 20,
-                      color: isLocked ? Colors.orange : Colors.grey[600],
-                    ),
                   ),
-                  onPressed: () {
-                    print('👆 ZLock button tapped for item: ${activeItem.id}');
-                    controller.toggleZLock(activeItem.id);
-                  },
                 ),
               )
             : const SizedBox(width: 48),
