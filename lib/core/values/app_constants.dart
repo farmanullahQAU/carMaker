@@ -2,7 +2,8 @@ const String placeholderPath = 'assets/add-image.png';
 const String kRemoteConfigKey = 'app_config';
 const String themeKey = 'app_theme_mode';
 
-const String kPlaystoreUrl = "";
+const String kPlaystoreUrl =
+    "https://play.google.com/store/apps/details?id=com.inkkaro.app&pcampaignid=web_share";
 const String kAppstoreUrl = "";
 const String kPrivacyPolicyUrl =
     "https://sites.google.com/view/privacy-policy-inkkaro/home";

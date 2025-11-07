@@ -98,7 +98,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 Tab(icon: Icon(Icons.palette, size: 16), text: 'Color'),
                 Tab(icon: Icon(Icons.format_color_fill, size: 16), text: 'BG'),
                 Tab(icon: Icon(Icons.font_download, size: 16), text: 'Font'),
-                Tab(icon: Icon(Icons.translate, size: 16), text: 'Urdu'),
+                Tab(icon: Icon(Icons.language, size: 16), text: 'Urdu'),
                 Tab(icon: Icon(Icons.gradient, size: 16), text: 'Effects'),
 
                 Tab(icon: Icon(Icons.image, size: 16), text: 'Mask'),

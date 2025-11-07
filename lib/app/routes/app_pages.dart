@@ -6,6 +6,7 @@ import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/app/routes/middleware.dart';
+import 'package:cardmaker/app/settings/view.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
 import 'package:get/get.dart';
 
@@ -37,6 +38,12 @@ class AppPages {
     GetPage(
       name: AppRoutes.editor,
       page: () => EditorPage(),
+      binding: InitialBindings(),
+    ),
+
+    GetPage(
+      name: AppRoutes.settings,
+      page: () => SettingsPage(),
       binding: InitialBindings(),
     ),
   ];

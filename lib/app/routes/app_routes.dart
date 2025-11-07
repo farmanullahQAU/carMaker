@@ -11,4 +11,5 @@ class AppRoutes {
   static const auth = "/auth";
   static const editor = "/editor";
   static const String categoryTemplates = '/category-templates';
+  static const String settings = '/settings';
 }

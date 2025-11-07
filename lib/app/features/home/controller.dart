@@ -197,7 +197,11 @@ class HomeController extends GetxController {
     isLoading.value = true;
     try {
       print("home controller is initializing....................");
-      _checkForUpdates();
+
+      // Check for updates asynchronously (don't block initialization)
+      _checkForUpdates().catchError((e) {
+        print('Update check failed: $e');
+      });
 
       await Future.wait([
         _loadTemplates(),

@@ -15,7 +15,7 @@ class ShapeEditorPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ShapeEditorController controller = Get.find<ShapeEditorController>();
+    final ShapeEditorController controller = Get.put(ShapeEditorController());
 
     // Initialize controller if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {

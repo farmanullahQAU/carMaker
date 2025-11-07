@@ -1,16 +1,12 @@
 import 'package:cardmaker/app/bindings/initial.dart';
 import 'package:cardmaker/app/routes/app_pages.dart';
-import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/firebase_options.dart';
 import 'package:cardmaker/services/app_locale_settings_service.dart';
 import 'package:cardmaker/services/firebase_font_service.dart';
-import 'package:cardmaker/web/delete_ac.dart';
-import 'package:cardmaker/web/web_home.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
 import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -53,7 +49,7 @@ class CardMakerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
+    /* if (kIsWeb) {
       return GetMaterialApp(
         theme: ThemeData(
           primaryColor: const Color(0xFF6366F1),
@@ -95,7 +91,7 @@ class CardMakerApp extends StatelessWidget {
         },
       );
     }
-
+*/
     return GetMaterialApp(
       title: 'Inkkaro',
       debugShowCheckedModeBanner: false,

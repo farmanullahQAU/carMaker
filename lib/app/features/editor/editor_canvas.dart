@@ -33,17 +33,6 @@ import 'package:photo_view/photo_view.dart';
 class EditorPage extends GetView<CanvasController> {
   const EditorPage({super.key});
 
-  StackItem deserializeItem(Map<String, dynamic> itemJson) {
-    final type = itemJson['type'];
-    if (type == 'StackTextItem') {
-      return StackTextItem.fromJson(itemJson);
-    } else if (type == 'StackImageItem') {
-      return StackImageItem.fromJson(itemJson);
-    } else {
-      throw Exception('Unsupported item type: $type');
-    }
-  }
-
   // In your EditorPage, update the buildPanelContent method
   Widget buildPanelContent() {
     return GetBuilder<CanvasController>(
@@ -128,30 +117,7 @@ class EditorPage extends GetView<CanvasController> {
       appBar: AppBar(
         elevation: 0,
         actions: [
-          Obx(
-            () => controller.activeItem.value == null
-                ? SizedBox()
-                : Tooltip(
-                    message: 'Duplicate',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: controller.duplicateItem,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.control_point_duplicate,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-          ),
+          Spacer(flex: 2),
 
           Obx(
             () =>
@@ -177,63 +143,78 @@ class EditorPage extends GetView<CanvasController> {
                       ),
                     ),
                   )
-                : SizedBox(),
+                : SizedBox.shrink(),
+          ),
+          Spacer(),
+
+          Obx(
+            () => controller.activeItem.value == null
+                ? SizedBox()
+                : Tooltip(
+                    message: 'Duplicate',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: controller.duplicateItem,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.control_point_duplicate,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
           ),
 
-          // Layer controls
-          Obx(
-            () =>
-                controller.activeItem.value != null &&
-                    !controller.activeItem.value!.lockZOrder
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Tooltip(
-                        message: 'Send to Back',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: controller.sendToBack,
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.flip_to_back_rounded,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
-                                size: 20,
-                              ),
-                            ),
-                          ),
+          Spacer(),
+
+          // Layer controls - Toggle button for send to back/front
+          Obx(() {
+            final activeItem = controller.activeItem.value;
+            final canToggle = activeItem != null && !activeItem.lockZOrder;
+
+            if (!canToggle) return SizedBox();
+
+            return GetBuilder<CanvasController>(
+              id: 'stack_board',
+              builder: (ctrl) {
+                final isAtFront = ctrl.isItemAtFront();
+
+                return Tooltip(
+                  message: isAtFront ? 'Send to Back' : 'Bring to Front',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: ctrl.toggleItemZOrder,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(
+                          isAtFront
+                              ? Icons.flip_to_back_rounded
+                              : Icons.flip_to_front_rounded,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                          size: 20,
                         ),
                       ),
-                      Tooltip(
-                        message: 'Bring to Front',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: controller.bringToFront,
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.flip_to_front_rounded,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : SizedBox(),
-          ),
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
+          Spacer(),
+
           _ZLockToggleButton(),
-          SizedBox(width: 16),
+          Spacer(),
 
           GetBuilder<CanvasController>(
             id: 'export_button',
@@ -917,32 +898,10 @@ class _ModernExportButton extends StatelessWidget {
               break;
           }
         },
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.branding,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.branding.withOpacity(0.3),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.file_download_outlined, color: Colors.white, size: 20),
-              SizedBox(width: 6),
-              Icon(
-                Icons.arrow_drop_down_rounded,
-                size: 18,
-                color: Colors.white.withOpacity(0.95),
-              ),
-            ],
-          ),
+        child: Icon(
+          Icons.more_vert,
+          size: 22,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
         ),
       ),
     );
@@ -1743,7 +1702,7 @@ class _ZLockToggleButton extends StatelessWidget {
                         ),
                       ),
                       child: Icon(
-                        isLocked ? Icons.layers : Icons.layers_outlined,
+                        isLocked ? Icons.lock : Icons.lock_open,
                         size: 20,
                         color: isLocked
                             ? Colors.orange.shade700
@@ -1759,52 +1718,4 @@ class _ZLockToggleButton extends StatelessWidget {
       );
     });
   }
-}
-
-@override
-Widget build(BuildContext context) {
-  return GetBuilder<CanvasController>(
-    id: 'z_lock_button',
-    builder: (controller) {
-      // Force refresh the activeItem to get latest state
-      final activeItem = controller.activeItem.value;
-      final isLocked = activeItem?.lockZOrder == true;
-      final hasActiveItem = activeItem != null;
-
-      return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: hasActiveItem
-            ? Tooltip(
-                message: isLocked
-                    ? 'Unlock from background'
-                    : 'Lock to background',
-                child: IconButton(
-                  key: ValueKey(isLocked),
-                  icon: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: isLocked
-                          ? Colors.orange.withOpacity(0.2)
-                          : Colors.grey.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isLocked ? Colors.orange : Colors.grey,
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      isLocked ? Icons.lock : Icons.lock_open,
-                      size: 20,
-                      color: isLocked ? Colors.orange : Colors.grey[600],
-                    ),
-                  ),
-                  onPressed: () {
-                    controller.toggleZLock(activeItem.id);
-                  },
-                ),
-              )
-            : const SizedBox(width: 48),
-      );
-    },
-  );
 }

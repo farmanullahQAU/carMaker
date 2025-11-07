@@ -9,13 +9,19 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 class RemoteConfigService {
   static final RemoteConfigService _instance = RemoteConfigService._internal();
   factory RemoteConfigService() => _instance;
-  RemoteConfigService._internal() {
-    _remoteConfig = FirebaseRemoteConfig.instance;
-  }
-
   late final FirebaseRemoteConfig _remoteConfig;
-  late RemoteConfigModel _config;
+  RemoteConfigModel _config;
   bool _isUsingFallback = false;
+
+  RemoteConfigModel _defaultFallbackConfig() =>
+      RemoteConfigModel(update: const AppUpdateConfig());
+
+  RemoteConfigService._internal()
+    : _remoteConfig = FirebaseRemoteConfig.instance,
+      _config = RemoteConfigModel(update: const AppUpdateConfig()),
+      _isUsingFallback = true {
+    // Initialize with fallback config to prevent LateInitializationError
+  }
 
   RemoteConfigModel get config => _config;
   bool get isUsingFallback => _isUsingFallback;
@@ -73,9 +79,6 @@ class RemoteConfigService {
       ],
     },
   };
-
-  RemoteConfigModel _defaultFallbackConfig() =>
-      RemoteConfigModel(update: const AppUpdateConfig());
 
   Future<void> refreshConfig() async {
     try {

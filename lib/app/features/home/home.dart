@@ -3,7 +3,6 @@ import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/app/settings/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/widgets/common/no_data.dart';
@@ -119,7 +118,9 @@ class HomeTab extends GetView<HomeController> {
           controller.refreshData();
         },
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
@@ -175,7 +176,7 @@ class HomeTab extends GetView<HomeController> {
 
             child: GestureDetector(
               onTap: () {
-                Get.to(() => SettingsPage());
+                Get.toNamed(AppRoutes.settings);
               },
               child: SizedBox(
                 width: 44,
