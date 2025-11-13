@@ -1,3 +1,4 @@
+import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/services/remote_config.dart';
@@ -56,6 +57,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initializeApp() async {
+    Get.put(HomeController());
     // Initialize RemoteConfig - it handles errors gracefully with fallback config
     // So we don't need to worry about network errors, it will work offline
     final service = RemoteConfigService();
@@ -157,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ).createShader(bounds);
                     },
                     child: const Text(
-                      'Inkkaro',
+                      'Artnie',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w700,
@@ -167,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   const Text(
-                    'Create Beautiful Cards Effortlessly',
+                    'Create Beautiful Designs Effortlessly',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,

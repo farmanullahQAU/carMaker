@@ -258,7 +258,7 @@ class ImageEditorController extends GetxController {
     _borderWidth.value = width;
     _selectedImageItem!.content!.borderWidth = width;
     if (width > 0 && _borderColor.value == null) {
-      setBorderColor(Colors.white);
+      setBorderColor(Colors.black);
     }
     _notifyImageUpdate();
     update(['border_width']);

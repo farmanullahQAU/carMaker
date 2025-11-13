@@ -6,7 +6,7 @@ const String kPlaystoreUrl =
     "https://play.google.com/store/apps/details?id=com.inkkaro.app&pcampaignid=web_share";
 const String kAppstoreUrl = "";
 const String kPrivacyPolicyUrl =
-    "https://sites.google.com/view/privacy-policy-inkkaro/home";
+    "https://sites.google.com/view/privacy-policy-artnie/home";
 const String kTermsOfServiceUrl =
-    "https://sites.google.com/view/terms-of-service-inkkaro/home";
+    "https://sites.google.com/view/terms-of-service-artnie/home";
 const String kContactEmail = "";

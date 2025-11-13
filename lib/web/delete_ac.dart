@@ -480,6 +480,7 @@ class _AccountDeletionPageState extends State<AccountDeletionPage> {
                   width: 2,
                 ),
               ),
+
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(

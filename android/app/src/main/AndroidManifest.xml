@@ -6,7 +6,7 @@
                      android:maxSdkVersion="32" />
     <!-- For Android 13 and above -->
     <application
-        android:label="cardmaker"
+        android:label="artnie"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

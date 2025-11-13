@@ -1442,7 +1442,7 @@ class _BorderPage extends StatelessWidget {
                           icon: Icons.border_outer,
                           value: controller.borderWidth,
                           min: 0.0,
-                          max: 50.0,
+                          max: 100.0,
                           onChanged: (v) {
                             controller.setBorderWidth(v);
                             onUpdate();

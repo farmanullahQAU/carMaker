@@ -576,7 +576,7 @@ class CanvasController extends GetxController {
       if (image != null) {
         final canvasSize = Size(
           scaledCanvasWidth.value,
-          scaledCanvasHeight.value,
+          scaledCanvasWidth.value,
         );
         final relSize = Size(0.3, 0.3);
         final absSize = toAbsoluteSize(relSize, canvasSize);
