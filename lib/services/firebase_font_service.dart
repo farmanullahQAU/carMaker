@@ -67,7 +67,14 @@ class FirebaseFontService {
       final ListResult result = await _storage.ref(_fontsPath).listAll();
       final List<RemoteFont> fonts = [];
 
-      for (final Reference ref in result.items) {
+      // Batch check all fonts at once for better performance
+      final List<Reference> refs = result.items.toList();
+
+      // Initialize cache and check all fonts in one go
+      await _initializeCache();
+      final Set<String> downloadedFamilies = _downloadedFonts.keys.toSet();
+
+      for (final Reference ref in refs) {
         final String fileName = ref.name;
         final String fontName = _getFontDisplayName(fileName);
         final String fontFamily = _getFontFamily(fileName);
@@ -76,6 +83,9 @@ class FirebaseFontService {
         final FullMetadata metadata = await ref.getMetadata();
         final int sizeInBytes = metadata.size ?? 0;
 
+        // Use cached downloaded status (much faster)
+        final bool isDownloaded = downloadedFamilies.contains(fontFamily);
+
         final RemoteFont font = RemoteFont(
           id: fileName,
           name: fontName,
@@ -83,7 +93,7 @@ class FirebaseFontService {
           fileName: fileName,
           sizeInBytes: sizeInBytes,
           downloadUrl: await ref.getDownloadURL(),
-          isDownloaded: await _isFontDownloaded(fontFamily),
+          isDownloaded: isDownloaded,
         );
 
         fonts.add(font);

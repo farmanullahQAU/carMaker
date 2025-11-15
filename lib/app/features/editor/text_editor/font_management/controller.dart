@@ -29,12 +29,18 @@ class FontManagementController extends GetxController {
   }
 
   void _initializeFonts() {
-    // Load local fonts
+    // Load local fonts immediately (no loading needed)
     localFonts.value = UrduFontService.localFonts;
     allFonts.value = UrduFontService.allFonts;
 
-    // Load remote fonts
-    loadRemoteFonts();
+    // Load remote fonts in background (only show loading if not already loaded)
+    if (UrduFontService.remoteFonts.isEmpty) {
+      loadRemoteFonts();
+    } else {
+      // Fonts already loaded, just update the lists
+      remoteFonts.value = UrduFontService.remoteFonts;
+      allFonts.value = UrduFontService.allFonts;
+    }
 
     // Calculate storage size
     _calculateStorageSize();
@@ -42,6 +48,13 @@ class FontManagementController extends GetxController {
 
   /// Load remote fonts from Firebase
   Future<void> loadRemoteFonts() async {
+    // Don't show loading if fonts are already loaded
+    if (UrduFontService.remoteFonts.isNotEmpty && !isLoadingRemoteFonts.value) {
+      remoteFonts.value = UrduFontService.remoteFonts;
+      allFonts.value = UrduFontService.allFonts;
+      return;
+    }
+
     isLoadingRemoteFonts.value = true;
     try {
       await UrduFontService.loadRemoteFonts();

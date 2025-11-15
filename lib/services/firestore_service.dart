@@ -625,6 +625,7 @@ import 'package:cardmaker/core/errors/failure.dart';
 import 'package:cardmaker/core/errors/firebase_error_handler.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/models/user_model.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firebase_storage_service.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -1238,6 +1239,124 @@ class FirestoreServices {
     } catch (e) {
       debugPrint('Error deleting draft files: $e');
       // Don't throw here - we want to complete the draft deletion even if file deletion fails
+    }
+  }
+
+  // Save or update user in Firestore
+  Future<void> saveUser(UserModel user) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(user.id)
+          .set(user.toJson(), SetOptions(merge: true));
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Get user by ID
+  Future<UserModel?> getUserById(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        return UserModel.fromJson(doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Get all templates (for admin)
+  Future<List<CardTemplate>> getAllTemplates({
+    int limit = 100,
+    DocumentSnapshot? startAfterDocument,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('templates')
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (startAfterDocument != null) {
+        query = query.startAfterDocument(startAfterDocument);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs
+          .map((doc) => CardTemplate.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Delete template (admin only) - includes storage cleanup
+  Future<void> deleteTemplate(String templateId) async {
+    try {
+      // First, get the template data to find associated files
+      final templateDoc = await _firestore
+          .collection('templates')
+          .doc(templateId)
+          .get();
+
+      // Delete from Firestore
+      if (templateDoc.exists) {
+        await _firestore.collection('templates').doc(templateId).delete();
+      }
+
+      // Delete associated files from Firebase Storage
+      // This will attempt to delete even if the document doesn't exist (cleanup orphaned files)
+      await _deleteTemplateFiles(templateId);
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Delete all files associated with a public template
+  Future<void> _deleteTemplateFiles(String templateId) async {
+    final FirebaseStorage storage = FirebaseStorage.instance;
+
+    try {
+      final basePath = 'public_templates/$templateId';
+      final storageRef = storage.ref().child(basePath);
+
+      // Delete entire folder recursively (includes thumbnails, backgrounds, template_images)
+      final listResult = await storageRef.listAll();
+      final deleteFutures = <Future>[];
+
+      // Delete all files in subfolders (thumbnails, backgrounds, template_images)
+      for (final prefix in listResult.prefixes) {
+        deleteFutures.add(
+          prefix.listAll().then((subResult) {
+            return Future.wait(subResult.items.map((item) => item.delete()));
+          }),
+        );
+      }
+
+      // Delete all files in root
+      deleteFutures.addAll(listResult.items.map((item) => item.delete()));
+
+      await Future.wait(deleteFutures);
+    } catch (e) {
+      debugPrint('Error deleting template files: $e');
+      // Don't throw here - we want to complete the template deletion even if file deletion fails
+      // This ensures the Firestore document is deleted even if some storage files are missing
+    }
+  }
+
+  // Update template (admin only)
+  Future<void> updateTemplate(
+    String templateId,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      await _firestore.collection('templates').doc(templateId).update({
+        ...updates,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
     }
   }
 

@@ -1,10 +1,11 @@
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/app/settings/controller.dart';
+import 'package:cardmaker/core/utils/admin_utils.dart';
+import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/update_service.dart';
-import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -50,6 +51,29 @@ class SettingsPage extends StatelessWidget {
           ),
 
           _buildDivider(theme),
+
+          // Admin Section (only for admins)
+          FutureBuilder<bool>(
+            future: AdminUtils.isAdmin(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data == true) {
+                return Column(
+                  children: [
+                    _buildSettingsTile(
+                      icon: Icons.admin_panel_settings_outlined,
+                      title: 'Manage Projects',
+                      subtitle: 'Admin only',
+                      theme: theme,
+                      onTap: () =>
+                          Get.toNamed(AppRoutes.adminProjectManagement),
+                    ),
+                    _buildDivider(theme),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
 
           // Terms and Privacy
           _buildSettingsTile(
@@ -575,12 +599,10 @@ class SettingsPage extends StatelessWidget {
                         await authService.deleteAccount(password: password);
                         Get.back();
                         Get.back();
-                        AppToast.success(
-                          message: 'Account deleted successfully',
-                        );
+                        ToastHelper.success('Account deleted successfully');
                       } catch (e) {
                         Get.back();
-                        AppToast.error(message: e.toString());
+                        ToastHelper.error(e.toString());
                       }
                     },
                     child: Text(
@@ -602,10 +624,10 @@ class SettingsPage extends StatelessWidget {
       if (await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
-        AppToast.error(message: 'Cannot launch URL');
+        ToastHelper.error('Cannot launch URL');
       }
     } catch (err) {
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
     }
   }
 }

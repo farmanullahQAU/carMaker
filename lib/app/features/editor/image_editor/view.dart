@@ -61,10 +61,41 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
       builder: (controller) => AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
-        height: _tabController.index < 4 ? 160 : 180,
+        height:
+            (_tabController.index < 4 ? 160 : 180) +
+            42, // Added header height (8*2 padding + ~26 for text/icon)
         color: Get.theme.colorScheme.surfaceContainerHigh,
         child: Column(
           children: [
+            // Header with close button
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Get.theme.colorScheme.surfaceContainer,
+              child: Row(
+                children: [
+                  Text(
+                    'Image Editor',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Spacer(),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        canvasController.setActiveItem(null);
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(Icons.close_rounded, size: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             // Tab Bar
             Container(
               decoration: BoxDecoration(
@@ -1152,10 +1183,10 @@ class _MiniColorButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 32,
-        height: 32,
+        height: 16,
         decoration: BoxDecoration(
           color: color ?? Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(2),
           border: Border.all(
             color: color != null
                 ? Colors.white.withOpacity(0.3)
@@ -1535,72 +1566,111 @@ class _BorderPage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
 
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: CompactSlider(
-                      icon: Icons.open_with,
-                      label: 'Shadow Offset X',
-                      value:
-                          controller
-                              .selectedImageItem
-                              ?.content
-                              ?.shadowOffset
-                              .dx ??
-                          0.0,
-                      min: -20.0,
-                      max: 20.0,
-                      onChanged: (v) {
-                        controller.setShadowOffset(
-                          Offset(
-                            v,
-                            controller
-                                    .selectedImageItem
-                                    ?.content
-                                    ?.shadowOffset
-                                    .dy ??
-                                0.0,
-                          ),
-                        );
-                        onUpdate();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: CompactSlider(
-                      icon: Icons.open_with,
-                      label: 'Shadow Offset Y',
-                      value:
-                          controller
-                              .selectedImageItem
-                              ?.content
-                              ?.shadowOffset
-                              .dy ??
-                          0.0,
-                      min: -20.0,
-                      max: 20.0,
-                      onChanged: (v) {
-                        controller.setShadowOffset(
-                          Offset(
-                            controller
-                                    .selectedImageItem
-                                    ?.content
-                                    ?.shadowOffset
-                                    .dx ??
-                                0.0,
-                            v,
-                          ),
-                        );
-                        onUpdate();
-                      },
-                    ),
-                  ),
-                ],
+              GetBuilder<ImageEditorController>(
+                id: 'shadow_offset',
+                builder: (controller) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: CompactSlider(
+                          icon: Icons.open_with,
+                          label: 'X',
+                          value: controller.shadowOffset.dx,
+                          min: -20.0,
+                          max: 20.0,
+                          onChanged: (v) {
+                            controller.setShadowOffset(
+                              Offset(v, controller.shadowOffset.dy),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: CompactSlider(
+                          icon: Icons.open_with,
+                          label: 'Y',
+                          value: controller.shadowOffset.dy,
+                          min: -20.0,
+                          max: 20.0,
+                          onChanged: (v) {
+                            controller.setShadowOffset(
+                              Offset(controller.shadowOffset.dx, v),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
+              const SizedBox(height: 8),
+
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: CompactSlider(
+              //         icon: Icons.open_with,
+              //         label: 'Offset X',
+              //         value:
+              //             controller
+              //                 .selectedImageItem
+              //                 ?.content
+              //                 ?.shadowOffset
+              //                 .dx ??
+              //             0.0,
+              //         min: -20.0,
+              //         max: 20.0,
+              //         onChanged: (v) {
+              //           controller.setShadowOffset(
+              //             Offset(
+              //               v,
+              //               controller
+              //                       .selectedImageItem
+              //                       ?.content
+              //                       ?.shadowOffset
+              //                       .dy ??
+              //                   0.0,
+              //             ),
+              //           );
+              //           onUpdate();
+              //         },
+              //       ),
+              //     ),
+              //     const SizedBox(width: 2),
+              //     Expanded(
+              //       child: CompactSlider(
+              //         icon: Icons.open_with,
+              //         label: 'Offset Y',
+              //         value:
+              //             controller
+              //                 .selectedImageItem
+              //                 ?.content
+              //                 ?.shadowOffset
+              //                 .dy ??
+              //             0.0,
+              //         min: -20.0,
+              //         max: 20.0,
+              //         onChanged: (v) {
+              //           controller.setShadowOffset(
+              //             Offset(
+              //               controller
+              //                       .selectedImageItem
+              //                       ?.content
+              //                       ?.shadowOffset
+              //                       .dx ??
+              //                   0.0,
+              //               v,
+              //             ),
+              //           );
+              //           onUpdate();
+              //         },
+              //       ),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),

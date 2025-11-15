@@ -12,4 +12,6 @@ class AppRoutes {
   static const editor = "/editor";
   static const String categoryTemplates = '/category-templates';
   static const String settings = '/settings';
+  static const String publishProject = '/publish-project';
+  static const String adminProjectManagement = '/admin/project-management';
 }

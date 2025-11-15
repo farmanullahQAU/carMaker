@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/services/update_service.dart';
-import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -93,6 +93,13 @@ class HomeController extends GetxController {
       icon: Icons.card_giftcard_outlined,
       imagePath: '',
     ),
+    CategoryModel(
+      id: 'general',
+      name: 'General',
+      color: const Color(0xFF6B7280),
+      icon: Icons.category_outlined,
+      imagePath: '',
+    ),
   ];
 
   final List<CategoryModel> trendingNow = [
@@ -136,6 +143,13 @@ class HomeController extends GetxController {
       name: 'Holiday',
       color: const Color(0xFF10B981),
       icon: Icons.card_giftcard_outlined,
+      imagePath: 'assets/card1.png',
+    ),
+    CategoryModel(
+      id: 'general',
+      name: 'General',
+      color: const Color(0xFF6B7280),
+      icon: Icons.category_outlined,
       imagePath: 'assets/card1.png',
     ),
   ];
@@ -329,7 +343,7 @@ class HomeController extends GetxController {
       );
       update(['freeTodayTemplates']);
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     }
   }
 

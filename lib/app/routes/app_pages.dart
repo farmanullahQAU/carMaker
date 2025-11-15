@@ -1,9 +1,13 @@
 import 'package:cardmaker/app/bindings/initial.dart';
+import 'package:cardmaker/app/features/admin/project_management/controller.dart';
+import 'package:cardmaker/app/features/admin/project_management/view.dart';
 import 'package:cardmaker/app/features/auth/auth_screen.dart';
 import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
+import 'package:cardmaker/app/features/publish_project/controller.dart';
+import 'package:cardmaker/app/features/publish_project/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/app/routes/middleware.dart';
 import 'package:cardmaker/app/settings/view.dart';
@@ -45,6 +49,24 @@ class AppPages {
       name: AppRoutes.settings,
       page: () => SettingsPage(),
       binding: InitialBindings(),
+    ),
+    GetPage(
+      name: AppRoutes.publishProject,
+      page: () => const PublishProjectPage(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<PublishProjectController>()) {
+          Get.put(PublishProjectController());
+        }
+      }),
+    ),
+    GetPage(
+      name: AppRoutes.adminProjectManagement,
+      page: () => const ProjectManagementPage(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ProjectManagementController>()) {
+          Get.put(ProjectManagementController());
+        }
+      }),
     ),
   ];
 }

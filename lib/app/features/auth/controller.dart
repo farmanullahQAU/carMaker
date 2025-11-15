@@ -1,6 +1,6 @@
 import 'package:cardmaker/app/features/profile/controller.dart';
+import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/services/auth_service.dart';
-import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:validatorless/validatorless.dart';
@@ -97,7 +97,7 @@ class AuthController extends GetxController {
     if (!(_currentForm?.validate() ?? false)) return;
 
     try {
-      AppToast.loading(message: "Authenticating...");
+      ToastHelper.loading("Authenticating...");
 
       await (isLoginMode.value ? _performLogin() : _performSignup());
 
@@ -106,9 +106,9 @@ class AuthController extends GetxController {
       }
       _clearForm();
 
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     }
   }
 
@@ -138,10 +138,10 @@ class AuthController extends GetxController {
   /// Sign in with Google
   Future<void> signInWithGoogle() async {
     try {
-      AppToast.loading(message: "Signing in with Google...", showLogo: false);
+      ToastHelper.loading("Signing in with Google...");
 
       await _authService.signInWithGoogle();
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
       if (Get.isRegistered<ProfileController>()) {
         Future.wait([
           Get.find<ProfileController>().refreshDrafts(),
@@ -151,7 +151,7 @@ class AuthController extends GetxController {
 
       // Get.back();
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     } finally {
       if (authService.user != null) {
         Get.back();
@@ -169,7 +169,7 @@ class AuthController extends GetxController {
       Get.back(); // Close dialog
       _showPasswordResetSuccess();
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     }
   }
 

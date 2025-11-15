@@ -186,11 +186,14 @@ class _FontManagementPageState extends State<FontManagementPage> {
 
   Widget _buildFontList(FontManagementController controller) {
     return Obx(() {
-      if (controller.isLoadingRemoteFonts.value) {
+      // Show loading only on initial load, not when fonts are already loaded
+      if (controller.isLoadingRemoteFonts.value &&
+          controller.remoteFonts.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (controller.remoteFonts.isEmpty) {
+      if (controller.remoteFonts.isEmpty &&
+          !controller.isLoadingRemoteFonts.value) {
         return _buildEmptyState();
       }
 

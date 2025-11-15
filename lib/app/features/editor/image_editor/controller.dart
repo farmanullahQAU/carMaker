@@ -310,7 +310,7 @@ class ImageEditorController extends GetxController {
     _shadowOffset.value = offset;
     _selectedImageItem!.content!.shadowOffset = offset;
     _notifyImageUpdate();
-    update(['effects_page']);
+    update(['shadow_offset']);
   }
 
   // Transform methods

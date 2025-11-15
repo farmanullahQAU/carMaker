@@ -9,8 +9,9 @@ class UrduFontService {
       family: 'AadilAadil',
       displayName: 'Aadil Aadil',
       category: UrduFontCategory.traditional,
-      previewText: 'اردو فونٹس کا بہترین مجموعہ',
-      description: 'Beautiful traditional Urdu font',
+      previewText: 'خوشخط اردو تحریر کے لیے',
+
+      description: 'Beautiful Urdu font',
       isRTL: true,
       isLocal: true,
     ),
@@ -19,7 +20,64 @@ class UrduFontService {
       displayName: 'Gandhara Suls Regular',
       category: UrduFontCategory.traditional,
       previewText: 'خوشخط اردو تحریر کے لیے',
-      description: 'Traditional Nastaleeq style with elegant curves',
+      description: 'Nastaleeq style with elegant curves',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'Regular300',
+      displayName: 'Regular 300',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+
+      description: 'Urdu font',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'AASameerBassamBold',
+      displayName: 'AA Sameer Bassam Bold',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+      description: 'Urdu font',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'AASameerQamriRegular',
+      displayName: 'AA Sameer Qamri Regular',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+
+      description: 'Urdu font',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'AlQalamAbuzarRegular',
+      displayName: 'Al Qalam Abuzar Regular',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+      description: 'Urdu font',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'AlQalamHassan',
+      displayName: 'Al Qalam Hassan',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+
+      description: 'Urdu font',
+      isRTL: true,
+      isLocal: true,
+    ),
+    UrduFont(
+      family: 'AlQalamSadafRegular',
+      displayName: 'Al Qalam Sadaf Regular',
+      category: UrduFontCategory.modern,
+      previewText: 'خوشخط اردو تحریر کے لیے',
+      description: 'Urdu font',
       isRTL: true,
       isLocal: true,
     ),
@@ -43,12 +101,24 @@ class UrduFontService {
       final List<RemoteFont> firebaseFonts =
           await FirebaseFontService.getAvailableFonts();
 
+      // Don't clear if already loaded and fonts haven't changed
+      if (remoteFonts.isNotEmpty &&
+          firebaseFonts.length == remoteFonts.length) {
+        return;
+      }
+
       remoteFonts.clear();
 
       // Process only first 'limit' fonts to avoid performance issues
       final int fontsToProcess = firebaseFonts.length > limit
           ? limit
           : firebaseFonts.length;
+
+      // Batch check downloaded status for all fonts at once (optimized)
+      final Set<String> downloadedFontFamilies =
+          await _batchCheckDownloadedFonts(
+            firebaseFonts.take(fontsToProcess).map((f) => f.family).toList(),
+          );
 
       for (int i = 0; i < fontsToProcess; i++) {
         final RemoteFont firebaseFont = firebaseFonts[i];
@@ -58,7 +128,10 @@ class UrduFontService {
           continue;
         }
 
-        final bool isDownloaded = await _isFontDownloaded(firebaseFont.family);
+        // Use cached downloaded status
+        final bool isDownloaded = downloadedFontFamilies.contains(
+          firebaseFont.family,
+        );
 
         remoteFonts.add(
           UrduFont(
@@ -86,6 +159,27 @@ class UrduFontService {
     } catch (e) {
       print('Error loading remote fonts: $e');
     }
+  }
+
+  /// Batch check downloaded fonts (optimized - single file system check)
+  static Future<Set<String>> _batchCheckDownloadedFonts(
+    List<String> fontFamilies,
+  ) async {
+    final Set<String> downloaded = {};
+
+    // Use the cached map from FirebaseFontService
+    for (final family in fontFamilies) {
+      if (_downloadedFontsCache.containsKey(family)) {
+        downloaded.add(family);
+      } else {
+        final bool isDownloaded = await _isFontDownloaded(family);
+        if (isDownloaded) {
+          downloaded.add(family);
+        }
+      }
+    }
+
+    return downloaded;
   }
 
   /// Load remaining fonts in background (non-blocking)
@@ -303,17 +397,17 @@ class UrduFontService {
     } else if (lowerName.contains('akram')) {
       return 'Modern Unicode Urdu font';
     } else if (lowerName.contains('gandhara')) {
-      return 'Contemporary Urdu font design';
+      return 'Urdu font design';
     } else if (lowerName.contains('bbc')) {
       return 'Media-style Urdu typography';
     } else if (lowerName.contains('alvi')) {
-      return 'Beautiful traditional Nastaleeq';
+      return 'Beautiful Nastaleeq';
     } else if (lowerName.contains('mehr')) {
       return 'Web-optimized Nastaliq font';
     } else if (lowerName.contains('nafees')) {
       return 'Clean and clear Urdu typography';
     } else {
-      return 'Professional Urdu font';
+      return 'Urdu font';
     }
   }
 }
@@ -368,11 +462,11 @@ extension UrduFontCategoryExtension on UrduFontCategory {
   String get displayName {
     switch (this) {
       case UrduFontCategory.traditional:
-        return 'Traditional';
+        return 'Classic';
       case UrduFontCategory.modern:
         return 'Modern';
       case UrduFontCategory.contemporary:
-        return 'Contemporary';
+        return 'Modern';
       case UrduFontCategory.decorative:
         return 'Decorative';
     }
@@ -385,7 +479,7 @@ extension UrduFontCategoryExtension on UrduFontCategory {
       case UrduFontCategory.modern:
         return 'Modern Urdu typography';
       case UrduFontCategory.contemporary:
-        return 'Contemporary Urdu design';
+        return 'Modern Urdu design';
       case UrduFontCategory.decorative:
         return 'Ornamental Urdu styles';
     }

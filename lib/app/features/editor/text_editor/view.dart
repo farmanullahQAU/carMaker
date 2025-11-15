@@ -315,7 +315,7 @@ class _EffectsTab extends StatelessWidget {
     ),
     EffectTemplate(
       id: 'basic_stroke',
-      name: 'Basic Stroke',
+      name: 'Classic',
       icon: Icons.border_color,
       hasShadow: true,
       hasStroke: true,
@@ -323,42 +323,158 @@ class _EffectsTab extends StatelessWidget {
       strokeColor: Colors.black,
       textColor: Colors.white,
       fontSize: 22.0,
+      shadowOffset: Offset(2, 2),
+      shadowBlur: 4.0,
+      shadowColor: Colors.black54,
     ),
     EffectTemplate(
       id: 'thick_stroke',
-      name: 'Thick Stroke',
+      name: 'Bold',
       icon: Icons.format_paint,
       hasShadow: false,
       hasStroke: true,
       strokeWidth: 4.0,
       strokeColor: Colors.blue,
       textColor: Colors.white,
-      fontSize: 16.0,
+      fontSize: 20.0,
     ),
     EffectTemplate(
       id: 'colored_stroke',
-      name: 'Color Stroke',
+      name: 'Vibrant',
       icon: Icons.palette,
       hasShadow: false,
       hasStroke: true,
       strokeWidth: 3.0,
       strokeColor: Color(0xFFFF5722),
       textColor: Colors.white,
-      fontSize: 16.0,
+      fontSize: 20.0,
     ),
     EffectTemplate(
       id: 'neon_stroke',
-      name: 'Neon Stroke',
+      name: 'Neon',
       icon: Icons.flash_on,
-      hasShadow: false,
+      hasShadow: true,
       shadowOffset: Offset(0, 0),
-      shadowBlur: 10.0,
+      shadowBlur: 12.0,
       shadowColor: Color(0xFF00E676),
       hasStroke: true,
-      strokeWidth: 1.0,
+      strokeWidth: 1.5,
       strokeColor: Color(0xFF00E676),
-      textColor: Colors.blue,
-      fontSize: 33.0,
+      textColor: Color(0xFF0D47A1),
+      fontSize: 24.0,
+    ),
+    EffectTemplate(
+      id: 'glow_blue',
+      name: 'Glow Blue',
+      icon: Icons.auto_awesome,
+      hasShadow: true,
+      shadowOffset: Offset(0, 0),
+      shadowBlur: 15.0,
+      shadowColor: Color(0xFF2196F3),
+      hasStroke: false,
+      textColor: Color(0xFF2196F3),
+      fontSize: 22.0,
+    ),
+    EffectTemplate(
+      id: 'glow_pink',
+      name: 'Glow Pink',
+      icon: Icons.auto_awesome,
+      hasShadow: true,
+      shadowOffset: Offset(0, 0),
+      shadowBlur: 15.0,
+      shadowColor: Color(0xFFE91E63),
+      hasStroke: false,
+      textColor: Color(0xFFE91E63),
+      fontSize: 22.0,
+    ),
+    EffectTemplate(
+      id: 'glow_gold',
+      name: 'Glow Gold',
+      icon: Icons.auto_awesome,
+      hasShadow: true,
+      shadowOffset: Offset(0, 0),
+      shadowBlur: 18.0,
+      shadowColor: Color(0xFFFFD700),
+      hasStroke: false,
+      textColor: Color(0xFFFFD700),
+      fontSize: 22.0,
+    ),
+    EffectTemplate(
+      id: 'soft_shadow',
+      name: 'Soft',
+      icon: Icons.blur_on,
+      hasShadow: true,
+      shadowOffset: Offset(0, 4),
+      shadowBlur: 8.0,
+      shadowColor: Colors.black26,
+      hasStroke: false,
+      textColor: Colors.black87,
+      fontSize: 20.0,
+    ),
+    EffectTemplate(
+      id: 'deep_shadow',
+      name: 'Deep',
+      icon: Icons.layers,
+      hasShadow: true,
+      shadowOffset: Offset(3, 3),
+      shadowBlur: 6.0,
+      shadowColor: Colors.black87,
+      hasStroke: false,
+      textColor: Colors.white,
+      fontSize: 20.0,
+    ),
+    EffectTemplate(
+      id: 'outline_white',
+      name: 'Outline',
+      icon: Icons.border_outer,
+      hasShadow: false,
+      hasStroke: true,
+      strokeWidth: 2.5,
+      strokeColor: Colors.white,
+      textColor: Color(0xFF1976D2),
+      fontSize: 20.0,
+    ),
+    EffectTemplate(
+      id: 'double_stroke',
+      name: 'Double',
+      icon: Icons.border_all,
+      hasShadow: true,
+      shadowOffset: Offset(2, 2),
+      shadowBlur: 3.0,
+      shadowColor: Colors.black45,
+      hasStroke: true,
+      strokeWidth: 3.5,
+      strokeColor: Colors.black,
+      textColor: Colors.white,
+      fontSize: 20.0,
+    ),
+    EffectTemplate(
+      id: 'metallic',
+      name: 'Metallic',
+      icon: Icons.diamond,
+      hasShadow: true,
+      shadowOffset: Offset(2, 2),
+      shadowBlur: 8.0,
+      shadowColor: Color(0xFF424242),
+      hasStroke: true,
+      strokeWidth: 1.5,
+      strokeColor: Color(0xFF757575),
+      textColor: Color(0xFFBDBDBD),
+      fontSize: 22.0,
+    ),
+    EffectTemplate(
+      id: 'elegant',
+      name: 'Elegant',
+      icon: Icons.star,
+      hasShadow: true,
+      shadowOffset: Offset(0, 2),
+      shadowBlur: 6.0,
+      shadowColor: Colors.black38,
+      hasStroke: true,
+      strokeWidth: 1.0,
+      strokeColor: Colors.black26,
+      textColor: Colors.white,
+      fontSize: 20.0,
     ),
   ];
 
@@ -407,48 +523,78 @@ class _EffectsTab extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 70,
-        height: 85,
+        width: 72,
+        height: 88,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
-              : Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+              ? AppColors.branding.withOpacity(0.12)
+              : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
                 ? AppColors.branding
-                : Get.theme.colorScheme.outline.withOpacity(0.2),
-            width: isSelected ? 1.5 : 0.5,
+                : Get.theme.colorScheme.outline.withOpacity(0.15),
+            width: isSelected ? 2.0 : 1.0,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Preview Container
+            // Preview Container with better styling
             Stack(
               children: [
                 Container(
-                  height: 50,
-                  width: 50,
+                  height: 52,
+                  width: 52,
                   decoration: BoxDecoration(
-                    color: Get.theme.colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
+                    color: Get.theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
+                    ),
                   ),
                   child: Center(
                     child: isNoneTemplate
                         ? Text(
                             "Aa",
                             style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: controller.textColorOld,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color:
+                                  controller.textColorOld ??
+                                  Get.theme.colorScheme.onSurface,
+                            ),
+                          )
+                        : (template.hasShadow && !template.hasStroke)
+                        ? Text(
+                            "Aa",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: template.textColor,
+                              shadows: [
+                                Shadow(
+                                  color: template.shadowColor,
+                                  blurRadius: template.shadowBlur,
+                                  offset: template.shadowOffset,
+                                ),
+                              ],
                             ),
                           )
                         : StrokeText(
@@ -456,15 +602,24 @@ class _EffectsTab extends StatelessWidget {
                             strokeColor: template.strokeColor,
                             strokeWidth: template.strokeWidth,
                             textStyle: TextStyle(
-                              fontSize: 20,
+                              fontSize: 22,
                               color: template.textColor,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
+                              shadows: template.hasShadow
+                                  ? [
+                                      Shadow(
+                                        color: template.shadowColor,
+                                        blurRadius: template.shadowBlur,
+                                        offset: template.shadowOffset,
+                                      ),
+                                    ]
+                                  : null,
                             ),
                           ),
                   ),
                 ),
 
-                // Tune overlay for selected effects
+                // Tune overlay for selected effects - improved design
                 if (isSelected && !isNoneTemplate)
                   Positioned.fill(
                     child: GestureDetector(
@@ -473,14 +628,14 @@ class _EffectsTab extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Center(
                           child: Icon(
                             Icons.tune_rounded,
                             color: Colors.white,
-                            size: 16,
+                            size: 18,
                           ),
                         ),
                       ),
@@ -489,17 +644,18 @@ class _EffectsTab extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
 
-            // Label
+            // Label with better typography
             Text(
               template.name,
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? AppColors.branding
-                    : Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                    : Get.theme.colorScheme.onSurface.withOpacity(0.75),
+                letterSpacing: 0.2,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2010,103 +2166,121 @@ class _DualToneTuneTab extends StatelessWidget {
   }) {
     final isNoneTemplate = template.id == 'none';
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 88,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.branding.withOpacity(0.08)
-                  : Get.theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: isSelected
-                  ? Border.all(color: AppColors.branding, width: 0.4)
-                  : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 76,
+        height: 92,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.12)
+              : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.branding
+                : Get.theme.colorScheme.outline.withOpacity(0.15),
+            width: isSelected ? 2.0 : 1.0,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.center,
               children: [
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      height: 56,
-                      width: 56,
-                      decoration: BoxDecoration(
-                        color: Get.theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: isNoneTemplate
-                            ? Text(
-                                "Aa",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: controller.textColor.value,
-                                ),
-                              )
-                            : DualToneText(
-                                text: "Aa",
-                                color1: template.color1,
-                                color2: template.color2,
-                                direction: template.direction,
-                                position: template.position,
-                                textStyle: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
+                Container(
+                  height: 54,
+                  width: 54,
+                  decoration: BoxDecoration(
+                    color: Get.theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
                     ),
+                  ),
+                  child: Center(
+                    child: isNoneTemplate
+                        ? Text(
+                            "Aa",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: controller.textColor.value,
+                            ),
+                          )
+                        : DualToneText(
+                            text: "Aa",
+                            color1: template.color1,
+                            color2: template.color2,
+                            direction: template.direction,
+                            position: template.position,
+                            textStyle: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
 
-                    if (isSelected && !isNoneTemplate)
-                      Container(
-                        child: GestureDetector(
-                          onTap: () {
-                            _showDualToneTuneBottomSheet(Get.context!);
-                          },
-                          child: Container(
-                            height: 56,
-                            width: 56,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 0),
-                              child: const Icon(
-                                Icons.tune,
-                                color: Colors.white,
-                              ),
-                            ),
+                if (isSelected && !isNoneTemplate)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () {
+                        _showDualToneTuneBottomSheet(Get.context!);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.tune_rounded,
+                            color: Colors.white,
+                            size: 18,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  template.name,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected
-                        ? AppColors.branding
-                        : Colors.grey.shade800,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              template.name,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? AppColors.branding
+                    : Get.theme.colorScheme.onSurface.withOpacity(0.75),
+                letterSpacing: 0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2476,11 +2650,20 @@ const List<DualToneTemplate> dualToneTemplates = [
     direction: DualToneDirection.horizontal,
   ),
   DualToneTemplate(
+    id: 'pti',
+    name: 'PTI',
+    color1: Colors.red,
+    color2: Colors.green,
+    direction: DualToneDirection.vertical,
+    position: 0.5,
+  ),
+  DualToneTemplate(
     id: 'red_blue',
     name: 'Red/Blue',
     color1: Colors.red,
     color2: Colors.blue,
-    direction: DualToneDirection.horizontal,
+    direction: DualToneDirection.vertical,
+    position: 0.5,
   ),
   DualToneTemplate(
     id: 'purple_pink',
@@ -2488,29 +2671,127 @@ const List<DualToneTemplate> dualToneTemplates = [
     color1: Colors.purple,
     color2: Colors.pink,
     direction: DualToneDirection.vertical,
+    position: 0.5,
   ),
   DualToneTemplate(
     id: 'green_yellow',
     name: 'Green/Yellow',
     color1: Colors.green,
     color2: Colors.yellow,
-    direction: DualToneDirection.diagonal,
-  ),
-  DualToneTemplate(
-    id: 'orange_teal',
-    name: 'Orange/Teal',
-    color1: Colors.orange,
-    color2: Colors.teal,
-    direction: DualToneDirection.radial,
-    position: 0.7,
+    direction: DualToneDirection.vertical,
+    position: 0.5,
   ),
   DualToneTemplate(
     id: 'black_white',
     name: 'Black/White',
     color1: Colors.black,
     color2: Colors.white,
+    direction: DualToneDirection.vertical,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'orange_teal',
+    name: 'Orange/Teal',
+    color1: Colors.orange,
+    color2: Colors.teal,
     direction: DualToneDirection.horizontal,
-    position: 0.3,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'sunset',
+    name: 'Sunset',
+    color1: Color(0xFFFF6B6B),
+    color2: Color(0xFFFFE66D),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'ocean',
+    name: 'Ocean',
+    color1: Color(0xFF4ECDC4),
+    color2: Color(0xFF0077BE),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'lavender',
+    name: 'Lavender',
+    color1: Color(0xFF9B59B6),
+    color2: Color(0xFFE74C3C),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'forest',
+    name: 'Forest',
+    color1: Color(0xFF2ECC71),
+    color2: Color(0xFF16A085),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'royal',
+    name: 'Royal',
+    color1: Color(0xFF6C5CE7),
+    color2: Color(0xFFDDA0DD),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'coral',
+    name: 'Coral',
+    color1: Color(0xFFFF7675),
+    color2: Color(0xFFFFB6C1),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'mint',
+    name: 'Mint',
+    color1: Color(0xFF00D2D3),
+    color2: Color(0xFF7FFFD4),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'amber',
+    name: 'Amber',
+    color1: Color(0xFFFFB800),
+    color2: Color(0xFFFFE5B4),
+    direction: DualToneDirection.diagonal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'rose',
+    name: 'Rose',
+    color1: Color(0xFFE84393),
+    color2: Color(0xFFFF6B9D),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'sky',
+    name: 'Sky',
+    color1: Color(0xFF74B9FF),
+    color2: Color(0xFF0984E3),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'emerald',
+    name: 'Emerald',
+    color1: Color(0xFF00B894),
+    color2: Color(0xFF90EE90),
+    direction: DualToneDirection.horizontal,
+    position: 0.5,
+  ),
+  DualToneTemplate(
+    id: 'violet',
+    name: 'Violet',
+    color1: Color(0xFFA29BFE),
+    color2: Color(0xFF9370DB),
+    direction: DualToneDirection.radial,
+    position: 0.6,
   ),
 ];
 
@@ -3556,7 +3837,7 @@ class _UrduFontTabState extends State<_UrduFontTab> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.branding.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
@@ -3578,18 +3859,12 @@ class _UrduFontTabState extends State<_UrduFontTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Manage Urdu Fonts',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Get.theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
                     'Browse and download more fonts',
+
                     style: TextStyle(
                       fontSize: 12,
-                      color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+                      fontWeight: FontWeight.w600,
+                      color: Get.theme.colorScheme.onSurface,
                     ),
                   ),
                 ],

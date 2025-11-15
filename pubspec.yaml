@@ -73,6 +73,7 @@ dependencies:
   font_awesome_flutter: ^10.10.0
   flutter_iconpicker: ^4.0.3
   archive: ^4.0.7
+  toastification: ^3.0.3
   # gallery_saver_plus: ^3.2.9
   # stack_board: ^0.2.6+1
 flutter_native_splash:
@@ -141,6 +142,24 @@ flutter:
     - family: GandharaSulsRegular
       fonts:
         - asset: assets/fonts/urdu/GandharaSulsRegular.ttf
+    - family: Regular300
+      fonts:
+        - asset: assets/fonts/urdu/300 Regular.ttf
+    - family: AASameerBassamBold
+      fonts:
+        - asset: assets/fonts/urdu/AA Sameer Bassam Bold AA Sameer Bassam Bold.ttf
+    - family: AASameerQamriRegular
+      fonts:
+        - asset: assets/fonts/urdu/AA Sameer Qamri Regular.ttf
+    - family: AlQalamAbuzarRegular
+      fonts:
+        - asset: assets/fonts/urdu/AlQalam Abuzar Regular.ttf
+    - family: AlQalamHassan
+      fonts:
+        - asset: assets/fonts/urdu/AlQalam Hassan AlQalam Hassan.ttf
+    - family: AlQalamSadafRegular
+      fonts:
+        - asset: assets/fonts/urdu/AlQalam Sadaf Regular.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

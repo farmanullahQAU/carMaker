@@ -4,7 +4,7 @@
 // import 'package:cardmaker/models/card_template.dart';
 // import 'package:cardmaker/services/firestore_service.dart';
 // import 'package:cardmaker/services/storage_service.dart';
-// import 'package:cardmaker/widgets/common/app_toast.dart';
+// import 'package:cardmaker/core/utils/toast_helper.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
@@ -14,10 +14,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
-import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -183,7 +183,7 @@ class ProfileController extends GetxController
       }
       update(['favoriteTemplateIds']);
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     }
   }
 
@@ -245,11 +245,11 @@ class ProfileController extends GetxController
   Future<void> backupDraft(CardTemplate template) async {
     try {
       if (authService.user == null) {
-        AppToast.error(message: 'You must be logged in to back up drafts.');
+        ToastHelper.error('You must be logged in to back up drafts.');
         return;
       }
 
-      AppToast.loading(message: 'Backing up draft...', showLogo: true);
+      ToastHelper.loading('Backing up draft...');
       isDraftsLoading.value = true;
 
       // Upload to Firebase
@@ -265,9 +265,9 @@ class ProfileController extends GetxController
       await loadDraftsCount();
       // await refreshDrafts(); // This will handle the drafts list refresh
 
-      AppToast.success(message: 'Draft backed up successfully');
+      ToastHelper.success('Draft backed up successfully');
     } catch (e) {
-      AppToast.error(message: 'Failed to backup draft: ${e.toString()}');
+      ToastHelper.error('Failed to backup draft: ${e.toString()}');
       // Revert local state if backup failed
       await loadLocalDrafts();
     } finally {
@@ -300,7 +300,7 @@ class ProfileController extends GetxController
         backgroundFile: backgroundFile,
       );
     } catch (err) {
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
       rethrow; // Important: rethrow to handle in backupDraft
     }
   }
@@ -313,7 +313,7 @@ class ProfileController extends GetxController
     try {
       // Check if it's a Firebase draft
       final isFirebaseDraft = drafts.any((draft) => draft.id == draftId);
-
+      ToastHelper.loading('Deleting draft...');
       if (isFirebaseDraft) {
         await _firestoreService.deleteDraft(draftId);
       }
@@ -328,7 +328,9 @@ class ProfileController extends GetxController
       await loadDraftsCount();
       await refreshDrafts();
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
+    } finally {
+      ToastHelper.dismissAll();
     }
   }
 
@@ -362,7 +364,7 @@ class ProfileController extends GetxController
       }
       update(['favoriteTemplateIds']);
     } catch (e) {
-      AppToast.error(message: e.toString());
+      ToastHelper.error(e.toString());
     }
   }
 

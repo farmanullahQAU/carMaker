@@ -1,5 +1,7 @@
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/core/errors/firebase_error_handler.dart';
+import 'package:cardmaker/models/user_model.dart';
+import 'package:cardmaker/services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -52,6 +54,18 @@ class AuthService extends GetxService {
 
       await result.user?.sendEmailVerification();
 
+      // Save user details to Firestore
+      if (result.user != null) {
+        final userModel = UserModel(
+          id: result.user!.uid,
+          email: result.user!.email ?? email.trim(),
+          displayName: result.user!.displayName,
+          photoUrl: result.user!.photoURL,
+          role: UserRole.user,
+        );
+        await FirestoreServices().saveUser(userModel);
+      }
+
       isLoading.value = false;
       return null;
     } catch (e) {
@@ -103,9 +117,26 @@ class AuthService extends GetxService {
         idToken: googleAuth.idToken,
         accessToken: googleAuth.idToken,
       );
-      isLoading.value = false;
 
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+
+      // Save/update user details to Firestore
+      if (userCredential.user != null) {
+        final user = userCredential.user!;
+        final userModel = UserModel(
+          id: user.uid,
+          email: user.email ?? '',
+          displayName: user.displayName ?? googleUser.displayName,
+          photoUrl: user.photoURL ?? googleUser.photoUrl,
+          role: UserRole.user,
+        );
+        await FirestoreServices().saveUser(userModel);
+      }
+
+      isLoading.value = false;
+      return userCredential;
     } catch (e) {
       isLoading.value = false;
       throw FirebaseErrorHandler.handle(e).message;
@@ -142,7 +173,6 @@ class AuthService extends GetxService {
       if (user == null) {
         throw 'No user is signed in';
       }
-      final uid = user.uid;
 
       // Step 1: Re-authenticate
       final providerData = user.providerData;

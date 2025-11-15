@@ -6,14 +6,15 @@ import 'package:cardmaker/app/features/editor/edit_item/view.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
+import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
+import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/permission_handler.dart';
 import 'package:cardmaker/services/storage_service.dart';
-import 'package:cardmaker/widgets/common/app_toast.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/shack_shape_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
@@ -412,7 +413,7 @@ class CanvasController extends GetxController {
         _cleanupTempFiles(thumbnailFile, backgroundFile);
       }
     } catch (err) {
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
     }
   }
 
@@ -651,6 +652,16 @@ class CanvasController extends GetxController {
         content: originalItem.content?.copyWith(),
         angle: originalItem.angle,
       );
+    }
+
+    if (originalItem is StackIconItem) {
+      newItem = StackIconItem(
+        id: UniqueKey().toString(),
+        offset: newAbsOffset,
+        size: newAbsSize,
+        content: originalItem.content?.copyWith(),
+        angle: originalItem.angle,
+      );
     } else {
       return;
     }
@@ -706,7 +717,7 @@ class CanvasController extends GetxController {
           ..click();
         html.Url.revokeObjectUrl(url);
         exportProgress.value = 100.0;
-        AppToast.success(message: 'Image downloaded');
+        ToastHelper.success('Image downloaded');
         return File('$fileName.png');
       } else {
         exportProgress.value = 60.0;
@@ -724,7 +735,7 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'Shared Successfully');
+          ToastHelper.success('Shared Successfully');
         }
         exportProgress.value = 100.0;
         _closeProgressDialog();
@@ -851,7 +862,7 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'PDF shared successfully');
+          ToastHelper.success('PDF shared successfully');
         }
         _closeProgressDialog();
       }
@@ -890,7 +901,7 @@ class CanvasController extends GetxController {
   // ==================== SAVE WITH RELATIVE UNITS ====================
   Future<void> _saveToFirestore({bool isCopy = false}) async {
     try {
-      AppToast.loading(message: "uploading changes");
+      ToastHelper.loading("uploading changes");
       final currentItems = boardController.getAllData();
       final Size canvasSize = Size(
         scaledCanvasWidth.value,
@@ -939,15 +950,40 @@ class CanvasController extends GetxController {
       );
       if (file != null) template = template.copyWith(thumbnailUrl: file.path);
       await uploadTemplate(template);
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
     } catch (err) {
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
     }
   }
 
   Future<void> saveAsPublicProject() async {
+    // Navigate to publish project page to get category and project name
+    final result = await Get.toNamed(AppRoutes.publishProject);
+
+    if (result == null) {
+      // User cancelled, do nothing
+      return;
+    }
+
+    final categoryId = result['categoryId'] as String;
+    final categoryName = result['categoryName'] as String;
+    final projectName = result['projectName'] as String;
+
+    // Now publish with the selected details
+    await publishProjectWithDetails(
+      categoryId: categoryId,
+      categoryName: categoryName,
+      projectName: projectName,
+    );
+  }
+
+  Future<void> publishProjectWithDetails({
+    required String categoryId,
+    required String categoryName,
+    required String projectName,
+  }) async {
     try {
-      AppToast.loading(message: 'Publishing template...');
+      ToastHelper.loading('Publishing template...');
       final currentItems = boardController.getAllData();
       final Size canvasSize = Size(
         scaledCanvasWidth.value,
@@ -983,13 +1019,15 @@ class CanvasController extends GetxController {
 
       final template = CardTemplate(
         imagePath: "",
-        categoryId: 'birthday',
+        categoryId: categoryId,
         id: Uuid().v4(),
-        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
+        name: projectName.trim().isEmpty
+            ? 'Untitled Template'
+            : projectName.trim(),
         items: relativeItems,
         width: initialTemplate!.width,
         height: initialTemplate!.height,
-        category: 'birthday',
+        category: categoryName,
         tags: ['default'],
         isPremium: false,
         isDraft: false,
@@ -1001,12 +1039,12 @@ class CanvasController extends GetxController {
       );
 
       await uploadTemplate(template);
-      AppToast.closeLoading();
-      AppToast.success(message: 'Template published successfully');
+      ToastHelper.dismissAll();
+      ToastHelper.success('Template published successfully');
     } catch (err) {
       debugPrint('Error publishing template: $err');
-      AppToast.closeLoading();
-      AppToast.error(message: 'Failed to publish template: ${err.toString()}');
+      ToastHelper.dismissAll();
+      ToastHelper.error('Failed to publish template: ${err.toString()}');
     }
   }
 
@@ -1015,7 +1053,7 @@ class CanvasController extends GetxController {
     bool showDialog = false,
   }) async {
     try {
-      AppToast.loading(message: 'Saving template...');
+      ToastHelper.loading('Saving template...');
       final currentItems = boardController.getAllData();
       final Size canvasSize = Size(
         scaledCanvasWidth.value,
@@ -1077,17 +1115,15 @@ class CanvasController extends GetxController {
           await profileController.loadLocalDrafts();
           await profileController.refreshDrafts();
         } catch (e) {}
-        AppToast.success(message: 'Template saved locally!');
+        ToastHelper.success('Template saved locally!');
       } else {
         throw Exception('Failed to generate thumbnail');
       }
     } catch (err) {
       debugPrint('Error saving to local storage: $err');
-      AppToast.error(
-        message: 'Failed to save template locally: ${err.toString()}',
-      );
+      ToastHelper.error('Failed to save template locally: ${err.toString()}');
     } finally {
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
     }
   }
 
@@ -1136,7 +1172,7 @@ class CanvasController extends GetxController {
         anchor.click();
         html.Url.revokeObjectUrl(url);
         exportProgress.value = 100.0;
-        AppToast.success(message: 'Image saved for draft');
+        ToastHelper.success('Image saved for draft');
         return File('$fileName.png');
       } else {
         exportProgress.value = 60.0;
@@ -1149,7 +1185,7 @@ class CanvasController extends GetxController {
       }
     } catch (e, s) {
       debugPrint('Export Image failed: $e\nStack trace: $s');
-      AppToast.error(message: 'Failed to export image: ${e.toString()}');
+      ToastHelper.error('Failed to export image: ${e.toString()}');
       return null;
     } finally {
       isExporting = false;
@@ -1523,7 +1559,7 @@ class CanvasController extends GetxController {
         _cleanupTempFiles(thumbnailFile, backgroundFile);
       }
     } catch (err) {
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
     }
   }
 
@@ -1872,7 +1908,7 @@ class CanvasController extends GetxController {
           ..click();
         html.Url.revokeObjectUrl(url);
         exportProgress.value = 100.0;
-        AppToast.success(message: 'Image downloaded');
+        ToastHelper.success('Image downloaded');
         if (kDebugMode) debugPrint('Web download triggered');
         return File('$fileName.png'); // Dummy file for web
       } else {
@@ -1896,7 +1932,7 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'Shared Successfully');
+          ToastHelper.success('Shared Successfully');
         }
         // exportProgress.value = 100.0;
         _closeProgressDialog();
@@ -2058,7 +2094,7 @@ class CanvasController extends GetxController {
         final result = await SharePlus.instance.share(params);
 
         if (result.status == ShareResultStatus.success) {
-          AppToast.success(message: 'PDF shared successfully');
+          ToastHelper.success('PDF shared successfully');
         }
         _closeProgressDialog();
 
@@ -2123,7 +2159,7 @@ class CanvasController extends GetxController {
   /// Save current design as draft to Firebase
   Future<void> _saveToFirestore({bool isCopy = false}) async {
     try {
-      AppToast.loading(message: "uploading changes");
+      ToastHelper.loading("uploading changes");
       final currentItems = boardController.getAllData();
 
       CardTemplate template = CardTemplate(
@@ -2150,59 +2186,14 @@ class CanvasController extends GetxController {
         template = template.copyWith(thumbnailUrl: file.path);
       }
       await uploadTemplate(template);
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
     } catch (err) {
       print("xxxxxxxxxxxxxxxxxxxx");
       print(err);
-      AppToast.error(message: err.toString());
+      ToastHelper.error(err.toString());
     }
   }
 
-  Future<void> saveAsPublicProject() async {
-    try {
-      AppToast.loading(message: 'Publishing template...');
-      final currentItems = boardController.getAllData();
-
-      // Generate thumbnail for the public project
-      final thumbnailFile = await _generateThumbnail(
-        "public_project_${Uuid().v4()}",
-      );
-
-      if (thumbnailFile == null) {
-        throw Exception('Failed to generate thumbnail for public project');
-      }
-
-      // Create the template with current state
-      final template = CardTemplate(
-        imagePath: "",
-        categoryId: 'birthday',
-        id: Uuid().v4(),
-        name: templateName.isEmpty ? 'Untitled Template' : templateName.value,
-        items: currentItems.map((e) => deserializeItem(e).toJson()).toList(),
-        width: initialTemplate!.width,
-        height: initialTemplate!.height,
-        category: 'birthday',
-        tags: ['default'],
-        isPremium: false,
-        isDraft: false,
-        backgroundHue: backgroundHue.value.roundToDouble(),
-        backgroundImageUrl: selectedBackground.value,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        thumbnailUrl: kIsWeb ? null : thumbnailFile.path, // Set thumbnail URL
-      );
-
-      // Upload template to Firebase
-      await uploadTemplate(template);
-
-      AppToast.closeLoading();
-      AppToast.success(message: 'Template published successfully');
-    } catch (err) {
-      debugPrint('Error publishing template: $err');
-      AppToast.closeLoading();
-      AppToast.error(message: 'Failed to publish template: ${err.toString()}');
-    }
-  }
   // Add these methods to your CanvasController class
 
   Future<void> _saveDraftLocale({
@@ -2210,7 +2201,7 @@ class CanvasController extends GetxController {
     bool showDialog = false,
   }) async {
     try {
-      AppToast.loading(message: 'Saving template...');
+      ToastHelper.loading('Saving template...');
       final currentItems = boardController.getAllData();
 
       // Create the template with current state
@@ -2254,17 +2245,15 @@ class CanvasController extends GetxController {
         } catch (e) {
           // Profile page not open, ignore
         }
-        AppToast.success(message: 'Template saved locally!');
+        ToastHelper.success('Template saved locally!');
       } else {
         throw Exception('Failed to generate thumbnail');
       }
     } catch (err) {
       debugPrint('Error saving to local storage: $err');
-      AppToast.error(
-        message: 'Failed to save template locally: ${err.toString()}',
-      );
+      ToastHelper.error('Failed to save template locally: ${err.toString()}');
     } finally {
-      AppToast.closeLoading();
+      ToastHelper.dismissAll();
     }
   }
 
@@ -2320,7 +2309,7 @@ class CanvasController extends GetxController {
         anchor.click();
         html.Url.revokeObjectUrl(url);
         exportProgress.value = 100.0;
-        AppToast.success(message: 'Image saved for draft');
+        ToastHelper.success('Image saved for draft');
         if (kDebugMode) debugPrint('Web download triggered');
         return File('$fileName.png'); // Dummy file for web
       } else {
@@ -2336,7 +2325,7 @@ class CanvasController extends GetxController {
       }
     } catch (e, s) {
       debugPrint('Export Image failed: $e\nStack trace: $s');
-      AppToast.error(message: 'Failed to export image: ${e.toString()}');
+      ToastHelper.error('Failed to export image: ${e.toString()}');
       return null;
     } finally {
       isExporting = false;
