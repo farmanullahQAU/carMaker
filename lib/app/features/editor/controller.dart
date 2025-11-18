@@ -703,7 +703,7 @@ class CanvasController extends GetxController {
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 4,
+        pixelRatio: 5, // Increased from 4 to 5 to match PDF quality
         delay: Duration(seconds: 4),
       );
       exportProgress.value = 50.0;
@@ -1892,7 +1892,7 @@ class CanvasController extends GetxController {
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 4,
+        pixelRatio: 5, // Increased from 4 to 5 to match PDF quality
         delay: Duration(seconds: 4),
       );
       exportProgress.value = 50.0;

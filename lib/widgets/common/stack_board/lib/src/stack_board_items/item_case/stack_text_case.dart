@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
@@ -239,9 +240,22 @@ class StackTextCase extends StatelessWidget {
     );
   }
 
-  Future<ui.Image> _loadImage(String assetPath) async {
-    final imageProvider = AssetImage(assetPath);
+  Future<ui.Image> _loadImage(String imagePath) async {
     final completer = Completer<ui.Image>();
+
+    // Check if it's a file path or asset path
+    // Asset paths start with 'assets/', file paths are absolute paths
+    final isAsset = imagePath.startsWith('assets/');
+
+    ImageProvider imageProvider;
+    if (isAsset) {
+      // It's an asset path
+      imageProvider = AssetImage(imagePath);
+    } else {
+      // It's a file path from gallery
+      imageProvider = FileImage(File(imagePath));
+    }
+
     final imageStream = imageProvider.resolve(const ImageConfiguration());
     ImageStreamListener? listener;
     listener = ImageStreamListener(

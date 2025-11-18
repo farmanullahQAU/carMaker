@@ -1445,7 +1445,7 @@ class _FontTab extends StatelessWidget {
   }
 }
 
-// MASK TAB - Fixed implementation with proper organization
+// MASK TAB - Templates in horizontal row
 class _MaskTab extends StatelessWidget {
   final TextStyleController controller;
   const _MaskTab({required this.controller});
@@ -1456,7 +1456,7 @@ class _MaskTab extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Mask presets in a horizontal list (including "None" option)
+        // Mask presets in a horizontal list
         _buildMaskPresets(),
       ],
     );
@@ -1471,13 +1471,14 @@ class _MaskTab extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: TextStyleController.maskImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildNoMaskOption();
               }
               final image = TextStyleController.maskImages[index];
-              return _buildMaskOption(image!);
+              if (image == null) return const SizedBox.shrink();
+              return _buildMaskOption(image);
             },
           );
         },
@@ -1491,31 +1492,39 @@ class _MaskTab extends StatelessWidget {
       onTap: () => _clearMask(controller),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 70,
-        height: 70,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
+              ? AppColors.branding.withOpacity(0.15)
               : Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.branding
                 : Get.theme.colorScheme.outline.withOpacity(0.2),
-            width: isSelected ? 1.5 : 0.5,
+            width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Center(
           child: Icon(
             Icons.layers_clear_rounded,
-            size: 24,
+            size: 28,
             color: isSelected
                 ? AppColors.branding
                 : Get.theme.colorScheme.onSurface.withOpacity(0.7),
@@ -1527,50 +1536,59 @@ class _MaskTab extends StatelessWidget {
 
   Widget _buildMaskOption(String image) {
     final isSelected = image == controller.maskImage;
+
     return GestureDetector(
       onTap: () => _selectImageMask(controller, image),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 70,
-        height: 70,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.1)
+              ? AppColors.branding.withOpacity(0.15)
               : Get.theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.branding
                 : Get.theme.colorScheme.outline.withOpacity(0.2),
-            width: isSelected ? 1.5 : 0.5,
+            width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Stack(
           children: [
             // Image container
             Positioned.fill(
               child: Container(
-                margin: const EdgeInsets.all(6),
+                margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   color: Get.theme.colorScheme.surfaceContainerLow,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
                     image,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(
                         Icons.image_not_supported_rounded,
-                        size: 20,
+                        size: 24,
                         color: Get.theme.colorScheme.onSurface.withOpacity(0.5),
                       );
                     },
@@ -1578,6 +1596,32 @@ class _MaskTab extends StatelessWidget {
                 ),
               ),
             ),
+
+            // Selected indicator
+            if (isSelected)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.branding,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
 
             // Tune overlay for selected mask
             if (isSelected)
@@ -1587,16 +1631,23 @@ class _MaskTab extends StatelessWidget {
                     _showMaskTuneBottomSheet(Get.context!);
                   },
                   child: Container(
-                    margin: const EdgeInsets.all(6),
+                    margin: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.black.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.tune_rounded,
-                        color: Colors.white,
-                        size: 20,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.branding,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.tune_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ),
@@ -1714,8 +1765,52 @@ class MaskTuneBottomSheet extends StatelessWidget {
 
   Widget _buildBlendModeSelector() {
     final blendModes = [
-      {'mode': BlendMode.srcATop, 'name': 'Src A Top'},
-      {'mode': BlendMode.dstATop, 'name': 'Dst A Top'},
+      {'mode': BlendMode.srcATop, 'name': 'Normal', 'icon': Icons.layers},
+      {'mode': BlendMode.dstATop, 'name': 'Overlay', 'icon': Icons.blur_on},
+      {
+        'mode': BlendMode.srcOver,
+        'name': 'Source Over',
+        'icon': Icons.merge_type,
+      },
+      {'mode': BlendMode.multiply, 'name': 'Multiply', 'icon': Icons.filter_1},
+      {'mode': BlendMode.screen, 'name': 'Screen', 'icon': Icons.filter_2},
+      {'mode': BlendMode.overlay, 'name': 'Overlay', 'icon': Icons.filter_3},
+      {'mode': BlendMode.darken, 'name': 'Darken', 'icon': Icons.brightness_2},
+      {
+        'mode': BlendMode.lighten,
+        'name': 'Lighten',
+        'icon': Icons.brightness_high,
+      },
+      {
+        'mode': BlendMode.colorDodge,
+        'name': 'Color Dodge',
+        'icon': Icons.wb_sunny,
+      },
+      {
+        'mode': BlendMode.colorBurn,
+        'name': 'Color Burn',
+        'icon': Icons.wb_twilight,
+      },
+      {
+        'mode': BlendMode.hardLight,
+        'name': 'Hard Light',
+        'icon': Icons.highlight,
+      },
+      {
+        'mode': BlendMode.softLight,
+        'name': 'Soft Light',
+        'icon': Icons.wb_incandescent,
+      },
+      {
+        'mode': BlendMode.difference,
+        'name': 'Difference',
+        'icon': Icons.compare_arrows,
+      },
+      {
+        'mode': BlendMode.exclusion,
+        'name': 'Exclusion',
+        'icon': Icons.exposure_neg_1,
+      },
     ];
 
     return GetBuilder<TextStyleController>(
@@ -1743,85 +1838,80 @@ class MaskTuneBottomSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: blendModes.map((blendModeData) {
-                final mode = blendModeData['mode'] as BlendMode;
-                final name = blendModeData['name'] as String;
-                final isSelected = controller.maskBlendMode == mode;
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: blendModes.map((blendModeData) {
+                  final mode = blendModeData['mode'] as BlendMode;
+                  final name = blendModeData['name'] as String;
+                  final icon = blendModeData['icon'] as IconData;
+                  final isSelected = controller.maskBlendMode == mode;
 
-                return GestureDetector(
-                  onTap: () {
-                    controller.maskBlendMode = mode;
-                    controller.updateTextItem();
-                    controller.update(['mask_properties', 'mask_blend_mode']);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.branding.withOpacity(0.1)
-                          : Get.theme.colorScheme.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.branding
-                            : Get.theme.colorScheme.outline.withOpacity(0.3),
-                        width: isSelected ? 1.5 : 1,
+                  return GestureDetector(
+                    onTap: () {
+                      controller.maskBlendMode = mode;
+                      controller.updateTextItem();
+                      controller.update(['mask_properties', 'mask_blend_mode']);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.branding
-                                  : Get.theme.colorScheme.outline.withOpacity(
-                                      0.5,
-                                    ),
-                              width: 2,
-                            ),
-                          ),
-                          child: isSelected
-                              ? Center(
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.branding,
-                                    ),
-                                  ),
-                                )
-                              : null,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.branding.withOpacity(0.15)
+                            : Get.theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.branding
+                              : Get.theme.colorScheme.outline.withOpacity(0.2),
+                          width: isSelected ? 2 : 1,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.branding.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            icon,
+                            size: 20,
                             color: isSelected
                                 ? AppColors.branding
-                                : Get.theme.colorScheme.onSurface,
+                                : Get.theme.colorScheme.onSurface.withOpacity(
+                                    0.7,
+                                  ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            name,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.branding
+                                  : Get.theme.colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ],
         );

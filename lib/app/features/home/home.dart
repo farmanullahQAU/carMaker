@@ -75,7 +75,7 @@ class HomePage extends GetView<HomeController> {
     return UpgradeAlert(
       upgrader: Upgrader(
         minAppVersion: minVersion.minSupportedVersion,
-        durationUntilAlertAgain: Duration(seconds: 10),
+        durationUntilAlertAgain: Duration(days: 2),
       ),
       barrierDismissible: !forceUpdate,
       // showIgnore: !forceUpdate,

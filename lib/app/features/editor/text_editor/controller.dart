@@ -7,6 +7,7 @@ import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 class TextStyleController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -230,12 +231,48 @@ class TextStyleController extends GetxController
   // ];
 
   static const maskImages = [
-    null,
+    null, // "None" option - always first
+    // Glitter masks
     'assets/gliter1.jpeg',
     'assets/gliter2.jpeg',
     'assets/gliter3.jpeg',
     'assets/gliter4.jpeg',
+    // TODO: Add more stunning mask templates here
+    // Recommended mask types:
+    // - Gradient masks (rainbow, sunset, ocean)
+    // - Texture masks (marble, wood, fabric)
+    // - Pattern masks (geometric, floral, abstract)
+    // - Effect masks (sparkle, glow, neon)
+    // - Color masks (solid colors with patterns)
+    // Example format: 'assets/masks/gradient_rainbow.png',
+    // Example format: 'assets/masks/texture_marble.jpg',
   ];
+
+  // Image picker for gallery selection
+  final ImagePicker _imagePicker = ImagePicker();
+
+  // Method to pick image from gallery
+  Future<void> pickMaskImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        hasMask = true;
+        hasDualTone.value = false;
+        maskImage = image.path; // Store file path for custom images
+        if (backgroundColor.value != Colors.transparent) {
+          backgroundColor(Colors.transparent);
+        }
+        updateTextItem();
+        update(['mask_presets', 'mask_settings']);
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
+  }
+
   final isArc = false.obs;
   final arcCurvature = 0.0.obs; // Changed to RxDouble for reactive updates
 
