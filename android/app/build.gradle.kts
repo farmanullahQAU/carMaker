@@ -22,6 +22,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.inkkaro.app"
     compileSdk = flutter.compileSdkVersion
+
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

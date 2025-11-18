@@ -5,10 +5,12 @@ import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/widgets/common/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:upgrader/upgrader.dart';
 import 'package:widget_mask/widget_mask.dart';
 
 // --- ENHANCED DATA MODELS ---
@@ -57,23 +59,44 @@ class CanvasSize {
 }
 
 // --- Main Home Page Widget ---
+// --- Main Home Page Widget ---
 class HomePage extends GetView<HomeController> {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
-        extendBody: controller.selectedIndex.value == 0,
-        body: IndexedStack(
-          index: controller.selectedIndex.value,
-          children: const [
-            HomeTab(),
-            ProfessionalTemplatesPage(),
-            ProfileTab(),
-          ],
+    // READ FROM ALREADY FETCHED REMOTE CONFIG
+
+    final remoteConfig = RemoteConfigService();
+
+    final minVersion = remoteConfig.config.update;
+    final forceUpdate = remoteConfig.config.update.isForceUpdate;
+
+    return UpgradeAlert(
+      upgrader: Upgrader(
+        minAppVersion: minVersion.minSupportedVersion,
+        durationUntilAlertAgain: Duration(seconds: 10),
+      ),
+      barrierDismissible: !forceUpdate,
+      // showIgnore: !forceUpdate,
+      showIgnore: false,
+      showLater: !forceUpdate,
+
+      dialogStyle: UpgradeDialogStyle.cupertino,
+
+      child: Obx(
+        () => Scaffold(
+          extendBody: controller.selectedIndex.value == 0,
+          body: IndexedStack(
+            index: controller.selectedIndex.value,
+            children: const [
+              HomeTab(),
+              ProfessionalTemplatesPage(),
+              ProfileTab(),
+            ],
+          ),
+          bottomNavigationBar: _buildBottomNav(),
         ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
     );
   }
@@ -337,19 +360,6 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
             separatorBuilder: (context, index) => const SizedBox(width: 12),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Text(
-        'No free templates available today',
-        style: TextStyle(
-          color: Color(0xFF6B7280),
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
       ),
     );
   }

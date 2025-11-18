@@ -7,7 +7,6 @@ import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
-import 'package:cardmaker/services/update_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -23,7 +22,6 @@ class HomeController extends GetxController {
   final authService = Get.find<AuthService>();
   final _firestoreService = FirestoreServices();
   final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
-  final UpdateManager updateManager = UpdateManager(); // Add this
   static const String _favoriteIdsKey = 'favorite_template_ids';
   // Add config values you want to use
 
@@ -210,13 +208,6 @@ class HomeController extends GetxController {
   Future<void> _initializeData() async {
     isLoading.value = true;
     try {
-      print("home controller is initializing....................");
-
-      // Check for updates asynchronously (don't block initialization)
-      _checkForUpdates().catchError((e) {
-        print('Update check failed: $e');
-      });
-
       await Future.wait([
         _loadTemplates(),
         _loadFreeTodayTemplates(),
@@ -310,14 +301,6 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error syncing local favorites with Firebase: $e');
-    }
-  }
-
-  Future<void> _checkForUpdates() async {
-    try {
-      await updateManager.checkForUpdates(Get.context!);
-    } catch (e) {
-      print('Update check failed: $e');
     }
   }
 

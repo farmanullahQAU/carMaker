@@ -5,7 +5,7 @@ import 'package:cardmaker/core/utils/admin_utils.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/services/auth_service.dart';
-import 'package:cardmaker/services/update_service.dart';
+import 'package:cardmaker/services/remote_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -17,8 +17,6 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final updateManger = UpdateManager();
-
     final theme = Theme.of(context);
     final settingsController = Get.find<SettingsController>();
 
@@ -129,7 +127,7 @@ class SettingsPage extends StatelessWidget {
           // Version
           Center(
             child: Text(
-              'Version ${updateManger.currVer}',
+              'Version ${RemoteConfigService().config.update.currentVersion}',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w400,
               ),

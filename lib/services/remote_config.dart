@@ -45,7 +45,7 @@ class RemoteConfigService {
     await _remoteConfig.setConfigSettings(
       RemoteConfigSettings(
         fetchTimeout: const Duration(seconds: 8),
-        minimumFetchInterval: const Duration(hours: 12),
+        minimumFetchInterval: const Duration(seconds: 10),
       ),
     );
     await _remoteConfig.fetchAndActivate();
@@ -72,11 +72,7 @@ class RemoteConfigService {
       "isForce_update": false,
       "isUpdate_available": false,
       "update_desc": "",
-      "new_features": [
-        "Minor Bugs fixed",
-        "Login issue fixed",
-        "Ui improvement",
-      ],
+      "new_features": [],
     },
   };
 

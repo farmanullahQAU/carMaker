@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/app/settings/view.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -198,7 +197,7 @@ class ProfilePage extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.settings_outlined, size: 24),
               onPressed: () {
-                Get.to(() => SettingsPage());
+                Get.toNamed(AppRoutes.settings);
               },
             ),
         ],

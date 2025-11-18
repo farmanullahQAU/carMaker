@@ -619,7 +619,7 @@ class _EffectsTab extends StatelessWidget {
                   ),
                 ),
 
-                // Tune overlay for selected effects - improved design
+                // Tune overlay for selected effects - 8id design
                 if (isSelected && !isNoneTemplate)
                   Positioned.fill(
                     child: GestureDetector(

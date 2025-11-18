@@ -79,6 +79,8 @@ class ToastHelper {
 
   /// Show success toast with modern design
   static void success(String message, {Duration? duration}) {
+    // Dismiss any existing toasts before showing a new one
+    dismissAll();
     final context = _getContext();
     if (context == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -170,6 +172,8 @@ class ToastHelper {
 
   /// Show error toast with modern design
   static void error(String message, {Duration? duration}) {
+    // Dismiss any existing toasts before showing a new one
+    dismissAll();
     final context = _getContext();
     if (context == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -260,6 +264,8 @@ class ToastHelper {
 
   /// Show loading/info toast with modern design
   static void loading(String message) {
+    // Dismiss any existing toasts before showing a new one
+    dismissAll();
     final context = _getContext();
     if (context == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
