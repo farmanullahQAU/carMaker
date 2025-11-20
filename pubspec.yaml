@@ -74,6 +74,7 @@ dependencies:
   flutter_iconpicker: ^4.0.3
   archive: ^4.0.7
   toastification: ^3.0.3
+  google_mobile_ads: ^5.1.0
   # stack_board: ^0.2.6+1
 flutter_native_splash:
   color: "#ffffff"  # White background for light mode

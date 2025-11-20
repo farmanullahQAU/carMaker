@@ -4,6 +4,7 @@ import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/storage_service.dart';
@@ -266,6 +267,9 @@ class CategoryTemplatesController extends GetxController {
   }
 
   void onTemplateSelected(CardTemplate template) {
+    // Track template view for interstitial ad
+    AdMobService().onTemplateViewed();
+
     Get.toNamed(AppRoutes.editor, arguments: {'template': template});
   }
 

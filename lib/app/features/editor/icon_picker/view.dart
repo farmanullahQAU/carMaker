@@ -80,7 +80,7 @@ class IconPickerPanel extends GetView<IconPickerController> {
           ),
           InkWell(
             onTap: () {
-              controller.addOrUpdateIcon(iconItem);
+              // controller.addOrUpdateIcon(iconItem);
               onClose();
             },
             borderRadius: BorderRadius.circular(6),

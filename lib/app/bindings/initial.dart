@@ -24,7 +24,7 @@ class InitialBindings extends Bindings {
       Get.lazyPut(() => ShapeEditorController());
       Get.lazyPut(() => SettingsController());
 
-      Get.lazyPut<IconPickerController>(() => IconPickerController());
+      Get.lazyPut(() => IconPickerController(), fenix: true);
 
       Get.lazyPut(() => CategoryTemplatesController(), fenix: true);
 

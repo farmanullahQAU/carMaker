@@ -3,6 +3,7 @@ import 'package:cardmaker/app/routes/app_pages.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/firebase_options.dart';
+import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/app_locale_settings_service.dart';
 import 'package:cardmaker/services/firebase_font_service.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
@@ -31,6 +32,9 @@ Future<void> initServices() async {
 
     return appSettings;
   });
+
+  // Initialize AdMob
+  await AdMobService().initialize();
 
   // Initialize font cache in background (non-blocking)
   _initializeFontCache();

@@ -13,12 +13,17 @@ class RemoteConfigService {
   RemoteConfigModel _config;
   bool _isUsingFallback = false;
 
-  RemoteConfigModel _defaultFallbackConfig() =>
-      RemoteConfigModel(update: const AppUpdateConfig());
+  RemoteConfigModel _defaultFallbackConfig() => RemoteConfigModel(
+    update: const AppUpdateConfig(),
+    ads: const AdMobConfig(),
+  );
 
   RemoteConfigService._internal()
     : _remoteConfig = FirebaseRemoteConfig.instance,
-      _config = RemoteConfigModel(update: const AppUpdateConfig()),
+      _config = RemoteConfigModel(
+        update: const AppUpdateConfig(),
+        ads: const AdMobConfig(),
+      ),
       _isUsingFallback = true {
     // Initialize with fallback config to prevent LateInitializationError
   }
@@ -73,6 +78,16 @@ class RemoteConfigService {
       "isUpdate_available": false,
       "update_desc": "",
       "new_features": [],
+    },
+    "ads": {
+      "enabled": false,
+      "rewarded_ad_unit_id": "",
+      "interstitial_ad_unit_id": "",
+      "banner_ad_unit_id": "",
+      "interstitial_ad_interval": 5,
+      "show_rewarded_ad_on_export": true,
+      "show_interstitial_ad_on_template_view": true,
+      "show_banner_ad": true,
     },
   };
 

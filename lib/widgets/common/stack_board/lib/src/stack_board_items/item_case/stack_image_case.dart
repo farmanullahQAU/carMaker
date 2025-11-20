@@ -43,21 +43,27 @@ class StackImageCase extends StatelessWidget {
     print("url");
     print(content.url);
     if (content.filePath != null || content.assetName != null) {
-      imageWidget = Image(
-        image: content.image,
-        width: content.width,
-        height: content.height,
-        fit: content.fit,
-        color: content.color,
-        colorBlendMode: content.colorBlendMode,
-        repeat: content.repeat,
-        filterQuality: content.filterQuality,
-        gaplessPlayback: content.gaplessPlayback,
-        isAntiAlias: content.isAntiAlias,
-        matchTextDirection: content.matchTextDirection,
-        excludeFromSemantics: content.excludeFromSemantics,
-        semanticLabel: content.semanticLabel,
-      );
+      imageWidget = content.isPlaceholder == true
+          ? Container(child: Icon(Icons.add_photo_alternate_outlined))
+          : Image(
+              image: content.image,
+              width: content.width,
+              height: content.height,
+
+              fit: content.fit,
+              color: content.color,
+              colorBlendMode: content.colorBlendMode,
+              repeat: content.repeat,
+              filterQuality: content.filterQuality,
+              gaplessPlayback: content.gaplessPlayback,
+              isAntiAlias: content.isAntiAlias,
+              matchTextDirection: content.matchTextDirection,
+              excludeFromSemantics: content.excludeFromSemantics,
+              semanticLabel: content.semanticLabel,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                return child;
+              },
+            );
     } else {
       imageWidget = CachedNetworkImage(
         imageUrl: content.url ?? "",
@@ -66,10 +72,8 @@ class StackImageCase extends StatelessWidget {
         fit: content.fit,
         placeholder: (context, url) =>
             Container(color: AppColors.backgroundLight),
-        errorWidget: (context, url, error) => Container(
-          color: AppColors.red400,
-          child: const Icon(Icons.error_outline, color: Colors.grey),
-        ),
+        errorWidget: (context, url, error) =>
+            Icon(Icons.add_photo_alternate_outlined),
         fadeInDuration: const Duration(milliseconds: 300),
       );
       // Keep everything else EXACTLY the same

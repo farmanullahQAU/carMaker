@@ -5,6 +5,7 @@ import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/widgets/common/no_data.dart';
 import 'package:flutter/material.dart';
@@ -834,6 +835,8 @@ class CanvasSizesRow extends GetView<HomeController> {
       children: [
         GestureDetector(
           onTap: () {
+            AdMobService().onTemplateViewed();
+
             Get.toNamed(AppRoutes.editor, arguments: template);
           },
           child: Container(

@@ -92,7 +92,7 @@ class EditorPage extends GetView<CanvasController> {
             break;
           case PanelType.icons:
             currentPanel = IconPickerPanel(
-              onClose: () => controller.activePanel.value = PanelType.none,
+              onClose: () => controller.setActiveItem(null),
               iconItem:
                   (controller.activeItem.value != null &&
                       (controller.activeItem.value is StackIconItem))
@@ -241,62 +241,71 @@ class EditorPage extends GetView<CanvasController> {
         ],
       ),
 
-      body: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
 
-                      boxShadow: [
-                        BoxShadow(
-                          color: Get.theme.shadowColor.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
+        onTap: () =>
+            controller.setActiveItem(null), //anywhere tap will close the panel
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
 
-                    child: LayoutBuilder(
-                      builder:
-                          (BuildContext context, BoxConstraints constraints) {
-                            SchedulerBinding.instance.addPostFrameCallback((_) {
-                              controller.updateCanvasAndLoadTemplate(
-                                constraints,
-                                context,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Get.theme.shadowColor.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+
+                      child: LayoutBuilder(
+                        builder:
+                            (BuildContext context, BoxConstraints constraints) {
+                              SchedulerBinding.instance.addPostFrameCallback((
+                                _,
+                              ) {
+                                controller.updateCanvasAndLoadTemplate(
+                                  constraints,
+                                  context,
+                                );
+                              });
+                              return CanvasStack(
+                                showGrid: true,
+                                showBorders: true,
+                                stackBoardKey: controller.stackBoardKey,
+                                canvasScale: controller.canvasScale,
+                                scaledCanvasWidth: controller.scaledCanvasWidth,
+                                scaledCanvasHeight:
+                                    controller.scaledCanvasHeight,
                               );
-                            });
-                            return CanvasStack(
-                              showGrid: true,
-                              showBorders: true,
-                              stackBoardKey: controller.stackBoardKey,
-                              canvasScale: controller.canvasScale,
-                              scaledCanvasWidth: controller.scaledCanvasWidth,
-                              scaledCanvasHeight: controller.scaledCanvasHeight,
-                            );
-                          },
+                            },
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              ProfessionalBottomToolbar(controller: controller),
-            ],
-          ),
+                ProfessionalBottomToolbar(controller: controller),
+              ],
+            ),
 
-          Obx(
-            () => controller.activePanel.value == PanelType.none
-                ? SizedBox()
-                : buildPanelContent(),
-          ),
-        ],
+            Obx(
+              () => controller.activePanel.value == PanelType.none
+                  ? SizedBox()
+                  : buildPanelContent(),
+            ),
+          ],
+        ),
       ),
     );
     return chd;
@@ -898,10 +907,12 @@ class _ModernExportButton extends StatelessWidget {
               break;
           }
         },
-        child: Icon(
-          Icons.more_vert,
-          size: 22,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+        child: Text(
+          "Next",
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.branding,
+          ),
         ),
       ),
     );

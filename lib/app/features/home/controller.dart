@@ -4,6 +4,7 @@ import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
+import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
@@ -429,6 +430,8 @@ class HomeController extends GetxController {
   }
 
   void onTemplateTap(CardTemplate template) {
+    AdMobService().onTemplateViewed();
+
     Get.toNamed(
       AppRoutes.editor,
       arguments: {"template": template, "showSaveCopyBtn": false},
