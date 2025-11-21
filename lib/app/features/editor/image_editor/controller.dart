@@ -485,6 +485,10 @@ class ImageEditorController extends GetxController {
     // Clear adjustment cache to reload fresh values
     _adjustmentValues.clear();
 
+    // Initialize adjustment values if they are at defaults
+    // This helps users see/feel the changes when adjusting sliders
+    _initializeAdjustmentValuesIfNeeded(content);
+
     // Update all relevant UI components
     update([
       'adjustment_tools',
@@ -494,6 +498,34 @@ class ImageEditorController extends GetxController {
       'border_page',
       'transform_page',
     ]);
+  }
+
+  /// Initialize adjustment values with subtle initial values if they are at defaults.
+  /// This helps users see/feel the changes when adjusting sliders.
+  void _initializeAdjustmentValuesIfNeeded(ImageItemContent content) {
+    // Check if all adjustments are at their default values
+    final isAtDefaults =
+        content.brightness == 0.0 &&
+        content.contrast == 1.0 &&
+        content.saturation == 1.0 &&
+        content.hue == 0.0 &&
+        content.opacity == 1.0;
+
+    // If at defaults, apply subtle initial values
+    if (isAtDefaults) {
+      // Apply initial values that are noticeable but not too strong
+      // Brightness: +10 (slightly brighter)
+      content.adjustBrightness(5.0 / 100);
+      // Contrast: +10 (slightly more contrast)
+      content.adjustContrast((60.0 / 100) + 1.0);
+      // Saturation: +10 (slightly more vibrant)
+      content.adjustSaturation((10.0 / 100) + 1.0);
+      // Hue: keep at 0 (no initial hue shift)
+      // Opacity: keep at 100% (no initial opacity change)
+
+      // Update the image to reflect these initial values
+      _notifyImageUpdate();
+    }
   }
 
   void _notifyImageUpdate() {
