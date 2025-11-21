@@ -468,19 +468,19 @@ class ImageEditorController extends GetxController {
     _shapeBorderColor.value = content.shapeBorderColor;
 
     // Load current values
-    _activeFilter.value = content.activeFilter ?? 'none';
-    _selectedMaskShape.value = content.maskShape ?? ImageMaskShape.none;
+    _activeFilter.value = content.activeFilter;
+    _selectedMaskShape.value = content.maskShape;
     _overlayColor.value = content.overlayColor;
     _overlayOpacity.value = content.overlayOpacity ?? 0.4;
-    _borderWidth.value = content.borderWidth ?? 0.0;
-    _borderRadius.value = content.borderRadius ?? 0.0;
+    _borderWidth.value = content.borderWidth;
+    _borderRadius.value = content.borderRadius;
     _borderColor.value = content.borderColor;
-    _shadowBlur.value = content.shadowBlur ?? 0.0;
+    _shadowBlur.value = content.shadowBlur;
     _shadowColor.value = content.shadowColor;
 
-    _rotationAngle.value = content.rotationAngle ?? 0.0;
-    _flipHorizontal.value = content.flipHorizontal ?? false;
-    _flipVertical.value = content.flipVertical ?? false;
+    _rotationAngle.value = content.rotationAngle;
+    _flipHorizontal.value = content.flipHorizontal;
+    _flipVertical.value = content.flipVertical;
 
     // Clear adjustment cache to reload fresh values
     _adjustmentValues.clear();

@@ -172,10 +172,10 @@ class HomeTab extends GetView<HomeController> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      // backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      title: Column(
+      title: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -191,26 +191,20 @@ class HomeTab extends GetView<HomeController> {
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16),
-          child: Card(
-            elevation: 0,
-            // color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-
-            child: GestureDetector(
-              onTap: () {
-                Get.toNamed(AppRoutes.settings);
-              },
-              child: SizedBox(
-                width: 44,
-                height: 44,
-
-                child: const Icon(
-                  Icons.settings,
-                  // color: Color(0xFF6B7280),
-                  size: 20,
-                ),
+          child: GestureDetector(
+            onTap: () {
+              Get.toNamed(AppRoutes.settings);
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Get.theme.colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.settings,
+                size: 20,
               ),
             ),
           ),
@@ -671,7 +665,16 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(title)],
+        children: [
+          Text(title,
+              style:
+                  Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          if (showSeeAll)
+            TextButton(
+              onPressed: onSeeAllTap,
+              child: const Text('See All'),
+            )
+        ],
       ),
     );
   }
@@ -694,7 +697,10 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.brandingLight, AppColors.pink400Light],
+                colors: [
+                  AppColors.branding,
+                  AppColors.brandingLight,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -913,7 +919,6 @@ class _CategoryChip extends StatelessWidget {
       onTap: () => controller.onCategoryTap(category),
       child: Card(
         // padding: const EdgeInsets.symmetric(horizontal: 15),
-        color: context.theme.cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15),

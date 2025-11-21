@@ -31,7 +31,7 @@ class ChartEditorPanel extends StatelessWidget {
       onTap: onClose,
       child: Material(
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 280),
+          constraints: const BoxConstraints(maxHeight: 320),
           decoration: BoxDecoration(
             color: Get.theme.colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -152,7 +152,7 @@ class ChartEditorPanel extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.branding
-                            : Get.theme.colorScheme.surfaceContainerHighest,
+                            : Get.theme.colorScheme.surfaceContainer,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isSelected

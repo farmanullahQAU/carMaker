@@ -438,7 +438,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
               blurRadius: 8,
               offset: Offset(0, -2),
             ),
@@ -706,7 +706,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                   padding: EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.branding.withOpacity(0.12)
+                        ? colorScheme.primary.withOpacity(0.12)
                         : Colors.transparent,
                     shape: BoxShape.circle,
                   ),
@@ -714,7 +714,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                     isActive ? activeIcon : icon,
                     size: 22,
                     color: isActive
-                        ? AppColors.branding
+                        ? colorScheme.primary
                         : colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
@@ -724,7 +724,7 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                     color: isActive
-                        ? AppColors.branding
+                        ? colorScheme.primary
                         : colorScheme.onSurface.withOpacity(0.7),
                   ),
                   child: Text(
@@ -911,7 +911,7 @@ class _ModernExportButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
 
           decoration: BoxDecoration(
-            color: AppColors.branding.withOpacity(1),
+            color: AppColors.branding,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.branding),
           ),
@@ -919,7 +919,7 @@ class _ModernExportButton extends StatelessWidget {
             "NEXT",
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.backgroundLight,
+              color: Colors.white,
             ),
           ),
         ),
@@ -1506,8 +1506,8 @@ class BorderPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = Get.find<CanvasController>().draggedItem.value == null
-          ? AppColors.accent.withOpacity(0.5) // More subtle color
-          : AppColors.accent.withOpacity(0.7)
+          ? Get.theme.colorScheme.secondary.withOpacity(0.5) // More subtle color
+          : Get.theme.colorScheme.secondary.withOpacity(0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke; // Thin stroke
 

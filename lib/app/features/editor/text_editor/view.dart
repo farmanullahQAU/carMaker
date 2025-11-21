@@ -69,7 +69,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppColors.branding, width: 0.1),
+          bottom: BorderSide(color: Get.theme.colorScheme.outline, width: 0.1),
         ),
       ),
       child: Row(
@@ -282,19 +282,23 @@ class _AlignmentTab extends StatelessWidget {
         width: 40.0,
         height: 40.0,
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.branding : Colors.transparent,
+          color: isSelected
+              ? Get.theme.colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6.0),
           border: Border.all(
             color: isSelected
-                ? AppColors.branding
-                : AppColors.highlight.withOpacity(0.2),
+                ? Get.theme.colorScheme.primary
+                : Get.theme.colorScheme.outline.withOpacity(0.2),
             width: 1.0,
           ),
         ),
         child: Icon(
           icon,
           size: 20.0,
-          color: isSelected ? Colors.white : AppColors.highlight,
+          color: isSelected
+              ? Get.theme.colorScheme.onPrimary
+              : Get.theme.colorScheme.onSurface,
         ),
       ),
     );
@@ -527,19 +531,19 @@ class _EffectsTab extends StatelessWidget {
         height: 88,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.12)
+              ? Get.theme.colorScheme.primary.withOpacity(0.12)
               : Get.theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected
-                ? AppColors.branding
+                ? Get.theme.colorScheme.primary
                 : Get.theme.colorScheme.outline.withOpacity(0.15),
             width: isSelected ? 2.0 : 1.0,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.branding.withOpacity(0.2),
+                    color: Get.theme.colorScheme.primary.withOpacity(0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -653,7 +657,7 @@ class _EffectsTab extends StatelessWidget {
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
-                    ? AppColors.branding
+                    ? Get.theme.colorScheme.primary
                     : Get.theme.colorScheme.onSurface.withOpacity(0.75),
                 letterSpacing: 0.2,
               ),
@@ -849,7 +853,7 @@ class _FormatTab extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding
+              ? Get.theme.colorScheme.primary
               : Get.theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(6),
         ),
@@ -857,7 +861,7 @@ class _FormatTab extends StatelessWidget {
           icon,
           size: 16,
           color: isSelected
-              ? Colors.white
+              ? Get.theme.colorScheme.onPrimary
               : Get.theme.colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
@@ -940,7 +944,9 @@ class _FormatTab extends StatelessWidget {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.branding : Colors.transparent,
+                    color: isSelected
+                        ? Get.theme.colorScheme.primary
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
@@ -950,7 +956,7 @@ class _FormatTab extends StatelessWidget {
                       fontSize: 10,
                       fontWeight: weight,
                       color: isSelected
-                          ? Colors.white
+                          ? Get.theme.colorScheme.onPrimary
                           : Get.theme.colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
@@ -976,7 +982,7 @@ class _FormatTab extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: isActive
-              ? AppColors.branding
+              ? Get.theme.colorScheme.primary
               : Get.theme.colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(6),
         ),
@@ -987,7 +993,7 @@ class _FormatTab extends StatelessWidget {
               icon,
               size: 14,
               color: isActive
-                  ? Colors.white
+                  ? Get.theme.colorScheme.onPrimary
                   : Get.theme.colorScheme.onSurface.withOpacity(0.6),
             ),
             const SizedBox(height: 2),
@@ -997,7 +1003,7 @@ class _FormatTab extends StatelessWidget {
                 fontSize: 8,
                 fontWeight: FontWeight.w500,
                 color: isActive
-                    ? Colors.white
+                    ? Get.theme.colorScheme.onPrimary
                     : Get.theme.colorScheme.onSurface.withOpacity(0.6),
                 fontStyle: label == 'Italic' && isActive
                     ? FontStyle.italic
@@ -1312,10 +1318,19 @@ class _FontTab extends StatelessWidget {
             ),
           ),
           FilledButton.icon(
-            style: FilledButton.styleFrom(elevation: 10),
+            style: FilledButton.styleFrom(
+              elevation: 10,
+              backgroundColor: Get.theme.colorScheme.primary,
+            ),
             onPressed: () => _openFontSearch(),
-            label: Text('Search'),
-            icon: Icon(Icons.search_rounded, color: Colors.white),
+            label: Text(
+              'Search',
+              style: TextStyle(color: Get.theme.colorScheme.onPrimary),
+            ),
+            icon: Icon(
+              Icons.search_rounded,
+              color: Get.theme.colorScheme.onPrimary,
+            ),
           ),
         ],
       ),
@@ -1354,8 +1369,8 @@ class _FontTab extends StatelessWidget {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    AppColors.branding.withOpacity(0.15),
-                    AppColors.branding.withOpacity(0.05),
+                    Get.theme.colorScheme.primary.withOpacity(0.15),
+                    Get.theme.colorScheme.primary.withOpacity(0.05),
                   ],
                 )
               : null,
@@ -1392,15 +1407,23 @@ class _FontTab extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.branding : Colors.transparent,
+                color: isSelected
+                    ? Get.theme.colorScheme.primary
+                    : Colors.transparent,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppColors.branding : Colors.white,
+                  color: isSelected
+                      ? Get.theme.colorScheme.primary
+                      : Get.theme.colorScheme.onSurface.withOpacity(0.5),
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  ? Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: Get.theme.colorScheme.onPrimary,
+                    )
                   : null,
             ),
           ],
@@ -1425,7 +1448,9 @@ class _FontTab extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.branding),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Get.theme.colorScheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1496,19 +1521,19 @@ class _MaskTab extends StatelessWidget {
         height: 80,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.15)
+              ? Get.theme.colorScheme.primary.withOpacity(0.15)
               : Get.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppColors.branding
+                ? Get.theme.colorScheme.primary
                 : Get.theme.colorScheme.outline.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.branding.withOpacity(0.3),
+                    color: Get.theme.colorScheme.primary.withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1526,7 +1551,7 @@ class _MaskTab extends StatelessWidget {
             Icons.layers_clear_rounded,
             size: 28,
             color: isSelected
-                ? AppColors.branding
+                ? Get.theme.colorScheme.primary
                 : Get.theme.colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
@@ -1545,19 +1570,19 @@ class _MaskTab extends StatelessWidget {
         height: 80,
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.branding.withOpacity(0.15)
+              ? Get.theme.colorScheme.primary.withOpacity(0.15)
               : Get.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppColors.branding
+                ? Get.theme.colorScheme.primary
                 : Get.theme.colorScheme.outline.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.branding.withOpacity(0.3),
+                    color: Get.theme.colorScheme.primary.withOpacity(0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -1605,7 +1630,7 @@ class _MaskTab extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.branding,
+                    color: Get.theme.colorScheme.primary,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -1615,9 +1640,9 @@ class _MaskTab extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_rounded,
-                    color: Colors.white,
+                    color: Get.theme.colorScheme.onPrimary,
                     size: 14,
                   ),
                 ),
@@ -1640,12 +1665,12 @@ class _MaskTab extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.branding,
+                          color: Get.theme.colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.tune_rounded,
-                          color: Colors.white,
+                          color: Get.theme.colorScheme.onPrimary,
                           size: 18,
                         ),
                       ),
@@ -1729,7 +1754,7 @@ class MaskTuneBottomSheet extends StatelessWidget {
       height: 5,
       width: 50,
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Get.theme.colorScheme.onSurface.withOpacity(0.4),
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -1863,19 +1888,20 @@ class MaskTuneBottomSheet extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.branding.withOpacity(0.15)
+                            ? Get.theme.colorScheme.primary.withOpacity(0.15)
                             : Get.theme.colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? AppColors.branding
+                              ? Get.theme.colorScheme.primary
                               : Get.theme.colorScheme.outline.withOpacity(0.2),
                           width: isSelected ? 2 : 1,
                         ),
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: AppColors.branding.withOpacity(0.2),
+                                  color: Get.theme.colorScheme.primary
+                                      .withOpacity(0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -1889,7 +1915,7 @@ class MaskTuneBottomSheet extends StatelessWidget {
                             icon,
                             size: 20,
                             color: isSelected
-                                ? AppColors.branding
+                                ? Get.theme.colorScheme.primary
                                 : Get.theme.colorScheme.onSurface.withOpacity(
                                     0.7,
                                   ),
@@ -1901,7 +1927,7 @@ class MaskTuneBottomSheet extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: isSelected
-                                  ? AppColors.branding
+                                  ? Get.theme.colorScheme.primary
                                   : Get.theme.colorScheme.onSurface,
                             ),
                             textAlign: TextAlign.center,
@@ -1969,7 +1995,7 @@ class TuneBottomSheet extends StatelessWidget {
       height: 5,
       width: 50,
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Get.theme.colorScheme.onSurface.withOpacity(0.4),
         borderRadius: BorderRadius.circular(4),
       ),
     );

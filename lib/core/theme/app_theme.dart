@@ -11,11 +11,11 @@ class CardMakerTheme {
         seedColor: AppColors.branding,
         primary: AppColors.branding,
         surface: AppColors.backgroundLight,
-        surfaceContainer: Color(0xffe6e7eb),
-        surfaceContainerHigh: Color(0xffd1d2d6),
-        surfaceContainerHighest: Color(0xffbabbc0),
-        surfaceContainerLow: Color(0xfff5f5f5),
-        surfaceContainerLowest: Color(0xfffafafa),
+        surfaceContainer: const Color(0xffe6e7eb),
+        surfaceContainerHigh: const Color(0xffd1d2d6),
+        surfaceContainerHighest: const Color(0xffbabbc0),
+        surfaceContainerLow: const Color(0xfff5f5f5),
+        surfaceContainerLowest: const Color(0xfffafafa),
         brightness: Brightness.light,
       ),
       textTheme: GoogleFonts.interTightTextTheme(Typography.blackMountainView),
@@ -27,24 +27,14 @@ class CardMakerTheme {
       useMaterial3: true,
       fontFamily: 'Inter', // Or any font you use
       colorScheme: ColorScheme.fromSeed(
-        // seedColor: Colors.pink,
         seedColor: AppColors.branding,
         primary: AppColors.branding,
         surface: AppColors.backgroundDark,
-        surfaceContainer: Color(0xff38393e),
-        surfaceContainerHigh: Color(0xff41434a),
-        surfaceContainerHighest: Color(0xff4a4c52),
-        surfaceContainerLow: Color(0xff313237),
-        surfaceContainerLowest: Color(0xff292a2f),
-
-        // surfaceContainer: Color(0xff38393e),
-
-        //38393e
-        // Dark surface color
-        // tertiary: Colors.white,
-
-        // secondary: AppColors.secondary
-        // tertiary: AppColors.tertiary,
+        surfaceContainer: const Color(0xff2a3a52),
+        surfaceContainerHigh: const Color(0xff3a4f6b),
+        surfaceContainerHighest: const Color(0xff4c6585),
+        surfaceContainerLow: const Color(0xff162031),
+        surfaceContainerLowest: const Color(0xff0d1520),
         brightness: Brightness.dark,
       ),
       textTheme: GoogleFonts.interTightTextTheme(Typography.whiteMountainView),
