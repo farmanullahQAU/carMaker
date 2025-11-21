@@ -62,9 +62,9 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
         height:
-            (_tabController.index < 4 ? 160 : 180) +
+            (_tabController.index < 4 ? 180 : 180) +
             42, // Added header height (8*2 padding + ~26 for text/icon)
-        color: Get.theme.colorScheme.surfaceContainerHigh,
+        color: Get.theme.colorScheme.surface,
         child: Column(
           children: [
             // Header with close button
@@ -242,6 +242,7 @@ class _AdjustPage extends StatelessWidget {
             },
           ),
         ),
+        SizedBox(height: 16),
       ],
     );
   }
@@ -302,7 +303,7 @@ class _AdjustmentToolButton extends StatelessWidget {
             width: 55,
             height: 55,
             decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surface,
+              color: Get.theme.colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(8),
               border: isSelected
                   ? Border.all(color: AppColors.brandingLight, width: 2)
@@ -367,7 +368,7 @@ class _ProfessionalSlider extends StatelessWidget {
                         Container(
                           height: 16,
                           decoration: BoxDecoration(
-                            color: Get.theme.colorScheme.surfaceContainerLow,
+                            color: Get.theme.colorScheme.surfaceContainer,
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
@@ -691,7 +692,7 @@ class _FilterThumbnail extends StatelessWidget {
             width: 55,
             height: 55,
             decoration: BoxDecoration(
-              color: Get.theme.colorScheme.surface,
+              color: Get.theme.colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(8),
               border: isActive
                   ? Border.all(color: AppColors.brandingLight, width: 2)
@@ -794,12 +795,10 @@ class _EffectsPage extends StatelessWidget {
                 width: 55,
 
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.branding.withOpacity(0.09)
-                      : Get.theme.colorScheme.surface,
+                  color: Get.theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: isSelected
-                      ? Border.all(color: AppColors.branding, width: 1)
+                      ? Border.all(color: AppColors.brandingLight, width: 2)
                       : null,
                 ),
                 child: Column(
@@ -810,10 +809,14 @@ class _EffectsPage extends StatelessWidget {
                         height: 56,
                         // width: 56,
                         decoration: BoxDecoration(
-                          color: Get.theme.colorScheme.surface,
+                          color: Get.theme.colorScheme.surfaceContainer,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(child: _getShapeIcon(shape, isSelected)),
+                        child: Center(
+                          child: isSelected && shape != ImageMaskShape.none
+                              ? null
+                              : _getShapeIcon(shape, isSelected),
+                        ),
                       ),
                     ),
                   ],
@@ -827,12 +830,10 @@ class _EffectsPage extends StatelessWidget {
                   onTap: () => _showShapeSettingsBottomSheet(),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
+                      // color: Colors.black.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.tune, color: Colors.white, size: 24),
-                    ),
+                    child: const Center(child: Icon(Icons.tune)),
                   ),
                 ),
               ),
@@ -1414,7 +1415,7 @@ class _ColorChip extends StatelessWidget {
               color: color ?? Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
               border: isActive
-                  ? Border.all(color: AppColors.branding, width: 1)
+                  ? Border.all(color: AppColors.brandingLight, width: 2)
                   : null,
             ),
             child: color == null
@@ -1428,7 +1429,7 @@ class _ColorChip extends StatelessWidget {
         ),
         SizedBox(height: 6),
         Text(
-          '#${color?.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+          '#${color?.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase() ?? "000"}',
           style: TextStyle(
             color: isActive ? AppColors.branding : null,
 
@@ -1462,6 +1463,7 @@ class _BorderPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+
             children: [
               Row(
                 children: [

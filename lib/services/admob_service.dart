@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:cardmaker/models/config_model.dart';
 import 'package:cardmaker/services/remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
@@ -54,9 +55,20 @@ class AdMobService {
   void _loadRewardedAd() {
     if (!isEnabled || !_adConfig.showRewardedAdOnExport) return;
 
-    final adUnitId = _adConfig.rewardedAdUnitId.isNotEmpty
-        ? _adConfig.rewardedAdUnitId
-        : _testRewardedAdUnitId;
+    // In release mode, only use configured ad unit IDs (no test IDs)
+    String? adUnitId;
+    if (_adConfig.rewardedAdUnitId.isNotEmpty) {
+      adUnitId = _adConfig.rewardedAdUnitId;
+    } else if (kDebugMode) {
+      // Only use test IDs in debug mode
+      adUnitId = _testRewardedAdUnitId;
+    } else {
+      // In release mode, don't load ads if no ad unit ID is configured
+      log(
+        'Rewarded ad unit ID not configured. Skipping ad load in release mode.',
+      );
+      return;
+    }
 
     RewardedAd.load(
       adUnitId: adUnitId,
@@ -152,9 +164,20 @@ class AdMobService {
   void _loadInterstitialAd() {
     if (!isEnabled || !_adConfig.showInterstitialAdOnTemplateView) return;
 
-    final adUnitId = _adConfig.interstitialAdUnitId.isNotEmpty
-        ? _adConfig.interstitialAdUnitId
-        : _testInterstitialAdUnitId;
+    // In release mode, only use configured ad unit IDs (no test IDs)
+    String? adUnitId;
+    if (_adConfig.interstitialAdUnitId.isNotEmpty) {
+      adUnitId = _adConfig.interstitialAdUnitId;
+    } else if (kDebugMode) {
+      // Only use test IDs in debug mode
+      adUnitId = _testInterstitialAdUnitId;
+    } else {
+      // In release mode, don't load ads if no ad unit ID is configured
+      log(
+        'Interstitial ad unit ID not configured. Skipping ad load in release mode.',
+      );
+      return;
+    }
 
     InterstitialAd.load(
       adUnitId: adUnitId,
@@ -228,9 +251,20 @@ class AdMobService {
   }) {
     if (!isEnabled || !_adConfig.showBannerAd) return null;
 
-    final adUnitId = _adConfig.bannerAdUnitId.isNotEmpty
-        ? _adConfig.bannerAdUnitId
-        : _testBannerAdUnitId;
+    // In release mode, only use configured ad unit IDs (no test IDs)
+    String? adUnitId;
+    if (_adConfig.bannerAdUnitId.isNotEmpty) {
+      adUnitId = _adConfig.bannerAdUnitId;
+    } else if (kDebugMode) {
+      // Only use test IDs in debug mode
+      adUnitId = _testBannerAdUnitId;
+    } else {
+      // In release mode, don't create banner ad if no ad unit ID is configured
+      log(
+        'Banner ad unit ID not configured. Skipping banner ad creation in release mode.',
+      );
+      return null;
+    }
 
     final bannerAd = BannerAd(
       adUnitId: adUnitId,

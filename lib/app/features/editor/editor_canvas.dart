@@ -907,11 +907,20 @@ class _ModernExportButton extends StatelessWidget {
               break;
           }
         },
-        child: Text(
-          "Next",
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppColors.branding,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+
+          decoration: BoxDecoration(
+            color: AppColors.branding.withOpacity(1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.branding),
+          ),
+          child: Text(
+            "NEXT",
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.backgroundLight,
+            ),
           ),
         ),
       ),

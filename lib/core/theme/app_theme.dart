@@ -11,7 +11,11 @@ class CardMakerTheme {
         seedColor: AppColors.branding,
         primary: AppColors.branding,
         surface: AppColors.backgroundLight,
-        // tertiary: AppColors.tertiary,
+        surfaceContainer: Color(0xffe6e7eb),
+        surfaceContainerHigh: Color(0xffd1d2d6),
+        surfaceContainerHighest: Color(0xffbabbc0),
+        surfaceContainerLow: Color(0xfff5f5f5),
+        surfaceContainerLowest: Color(0xfffafafa),
         brightness: Brightness.light,
       ),
       textTheme: GoogleFonts.interTightTextTheme(Typography.blackMountainView),
@@ -27,6 +31,12 @@ class CardMakerTheme {
         seedColor: AppColors.branding,
         primary: AppColors.branding,
         surface: AppColors.backgroundDark,
+        surfaceContainer: Color(0xff38393e),
+        surfaceContainerHigh: Color(0xff41434a),
+        surfaceContainerHighest: Color(0xff4a4c52),
+        surfaceContainerLow: Color(0xff313237),
+        surfaceContainerLowest: Color(0xff292a2f),
+
         // surfaceContainer: Color(0xff38393e),
 
         //38393e
