@@ -44,6 +44,10 @@ class PublishProjectPage extends GetView<PublishProjectController> {
 
               // Category Selection
               _buildCategorySection(context),
+              const SizedBox(height: 32),
+
+              // Premium/Free Toggle
+              _buildPremiumToggle(context),
               const SizedBox(height: 40),
 
               // Publish Button
@@ -129,6 +133,153 @@ class PublishProjectPage extends GetView<PublishProjectController> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildPremiumToggle(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Project Type',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Obx(() {
+          final isPremium = controller.isPremium.value;
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => controller.isPremium.value = false,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: !isPremium
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
+                        ),
+                        border: Border.all(
+                          color: !isPremium
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: !isPremium ? 2 : 0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            color: !isPremium
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Free',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: !isPremium
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: !isPremium
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => controller.isPremium.value = true,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isPremium
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                        border: Border.all(
+                          color: isPremium
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent,
+                          width: isPremium ? 2 : 0,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            color: isPremium
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Premium',
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontWeight: isPremium
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: isPremium
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
@@ -259,6 +410,7 @@ class PublishProjectPage extends GetView<PublishProjectController> {
         'categoryId': categoryId,
         'categoryName': categoryName,
         'projectName': projectName,
+        'isPremium': controller.isPremium.value,
       },
     );
   }

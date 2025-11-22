@@ -21,8 +21,19 @@ class SettingsController extends GetxController {
   }
 
   /// Save theme to storage and update app theme
-  void setThemeMode(ThemeMode mode) async {
+  void setThemeMode(ThemeMode mode) {
+    // Update UI immediately for smooth transition
     themeMode.value = mode;
+
+    // Update theme immediately for instant feedback
+    Get.changeThemeMode(mode);
+
+    // Save to storage asynchronously (non-blocking)
+    _saveThemeMode(mode);
+  }
+
+  /// Save theme mode to storage (non-blocking)
+  void _saveThemeMode(ThemeMode mode) {
     String themeString;
     switch (mode) {
       case ThemeMode.light:
@@ -34,7 +45,9 @@ class SettingsController extends GetxController {
       default:
         themeString = 'system';
     }
-    await _storage.write(themeKey, themeString);
-    Get.changeThemeMode(mode);
+    // Fire and forget - don't block UI
+    _storage.write(themeKey, themeString).catchError((error) {
+      debugPrint('Error saving theme: $error');
+    });
   }
 }

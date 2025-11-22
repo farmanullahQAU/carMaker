@@ -575,7 +575,32 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
-                // 6. Stickers (Last)
+                // 6. Image
+                Obx(() {
+                  bool isImageActive =
+                      controller.activeItem.value is StackImageItem ||
+                      controller.activePanel.value == PanelType.advancedImage;
+                  return _ProfessionalToolbarButton(
+                    isActive: isImageActive,
+                    icon: Icons.photo_filter_outlined,
+                    activeIcon: Icons.photo_filter,
+                    label: controller.activeItem.value is StackImageItem
+                        ? 'Edit'
+                        : 'Image',
+                    panelType: PanelType.advancedImage,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activeItem.value != null &&
+                          controller.activeItem.value is StackImageItem) {
+                        controller.activePanel.value = PanelType.advancedImage;
+                      } else {
+                        _showImageOptions(context);
+                      }
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
+                // 7. Stickers (Last)
                 _ProfessionalToolbarButton(
                   isActive: controller.activePanel.value == PanelType.stickers,
                   icon: Icons.emoji_emotions_outlined,
@@ -632,16 +657,6 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     controller.pickAndAddImage();
                   },
                 ),
-              const SizedBox(height: 12),
-              _ActionButton(
-                icon: Icons.image_outlined,
-                label: "Change Background Image",
-                onTap: () {
-                  Navigator.pop(context);
-                  controller.pickAndUpdateBackground();
-                },
-              ),
-              const SizedBox(height: 12),
             ],
           ),
         );

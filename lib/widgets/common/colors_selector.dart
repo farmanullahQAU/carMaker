@@ -256,7 +256,8 @@ class ColorSelector extends StatefulWidget {
 }
 
 class _ColorSelectorState extends State<ColorSelector> {
-  final List<Color> _customColors = []; // Store custom selected colors
+  // Static list to persist custom colors across all ColorSelector instances
+  static final List<Color> _persistentCustomColors = [];
 
   void _showColorPickerDialog(BuildContext context) {
     Color pickerColor = widget.currentColor;
@@ -312,14 +313,18 @@ class _ColorSelectorState extends State<ColorSelector> {
     final bool isCustomColor = !widget.colors.contains(color);
 
     if (isCustomColor) {
-      // Add to custom colors if not already present
-      if (!_customColors.contains(color)) {
+      // Check if color already exists in persistent list (by value, not reference)
+      final bool colorExists = _persistentCustomColors.any(
+        (c) => c.value == color.value,
+      );
+
+      if (!colorExists) {
         setState(() {
-          _customColors.insert(0, color); // Add at beginning
+          _persistentCustomColors.insert(0, color); // Add at beginning
 
           // Limit the number of custom colors
-          if (_customColors.length > widget.maxCustomColors) {
-            _customColors.removeLast();
+          if (_persistentCustomColors.length > widget.maxCustomColors) {
+            _persistentCustomColors.removeLast();
           }
         });
       }
@@ -329,18 +334,22 @@ class _ColorSelectorState extends State<ColorSelector> {
     widget.onColorSelected(color);
   }
 
-  bool _isColorInList(Color color, List<Color> list) {
-    return list.any((c) => c.value == color.value);
-  }
-
   @override
   Widget build(BuildContext context) {
     final Color borderColor =
         widget.selectedBorderColor ?? Theme.of(context).primaryColor;
 
-    // Combine predefined colors and custom colors
-    final allColors = [...widget.colors, ..._customColors];
-    final uniqueColors = allColors.toSet().toList(); // Remove duplicates
+    // Combine predefined colors and persistent custom colors
+    final allColors = [...widget.colors, ..._persistentCustomColors];
+    // Remove duplicates by color value
+    final uniqueColors = <Color>[];
+    final seenValues = <int>{};
+    for (final color in allColors) {
+      if (!seenValues.contains(color.value)) {
+        seenValues.add(color.value);
+        uniqueColors.add(color);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +407,9 @@ class _ColorSelectorState extends State<ColorSelector> {
               // Color items
               final color = uniqueColors[index];
               final isSelected = color == widget.currentColor;
-              final isCustomColor = _customColors.contains(color);
+              final isCustomColor = _persistentCustomColors.any(
+                (c) => c.value == color.value,
+              );
 
               // First item (clear/transparent button)
               if (index == 0 && color == Colors.transparent) {

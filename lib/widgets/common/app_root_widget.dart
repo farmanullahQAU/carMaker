@@ -13,10 +13,13 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+    with TickerProviderStateMixin {
+  late AnimationController _mainAnimationController;
+  late AnimationController _pulseController;
+  late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
+  late Animation<double> _logoScaleAnimation;
+  late Animation<double> _pulseAnimation;
   bool _hasNavigated = false;
 
   @override
@@ -27,32 +30,50 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _setupAnimations() {
-    _animationController = AnimationController(
+    // Main animation controller
+    _mainAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(
-        milliseconds: 800,
-      ), // Reduced for smoother performance
+      duration: const Duration(milliseconds: 1200),
     );
 
-    // _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-    //   CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    // );
+    // Pulse animation controller for logo
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _mainAnimationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
     );
 
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0.9, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _mainAnimationController,
+        curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
 
-    _animationController.forward();
+    _logoScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _mainAnimationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.elasticOut),
+      ),
+    );
+
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _mainAnimationController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _mainAnimationController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -88,121 +109,227 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF0A0A0A)
+          : const Color(0xFFFAFAFA),
       body: Stack(
         children: [
-          // Decorative background elements
+          // Gradient background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [
+                        const Color(0xFF0A0A0A),
+                        const Color(0xFF1A1A2E),
+                        const Color(0xFF0A0A0A),
+                      ]
+                    : [
+                        const Color(0xFFFAFAFA),
+                        const Color(0xFFF5F5F5),
+                        const Color(0xFFFAFAFA),
+                      ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+
+          // Decorative gradient circles
           Positioned(
-            top: -100,
-            right: -100,
-            child: _buildDecorativeCircle(
-              size: 250,
-              opacity: 0.08,
-              color: Get.theme.colorScheme.surfaceContainer,
+            top: -150,
+            right: -150,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.branding.withOpacity(0.15),
+                    AppColors.branding.withOpacity(0.0),
+                  ],
+                ),
+              ),
             ),
           ),
           Positioned(
-            bottom: -120,
-            left: -80,
-            child: _buildDecorativeCircle(
-              size: 300,
-              opacity: 0.06,
-              color: Get.theme.colorScheme.surfaceContainer,
+            bottom: -200,
+            left: -100,
+            child: Container(
+              width: 500,
+              height: 500,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.brandingLight.withOpacity(0.12),
+                    AppColors.brandingLight.withOpacity(0.0),
+                  ],
+                ),
+              ),
             ),
           ),
 
           // Main content
           Center(
             child: AnimatedBuilder(
-              animation: _animationController,
+              animation: Listenable.merge([
+                _mainAnimationController,
+                _pulseController,
+              ]),
               builder: (context, child) {
-                return Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: child,
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // App logo with pulse animation
+                        Transform.scale(
+                          scale:
+                              _logoScaleAnimation.value * _pulseAnimation.value,
+                          child: Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.branding.withOpacity(0.2),
+                                  AppColors.brandingLight.withOpacity(0.1),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.branding.withOpacity(0.3),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF1A1A2E)
+                                    : Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Image.asset(
+                                  "assets/icon.png",
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // App name with gradient
+                        ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.branding,
+                                AppColors.brandingLight,
+                                AppColors.branding,
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ).createShader(bounds);
+                          },
+                          child: const Text(
+                            'Artnie',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: Colors.white,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Tagline
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Text(
+                            'Create Beautiful Designs Effortlessly',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.7)
+                                  : Colors.black.withOpacity(0.6),
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 80),
+
+                        // Professional loading indicator
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.branding.withOpacity(0.3),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.branding,
+                                    ),
+                                    strokeCap: StrokeCap.round,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // App logo container
-                  Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Get.theme.colorScheme.surfaceContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Image.asset(
-                        "assets/icon.png",
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // App name with shader mask
-                  ShaderMask(
-                    shaderCallback: (bounds) {
-                      return LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.branding,
-                          AppColors.brandingLight,
-                          AppColors.blue400,
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ).createShader(bounds);
-                    },
-                    child: const Text(
-                      'Artnie',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    'Create Beautiful Designs Effortlessly',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-                  // Loading indicator
-                  const SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(strokeWidth: 4),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDecorativeCircle({
-    required double size,
-    required double opacity,
-    required Color color,
-  }) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color.withOpacity(opacity),
-        shape: BoxShape.circle,
       ),
     );
   }

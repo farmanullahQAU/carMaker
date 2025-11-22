@@ -155,6 +155,10 @@ class HomeController extends GetxController {
 
   final RxList<CardTemplate> featuredTemplates = RxList<CardTemplate>([]);
 
+  // Cache flags to prevent unnecessary reloads
+  bool _isDataInitialized = false;
+  bool _isInitializing = false;
+
   final List<CanvasSize> canvasSizes = [
     CanvasSize(
       title: 'Portrait',
@@ -184,7 +188,10 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _initializeData();
+    // Only initialize if not already initialized
+    if (!_isDataInitialized && !_isInitializing) {
+      _initializeData();
+    }
   }
 
   // Modify your HomeController's _initializeData method
@@ -207,6 +214,10 @@ class HomeController extends GetxController {
   //   }
   // }
   Future<void> _initializeData() async {
+    // Prevent multiple simultaneous initializations
+    if (_isInitializing || _isDataInitialized) return;
+
+    _isInitializing = true;
     isLoading.value = true;
     try {
       await Future.wait([
@@ -217,9 +228,11 @@ class HomeController extends GetxController {
       ]);
       // Sync local favorites with Firebase if user is logged in
       await syncLocalFavoritesWithFirebase();
+      _isDataInitialized = true;
     } catch (e) {
       print('Error initializing data: $e');
     } finally {
+      _isInitializing = false;
       isLoading.value = false;
       update([
         'freeTodayTemplates',
@@ -475,6 +488,8 @@ class HomeController extends GetxController {
   }
 
   void refreshData() async {
+    // Force refresh by resetting the flag
+    _isDataInitialized = false;
     await _initializeData();
     await remoteConfig.refreshConfig();
   }

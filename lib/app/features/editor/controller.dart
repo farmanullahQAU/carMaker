@@ -1002,12 +1002,14 @@ class CanvasController extends GetxController {
     final categoryId = result['categoryId'] as String;
     final categoryName = result['categoryName'] as String;
     final projectName = result['projectName'] as String;
+    final isPremium = result['isPremium'] as bool? ?? false;
 
     // Now publish with the selected details
     await publishProjectWithDetails(
       categoryId: categoryId,
       categoryName: categoryName,
       projectName: projectName,
+      isPremium: isPremium,
     );
   }
 
@@ -1015,6 +1017,7 @@ class CanvasController extends GetxController {
     required String categoryId,
     required String categoryName,
     required String projectName,
+    bool isPremium = false,
   }) async {
     try {
       ToastHelper.loading('Publishing template...');
@@ -1063,7 +1066,7 @@ class CanvasController extends GetxController {
         height: initialTemplate!.height,
         category: categoryName,
         tags: ['default'],
-        isPremium: false,
+        isPremium: isPremium,
         isDraft: false,
         backgroundHue: backgroundHue.value.roundToDouble(),
         backgroundColor: backgroundColor.value,

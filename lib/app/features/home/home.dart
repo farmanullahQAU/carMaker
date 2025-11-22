@@ -11,6 +11,7 @@ import 'package:cardmaker/widgets/common/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:widget_mask/widget_mask.dart';
 
@@ -134,9 +135,31 @@ class HomeTab extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    return _HomeTabStateful();
+  }
+}
+
+class _HomeTabStateful extends StatefulWidget {
+  const _HomeTabStateful();
+
+  @override
+  State<_HomeTabStateful> createState() => _HomeTabStatefulState();
+}
+
+class _HomeTabStatefulState extends State<_HomeTabStateful>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
+    final controller = Get.find<HomeController>();
+
     return Scaffold(
       extendBody: true,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(controller),
       body: RefreshIndicator(
         onRefresh: () async {
           controller.refreshData();
@@ -170,7 +193,7 @@ class HomeTab extends GetView<HomeController> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(HomeController controller) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -202,10 +225,7 @@ class HomeTab extends GetView<HomeController> {
                 color: Get.theme.colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.settings,
-                size: 20,
-              ),
+              child: const Icon(Icons.settings, size: 20),
             ),
           ),
         ),
@@ -222,30 +242,7 @@ class ModernLoadingSkeleton extends StatefulWidget {
   State<ModernLoadingSkeleton> createState() => _ModernLoadingSkeletonState();
 }
 
-class _ModernLoadingSkeletonState extends State<ModernLoadingSkeleton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-    _animation = Tween<double>(
-      begin: -1,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _ModernLoadingSkeletonState extends State<ModernLoadingSkeleton> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -261,51 +258,54 @@ class _ModernLoadingSkeletonState extends State<ModernLoadingSkeleton>
   }
 
   Widget _buildSkeletonCard() {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: 100,
-          height: 140,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+    final isDark = Get.theme.brightness == Brightness.dark;
+
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+      highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
+      period: const Duration(milliseconds: 1500),
+      child: Container(
+        width: 100,
+        height: 140,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade800 : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.grey.shade700 : const Color(0xFFE5E7EB),
+            width: 1,
           ),
-          child: Stack(
-            children: [
-              Container(
-                margin: const EdgeInsets.all(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Container(
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    begin: Alignment(-1 + _animation.value, 0),
-                    end: Alignment(1 + _animation.value, 0),
-                    colors: const [
-                      Color(0xFFF3F4F6),
-                      Color(0xFFE5E7EB),
-                      Color(0xFFF3F4F6),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -578,8 +578,8 @@ class OptimizedTemplateCard extends StatelessWidget {
         fit: BoxFit.cover,
         fadeInDuration: const Duration(milliseconds: 200),
 
-        placeholder: (context, url) => _buildPlaceholder(),
-        errorWidget: (context, url, error) => _buildPlaceholder(),
+        placeholder: (context, url) => _buildShimmerPlaceholder(),
+        errorWidget: (context, url, error) => _buildErrorWidget(),
         imageBuilder: (context, imageProvider) => Image(
           image: imageProvider,
           fit: BoxFit.cover,
@@ -593,10 +593,64 @@ class OptimizedTemplateCard extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
+    return _buildShimmerPlaceholder();
+  }
+
+  Widget _buildShimmerPlaceholder() {
+    final isDark = Get.theme.brightness == Brightness.dark;
+
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+      highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
+      period: const Duration(milliseconds: 1500),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.image_outlined,
+            color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+            size: 32,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    final isDark = Get.theme.brightness == Brightness.dark;
+
     return Container(
-      color: const Color(0xFFF9FAFB),
-      child: const Center(
-        child: Icon(Icons.image_outlined, color: Color(0xFFD1D5DB), size: 24),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_rounded,
+              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+              size: 32,
+            ),
+            // const SizedBox(height: 8),
+            // Text(
+            //   'Failed to load',
+            //   style: TextStyle(
+            //     fontSize: 10,
+            //     color: isDark ? Colors.grey.shade600 : Colors.grey.shade500,
+            //     fontWeight: FontWeight.w500,
+            //   ),
+            // ),
+          ],
+        ),
       ),
     );
   }
@@ -666,14 +720,14 @@ class SectionTitle extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title,
-              style:
-                  Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: Get.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           if (showSeeAll)
-            TextButton(
-              onPressed: onSeeAllTap,
-              child: const Text('See All'),
-            )
+            TextButton(onPressed: onSeeAllTap, child: const Text('See All')),
         ],
       ),
     );
@@ -697,10 +751,7 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  AppColors.branding,
-                  AppColors.brandingLight,
-                ],
+                colors: [AppColors.branding, AppColors.brandingLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

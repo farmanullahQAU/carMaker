@@ -40,14 +40,8 @@ class SettingsPage extends StatelessWidget {
 
           _buildDivider(theme),
 
-          // Appearance Section
-          _buildSettingsTile(
-            icon: Icons.palette_outlined,
-            title: 'Appearance',
-            theme: theme,
-            onTap: () =>
-                _showAppearanceSheet(context, theme, settingsController),
-          ),
+          // Appearance Section with Inline Toggle
+          _buildAppearanceSection(context, theme, settingsController),
 
           _buildDivider(theme),
 
@@ -258,92 +252,164 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showAppearanceSheet(
+  Widget _buildAppearanceSection(
     BuildContext context,
     ThemeData theme,
     SettingsController controller,
   ) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Appearance',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 20),
-            Obx(
-              () => Column(
-                children: [
-                  _buildThemeOption(
-                    context: context,
-                    theme: theme,
-                    title: 'System',
-                    value: ThemeMode.system,
-                    groupValue: controller.themeMode.value,
-                    onChanged: (value) {
-                      if (value != null) {
-                        controller.setThemeMode(value);
-                      }
-                    },
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    theme: theme,
-                    title: 'Light',
-                    value: ThemeMode.light,
-                    groupValue: controller.themeMode.value,
-                    onChanged: (value) {
-                      if (value != null) {
-                        controller.setThemeMode(value);
-                      }
-                    },
-                  ),
-                  _buildThemeOption(
-                    context: context,
-                    theme: theme,
-                    title: 'Dark',
-                    value: ThemeMode.dark,
-                    groupValue: controller.themeMode.value,
-                    onChanged: (value) {
-                      if (value != null) {
-                        controller.setThemeMode(value);
-                      }
-                    },
-                  ),
-                ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.palette_outlined,
+                size: 22,
+                color: theme.iconTheme.color,
               ),
+              const SizedBox(width: 16),
+              Text(
+                'Appearance',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Obx(() => _buildThemeToggle(context, theme, controller)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeToggle(
+    BuildContext context,
+    ThemeData theme,
+    SettingsController controller,
+  ) {
+    final currentMode = controller.themeMode.value;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surfaceContainerLow
+            : theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildThemeOptionButton(
+              context: context,
+              theme: theme,
+              title: 'System',
+              icon: Icons.brightness_auto_rounded,
+              mode: ThemeMode.system,
+              isSelected: currentMode == ThemeMode.system,
+              onTap: () => _handleThemeChange(controller, ThemeMode.system),
             ),
-            const SizedBox(height: 20),
-          ],
+          ),
+          Expanded(
+            child: _buildThemeOptionButton(
+              context: context,
+              theme: theme,
+              title: 'Light',
+              icon: Icons.light_mode_rounded,
+              mode: ThemeMode.light,
+              isSelected: currentMode == ThemeMode.light,
+              onTap: () => _handleThemeChange(controller, ThemeMode.light),
+            ),
+          ),
+          Expanded(
+            child: _buildThemeOptionButton(
+              context: context,
+              theme: theme,
+              title: 'Dark',
+              icon: Icons.dark_mode_rounded,
+              mode: ThemeMode.dark,
+              isSelected: currentMode == ThemeMode.dark,
+              onTap: () => _handleThemeChange(controller, ThemeMode.dark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeOptionButton({
+    required BuildContext context,
+    required ThemeData theme,
+    required String title,
+    required IconData icon,
+    required ThemeMode mode,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = theme.brightness == Brightness.dark;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? theme.colorScheme.primary.withOpacity(0.15)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+          width: isSelected ? 2 : 0,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : (isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildThemeOption({
-    required BuildContext context,
-    required ThemeData theme,
-    required String title,
-    required ThemeMode value,
-    required ThemeMode groupValue,
-    required ValueChanged<ThemeMode?> onChanged,
-  }) {
-    return RadioListTile<ThemeMode>(
-      title: Text(title),
-      value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
-      activeColor: theme.primaryColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-    );
+  void _handleThemeChange(SettingsController controller, ThemeMode mode) {
+    // Smooth transition with haptic feedback
+    controller.setThemeMode(mode);
   }
 
   void _showSignOutConfirmation() {

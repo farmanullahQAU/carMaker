@@ -9,6 +9,7 @@ class PublishProjectController extends GetxController {
   final RxString projectName = ''.obs;
   final Rxn<CategoryModel> selectedCategory = Rxn<CategoryModel>();
   final RxBool isPublishing = false.obs;
+  final RxBool isPremium = false.obs; // Free by default
   final TextEditingController nameController = TextEditingController();
 
   // Cache categories list to avoid repeated access
