@@ -627,7 +627,10 @@ class CanvasController extends GetxController {
   }
 
   void duplicateItem() {
-    if (activeItem.value == null) return;
+    if (activeItem.value == null) {
+      print("nnnnnnnnnnn");
+      return;
+    }
 
     final originalItem = activeItem.value!;
     final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
@@ -645,7 +648,7 @@ class CanvasController extends GetxController {
         id: UniqueKey().toString(),
         offset: newAbsOffset,
         size: newAbsSize,
-        content: originalItem.content,
+        content: originalItem.content?.copyWith(),
       );
     } else if (originalItem is StackImageItem) {
       newItem = StackImageItem(
@@ -672,9 +675,7 @@ class CanvasController extends GetxController {
         content: originalItem.content?.copyWith(),
         angle: originalItem.angle,
       );
-    }
-
-    if (originalItem is StackIconItem) {
+    } else if (originalItem is StackIconItem) {
       newItem = StackIconItem(
         id: UniqueKey().toString(),
         offset: newAbsOffset,

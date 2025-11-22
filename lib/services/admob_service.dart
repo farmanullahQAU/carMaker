@@ -19,6 +19,7 @@ class AdMobService {
   bool _isInitialized = false;
 
   int _templateViewCount = 0;
+  int _exportCount = 0;
 
   // Test Ad Unit IDs (replace with your actual IDs in remote config)
   static const String _testRewardedAdUnitId =
@@ -113,51 +114,67 @@ class AdMobService {
 
   /// Shows rewarded ad before export. Returns true if ad was shown and user watched it.
   /// Returns false if ad was not shown (not ready, disabled, etc.)
+  /// First export is free (no ad shown), then every second export shows an ad
   Future<bool> showRewardedAdBeforeExport() async {
-    if (!isEnabled || !_adConfig.showRewardedAdOnExport) {
-      return true; // Allow export if ads are disabled
+    // First export is free (no ad)
+    if (_exportCount == 0) {
+      log('First export - skipping ad (free export)');
+      _exportCount++;
+      return true; // Allow export without ad
     }
 
-    if (!_isRewardedAdReady || _rewardedAd == null) {
-      log('Rewarded ad not ready, allowing export without ad');
-      // Try to load for next time
-      _loadRewardedAd();
-      return true; // Allow export even if ad is not ready
+    // Every second export shows an ad
+    if (_exportCount == 1) {
+      _exportCount = 0; // Reset counter for next cycle
+
+      if (!isEnabled || !_adConfig.showRewardedAdOnExport) {
+        return true; // Allow export if ads are disabled
+      }
+
+      if (!_isRewardedAdReady || _rewardedAd == null) {
+        log('Rewarded ad not ready, allowing export without ad');
+        // Try to load for next time
+        _loadRewardedAd();
+        return true; // Allow export even if ad is not ready
+      }
+
+      final completer = Completer<bool>();
+
+      _rewardedAd?.show(
+        onUserEarnedReward: (ad, reward) {
+          log('User earned reward: ${reward.amount} ${reward.type}');
+          completer.complete(true);
+        },
+      );
+
+      // Set callback for when ad is dismissed without reward
+      _rewardedAd?.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdReady = false;
+          _loadRewardedAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          log('Rewarded ad failed to show: ${error.message}');
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+          ad.dispose();
+          _rewardedAd = null;
+          _isRewardedAdReady = false;
+          _loadRewardedAd();
+        },
+      );
+
+      return completer.future;
     }
 
-    final completer = Completer<bool>();
-
-    _rewardedAd?.show(
-      onUserEarnedReward: (ad, reward) {
-        log('User earned reward: ${reward.amount} ${reward.type}');
-        completer.complete(true);
-      },
-    );
-
-    // Set callback for when ad is dismissed without reward
-    _rewardedAd?.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        if (!completer.isCompleted) {
-          completer.complete(false);
-        }
-        ad.dispose();
-        _rewardedAd = null;
-        _isRewardedAdReady = false;
-        _loadRewardedAd();
-      },
-      onAdFailedToShowFullScreenContent: (ad, error) {
-        log('Rewarded ad failed to show: ${error.message}');
-        if (!completer.isCompleted) {
-          completer.complete(false);
-        }
-        ad.dispose();
-        _rewardedAd = null;
-        _isRewardedAdReady = false;
-        _loadRewardedAd();
-      },
-    );
-
-    return completer.future;
+    // Should not reach here, but allow export just in case
+    return true;
   }
 
   // ========== INTERSTITIAL AD ==========

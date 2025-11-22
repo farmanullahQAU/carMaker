@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/enums.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -454,86 +455,57 @@ class StickerPanel extends StatelessWidget {
     };
 
     return Container(
-      height: 180,
+      constraints: const BoxConstraints(maxHeight: 300),
       decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Get.theme.shadowColor.withOpacity(0.1),
-            blurRadius: 4,
-            offset: Offset(0, -3),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
           ),
         ],
-        // borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-        color: Get.theme.colorScheme.surfaceContainerHighest,
       ),
       child: DefaultTabController(
         length: categories.length,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              height: 33,
-              padding: EdgeInsets.symmetric(horizontal: 0),
-              decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainer,
-                // borderRadius: BorderRadius.circular(25),
-              ),
-              child: TabBar(
-                isScrollable: true,
-                dividerHeight: 0,
-                tabAlignment: TabAlignment.start,
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  // color: AppColors.branding.withOpacity(0.1),
-                ),
-                labelColor: AppColors.branding,
-                indicatorWeight: 3,
-                labelStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-                tabs: categories.keys.map((category) {
-                  return Tab(text: category);
-                }).toList(),
-              ),
-            ),
+            _buildHeader(),
+            _buildTabBar(categories),
             Expanded(
               child: TabBarView(
                 children: categories.values.map((stickers) {
                   return SingleChildScrollView(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Wrap(
                       spacing: 8, // Horizontal spacing between stickers
                       runSpacing: 8, // Vertical spacing between rows
-                      alignment:
-                          WrapAlignment.start, // Align stickers to the start
-                      children: stickers.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final sticker = entry.value;
+                      alignment: WrapAlignment.start,
+                      children: stickers.map((sticker) {
                         return GestureDetector(
                           onTap: () {
                             controller.addSticker(sticker);
-                            // Haptic feedback
-                            // HapticFeedback.lightImpact();
                           },
                           child: AnimatedContainer(
-                            duration: Duration(milliseconds: 150),
-                            width: 48, // Fixed width for each sticker
-                            height: 48, // Fixed height for each sticker
+                            duration: const Duration(milliseconds: 150),
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
+                              color:
+                                  Get.theme.colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
+                              border: Border.all(
+                                color: Get.theme.colorScheme.outline
+                                    .withOpacity(0.1),
+                                width: 1,
+                              ),
                             ),
                             child: Center(
                               child: Text(
                                 sticker,
-                                style: TextStyle(fontSize: 28),
+                                style: const TextStyle(fontSize: 28),
                               ),
                             ),
                           ),
@@ -546,6 +518,87 @@ class StickerPanel extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        border: Border(
+          bottom: BorderSide(
+            color: Get.theme.colorScheme.outline.withOpacity(0.1),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.emoji_emotions_rounded,
+            size: 16,
+            color: Get.theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Stickers',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              controller.activePanel.value = PanelType.none;
+              controller.update(['bottom_sheet']);
+            },
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close_rounded,
+                size: 16,
+                color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar(Map<String, List<String>> categories) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: TabBar(
+        isScrollable: true,
+        dividerHeight: 0,
+        tabAlignment: TabAlignment.start,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorColor: Colors.transparent,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: AppColors.branding.withOpacity(0.1),
+        ),
+        labelColor: AppColors.branding,
+        unselectedLabelColor: Get.theme.colorScheme.onSurface.withOpacity(0.6),
+        indicatorWeight: 0,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+        tabs: categories.keys.map((category) {
+          return Tab(text: category);
+        }).toList(),
       ),
     );
   }

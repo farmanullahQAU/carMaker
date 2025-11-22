@@ -61,9 +61,6 @@ class EditorPage extends GetView<CanvasController> {
               onClose: () => controller.activePanel.value = PanelType.none,
             );
             break;
-          case PanelType.stickers:
-            currentPanel = StickerPanel(controller: controller);
-            break;
           case PanelType.color:
             currentPanel = HueAdjustmentPanel(controller: controller);
             break;
@@ -99,6 +96,10 @@ class EditorPage extends GetView<CanvasController> {
                   ? controller.activeItem.value as StackIconItem
                   : null,
             );
+            break;
+          case PanelType.stickers:
+            currentPanel = StickerPanel(controller: controller);
+            break;
           default:
             currentPanel = const SizedBox.shrink();
         }
@@ -237,7 +238,7 @@ class EditorPage extends GetView<CanvasController> {
               isExporting: controller.isExporting,
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 8),
         ],
       ),
 
@@ -455,6 +456,31 @@ class ProfessionalBottomToolbar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // 1. Text (First)
+                Obx(() {
+                  bool isActive = controller.activeItem.value is StackTextItem;
+                  return _ProfessionalToolbarButton(
+                    isActive: isActive,
+                    icon: Icons.text_fields_outlined,
+                    activeIcon: Icons.text_fields,
+                    label: 'Text',
+                    panelType: PanelType.text,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (isActive) {
+                        controller.editText();
+                      } else {
+                        //shape or chart is selected but user has pressed text
+                        controller.setActiveItem(null);
+
+                        Get.to(() => UpdateTextView());
+                      }
+
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
+                // 2. Shapes (Second)
                 Obx(() {
                   bool isShapeActive =
                       controller.activeItem.value is StackShapeItem ||
@@ -479,111 +505,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
-                _ProfessionalToolbarButton(
-                  isActive: false,
-                  icon: Icons.emoji_emotions_outlined,
-                  activeIcon: Icons.emoji_emotions,
-                  label: 'Stickers',
-                  panelType: PanelType.stickers,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    controller.activePanel.value =
-                        controller.activePanel.value == PanelType.stickers
-                        ? PanelType.none
-                        : PanelType.stickers;
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
-                Obx(() {
-                  bool isBackgroundActive =
-                      controller.activePanel.value == PanelType.color;
-                  return _ProfessionalToolbarButton(
-                    isActive: isBackgroundActive,
-                    icon: Icons.format_color_fill_outlined,
-                    activeIcon: Icons.format_color_fill,
-                    label: 'Background',
-                    panelType: PanelType.color,
-                    activePanel: controller.activePanel,
-                    onPressed: () {
-                      controller.activePanel.value =
-                          controller.activePanel.value == PanelType.color
-                          ? PanelType.none
-                          : PanelType.color;
-                      controller.update(['bottom_sheet']);
-                    },
-                  );
-                }),
-                Obx(() {
-                  bool isActive = controller.activeItem.value is StackTextItem;
-                  return _ProfessionalToolbarButton(
-                    isActive: isActive,
-                    icon: Icons.text_fields_outlined,
-                    activeIcon: Icons.text_fields,
-                    label: 'Text',
-                    panelType: PanelType.text,
-                    activePanel: controller.activePanel,
-                    onPressed: () {
-                      if (isActive) {
-                        controller.editText();
-                      } else {
-                        //shape or chart is selected but user has pressed text
-                        controller.setActiveItem(null);
-
-                        Get.to(() => UpdateTextView());
-                      }
-
-                      controller.update(['bottom_sheet']);
-                    },
-                  );
-                }),
-                _ProfessionalToolbarButton(
-                  icon: Icons.photo_filter_outlined,
-                  isActive: false,
-                  activeIcon: Icons.photo_filter,
-                  label: 'Image',
-                  panelType: PanelType.advancedImage,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    if (controller.activePanel.value ==
-                        PanelType.advancedImage) {
-                      controller.activePanel.value = PanelType.none;
-                    } else {
-                      if (controller.activeItem.value != null &&
-                          controller.activeItem.value is StackImageItem) {
-                        controller.activePanel.value = PanelType.advancedImage;
-                      } else {
-                        _showImageOptions(context);
-                      }
-                    }
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
-
-                // Add this button to your toolbar
-                Obx(() {
-                  bool isChartActive =
-                      controller.activeItem.value is StackChartItem ||
-                      controller.activePanel.value == PanelType.charts;
-
-                  return _ProfessionalToolbarButton(
-                    isActive: isChartActive,
-                    icon: Icons.bar_chart_rounded,
-                    activeIcon: Icons.bar_chart_rounded,
-                    label: controller.activeItem.value is StackChartItem
-                        ? 'Edit'
-                        : 'Charts',
-                    panelType: PanelType.charts,
-                    activePanel: controller.activePanel,
-                    onPressed: () {
-                      if (controller.activePanel.value == PanelType.charts) {
-                        controller.activePanel.value = PanelType.none;
-                      } else {
-                        controller.activePanel.value = PanelType.charts;
-                      }
-                      controller.update(['bottom_sheet']);
-                    },
-                  );
-                }),
+                // 3. Icons
                 Obx(() {
                   bool isIconActive =
                       controller.activeItem.value is StackIconItem ||
@@ -608,6 +530,67 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
+                // 4. Charts
+                Obx(() {
+                  bool isChartActive =
+                      controller.activeItem.value is StackChartItem ||
+                      controller.activePanel.value == PanelType.charts;
+
+                  return _ProfessionalToolbarButton(
+                    isActive: isChartActive,
+                    icon: Icons.bar_chart_rounded,
+                    activeIcon: Icons.bar_chart_rounded,
+                    label: controller.activeItem.value is StackChartItem
+                        ? 'Edit'
+                        : 'Charts',
+                    panelType: PanelType.charts,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      if (controller.activePanel.value == PanelType.charts) {
+                        controller.activePanel.value = PanelType.none;
+                      } else {
+                        controller.activePanel.value = PanelType.charts;
+                      }
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
+                // 5. Background
+                Obx(() {
+                  bool isBackgroundActive =
+                      controller.activePanel.value == PanelType.color;
+                  return _ProfessionalToolbarButton(
+                    isActive: isBackgroundActive,
+                    icon: Icons.format_color_fill_outlined,
+                    activeIcon: Icons.format_color_fill,
+                    label: 'Background',
+                    panelType: PanelType.color,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      controller.activePanel.value =
+                          controller.activePanel.value == PanelType.color
+                          ? PanelType.none
+                          : PanelType.color;
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
+                // 6. Stickers (Last)
+                _ProfessionalToolbarButton(
+                  isActive: controller.activePanel.value == PanelType.stickers,
+                  icon: Icons.emoji_emotions_outlined,
+                  activeIcon: Icons.emoji_emotions,
+                  label: 'Stickers',
+                  panelType: PanelType.stickers,
+                  activePanel: controller.activePanel,
+                  onPressed: () {
+                    controller.activePanel.value =
+                        controller.activePanel.value == PanelType.stickers
+                        ? PanelType.none
+                        : PanelType.stickers;
+                    controller.update(['bottom_sheet']);
+                  },
+                ),
               ],
             ),
           ),
@@ -920,7 +903,7 @@ class _ModernExportButton extends StatelessWidget {
             border: Border.all(color: AppColors.branding),
           ),
           child: Text(
-            "NEXT",
+            "Download",
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: Colors.white,
