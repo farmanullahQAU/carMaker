@@ -27,13 +27,6 @@ class IconPickerPanel extends GetView<IconPickerController> {
       decoration: BoxDecoration(
         color: Get.theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 6,
-            offset: Offset(0, -1),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -53,6 +46,8 @@ class IconPickerPanel extends GetView<IconPickerController> {
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
         border: Border(
           bottom: BorderSide(
             color: Get.theme.colorScheme.outline.withOpacity(0.12),

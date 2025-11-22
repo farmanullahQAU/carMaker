@@ -1,5 +1,4 @@
 import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_controller.dart';
-import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
@@ -31,15 +30,15 @@ class ChartEditorPanel extends StatelessWidget {
       onTap: onClose,
       child: Material(
         child: Container(
-          constraints: const BoxConstraints(maxHeight: 320),
+          constraints: const BoxConstraints(maxHeight: 280),
           decoration: BoxDecoration(
             color: Get.theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 24,
+                offset: const Offset(0, -4),
               ),
             ],
           ),
@@ -52,13 +51,16 @@ class ChartEditorPanel extends StatelessWidget {
                   id: 'chart_editor',
                   builder: (controller) {
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: Column(
                         children: [
                           _buildChartTypeSection(controller),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildProgressSection(controller),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           _buildAppearanceSection(controller),
                         ],
                       ),
@@ -75,38 +77,33 @@ class ChartEditorPanel extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      height: 44,
+      height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surfaceContainer,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        color: Get.theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         border: Border(
           bottom: BorderSide(
-            color: Get.theme.colorScheme.outline.withOpacity(0.08),
+            color: Get.theme.colorScheme.outline.withOpacity(0.1),
+            width: 0.5,
           ),
         ),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: AppColors.branding.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              Icons.bar_chart_rounded,
-              size: 14,
-              color: AppColors.branding,
-            ),
+          Icon(
+            Icons.bar_chart_rounded,
+            size: 16,
+            color: Get.theme.colorScheme.primary,
           ),
           const SizedBox(width: 8),
           Text(
             chartItem == null ? 'Add Chart' : 'Edit Chart',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: Get.theme.colorScheme.onSurface,
+              letterSpacing: 0.2,
             ),
           ),
           const Spacer(),
@@ -116,11 +113,11 @@ class ChartEditorPanel extends StatelessWidget {
               onTap: onClose,
               borderRadius: BorderRadius.circular(6),
               child: Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(6),
                 child: Icon(
                   Icons.close_rounded,
                   size: 16,
-                  color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
             ),
@@ -138,46 +135,55 @@ class ChartEditorPanel extends StatelessWidget {
         children: ChartType.values.map((type) {
           return Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Obx(() {
                 final isSelected = controller.chartType.value == type;
                 return Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => controller.updateChartType(type),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.branding
-                            : Get.theme.colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(6),
+                            ? Get.theme.colorScheme.primary
+                            : Get.theme.colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isSelected
-                              ? AppColors.branding
-                              : Get.theme.colorScheme.outline.withOpacity(0.2),
+                              ? Get.theme.colorScheme.primary
+                              : Get.theme.colorScheme.outline.withOpacity(0.15),
+                          width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             _getChartTypeIcon(type),
-                            size: 14,
+                            size: 15,
                             color: isSelected
-                                ? Colors.white
-                                : Get.theme.colorScheme.onSurface,
+                                ? Get.theme.colorScheme.onPrimary
+                                : Get.theme.colorScheme.onSurface.withOpacity(
+                                    0.8,
+                                  ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _getChartTypeName(type),
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 9.5,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: isSelected
-                                  ? Colors.white
-                                  : Get.theme.colorScheme.onSurface,
+                                  ? Get.theme.colorScheme.onPrimary
+                                  : Get.theme.colorScheme.onSurface.withOpacity(
+                                      0.8,
+                                    ),
+                              letterSpacing: 0.1,
                             ),
                           ),
                         ],
@@ -208,7 +214,7 @@ class ChartEditorPanel extends StatelessWidget {
               onChanged: controller.updateValue,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Obx(
             () => CompactSlider(
               icon: Icons.line_weight_rounded,
@@ -240,7 +246,7 @@ class ChartEditorPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Expanded(
                 child: Obx(
                   () => _buildColorPicker(
@@ -250,7 +256,7 @@ class ChartEditorPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Expanded(
                 child: Obx(
                   () => _buildColorPicker(
@@ -262,7 +268,7 @@ class ChartEditorPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
@@ -275,7 +281,7 @@ class ChartEditorPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Expanded(
                 child: Obx(
                   () => _buildCompactSwitch(
@@ -290,17 +296,15 @@ class ChartEditorPanel extends StatelessWidget {
           ),
           Obx(() {
             if (controller.chartType.value == ChartType.linearProgress) {
-              return Column(
-                children: [
-                  const SizedBox(height: 6),
-                  CompactSlider(
-                    icon: Icons.rounded_corner,
-                    value: controller.cornerRadius.value,
-                    min: 0,
-                    max: 50,
-                    onChanged: controller.updateCornerRadius,
-                  ),
-                ],
+              return Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: CompactSlider(
+                  icon: Icons.rounded_corner,
+                  value: controller.cornerRadius.value,
+                  min: 0,
+                  max: 50,
+                  onChanged: controller.updateCornerRadius,
+                ),
               );
             }
             return const SizedBox();
@@ -315,35 +319,35 @@ class ChartEditorPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.only(bottom: 5, left: 2),
           child: Row(
             children: [
               Icon(
                 icon,
-                size: 12,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+                size: 13,
+                color: Get.theme.colorScheme.primary.withOpacity(0.8),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 5),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                  color: Get.theme.colorScheme.onSurface.withOpacity(0.85),
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: Get.theme.colorScheme.surfaceContainerHighest.withOpacity(
-              0.3,
-            ),
-            borderRadius: BorderRadius.circular(8),
+            // color: Get.theme.colorScheme.surfaceContainerHigh.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: Get.theme.colorScheme.outline.withOpacity(0.08),
+              color: Get.theme.colorScheme.outline.withOpacity(0.1),
+              width: 0.5,
             ),
           ),
           child: child,
@@ -366,23 +370,32 @@ class ChartEditorPanel extends StatelessWidget {
             fontSize: 9,
             fontWeight: FontWeight.w500,
             color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+            letterSpacing: 0.1,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _showColorPicker(label, color, onChanged),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: Container(
               width: double.infinity,
-              height: 24,
+              height: 26,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: Get.theme.colorScheme.outline.withOpacity(0.2),
+                  color: Get.theme.colorScheme.outline.withOpacity(0.25),
+                  width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ),
@@ -398,39 +411,41 @@ class ChartEditorPanel extends StatelessWidget {
     Function(bool) onChanged,
   ) {
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(6),
+        color: Get.theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(7),
         border: Border.all(
-          color: Get.theme.colorScheme.outline.withOpacity(0.1),
+          color: Get.theme.colorScheme.outline.withOpacity(0.12),
+          width: 0.5,
         ),
       ),
       child: Row(
         children: [
           Icon(
             icon,
-            size: 12,
-            color: Get.theme.colorScheme.onSurface.withOpacity(0.7),
+            size: 13,
+            color: Get.theme.colorScheme.onSurface.withOpacity(0.75),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                color: Get.theme.colorScheme.onSurface.withOpacity(0.85),
+                letterSpacing: 0.1,
               ),
             ),
           ),
           Transform.scale(
-            scale: 0.7,
+            scale: 0.75,
             child: Switch(
               value: value,
               onChanged: onChanged,
-              activeThumbColor: AppColors.branding,
+              activeThumbColor: Get.theme.colorScheme.primary,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
@@ -477,381 +492,3 @@ class ChartEditorPanel extends StatelessWidget {
     }
   }
 }
-// chart_editor_panel.dart
-// import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_controller.dart';
-// import 'package:cardmaker/core/values/app_colors.dart';
-// import 'package:cardmaker/core/values/enums.dart';
-// import 'package:cardmaker/widgets/common/compact_slider.dart';
-// import 'package:cardmaker/widgets/common/quick_color_picker.dart';
-// import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_chart_item.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// class ChartEditorPanel extends StatelessWidget {
-//   final StackChartItem? chartItem;
-//   final VoidCallback onClose;
-
-//   final ChartEditorController controller = Get.put(ChartEditorController());
-
-//   ChartEditorPanel({super.key, this.chartItem, required this.onClose});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // Initialize controller based on whether we're adding or editing
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       if (chartItem != null) {
-//         controller.initWithItem(chartItem!);
-//       } else {
-//         controller.resetForNewChart();
-//       }
-//     });
-
-//     return GestureDetector(
-//       behavior: HitTestBehavior.translucent,
-//       onTap: onClose,
-//       child: Material(
-//         child: Container(
-//           constraints: const BoxConstraints(maxHeight: 300),
-//           decoration: BoxDecoration(
-//             color: Get.theme.colorScheme.surface,
-//             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-//           ),
-//           child: Column(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               _buildHeader(),
-//               Expanded(
-//                 child: GetBuilder<ChartEditorController>(
-//                   id: 'chart_editor',
-//                   builder: (controller) {
-//                     return ListView(
-//                       padding: const EdgeInsets.all(12),
-//                       children: [
-//                         _buildChartTypeSection(controller),
-//                         const SizedBox(height: 8),
-//                         _buildProgressSection(controller),
-//                         const SizedBox(height: 8),
-//                         _buildAppearanceSection(controller),
-//                       ],
-//                     );
-//                   },
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildHeader() {
-//     return Container(
-//       height: 44,
-//       padding: const EdgeInsets.symmetric(horizontal: 12),
-//       decoration: BoxDecoration(
-//         color: Get.theme.colorScheme.surfaceContainer,
-//         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-//       ),
-//       child: Row(
-//         children: [
-//           Icon(Icons.bar_chart, size: 18, color: AppColors.branding),
-//           const SizedBox(width: 8),
-//           Text(
-//             chartItem == null ? 'Add Chart' : 'Edit Chart',
-//             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-//           ),
-//           const Spacer(),
-//           IconButton(
-//             icon: const Icon(Icons.close, size: 18),
-//             onPressed: onClose,
-//             padding: EdgeInsets.zero,
-//             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildChartTypeSection(ChartEditorController controller) {
-//     return Container(
-//       padding: const EdgeInsets.all(8),
-//       decoration: BoxDecoration(
-//         color: Get.theme.colorScheme.surfaceContainer,
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       child: Row(
-//         children: ChartType.values.map((type) {
-//           return Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.symmetric(horizontal: 2),
-//               child: Obx(() {
-//                 final isSelected = controller.chartType.value == type;
-//                 return Material(
-//                   color: Colors.transparent,
-//                   child: InkWell(
-//                     onTap: () => controller.updateChartType(type),
-//                     borderRadius: BorderRadius.circular(6),
-//                     child: Container(
-//                       padding: const EdgeInsets.symmetric(vertical: 8),
-//                       decoration: BoxDecoration(
-//                         color: isSelected
-//                             ? AppColors.branding
-//                             : Get.theme.colorScheme.surface,
-//                         borderRadius: BorderRadius.circular(6),
-//                         border: Border.all(
-//                           color: isSelected
-//                               ? AppColors.branding
-//                               : Get.theme.colorScheme.outline.withOpacity(0.2),
-//                         ),
-//                       ),
-//                       child: Column(
-//                         children: [
-//                           Icon(
-//                             _getChartTypeIcon(type),
-//                             size: 14,
-//                             color: isSelected
-//                                 ? Colors.white
-//                                 : Get.theme.colorScheme.onSurface,
-//                           ),
-//                           const SizedBox(height: 2),
-//                           Text(
-//                             _getChartTypeName(type),
-//                             style: TextStyle(
-//                               fontSize: 10,
-//                               fontWeight: FontWeight.w500,
-//                               color: isSelected
-//                                   ? Colors.white
-//                                   : Get.theme.colorScheme.onSurface,
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                 );
-//               }),
-//             ),
-//           );
-//         }).toList(),
-//       ),
-//     );
-//   }
-
-//   Widget _buildProgressSection(ChartEditorController controller) {
-//     return Container(
-//       padding: const EdgeInsets.all(8),
-//       decoration: BoxDecoration(
-//         color: Get.theme.colorScheme.surfaceContainer,
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       child: Column(
-//         children: [
-//           Obx(
-//             () => CompactSlider(
-//               icon: Icons.speed,
-//               value: controller.value.value,
-//               min: 0,
-//               max: 100,
-//               onChanged: controller.updateValue,
-//               division: 100,
-//             ),
-//           ),
-//           const SizedBox(height: 4),
-//           Obx(
-//             () => CompactSlider(
-//               icon: Icons.line_weight,
-//               value: controller.thickness.value,
-//               min: 1,
-//               max: 30,
-//               onChanged: controller.updateThickness,
-//               division: 29,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildAppearanceSection(ChartEditorController controller) {
-//     return Container(
-//       padding: const EdgeInsets.all(8),
-//       decoration: BoxDecoration(
-//         color: Get.theme.colorScheme.surfaceContainer,
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       child: Column(
-//         children: [
-//           // Color Picker Row
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: _buildColorChip(
-//                   'Background',
-//                   controller.backgroundColor.value,
-//                   controller.updateBackgroundColor,
-//                 ),
-//               ),
-//               const SizedBox(width: 6),
-//               Expanded(
-//                 child: _buildColorChip(
-//                   'Progress',
-//                   controller.progressColor.value,
-//                   controller.updateProgressColor,
-//                 ),
-//               ),
-//               const SizedBox(width: 6),
-//               Expanded(
-//                 child: _buildColorChip(
-//                   'Text',
-//                   controller.textColor.value,
-//                   controller.updateTextColor,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           const SizedBox(height: 8),
-//           // Toggle Switches
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: _buildToggle(
-//                   'Show Text',
-//                   controller.showValueText.value,
-//                   controller.updateShowValueText,
-//                 ),
-//               ),
-//               const SizedBox(width: 8),
-//               Expanded(
-//                 child: _buildToggle(
-//                   'Glow',
-//                   controller.glowEffect.value,
-//                   controller.updateGlowEffect,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           // Corner Radius for Linear Progress
-//           Obx(() {
-//             if (controller.chartType.value == ChartType.linearProgress) {
-//               return Column(
-//                 children: [
-//                   const SizedBox(height: 8),
-//                   CompactSlider(
-//                     icon: Icons.rounded_corner,
-//                     value: controller.cornerRadius.value,
-//                     min: 0,
-//                     max: 25,
-//                     onChanged: controller.updateCornerRadius,
-//                     division: 25,
-//                   ),
-//                 ],
-//               );
-//             }
-//             return const SizedBox();
-//           }),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildColorChip(String label, Color color, Function(Color) onChanged) {
-//     return Column(
-//       children: [
-//         Text(
-//           label,
-//           style: TextStyle(
-//             fontSize: 10,
-//             fontWeight: FontWeight.w500,
-//             color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
-//           ),
-//         ),
-//         const SizedBox(height: 4),
-//         GestureDetector(
-//           onTap: () => _showColorPicker(label, color, onChanged),
-//           child: Container(
-//             width: 28,
-//             height: 20,
-//             decoration: BoxDecoration(
-//               color: color,
-//               borderRadius: BorderRadius.circular(4),
-//               border: Border.all(
-//                 color: Get.theme.colorScheme.outline.withOpacity(0.3),
-//               ),
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-
-//   Widget _buildToggle(String label, bool value, Function(bool) onChanged) {
-//     return Container(
-//       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-//       decoration: BoxDecoration(
-//         color: Get.theme.colorScheme.surface,
-//         borderRadius: BorderRadius.circular(4),
-//       ),
-//       child: Row(
-//         children: [
-//           Expanded(
-//             child: Text(
-//               label,
-//               style: TextStyle(
-//                 fontSize: 10,
-//                 fontWeight: FontWeight.w500,
-//                 color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
-//               ),
-//             ),
-//           ),
-//           Transform.scale(
-//             scale: 0.8,
-//             child: Switch(
-//               value: value,
-//               onChanged: onChanged,
-//               activeThumbColor: AppColors.branding,
-//               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   void _showColorPicker(
-//     String title,
-//     Color currentColor,
-//     Function(Color) onChanged,
-//   ) {
-//     showModalBottomSheet(
-//       context: Get.context!,
-//       backgroundColor: Colors.transparent,
-//       builder: (context) => QuickColorPicker(
-//         title: title,
-//         currentColor: currentColor,
-//         onChanged: (color) => onChanged(color!),
-//       ),
-//     );
-//   }
-
-//   IconData _getChartTypeIcon(ChartType type) {
-//     switch (type) {
-//       case ChartType.linearProgress:
-//         return Icons.linear_scale;
-//       case ChartType.circularProgress:
-//         return Icons.donut_large;
-//       case ChartType.radialProgress:
-//         return Icons.radio_button_unchecked;
-//     }
-//   }
-
-//   String _getChartTypeName(ChartType type) {
-//     switch (type) {
-//       case ChartType.linearProgress:
-//         return 'Linear';
-//       case ChartType.circularProgress:
-//         return 'Circular';
-//       case ChartType.radialProgress:
-//         return 'Radial';
-//     }
-//   }
-// }

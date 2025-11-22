@@ -48,6 +48,9 @@ class CanvasController extends GetxController {
   final Rx<Color> fontColor = Colors.black.obs;
   final RxnString selectedBackground = RxnString();
   final RxDouble backgroundHue = 0.0.obs;
+  final Rx<Color> backgroundColor = Colors.white.obs;
+  final RxBool isBackgroundGradient =
+      true.obs; // true for gradient, false for solid
   final RxString templateName = ''.obs;
   bool isExporting = false;
   final ScreenshotController screenshotController = ScreenshotController();
@@ -128,7 +131,9 @@ class CanvasController extends GetxController {
 
     templateName.value = initialTemplate!.name;
     selectedBackground.value = initialTemplate?.backgroundImageUrl;
-    backgroundHue.value = initialTemplate!.backgroundHue!;
+    backgroundHue.value = initialTemplate!.backgroundHue ?? 0.0;
+    backgroundColor.value = initialTemplate?.backgroundColor ?? Colors.white;
+    isBackgroundGradient.value = initialTemplate?.isBackgroundGradient ?? true;
     boardController.clear();
 
     profileImageItems.clear();
@@ -244,7 +249,9 @@ class CanvasController extends GetxController {
   ) async {
     selectedBackground.value = template.backgroundImageUrl;
     templateName.value = template.name;
-    backgroundHue.value = template.backgroundHue!.toDouble();
+    backgroundHue.value = template.backgroundHue ?? 0.0;
+    backgroundColor.value = template.backgroundColor ?? Colors.white;
+    isBackgroundGradient.value = template.isBackgroundGradient ?? true;
     boardController.clear();
     profileImageItems.clear();
 
@@ -374,6 +381,18 @@ class CanvasController extends GetxController {
 
   void updateBackgroundHue(double hue) {
     backgroundHue.value = hue;
+    isBackgroundGradient.value = true;
+    update(['canvas_stack']);
+  }
+
+  void updateBackgroundColor(Color color) {
+    backgroundColor.value = color;
+    isBackgroundGradient.value = false;
+    update(['canvas_stack']);
+  }
+
+  void setBackgroundMode(bool isGradient) {
+    isBackgroundGradient.value = isGradient;
     update(['canvas_stack']);
   }
 
@@ -898,6 +917,11 @@ class CanvasController extends GetxController {
     }
   }
 
+  void removeBackgroundImage() {
+    selectedBackground.value = null;
+    update(['canvas_stack']);
+  }
+
   void saveCopy() => isLocaleTemplate
       ? _saveDraftLocale(isCopy: true)
       : _saveDraftLocale(isCopy: true);
@@ -949,6 +973,8 @@ class CanvasController extends GetxController {
         isPremium: false,
         isDraft: true,
         backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundColor: backgroundColor.value,
+        isBackgroundGradient: isBackgroundGradient.value,
       );
 
       final file = await _generateThumbnail(
@@ -1039,6 +1065,8 @@ class CanvasController extends GetxController {
         isPremium: false,
         isDraft: false,
         backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundColor: backgroundColor.value,
+        isBackgroundGradient: isBackgroundGradient.value,
         backgroundImageUrl: selectedBackground.value,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -1103,6 +1131,8 @@ class CanvasController extends GetxController {
         isPremium: false,
         isDraft: true,
         backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundColor: backgroundColor.value,
+        isBackgroundGradient: isBackgroundGradient.value,
         backgroundImageUrl: selectedBackground.value,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

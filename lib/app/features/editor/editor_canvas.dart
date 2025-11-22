@@ -494,21 +494,25 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     controller.update(['bottom_sheet']);
                   },
                 ),
-                _ProfessionalToolbarButton(
-                  isActive: false,
-                  icon: Icons.palette_outlined,
-                  activeIcon: Icons.palette,
-                  label: 'Colors',
-                  panelType: PanelType.color,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    controller.activePanel.value =
-                        controller.activePanel.value == PanelType.color
-                        ? PanelType.none
-                        : PanelType.color;
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
+                Obx(() {
+                  bool isBackgroundActive =
+                      controller.activePanel.value == PanelType.color;
+                  return _ProfessionalToolbarButton(
+                    isActive: isBackgroundActive,
+                    icon: Icons.format_color_fill_outlined,
+                    activeIcon: Icons.format_color_fill,
+                    label: 'Background',
+                    panelType: PanelType.color,
+                    activePanel: controller.activePanel,
+                    onPressed: () {
+                      controller.activePanel.value =
+                          controller.activePanel.value == PanelType.color
+                          ? PanelType.none
+                          : PanelType.color;
+                      controller.update(['bottom_sheet']);
+                    },
+                  );
+                }),
                 Obx(() {
                   bool isActive = controller.activeItem.value is StackTextItem;
                   return _ProfessionalToolbarButton(
@@ -1090,17 +1094,24 @@ class CanvasStack extends StatelessWidget {
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Background container with hue color when no background image
+            // Background container with hue color or solid color when no background image
             if (controller.selectedBackground.value == null)
               IgnorePointer(
                 ignoring: true,
                 child: SizedBox(
                   width: scaledCanvasWidth.value,
                   height: scaledCanvasHeight.value,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: _getBackgroundGradient(
-                        controller.backgroundHue.value,
+                  child: Obx(
+                    () => Container(
+                      decoration: BoxDecoration(
+                        gradient: controller.isBackgroundGradient.value
+                            ? _getBackgroundGradient(
+                                controller.backgroundHue.value,
+                              )
+                            : null,
+                        color: controller.isBackgroundGradient.value
+                            ? null
+                            : controller.backgroundColor.value,
                       ),
                     ),
                   ),
@@ -1506,7 +1517,9 @@ class BorderPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = Get.find<CanvasController>().draggedItem.value == null
-          ? Get.theme.colorScheme.secondary.withOpacity(0.5) // More subtle color
+          ? Get.theme.colorScheme.secondary.withOpacity(
+              0.5,
+            ) // More subtle color
           : Get.theme.colorScheme.secondary.withOpacity(0.7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke; // Thin stroke

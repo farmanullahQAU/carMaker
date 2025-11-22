@@ -21,6 +21,8 @@ class CardTemplate {
   final IconData? icon;
   final Color color;
   final double? backgroundHue;
+  final Color? backgroundColor;
+  final bool? isBackgroundGradient;
 
   final bool isDraft;
 
@@ -44,6 +46,8 @@ class CardTemplate {
     this.icon,
     this.color = Colors.transparent,
     this.backgroundHue = 0.0,
+    this.backgroundColor,
+    this.isBackgroundGradient = true,
     this.isDraft = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -80,7 +84,13 @@ class CardTemplate {
           )
         : null,
 
-    backgroundHue: json['backgroundHue'].toDouble(),
+    backgroundHue: json['backgroundHue'] != null
+        ? json['backgroundHue'].toDouble()
+        : 0.0,
+    backgroundColor: json['backgroundColor'] != null
+        ? Color(json['backgroundColor'] as int)
+        : null,
+    isBackgroundGradient: json['isBackgroundGradient'] ?? true,
     isDraft: json['isDraft'] ?? false,
   );
 
@@ -103,6 +113,8 @@ class CardTemplate {
     'imagePath': imagePath,
     if (icon != null) 'icon': icon!.codePoint,
     'backgroundHue': backgroundHue,
+    if (backgroundColor != null) 'backgroundColor': backgroundColor!.value,
+    'isBackgroundGradient': isBackgroundGradient ?? true,
     'isDraft': isDraft,
   };
 
@@ -114,6 +126,8 @@ class CardTemplate {
     String? thumbnailUrl,
     String? backgroundImageUrl,
     double? backgroundHue,
+    Color? backgroundColor,
+    bool? isBackgroundGradient,
     List<Map<String, dynamic>>? items,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -135,6 +149,8 @@ class CardTemplate {
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       backgroundImageUrl: backgroundImageUrl ?? this.backgroundImageUrl,
       backgroundHue: backgroundHue ?? this.backgroundHue,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      isBackgroundGradient: isBackgroundGradient ?? this.isBackgroundGradient,
       items: items ?? this.items,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
