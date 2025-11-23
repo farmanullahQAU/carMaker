@@ -256,7 +256,7 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Get.theme.colorScheme.surfaceContainer,
+                color: Theme.of(context).colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.settings, size: 20),

@@ -24,7 +24,12 @@ class AppLocaleSettingsService {
   }
 
   ThemeMode getThemeMode() {
-    switch (_settings.theme) {
+    // Read directly from storage to get the latest value
+    // This ensures the theme toggle shows the correct state when settings page reopens
+    final savedTheme = _storage.read(themeKey);
+    final themeString = savedTheme ?? _settings.theme;
+
+    switch (themeString) {
       case 'light':
         return ThemeMode.light;
       case 'dark':

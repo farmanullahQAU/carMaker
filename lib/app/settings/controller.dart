@@ -15,6 +15,13 @@ class SettingsController extends GetxController {
     _loadTheme();
   }
 
+  @override
+  void onReady() {
+    super.onReady();
+    // Reload theme when page becomes visible to ensure correct state
+    _loadTheme();
+  }
+
   /// Load theme from AppLocaleSettingsService
   void _loadTheme() {
     themeMode.value = _localeSettings.getThemeMode();
