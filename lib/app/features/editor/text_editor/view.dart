@@ -916,12 +916,16 @@ class _FormatTab extends StatelessWidget {
   }
 
   Widget _buildFontWeightSelector(TextStyleController controller) {
-    const weights = [
-      FontWeight.w300,
-      FontWeight.normal,
-      FontWeight.w500,
-      FontWeight.bold,
-    ];
+    const weights = [FontWeight.w500, FontWeight.bold];
+
+    // Helper to get numeric weight value for comparison
+    int getWeightValue(FontWeight? weight) {
+      if (weight == null) return 400;
+      if (weight == FontWeight.w500) return 500;
+      if (weight == FontWeight.w600) return 600;
+      if (weight == FontWeight.w700 || weight == FontWeight.bold) return 700;
+      return 400;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -932,7 +936,9 @@ class _FormatTab extends StatelessWidget {
         padding: const EdgeInsets.all(3),
         child: Row(
           children: weights.map((weight) {
-            final isSelected = weight == controller.fontWeight.value;
+            final isSelected =
+                getWeightValue(weight) ==
+                getWeightValue(controller.fontWeight.value);
             return Expanded(
               child: GestureDetector(
                 onTap: () {
@@ -1063,10 +1069,6 @@ class _FormatTab extends StatelessWidget {
 
   String _getWeightLabel(FontWeight weight) {
     switch (weight) {
-      case FontWeight.w300:
-        return 'Light';
-      case FontWeight.normal:
-        return 'Regular';
       case FontWeight.w500:
         return 'Medium';
       case FontWeight.bold:

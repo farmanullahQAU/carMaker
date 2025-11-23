@@ -463,8 +463,14 @@ class TextStyleController extends GetxController
         return 'Regular';
       case FontWeight.w500:
         return 'Medium';
+      case FontWeight.w600:
+        return 'SemiBold';
       case FontWeight.bold:
         return 'Bold';
+      case FontWeight.w800:
+        return 'ExtraBold';
+      case FontWeight.w900:
+        return 'Black';
       default:
         return 'Regular';
     }

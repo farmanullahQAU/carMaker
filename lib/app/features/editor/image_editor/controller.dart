@@ -82,6 +82,52 @@ class ImageEditorController extends GetxController {
   // Methods to update states with specific IDs
   void setSelectedAdjustment(String adjustment) {
     _selectedAdjustment.value = adjustment;
+
+    // Handle 'normal' selection - reset all adjustments
+    if (adjustment == 'normal') {
+      resetAdjustments();
+      update(['adjustment_tools', 'adjustment_slider']);
+      return;
+    }
+
+    // Apply a small initial value when user first clicks on an adjustment
+    // This helps users see the changes immediately
+    if (_selectedImageItem?.content != null) {
+      final currentValue = getAdjustmentValue(adjustment);
+
+      // Only apply initial value if it's at default (0 or default value)
+      // Default values: brightness=0, contrast=0, saturation=0, hue=0, opacity=100
+      bool isAtDefault = false;
+      double initialValue = 0.0;
+
+      switch (adjustment) {
+        case 'brightness':
+          isAtDefault = (currentValue - 0.0).abs() < 0.1;
+          initialValue = 10.0; // Slightly brighter
+          break;
+        case 'contrast':
+          isAtDefault = (currentValue - 0.0).abs() < 0.1;
+          initialValue = 60.0; // More contrast for better visibility
+          break;
+        case 'saturation':
+          isAtDefault = (currentValue - 0.0).abs() < 0.1;
+          initialValue = 30.0; // More vibrant for better visibility
+          break;
+        case 'hue':
+          isAtDefault = (currentValue - 0.0).abs() < 0.1;
+          initialValue = 10.0; // Small hue shift
+          break;
+        case 'opacity':
+          isAtDefault = (currentValue - 100.0).abs() < 0.1;
+          // Don't change opacity, keep at 100%
+          break;
+      }
+
+      if (isAtDefault && adjustment != 'opacity') {
+        updateAdjustment(adjustment, initialValue);
+      }
+    }
+
     update(['adjustment_tools', 'adjustment_slider']);
   }
 
@@ -485,9 +531,8 @@ class ImageEditorController extends GetxController {
     // Clear adjustment cache to reload fresh values
     _adjustmentValues.clear();
 
-    // Initialize adjustment values if they are at defaults
-    // This helps users see/feel the changes when adjusting sliders
-    _initializeAdjustmentValuesIfNeeded(content);
+    // Keep adjustments at normal values until user interacts with them
+    // No need to initialize with default values - let users see changes only when they adjust
 
     // Update all relevant UI components
     update([
@@ -498,34 +543,6 @@ class ImageEditorController extends GetxController {
       'border_page',
       'transform_page',
     ]);
-  }
-
-  /// Initialize adjustment values with subtle initial values if they are at defaults.
-  /// This helps users see/feel the changes when adjusting sliders.
-  void _initializeAdjustmentValuesIfNeeded(ImageItemContent content) {
-    // Check if all adjustments are at their default values
-    final isAtDefaults =
-        content.brightness == 0.0 &&
-        content.contrast == 1.0 &&
-        content.saturation == 1.0 &&
-        content.hue == 0.0 &&
-        content.opacity == 1.0;
-
-    // If at defaults, apply subtle initial values
-    if (isAtDefaults) {
-      // Apply initial values that are noticeable but not too strong
-      // Brightness: +10 (slightly brighter)
-      content.adjustBrightness(5.0 / 100);
-      // Contrast: +10 (slightly more contrast)
-      content.adjustContrast((60.0 / 100) + 1.0);
-      // Saturation: +10 (slightly more vibrant)
-      content.adjustSaturation((10.0 / 100) + 1.0);
-      // Hue: keep at 0 (no initial hue shift)
-      // Opacity: keep at 100% (no initial opacity change)
-
-      // Update the image to reflect these initial values
-      _notifyImageUpdate();
-    }
   }
 
   void _notifyImageUpdate() {

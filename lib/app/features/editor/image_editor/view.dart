@@ -240,6 +240,7 @@ class _AdjustPage extends StatelessWidget {
             onSelectionChanged: (String adjustment) {
               imageEditorController.setSelectedAdjustment(adjustment);
             },
+            onUpdate: onUpdate,
           ),
         ),
         SizedBox(height: 16),
@@ -251,10 +252,12 @@ class _AdjustPage extends StatelessWidget {
 class _AdjustmentToolsRow extends StatelessWidget {
   final ImageEditorController imageEditorController;
   final Function(String) onSelectionChanged;
+  final VoidCallback? onUpdate;
 
   const _AdjustmentToolsRow({
     required this.imageEditorController,
     required this.onSelectionChanged,
+    this.onUpdate,
   });
 
   @override
@@ -267,10 +270,62 @@ class _AdjustmentToolsRow extends StatelessWidget {
         return ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: adjustments.length,
+          itemCount: adjustments.length + 1, // +1 for reset button
           separatorBuilder: (context, index) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
-            final tool = adjustments[index];
+            // Normal button at the start
+            if (index == 0) {
+              final isSelected = controller.selectedAdjustment == 'normal';
+              return GestureDetector(
+                onTap: () {
+                  controller.setSelectedAdjustment('normal');
+                  controller.resetAdjustments();
+                  onUpdate?.call();
+                },
+                child: SizedBox(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 55,
+                        height: 55,
+                        decoration: BoxDecoration(
+                          color: Get.theme.colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(8),
+                          border: isSelected
+                              ? Border.all(
+                                  color: AppColors.brandingLight,
+                                  width: 2,
+                                )
+                              : null,
+                        ),
+                        child: Icon(
+                          Icons.tune,
+                          size: 20,
+                          color: isSelected ? AppColors.branding : null,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Normal',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Adjustment tools
+            final tool = adjustments[index - 1];
             final isSelected = controller.selectedAdjustment == tool.key;
 
             return GestureDetector(
@@ -347,6 +402,11 @@ class _ProfessionalSlider extends StatelessWidget {
     return GetBuilder<ImageEditorController>(
       id: 'adjustment_slider',
       builder: (controller) {
+        // Don't show slider for 'normal' selection
+        if (controller.selectedAdjustment == 'normal') {
+          return const SizedBox.shrink();
+        }
+
         final config = _ImageAdjustmentConfig.getConfig(
           controller.selectedAdjustment,
         );

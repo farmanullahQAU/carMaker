@@ -117,6 +117,60 @@ import 'package:flutter/painting.dart';
 
 import 'ex_locale.dart';
 
+// Helper function to serialize FontWeight to its numeric weight value
+int? fontWeightToJson(FontWeight? weight) {
+  if (weight == null) return null;
+
+  if (weight == FontWeight.w100) return 100;
+  if (weight == FontWeight.w200) return 200;
+  if (weight == FontWeight.w300) return 300;
+  if (weight == FontWeight.w400 || weight == FontWeight.normal) return 400;
+  if (weight == FontWeight.w500) return 500;
+  if (weight == FontWeight.w600) return 600;
+  if (weight == FontWeight.w700 || weight == FontWeight.bold) return 700;
+  if (weight == FontWeight.w800) return 800;
+  if (weight == FontWeight.w900) return 900;
+
+  return 400; // Default to normal
+}
+
+// Helper function to deserialize FontWeight from numeric value
+FontWeight? fontWeightFromJson(dynamic data) {
+  if (data == null) return null;
+
+  int weightValue;
+  if (data is num) {
+    weightValue = data.toInt();
+  } else if (data is String) {
+    weightValue = int.tryParse(data) ?? 400;
+  } else {
+    return FontWeight.normal;
+  }
+
+  switch (weightValue) {
+    case 100:
+      return FontWeight.w100;
+    case 200:
+      return FontWeight.w200;
+    case 300:
+      return FontWeight.w300;
+    case 400:
+      return FontWeight.normal;
+    case 500:
+      return FontWeight.w500;
+    case 600:
+      return FontWeight.w600;
+    case 700:
+      return FontWeight.bold;
+    case 800:
+      return FontWeight.w800;
+    case 900:
+      return FontWeight.w900;
+    default:
+      return FontWeight.normal;
+  }
+}
+
 extension ExTextStyle on TextStyle {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -128,7 +182,7 @@ extension ExTextStyle on TextStyle {
         'decorationStyle': decorationStyle?.toString(),
       if (decorationThickness != null)
         'decorationThickness': decorationThickness,
-      if (fontWeight != null) 'fontWeight': fontWeight?.toString(),
+      if (fontWeight != null) 'fontWeight': fontWeightToJson(fontWeight),
       if (fontStyle != null) 'fontStyle': fontStyle?.toString(),
       if (fontFamily != null) 'fontFamily': fontFamily,
       if (fontFamilyFallback != null)
@@ -169,10 +223,7 @@ TextStyle? jsonToTextStyle(Map<String, dynamic> data) {
     decorationThickness: data['decorationThickness'] == null
         ? null
         : asT<double>(data['decorationThickness']),
-    fontWeight: ExEnum.tryParse<FontWeight>(
-      FontWeight.values,
-      asT<String>(data['fontWeight']),
-    ),
+    fontWeight: fontWeightFromJson(data['fontWeight']),
     fontStyle: ExEnum.tryParse<FontStyle>(
       FontStyle.values,
       asT<String>(data['fontStyle']),

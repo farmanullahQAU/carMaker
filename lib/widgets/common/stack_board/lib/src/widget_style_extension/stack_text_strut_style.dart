@@ -1,4 +1,5 @@
 import 'package:cardmaker/widgets/common/stack_board/lib/helpers.dart';
+import 'package:cardmaker/widgets/common/stack_board/lib/src/widget_style_extension/ex_text_style.dart';
 import 'package:flutter/widgets.dart';
 
 class StackTextStrutStyle {
@@ -27,10 +28,7 @@ class StackTextStrutStyle {
         asNullT<String?>(data['leadingDistribution']),
       ),
       leading: asNullT<double?>(data['leading']),
-      fontWeight: ExEnum.tryParse<FontWeight>(
-        FontWeight.values,
-        asNullT<String?>(data['fontWeight']),
-      ),
+      fontWeight: fontWeightFromJson(data['fontWeight']),
       fontStyle: ExEnum.tryParse<FontStyle>(
         FontStyle.values,
         asNullT<String?>(data['fontStyle']),
@@ -73,7 +71,7 @@ class StackTextStrutStyle {
       if (leadingDistribution != null)
         'leadingDistribution': leadingDistribution.toString(),
       if (leading != null) 'leading': leading,
-      if (fontWeight != null) 'fontWeight': fontWeight,
+      if (fontWeight != null) 'fontWeight': fontWeightToJson(fontWeight),
       if (fontStyle != null) 'fontStyle': fontStyle,
       if (forceStrutHeight != null) 'forceStrutHeight': forceStrutHeight,
     };
