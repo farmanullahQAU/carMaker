@@ -116,6 +116,16 @@ class AdMobService {
   /// Returns false if ad was not shown (not ready, disabled, etc.)
   /// First export is free (no ad shown), then every second export shows an ad
   Future<bool> showRewardedAdBeforeExport() async {
+    // Initialize AdMob in background if not already initialized (non-blocking)
+    if (!_isInitialized) {
+      log('AdMob not initialized, starting non-blocking initialization');
+      // Start initialization in background - don't await it
+      initialize().catchError((error) {
+        log('Background AdMob initialization failed: $error');
+      });
+      // Continue with export immediately without waiting
+    }
+
     // First export is free (no ad)
     if (_exportCount == 0) {
       log('First export - skipping ad (free export)');
@@ -133,7 +143,7 @@ class AdMobService {
 
       if (!_isRewardedAdReady || _rewardedAd == null) {
         log('Rewarded ad not ready, allowing export without ad');
-        // Try to load for next time
+        // Try to load for next time (will work if AdMob initializes in background)
         _loadRewardedAd();
         return true; // Allow export even if ad is not ready
       }

@@ -7,7 +7,7 @@
                      android:maxSdkVersion="32" />
     <!-- For Android 13 and above -->
     <application
-        android:label="artnie"
+        android:label="Artnie"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

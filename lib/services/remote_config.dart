@@ -12,6 +12,7 @@ class RemoteConfigService {
   late final FirebaseRemoteConfig _remoteConfig;
   RemoteConfigModel _config;
   bool _isUsingFallback = false;
+  bool _isInitialized = false;
 
   RemoteConfigModel _defaultFallbackConfig() => RemoteConfigModel(
     update: const AppUpdateConfig(),
@@ -30,16 +31,25 @@ class RemoteConfigService {
 
   RemoteConfigModel get config => _config;
   bool get isUsingFallback => _isUsingFallback;
+  bool get isInitialized => _isInitialized;
 
   Future<void> initialize() async {
+    // Prevent multiple initializations
+    if (_isInitialized) {
+      log('RemoteConfig already initialized, skipping...');
+      return;
+    }
+
     try {
       await _setupRemoteConfig();
       _config = await _fetchConfig();
       _isUsingFallback = false;
+      _isInitialized = true;
     } catch (e, stackTrace) {
       log('RemoteConfig initialization failed: $e', stackTrace: stackTrace);
       _config = _defaultFallbackConfig();
       _isUsingFallback = true;
+      _isInitialized = true; // Mark as initialized even if using fallback
     }
   }
 

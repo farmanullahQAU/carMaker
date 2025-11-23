@@ -1,6 +1,7 @@
 import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -79,13 +80,17 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     Get.put(HomeController());
-    // Initialize RemoteConfig - it handles errors gracefully with fallback config
-    // So we don't need to worry about network errors, it will work offline
-    final service = RemoteConfigService();
-    await service
+    final remoteConfigService = RemoteConfigService();
+
+    // Initialize services in parallel for minimum loading time
+    // Navigate as soon as RemoteConfig is ready (AdMob can load in background)
+    final initStartTime = DateTime.now();
+    debugPrint('Initializing RemoteConfig...');
+    // Initialize RemoteConfig with shorter timeout for faster failure
+    await remoteConfigService
         .initialize()
         .timeout(
-          const Duration(seconds: 10),
+          const Duration(seconds: 8), // Reduced from 10s for faster timeout
           onTimeout: () {
             // Timeout is fine - RemoteConfigService uses fallback config automatically
           },
@@ -93,18 +98,32 @@ class _SplashScreenState extends State<SplashScreen>
         .catchError((_) {
           // Any error is fine - RemoteConfigService already has fallback config
         });
+    debugPrint('Initialized RemoteConfig...');
+    debugPrint('Starting AdMob initialization (non-blocking)...');
+    // Start AdMob initialization in background (don't wait for it)
+    // It will use RemoteConfig once it's ready
+    AdMobService().initialize().catchError((error) {
+      debugPrint('AdMob initialization failed: $error');
+      // Non-critical - app continues without ads
+    });
+    debugPrint('AdMob initialization started in background...');
 
-    // Don't create controllers here - let InitialBindings handle it
-    // This prevents duplicate controller creation and improves performance
+    // Ensure minimum splash screen time for smooth UX (600ms minimum)
+    // But don't wait longer than necessary
+    final elapsed = DateTime.now().difference(initStartTime);
+    final minSplashTime = const Duration(milliseconds: 600);
+    if (elapsed < minSplashTime) {
+      await Future.delayed(minSplashTime - elapsed);
+    }
 
-    // Small delay for smooth transition
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // Navigate to home only once
+    // Navigate immediately after minimum time (AdMob continues loading in background)
     if (mounted && !_hasNavigated) {
       _hasNavigated = true;
       Get.offNamed(AppRoutes.home);
     }
+
+    // AdMob continues loading in background (non-blocking)
+    // No need to await - ads will be ready when needed
   }
 
   @override

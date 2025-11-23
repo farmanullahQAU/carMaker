@@ -3,7 +3,6 @@ import 'package:cardmaker/app/routes/app_pages.dart';
 import 'package:cardmaker/core/theme/app_theme.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/firebase_options.dart';
-import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/app_locale_settings_service.dart';
 import 'package:cardmaker/services/firebase_font_service.dart';
 import 'package:cardmaker/widgets/common/app_root_widget.dart';
@@ -26,6 +25,7 @@ void main() async {
 }
 
 Future<void> initServices() async {
+  // Only initialize critical services that are needed before app shows
   await Get.putAsync(() async {
     final appSettings = AppLocaleSettingsService();
     await appSettings.initialize();
@@ -33,11 +33,11 @@ Future<void> initServices() async {
     return appSettings;
   });
 
-  // Initialize AdMob
-  await AdMobService().initialize();
-
   // Initialize font cache in background (non-blocking)
   _initializeFontCache();
+
+  // RemoteConfig and AdMob will be initialized in splash screen
+  // This allows app to show faster while services initialize in background
 }
 
 Future<void> _initializeFontCache() async {
@@ -63,6 +63,7 @@ class CardMakerApp extends StatelessWidget {
         theme: CardMakerTheme.lightTheme(),
         darkTheme: CardMakerTheme.darkTheme(),
         getPages: AppPages.pages,
+        // initialRoute: AppRoutes.splash,
         navigatorKey: ToastHelper.navigatorKey,
         initialBinding: InitialBindings(),
         home: const SplashScreen(),

@@ -25,6 +25,7 @@ import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
 // Modern Minimalist Progress Dialog - Professional Design
 import 'package:flutter/material.dart';
+import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -749,8 +750,36 @@ class CanvasController extends GetxController {
         final tempPath = '${tempDir.path}/$fileName.png';
         final tempFile = File(tempPath);
         await tempFile.writeAsBytes(image);
-        exportProgress.value = 80.0;
+        exportProgress.value = 70.0;
 
+        // Save to gallery first
+        try {
+          final success = await GallerySaver.saveImage(
+            tempFile.path,
+            albumName: 'CardMaker',
+          );
+
+          if (success == true) {
+            exportProgress.value = 80.0;
+            ToastHelper.success('Image saved to gallery');
+          } else {
+            exportProgress.value = 80.0;
+            // Continue even if gallery save fails
+          }
+        } catch (e) {
+          debugPrint('Failed to save to gallery: $e');
+          exportProgress.value = 80.0;
+          // Continue to share even if gallery save fails
+        }
+
+        // Close progress dialog before opening share dialog
+        exportProgress.value = 90.0;
+        _closeProgressDialog();
+
+        // Small delay to ensure dialog is fully closed
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Then open share dialog
         final params = ShareParams(
           text: "$fileName card",
           title: fileName,
@@ -762,16 +791,19 @@ class CanvasController extends GetxController {
           ToastHelper.success('Shared Successfully');
         }
         exportProgress.value = 100.0;
-        _closeProgressDialog();
       }
     } catch (e, s) {
       debugPrint('Export Image failed: $e\nStack trace: $s');
-      Get.snackbar('Error', 'Failed to export image: ${e.toString()}');
       _closeProgressDialog();
+      Get.snackbar('Error', 'Failed to export image: ${e.toString()}');
       return null;
     } finally {
       isExporting = false;
-      _closeProgressDialog();
+      // Only close dialog if it's still open (not already closed)
+      if (Get.isDialogOpen == true) {
+        _closeProgressDialog();
+      }
+      exportProgress.value = 0.0;
       update(['export_button']);
     }
     return null;
@@ -782,7 +814,7 @@ class CanvasController extends GetxController {
       ModernProgressDialog(
         progress: exportProgress,
         title: 'Exporting Your Design',
-        message: 'This may take a moment...',
+        message: "Please wait for few seconds to export your design",
       ),
       barrierDismissible: false,
     );
@@ -790,8 +822,8 @@ class CanvasController extends GetxController {
 
   void _closeProgressDialog() {
     try {
-      if (Get.isDialogOpen ?? false) {
-        Get.back(result: true);
+      if (Get.isDialogOpen == true && Get.context != null) {
+        Navigator.of(Get.context!, rootNavigator: true).pop();
       }
       exportProgress.value = 0.0;
     } catch (e) {
@@ -879,8 +911,15 @@ class CanvasController extends GetxController {
         final pdfPath = '${tempDir.path}/$fileName.pdf';
         final pdfFile = File(pdfPath);
         await pdfFile.writeAsBytes(pdfBytes);
-        exportProgress.value = 100.0;
+        exportProgress.value = 90.0;
 
+        // Close progress dialog before opening share dialog
+        _closeProgressDialog();
+
+        // Small delay to ensure dialog is fully closed
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Open share dialog
         final params = ShareParams(
           text: 'Save or open your PDF',
           files: [XFile(pdfFile.path)],
@@ -891,14 +930,19 @@ class CanvasController extends GetxController {
         if (result.status == ShareResultStatus.success) {
           ToastHelper.success('PDF shared successfully');
         }
-        _closeProgressDialog();
+        exportProgress.value = 100.0;
       }
     } catch (e, s) {
       debugPrint('Export PDF failed: $e\n$s');
+      _closeProgressDialog();
       Get.snackbar('Error', 'Failed to export PDF: ${e.toString()}');
     } finally {
       isExporting = false;
-      _closeProgressDialog();
+      // Only close dialog if it's still open (not already closed)
+      if (Get.isDialogOpen == true) {
+        _closeProgressDialog();
+      }
+      exportProgress.value = 0.0;
       update(['export_button']);
     }
   }

@@ -6,7 +6,6 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
-import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/widgets/common/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -67,25 +66,60 @@ class HomePage extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // READ FROM ALREADY FETCHED REMOTE CONFIG
-
-    final remoteConfig = RemoteConfigService();
-
-    final minVersion = remoteConfig.config.update;
-    final forceUpdate = remoteConfig.config.update.isForceUpdate;
-
     return UpgradeAlert(
       upgrader: Upgrader(
-        minAppVersion: minVersion.minSupportedVersion,
-        durationUntilAlertAgain: Duration(days: 2),
+        // Upgrader automatically checks the app store for updates
+        // and compares with current app version
+
+        // FORCED UPDATES: Set minimum app version for forced updates
+        // If current app version < minAppVersion, it becomes a forced update
+        // The dialog will keep showing until user updates, even if they:
+        // - Go to Play Store and come back without updating
+        // - Close the app and reopen it
+        minAppVersion: '1.0.5', // Uncomment and set your minimum version
+        // How often to show the update dialog again after user dismisses
+        // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
+        // to show immediately every time app opens until user updates
+        // For flexible updates, use Duration(days: 2) to remind after 2 days
+        durationUntilAlertAgain: const Duration(minutes: 10),
+
+        // For forced updates, change to: Duration(seconds: 0)
       ),
-      barrierDismissible: !forceUpdate,
-      // showIgnore: !forceUpdate,
-      showIgnore: false,
-      showLater: !forceUpdate,
 
+      // FLEXIBLE UPDATE CONFIGURATION (Current Setup):
+      // Users can dismiss or postpone the update
+      barrierDismissible: true, // Allow tapping outside to dismiss
+      showIgnore: true, // Show "Ignore" button
+      showLater: true, // Show "Later" button
+      // FORCED UPDATE CONFIGURATION (When minAppVersion is set):
+      // When minAppVersion is set and current version < minAppVersion:
+      // - Upgrader automatically detects it's a forced update
+      // - You should also set these to enforce forced behavior:
+      // barrierDismissible: false,  // Prevent dismissing dialog
+      // showIgnore: false,           // Hide "Ignore" button
+      // showLater: false,            // Hide "Later" button
+      // durationUntilAlertAgain: Duration(seconds: 0) // Show immediately on every app open
+
+      // BEHAVIOR EXPLANATION:
+      // 1. If user's app version < minAppVersion (forced update):
+      //    - Dialog shows immediately when app opens
+      //    - If user goes to Play Store and comes back WITHOUT updating:
+      //      → Dialog will show again immediately (if durationUntilAlertAgain: Duration(seconds: 0))
+      //      → Or after the duration specified
+      //    - If user closes app and reopens:
+      //      → Dialog will show again immediately (if durationUntilAlertAgain: Duration(seconds: 0))
+      //      → This continues until user updates to >= minAppVersion
+      //
+      // 2. If user's app version >= minAppVersion (no forced update):
+      //    - Dialog only shows if there's a newer version available (optional update)
+      //    - User can dismiss and it won't show again for durationUntilAlertAgain period
+      //
+      // 3. ALTERNATIVE: Use app store description markers (recommended):
+      //    - Google Play: Add "[Minimum supported app version: 1.2.3]" to description
+      //    - App Store: Add "[:mav: 1.2.3]" to description
+      //    - When detected, upgrader automatically handles forced updates
+      //    - No need to set minAppVersion in code
       dialogStyle: UpgradeDialogStyle.cupertino,
-
       child: Obx(
         () => Scaffold(
           extendBody: controller.selectedIndex.value == 0,
