@@ -60,7 +60,7 @@ class ProfilePage extends StatelessWidget {
                 //   onPressed: () => Get.back(),
                 // ),
                 flexibleSpace: FlexibleSpaceBar(
-                  background: _buildUserHeader(controller),
+                  background: _buildUserHeader(context, controller),
                   // titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                   // centerTitle: false,
                 ),
@@ -69,7 +69,7 @@ class ProfilePage extends StatelessWidget {
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Get.theme.colorScheme.surfaceContainerHighest,
+                      color: Get.theme.colorScheme.surfaceContainerLow,
 
                       borderRadius: BorderRadius.circular(25),
                     ),
@@ -84,7 +84,7 @@ class ProfilePage extends StatelessWidget {
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicatorPadding: const EdgeInsets.symmetric(vertical: 0),
                       labelColor: Colors.white,
-                      unselectedLabelColor: Colors.grey.shade600,
+                      // unselectedLabelColor: Colors.grey.shade600,
                       labelStyle: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -115,58 +115,92 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildUserHeader(ProfileController controller) {
+  Widget _buildUserHeader(BuildContext context, ProfileController controller) {
     final user = controller.authService.user;
-
     final isGuest = user == null;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      // color: Colors.red,
-      padding: const EdgeInsets.only(
-        // top: kToolbarHeight + 40,
-        left: 16,
-        right: 16,
-      ),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColors.blue400Light,
-            child: user?.photoURL != null
-                ? ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: user?.photoURL ?? "",
-                      fit: BoxFit.cover,
-                      width: 56,
-                      height: 56,
-                      placeholder: (context, url) => _buildShimmerPlaceholder(),
-                      errorWidget: (context, url, error) => Icon(
-                        Icons.person,
-                        size: 28,
-                        color: AppColors.blue400Light,
+          // Professional Avatar with better styling
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.outlineVariant, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 28,
+              backgroundColor: isGuest
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.primaryContainer,
+              child: user?.photoURL != null
+                  ? ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: user?.photoURL ?? "",
+                        fit: BoxFit.cover,
+                        width: 56,
+                        height: 56,
+                        placeholder: (context, url) =>
+                            _buildShimmerPlaceholder(),
+                        errorWidget: (context, url, error) => Icon(
+                          Icons.person_rounded,
+                          size: 32,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                       ),
+                    )
+                  : Icon(
+                      Icons.person_rounded,
+                      size: 32,
+                      color: isGuest
+                          ? colorScheme.onSurfaceVariant
+                          : colorScheme.onPrimaryContainer,
                     ),
-                  )
-                : Icon(Icons.person),
+            ),
           ),
           const SizedBox(width: 16),
+          // User Info Section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  isGuest ? "Guest User" : user.displayName ?? "----",
-                  style: const TextStyle(),
+                  isGuest ? "Guest User" : (user.displayName ?? "User"),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (user?.email != null)
+                const SizedBox(height: 4),
+                if (isGuest)
                   Text(
-                    user!.email!,
-                    style: Get.theme.textTheme.labelSmall?.copyWith(
-                      color: Get.theme.hintColor,
+                    'Sign in to sync your data',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else if (user.email != null)
+                  Text(
+                    user.email!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 12,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -174,31 +208,48 @@ class ProfilePage extends StatelessWidget {
               ],
             ),
           ),
+          // Action Button
           if (isGuest)
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
                 Get.toNamed(AppRoutes.auth);
               },
               style: ElevatedButton.styleFrom(
+                // backgroundColor: AppColors.branding,
+
+                // foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 4,
+                  vertical: 0,
                 ),
-
-                elevation: 0,
-                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
               ),
-              child: const Text(
-                'Login',
+              icon: const Icon(Icons.login_rounded, size: 18),
+              label: const Text(
+                'Sign In',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             )
           else
-            IconButton(
-              icon: Icon(Icons.settings_outlined, size: 24),
-              onPressed: () {
-                Get.toNamed(AppRoutes.settings);
-              },
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.settings_outlined,
+                  size: 22,
+                  color: colorScheme.onSurface,
+                ),
+                onPressed: () {
+                  Get.toNamed(AppRoutes.settings);
+                },
+                tooltip: 'Settings',
+              ),
             ),
         ],
       ),
@@ -229,7 +280,7 @@ class ProfilePage extends StatelessWidget {
         if (allDrafts.isEmpty) {
           return _buildEmptyState(
             'No drafts yet',
-            'Create and save your projects to see them here',
+            "Create and save your projects to see them here",
             Icons.drafts_outlined,
           );
         }
@@ -600,26 +651,25 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.pink400Light,
+                color: Get.theme.colorScheme.surfaceContainerLow,
               ),
               child: Icon(icon, size: 48, color: Colors.white),
             ),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(
+              style: Get.textTheme.titleMedium?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: TextStyle(
+              style: Get.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
-                color: Colors.grey.shade500,
                 fontWeight: FontWeight.w400,
+                color: Get.theme.colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),

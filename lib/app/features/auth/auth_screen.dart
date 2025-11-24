@@ -18,7 +18,6 @@ class AuthScreen extends GetView<AuthController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -29,15 +28,15 @@ class AuthScreen extends GetView<AuthController> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // const SizedBox(height: 40),
-              _buildHeader(),
+              _buildHeader(context),
               const SizedBox(height: 12),
-              _buildAuthForm(),
+              _buildAuthForm(context),
               // const SizedBox(height: 24),
               // _buildErrorMessage(),
               const SizedBox(height: 24),
-              _buildSocialLogin(),
+              _buildSocialLogin(context),
               const SizedBox(height: 16),
-              _buildAuthModeSwitch(),
+              _buildAuthModeSwitch(context),
               const SizedBox(height: 20),
             ],
           ),
@@ -47,25 +46,26 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build professional header with logo and title
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Column(
       children: [
-        _buildLogo(),
+        _buildLogo(context),
         const SizedBox(height: 24),
-        Obx(() => _buildTitle()),
+        Obx(() => _buildTitle(context)),
         const SizedBox(height: 12),
-        Obx(() => _buildSubtitle()),
+        Obx(() => _buildSubtitle(context)),
       ],
     );
   }
 
   /// Build professional logo container
-  Widget _buildLogo() {
+  Widget _buildLogo(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: _logoSize,
       height: _logoSize,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surfaceContainerHigh,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -83,24 +83,26 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build dynamic title based on auth mode
-  Widget _buildTitle() {
+  Widget _buildTitle(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text(
       controller.isLoginMode.value ? 'Welcome Back' : 'Create Account',
       style: Get.textTheme.headlineMedium?.copyWith(
         fontWeight: FontWeight.w700,
-        color: Colors.grey.shade800,
+        color: colorScheme.onSurface,
       ),
     );
   }
 
   /// Build dynamic subtitle based on auth mode
-  Widget _buildSubtitle() {
+  Widget _buildSubtitle(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Text(
       controller.isLoginMode.value
           ? 'Sign in to continue your creative journey'
           : 'Join thousands of creators worldwide',
       style: Get.textTheme.bodyLarge?.copyWith(
-        color: Colors.grey.shade600,
+        color: colorScheme.onSurfaceVariant,
         height: 1.4,
       ),
       textAlign: TextAlign.center,
@@ -108,26 +110,26 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build auth form based on current mode
-  Widget _buildAuthForm() {
+  Widget _buildAuthForm(BuildContext context) {
     return Obx(
       () => AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: controller.isLoginMode.value
-            ? _buildLoginForm()
-            : _buildSignupForm(),
+            ? _buildLoginForm(context)
+            : _buildSignupForm(context),
       ),
     );
   }
 
   /// Build login form
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(BuildContext context) {
     return Form(
       key: controller.loginFormKey,
       child: Column(
         children: [
-          _buildEmailField(),
+          _buildEmailField(context),
           const SizedBox(height: 16),
-          _buildPasswordField(),
+          _buildPasswordField(context),
           const SizedBox(height: 8),
           _buildForgotPassword(),
           const SizedBox(height: 8),
@@ -138,18 +140,18 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build signup form
-  Widget _buildSignupForm() {
+  Widget _buildSignupForm(BuildContext context) {
     return Form(
       key: controller.signupFormKey,
       child: Column(
         children: [
-          _buildNameField(),
+          _buildNameField(context),
           const SizedBox(height: 16),
-          _buildEmailField(),
+          _buildEmailField(context),
           const SizedBox(height: 16),
-          _buildPasswordField(),
+          _buildPasswordField(context),
           const SizedBox(height: 16),
-          _buildConfirmPasswordField(),
+          _buildConfirmPasswordField(context),
           const SizedBox(height: 24),
           _buildSubmitButton('Create Account'),
         ],
@@ -158,10 +160,11 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build name input field
-  Widget _buildNameField() {
+  Widget _buildNameField(BuildContext context) {
     return TextFormField(
       controller: controller.nameController,
       decoration: _getInputDecoration(
+        context: context,
         label: 'Full Name',
         icon: Icons.person_outline_rounded,
       ),
@@ -171,10 +174,11 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build email input field
-  Widget _buildEmailField() {
+  Widget _buildEmailField(BuildContext context) {
     return TextFormField(
       controller: controller.emailController,
       decoration: _getInputDecoration(
+        context: context,
         label: 'Email Address',
         icon: Icons.email_outlined,
       ),
@@ -185,11 +189,13 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build password input field
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Obx(
       () => TextFormField(
         controller: controller.passwordController,
         decoration: _getInputDecoration(
+          context: context,
           label: 'Password',
           icon: Icons.lock_outline_rounded,
           suffixIcon: IconButton(
@@ -197,7 +203,7 @@ class AuthScreen extends GetView<AuthController> {
               controller.obscurePassword.value
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
-              color: Colors.grey.shade600,
+              color: colorScheme.onSurfaceVariant,
             ),
             onPressed: controller.togglePasswordVisibility,
           ),
@@ -212,11 +218,13 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build confirm password input field
-  Widget _buildConfirmPasswordField() {
+  Widget _buildConfirmPasswordField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Obx(
       () => TextFormField(
         controller: controller.confirmPasswordController,
         decoration: _getInputDecoration(
+          context: context,
           label: 'Confirm Password',
           icon: Icons.lock_outline_rounded,
           suffixIcon: IconButton(
@@ -224,7 +232,7 @@ class AuthScreen extends GetView<AuthController> {
               controller.obscureConfirmPassword.value
                   ? Icons.visibility_off_outlined
                   : Icons.visibility_outlined,
-              color: Colors.grey.shade600,
+              color: colorScheme.onSurfaceVariant,
             ),
             onPressed: controller.toggleConfirmPasswordVisibility,
           ),
@@ -282,39 +290,41 @@ class AuthScreen extends GetView<AuthController> {
   }
 
   /// Build social login section
-  Widget _buildSocialLogin() {
+  Widget _buildSocialLogin(BuildContext context) {
     return Column(
       children: [
-        _buildDivider(),
+        _buildDivider(context),
         const SizedBox(height: 24),
-        _buildGoogleSignInButton(),
+        _buildGoogleSignInButton(context),
       ],
     );
   }
 
   /// Build divider with text
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Expanded(child: Divider(color: colorScheme.outlineVariant)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Or continue with',
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: colorScheme.onSurfaceVariant,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        Expanded(child: Divider(color: colorScheme.outlineVariant)),
       ],
     );
   }
 
   /// Build Google sign-in button
-  Widget _buildGoogleSignInButton() {
+  Widget _buildGoogleSignInButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
       height: _buttonHeight,
@@ -324,14 +334,15 @@ class AuthScreen extends GetView<AuthController> {
         onPressed: controller.signInWithGoogle,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_borderRadius),
-          side: BorderSide(color: Colors.grey.shade300),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
       ),
     );
   }
 
   /// Build auth mode switch
-  Widget _buildAuthModeSwitch() {
+  Widget _buildAuthModeSwitch(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Obx(
       () => Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -340,7 +351,7 @@ class AuthScreen extends GetView<AuthController> {
             controller.isLoginMode.value
                 ? "Don't have an account?"
                 : 'Already have an account?',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 15),
           ),
           TextButton(
             onPressed: controller.toggleAuthMode,
@@ -363,21 +374,23 @@ class AuthScreen extends GetView<AuthController> {
 
   /// Get consistent input decoration
   InputDecoration _getInputDecoration({
+    required BuildContext context,
     required String label,
     required IconData icon,
     Widget? suffixIcon,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.grey.shade600),
+      prefixIcon: Icon(icon, color: colorScheme.onSurfaceVariant),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(_borderRadius),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(_borderRadius),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(_borderRadius),
@@ -385,20 +398,23 @@ class AuthScreen extends GetView<AuthController> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(_borderRadius),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
+        borderSide: BorderSide(color: colorScheme.error, width: 1),
       ),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: colorScheme.surfaceContainerLow,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
   /// Show password reset dialog
   void _showResetPasswordDialog() {
+    final context = Get.context!;
+    final colorScheme = Theme.of(context).colorScheme;
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 8,
+        backgroundColor: colorScheme.surface,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Form(
@@ -416,14 +432,14 @@ class AuthScreen extends GetView<AuthController> {
                   'Reset Password',
                   style: Get.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Enter your email address and we\'ll send you a link to reset your password.',
                   style: Get.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -432,6 +448,7 @@ class AuthScreen extends GetView<AuthController> {
                 TextFormField(
                   controller: controller.emailController,
                   decoration: _getInputDecoration(
+                    context: context,
                     label: 'Email Address',
                     icon: Icons.email_outlined,
                   ),
@@ -448,12 +465,12 @@ class AuthScreen extends GetView<AuthController> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(_borderRadius),
                           ),
-                          side: BorderSide(color: Colors.grey.shade400),
+                          side: BorderSide(color: colorScheme.outline),
                         ),
                         child: Text(
                           'Cancel',
                           style: TextStyle(
-                            color: Colors.grey.shade700,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

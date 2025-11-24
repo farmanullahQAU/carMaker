@@ -71,17 +71,17 @@ class HomePage extends GetView<HomeController> {
         // Upgrader automatically checks the app store for updates
         // and compares with current app version
 
-        // FORCED UPDATES: Set minimum app version for forced updates
+        // FORCED UPDATES: Set minimum app version for forced updates.,.l;
         // If current app version < minAppVersion, it becomes a forced update
         // The dialog will keep showing until user updates, even if they:
         // - Go to Play Store and come back without updating
-        // - Close the app and reopen it
+        // - Close the app and reopen its
         minAppVersion: '1.0.5', // Uncomment and set your minimum version
         // How often to show the update dialog again after user dismisses
         // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
         // to show immediately every time app opens until user updates
         // For flexible updates, use Duration(days: 2) to remind after 2 days
-        durationUntilAlertAgain: const Duration(minutes: 10),
+        durationUntilAlertAgain: const Duration(hours: 3),
 
         // For forced updates, change to: Duration(seconds: 0)
       ),
@@ -217,7 +217,7 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
               TrendingTemplatesList(),
               SizedBox(height: 12),
 
-              SectionTitle(title: 'Free today', showSeeAll: true),
+              SectionTitle(title: 'Free today', showSeeAll: false),
               FreeTodayTemplatesList(),
               SizedBox(height: 100),
             ],
@@ -374,7 +374,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
             itemCount: controller.freeTodayTemplates.length + 1,
             itemBuilder: (context, index) {
               if (index == controller.freeTodayTemplates.length) {
-                return _buildViewAllCard();
+                return _buildViewAllCard(context);
               }
               return OptimizedTemplateCard(
                 template: controller.freeTodayTemplates[index],
@@ -393,9 +393,9 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
     );
   }
 
-  Widget _buildViewAllCard() {
+  Widget _buildViewAllCard(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -403,7 +403,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
         child: Container(
           width: 100,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
@@ -424,14 +424,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'View All',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
-                ),
-              ),
+              const Text('View All'),
             ],
           ),
         ),
@@ -470,7 +463,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
             itemCount: controller.trendingTemplates.length + 1,
             itemBuilder: (context, index) {
               if (index == controller.trendingTemplates.length) {
-                return _buildViewAllCard();
+                return _buildViewAllCard(context);
               }
               return OptimizedTemplateCard(
                 template: controller.trendingTemplates[index],
@@ -489,7 +482,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
     );
   }
 
-  Widget _buildViewAllCard() {
+  Widget _buildViewAllCard(BuildContext context) {
     return Material(
       // color: Colors.white,
       borderRadius: BorderRadius.circular(16),
@@ -499,7 +492,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
         child: Container(
           width: 100,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
@@ -520,14 +513,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'View All',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF374151),
-                ),
-              ),
+              const Text('View All'),
             ],
           ),
         ),
@@ -758,6 +744,7 @@ class SectionTitle extends StatelessWidget {
             title,
             style: Get.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: context.theme.colorScheme.onSurface,
             ),
           ),
           if (showSeeAll)
@@ -775,14 +762,14 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => Get.to(() => const ProfessionalTemplatesPage()),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.branding, AppColors.brandingLight],
@@ -801,7 +788,7 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
                       const SizedBox(height: 8),
                       // Title
                       const Text(
-                        'Blank Canvas Templates',
+                        'Blank Canvas',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -820,34 +807,21 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
+
                       // CTA Button
-                      ElevatedButton(
-                        style: FilledButton.styleFrom(
-                          elevation: 0,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        onPressed: () {
-                          Get.to(() => const ProfessionalTemplatesPage());
-                        },
-                        child: Text("Browse"),
-                      ),
                     ],
                   ),
                 ),
-                // Icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
+                ElevatedButton(
+                  style: FilledButton.styleFrom(
+                    elevation: 0,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
                   ),
-                  child: Icon(
-                    Icons.star_rounded,
-                    size: 22,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+                  onPressed: () {
+                    Get.to(() => const ProfessionalTemplatesPage());
+                  },
+                  child: Text("Browse"),
                 ),
               ],
             ),
