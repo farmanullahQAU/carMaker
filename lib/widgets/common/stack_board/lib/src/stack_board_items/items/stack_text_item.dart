@@ -511,7 +511,8 @@ class TextItemContent implements StackItemContent {
     this.dualToneColor2 = Colors.blue,
     this.dualToneDirection = DualToneDirection.horizontal,
     this.dualTonePosition = 0.5,
-  });
+    bool? autoFit,
+  }) : autoFit = autoFit ?? ((data?.length ?? 0) <= 20);
 
   factory TextItemContent.fromJson(Map<String, dynamic> data) {
     return TextItemContent(
@@ -623,6 +624,10 @@ class TextItemContent implements StackItemContent {
                 ) ??
                 DualToneDirection.horizontal,
       dualTonePosition: asT<double>(data['dualTonePosition'], 0.5),
+      autoFit: asT<bool>(
+        data['autoFit'],
+        ((data['data'] as String?)?.length ?? 0) <= 20,
+      ),
     );
   }
 
@@ -665,6 +670,7 @@ class TextItemContent implements StackItemContent {
   Color dualToneColor2;
   DualToneDirection dualToneDirection;
   double dualTonePosition;
+  bool autoFit;
 
   TextItemContent copyWith({
     String? data,
@@ -706,6 +712,7 @@ class TextItemContent implements StackItemContent {
     Color? dualToneColor2,
     DualToneDirection? dualToneDirection,
     double? dualTonePosition,
+    bool? autoFit,
   }) {
     return TextItemContent(
       data: data ?? this.data,
@@ -747,6 +754,7 @@ class TextItemContent implements StackItemContent {
       dualToneColor2: dualToneColor2 ?? this.dualToneColor2,
       dualToneDirection: dualToneDirection ?? this.dualToneDirection,
       dualTonePosition: dualTonePosition ?? this.dualTonePosition,
+      autoFit: autoFit ?? this.autoFit,
     );
   }
 
@@ -795,6 +803,7 @@ class TextItemContent implements StackItemContent {
       'dualToneColor2': dualToneColor2.toARGB32(),
       'dualToneDirection': dualToneDirection.toString(),
       'dualTonePosition': dualTonePosition,
+      'autoFit': autoFit,
     };
   }
 }

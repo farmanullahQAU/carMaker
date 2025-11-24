@@ -1230,6 +1230,7 @@ class CanvasStack extends StatelessWidget {
                     child: StackBoard(
                       key: stackBoardKey,
                       controller: controller.boardController,
+                      onSizeChanged: controller.handleStackItemResize,
 
                       customBuilder: (StackItem<StackItemContent> item) {
                         if (item is StackTextItem && item.content != null) {
@@ -1237,9 +1238,9 @@ class CanvasStack extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: StackTextCase(
                               item: item,
-                              isFitted: item.content!.data!.length > 20
-                                  ? false
-                                  : true,
+                              isFitted:
+                                  item.content?.autoFit ??
+                                  (item.content!.data!.length <= 20),
                             ),
                           );
                         } else if (item is StackImageItem &&
@@ -1379,6 +1380,12 @@ class CanvasStack extends StatelessWidget {
                           if (controller.draggedItem.value?.id == item.id) {
                             controller.draggedItem.value = null;
                           }
+                          // Clear tracked size when resize ends
+                          controller.clearTrackedSize(item.id);
+                        }
+                        // Clear tracked size when item is selected (new resize may start)
+                        if (status == StackItemStatus.selected) {
+                          controller.clearTrackedSize(item.id);
                         }
                         controller.update(['canvas_stack', 'bottom_sheet']);
                         return true;

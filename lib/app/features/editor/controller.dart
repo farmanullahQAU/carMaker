@@ -467,6 +467,170 @@ class CanvasController extends GetxController {
     }
   }
 
+  // Track previous sizes to detect corner vs edge resizing
+  final Map<String, Size> _previousItemSizes = {};
+  // Track original font sizes when resize starts
+  final Map<String, double> _originalFontSizes = {};
+
+  /// Clear tracked size for an item (call when resize ends or item is deselected)
+  void clearTrackedSize(String itemId) {
+    _previousItemSizes.remove(itemId);
+    _originalFontSizes.remove(itemId);
+  }
+
+  bool handleStackItemResize(StackItem<StackItemContent> item, Size newSize) {
+    if (item is StackTextItem && item.content != null) {
+      final TextItemContent content = item.content!;
+      // If auto fit is enabled, let FittedBox handle scaling
+      if (content.autoFit) {
+        return true;
+      }
+      // Initialize baseline size and font size on first resize call if not already tracked
+      if (!_previousItemSizes.containsKey(item.id)) {
+        _previousItemSizes[item.id] =
+            item.size; // Store original size at resize start
+        // Store original font size at resize start
+        final TextStyle? style = content.style;
+        final double originalFontSize = style?.fontSize ?? 16.0;
+        _originalFontSizes[item.id] = originalFontSize;
+      }
+
+      // Only scale font if resizing from corners (proportional resize)
+      if (_isCornerResize(item.id, item.size, newSize)) {
+        _scaleTextItemFont(item, newSize);
+      }
+      // Don't update tracked size here - keep the original baseline throughout the resize
+    }
+    return true;
+  }
+
+  /// Check if resize is from corner (proportional) or edge (non-proportional)
+  bool _isCornerResize(String itemId, Size oldSize, Size newSize) {
+    final Size? previousSize = _previousItemSizes[itemId];
+
+    // If no previous size tracked, initialize it with current size
+    // This happens on first resize update - treat it as potential corner resize
+    if (previousSize == null) {
+      _previousItemSizes[itemId] = oldSize;
+      // On first update, check if both dimensions are changing
+      // If aspect ratio is maintained, it's likely a corner resize
+      if (oldSize.width > 0 && oldSize.height > 0) {
+        final double oldAspectRatio = oldSize.width / oldSize.height;
+        final double newAspectRatio = newSize.width / newSize.height;
+        const double aspectRatioTolerance = 0.02; // 2% tolerance
+        return (oldAspectRatio - newAspectRatio).abs() < aspectRatioTolerance;
+      }
+      return false;
+    }
+
+    // Use tracked previous size as baseline
+    final Size baselineSize = previousSize;
+
+    if (baselineSize.width <= 0 || baselineSize.height <= 0) return false;
+
+    // Calculate aspect ratios
+    final double oldAspectRatio = baselineSize.width / baselineSize.height;
+    final double newAspectRatio = newSize.width / newSize.height;
+
+    // Calculate scale factors
+    final double scaleX = newSize.width / baselineSize.width;
+    final double scaleY = newSize.height / baselineSize.height;
+
+    // If both dimensions changed significantly and aspect ratio is maintained (within tolerance),
+    // it's a corner resize (proportional scaling)
+    const double aspectRatioTolerance =
+        0.02; // 2% tolerance for better detection
+    final bool aspectRatioMaintained =
+        (oldAspectRatio - newAspectRatio).abs() < aspectRatioTolerance;
+
+    // Both dimensions must have changed significantly (more than 2% change)
+    const double minScaleChange = 0.02;
+    final bool bothDimensionsChanged =
+        (scaleX - 1.0).abs() > minScaleChange &&
+        (scaleY - 1.0).abs() > minScaleChange;
+
+    // Corner resize: both dimensions changed AND aspect ratio maintained
+    return bothDimensionsChanged && aspectRatioMaintained;
+  }
+
+  void _scaleTextItemFont(StackTextItem item, Size newSize) {
+    final TextItemContent? content = item.content;
+    if (content == null) return;
+
+    final Size? previousSize = _previousItemSizes[item.id];
+
+    // Use the tracked previous size as baseline (size at start of resize)
+    // If not tracked yet, use current item size and initialize tracking
+    final Size baselineSize;
+    if (previousSize == null) {
+      baselineSize = item.size;
+      _previousItemSizes[item.id] = item.size; // Initialize with current size
+    } else {
+      baselineSize =
+          previousSize; // Always use the original size when resize started
+    }
+
+    if (baselineSize.width <= 0 || baselineSize.height <= 0) return;
+
+    // Calculate scale factor using diagonal distance (keeps proportional feel)
+    final double baselineDiagonal = math.sqrt(
+      math.pow(baselineSize.width, 2) + math.pow(baselineSize.height, 2),
+    );
+    final double newDiagonal = math.sqrt(
+      math.pow(newSize.width, 2) + math.pow(newSize.height, 2),
+    );
+
+    if (baselineDiagonal == 0) return;
+
+    final double scale = newDiagonal / baselineDiagonal;
+    if (!scale.isFinite || scale <= 0) return;
+
+    // Boost sensitivity for more responsive font scaling
+    const double sensitivityMultiplier =
+        2.5; // Increased for better responsiveness
+    final double adjustedScale = 1 + (scale - 1) * sensitivityMultiplier;
+    if (!adjustedScale.isFinite || adjustedScale <= 0) return;
+
+    // Use the original font size (when resize started) as baseline, not current font size
+    final double? originalFontSize = _originalFontSizes[item.id];
+    final double baseFontSize;
+
+    if (originalFontSize == null) {
+      // Fallback if not tracked (shouldn't happen, but safety check)
+      final TextStyle baseStyle = content.style ?? const TextStyle();
+      baseFontSize = baseStyle.fontSize ?? 16.0;
+      _originalFontSizes[item.id] = baseFontSize;
+    } else {
+      baseFontSize = originalFontSize;
+    }
+
+    // Calculate new font size based on original font size and scale
+    final double newFontSize = (baseFontSize * adjustedScale).clamp(4.0, 400.0);
+
+    // Get current style to preserve other properties
+    final TextStyle baseStyle = content.style ?? const TextStyle();
+
+    // Skip update if change is too small
+    final double currentFontSize = baseStyle.fontSize ?? baseFontSize;
+    if ((newFontSize - currentFontSize).abs() < 0.1) return;
+
+    final TextStyle updatedStyle = baseStyle.copyWith(
+      fontSize: newFontSize.toDouble(),
+    );
+    final TextItemContent updatedContent = content.copyWith(
+      style: updatedStyle,
+      autoFit: false,
+    );
+    final StackTextItem updatedItem = item.copyWith(content: updatedContent);
+
+    boardController.updateItem(updatedItem);
+
+    if (activeItem.value?.id == updatedItem.id) {
+      activeItem.value = updatedItem;
+      activeItem.refresh();
+    }
+  }
+
   void _updateGridSize() {
     if (actualStackBoardRenderSize.value == Size.zero) return;
     final double width = actualStackBoardRenderSize.value.width;
