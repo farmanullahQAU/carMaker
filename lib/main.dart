@@ -17,6 +17,9 @@ void main() async {
   await GetStorage.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Note: Firestore persistence is enabled by default in cloud_firestore v6.0.0+
+  // It automatically caches data locally for offline access
+
   // Initialize SettingsController
 
   await initServices();
@@ -57,7 +60,8 @@ class CardMakerApp extends StatelessWidget {
     return ToastificationWrapper(
       // Wrap your app with this
       child: GetMaterialApp(
-        title: 'Inkkaro',
+        title: 'Artnie',
+        // showPerformanceOverlay: true,
         debugShowCheckedModeBanner: false,
         themeMode: AppLocaleSettingsService().getThemeMode(),
         theme: CardMakerTheme.lightTheme(),

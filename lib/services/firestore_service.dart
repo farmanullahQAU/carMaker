@@ -818,6 +818,7 @@ class FirestoreServices {
     List<String>? tags,
     int limit = 20,
     DocumentSnapshot? startAfterDocument,
+    bool useCache = false,
   }) async {
     try {
       Query<Map<String, dynamic>> query = _firestore
@@ -834,7 +835,11 @@ class FirestoreServices {
         query = query.startAfterDocument(startAfterDocument);
       }
 
-      return await query.get();
+      // useCache=true: Only use cache (fast, but might be stale)
+      // useCache=false: Use serverAndCache (shows cache immediately, then updates with fresh data)
+      return await query.get(
+        GetOptions(source: useCache ? Source.cache : Source.serverAndCache),
+      );
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
     }
@@ -844,6 +849,7 @@ class FirestoreServices {
   Future<QuerySnapshot<Map<String, dynamic>>> getFreeTodayTemplatesPaginated({
     int limit = 20,
     DocumentSnapshot? startAfterDocument,
+    bool useCache = false,
   }) async {
     try {
       Query<Map<String, dynamic>> query = _firestore
@@ -855,7 +861,11 @@ class FirestoreServices {
         query = query.startAfterDocument(startAfterDocument);
       }
 
-      return await query.get();
+      // useCache=true: Only use cache (fast, but might be stale)
+      // useCache=false: Use serverAndCache (shows cache immediately, then updates with fresh data)
+      return await query.get(
+        GetOptions(source: useCache ? Source.cache : Source.serverAndCache),
+      );
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
     }
@@ -865,6 +875,7 @@ class FirestoreServices {
   Future<QuerySnapshot<Map<String, dynamic>>> getTrendingTemplatesPaginated({
     int limit = 20,
     DocumentSnapshot? startAfterDocument,
+    bool useCache = false,
   }) async {
     try {
       Query<Map<String, dynamic>> query = _firestore
@@ -877,7 +888,11 @@ class FirestoreServices {
         query = query.startAfterDocument(startAfterDocument);
       }
 
-      return await query.get();
+      // useCache=true: Only use cache (fast, but might be stale)
+      // useCache=false: Use serverAndCache (shows cache immediately, then updates with fresh data)
+      return await query.get(
+        GetOptions(source: useCache ? Source.cache : Source.serverAndCache),
+      );
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
     }

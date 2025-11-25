@@ -25,6 +25,7 @@ import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/foundation.dart';
 // Modern Minimalist Progress Dialog - Professional Design
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -887,7 +888,71 @@ class CanvasController extends GetxController {
 
   final PermissionService permissionService = Get.find<PermissionService>();
 
-  // ==================== EXPORT METHODS (UNCHANGED) ====================
+  // ==================== EXPORT OPTIMIZATION HELPERS ====================
+  /// Calculate optimal pixel ratio based on canvas size
+  /// Returns a value between 2.0 and 3.0 for optimal quality/size balance
+  double _calculateOptimalPixelRatio() {
+    final canvasWidth = scaledCanvasWidth.value;
+    final canvasHeight = scaledCanvasHeight.value;
+    final maxDimension = math.max(canvasWidth, canvasHeight);
+
+    // For smaller canvases, use higher pixel ratio
+    // For larger canvases, use lower pixel ratio to keep file size reasonable
+    if (maxDimension < 500) {
+      return 3.0; // High quality for small cards
+    } else if (maxDimension < 1000) {
+      return 2.5; // Good quality for medium cards
+    } else {
+      return 2.0; // Balanced for large cards
+    }
+  }
+
+  /// Compress image bytes while maintaining high quality
+  /// Returns compressed bytes optimized for file size
+  Future<Uint8List> _compressImageBytes(
+    Uint8List imageBytes, {
+    int quality = 92,
+    int minWidth = 0,
+    int minHeight = 0,
+  }) async {
+    try {
+      // Write to temp file for compression
+      final tempDir = await getTemporaryDirectory();
+      final tempInputPath =
+          '${tempDir.path}/export_temp_${DateTime.now().millisecondsSinceEpoch}.png';
+      final tempInputFile = File(tempInputPath);
+      await tempInputFile.writeAsBytes(imageBytes);
+
+      // Compress with high quality settings
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
+        tempInputFile.absolute.path,
+        format: CompressFormat.png, // Use PNG for lossless quality
+        quality: quality,
+        minWidth: minWidth > 0 ? minWidth : 1920, // Default to reasonable size
+        minHeight: minHeight > 0
+            ? minHeight
+            : 1920, // Default to reasonable size
+        keepExif: false, // Remove EXIF to reduce size
+      );
+
+      // Clean up temp file
+      if (await tempInputFile.exists()) {
+        await tempInputFile.delete();
+      }
+
+      if (compressedBytes == null) {
+        debugPrint('Compression returned null, using original bytes');
+        return imageBytes;
+      }
+
+      return compressedBytes;
+    } catch (e) {
+      debugPrint('Image compression failed: $e, using original bytes');
+      return imageBytes;
+    }
+  }
+
+  // ==================== EXPORT METHODS (OPTIMIZED) ====================
   Future<File?> exportAsImage([String fileName = "inkaro_card"]) async {
     try {
       final adService = AdMobService();
@@ -909,6 +974,8 @@ class CanvasController extends GetxController {
 
       exportProgress.value = 10.0;
       final exportKey = GlobalKey();
+      final optimalPixelRatio = _calculateOptimalPixelRatio();
+
       final image = await screenshotController.captureFromWidget(
         Material(
           elevation: 0,
@@ -928,14 +995,24 @@ class CanvasController extends GetxController {
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 5, // Increased from 4 to 5 to match PDF quality
-        delay: Duration(seconds: 4),
+        pixelRatio: optimalPixelRatio, // Optimized based on canvas size
+        delay: const Duration(milliseconds: 500), // Reduced delay
       );
+      exportProgress.value = 40.0;
+
+      // Compress image to reduce file size while maintaining quality
       exportProgress.value = 50.0;
+      final compressedImage = await _compressImageBytes(
+        image,
+        quality: 92, // High quality (92%) for near-lossless compression
+        minWidth: (scaledCanvasWidth.value * optimalPixelRatio).round(),
+        minHeight: (scaledCanvasHeight.value * optimalPixelRatio).round(),
+      );
+      exportProgress.value = 60.0;
 
       if (kIsWeb) {
-        exportProgress.value = 60.0;
-        final blob = html.Blob([image]);
+        exportProgress.value = 70.0;
+        final blob = html.Blob([compressedImage]);
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement(href: url)
           ..setAttribute('download', '$fileName.png')
@@ -945,12 +1022,12 @@ class CanvasController extends GetxController {
         ToastHelper.success('Image downloaded');
         return File('$fileName.png');
       } else {
-        exportProgress.value = 60.0;
+        exportProgress.value = 70.0;
         final tempDir = await getTemporaryDirectory();
         final tempPath = '${tempDir.path}/$fileName.png';
         final tempFile = File(tempPath);
-        await tempFile.writeAsBytes(image);
-        exportProgress.value = 70.0;
+        await tempFile.writeAsBytes(compressedImage);
+        exportProgress.value = 80.0;
 
         // Save to gallery first
         try {
@@ -960,15 +1037,15 @@ class CanvasController extends GetxController {
           );
 
           if (success == true) {
-            exportProgress.value = 80.0;
+            exportProgress.value = 85.0;
             ToastHelper.success('Image saved to gallery');
           } else {
-            exportProgress.value = 80.0;
+            exportProgress.value = 85.0;
             // Continue even if gallery save fails
           }
         } catch (e) {
           debugPrint('Failed to save to gallery: $e');
-          exportProgress.value = 80.0;
+          exportProgress.value = 85.0;
           // Continue to share even if gallery save fails
         }
 
@@ -1064,6 +1141,8 @@ class CanvasController extends GetxController {
       exportProgress.value = 0.0;
 
       exportProgress.value = 20.0;
+      final optimalPixelRatio = _calculateOptimalPixelRatio();
+
       final image = await screenshotController.captureFromWidget(
         Material(
           shadowColor: Colors.transparent,
@@ -1084,13 +1163,24 @@ class CanvasController extends GetxController {
           ),
         ),
         targetSize: Size(scaledCanvasWidth.value, scaledCanvasHeight.value),
-        pixelRatio: 5,
-        delay: Duration(seconds: 4),
+        pixelRatio: optimalPixelRatio, // Optimized based on canvas size
+        delay: const Duration(milliseconds: 500), // Reduced delay
+      );
+
+      exportProgress.value = 40.0;
+
+      // Compress image before embedding in PDF to reduce file size
+      final compressedImage = await _compressImageBytes(
+        image,
+        quality:
+            90, // Slightly lower for PDF (90%) as PDF has its own compression
+        minWidth: (scaledCanvasWidth.value * optimalPixelRatio).round(),
+        minHeight: (scaledCanvasHeight.value * optimalPixelRatio).round(),
       );
 
       exportProgress.value = 50.0;
       final pdf = pw.Document();
-      final imageProvider = pw.MemoryImage(image);
+      final imageProvider = pw.MemoryImage(compressedImage);
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat(

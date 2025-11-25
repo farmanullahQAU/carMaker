@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
-import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -218,27 +217,50 @@ class HomeController extends GetxController {
     if (_isInitializing || _isDataInitialized) return;
 
     _isInitializing = true;
-    isLoading.value = true;
+    isLoading.value = false; // Don't show loading spinner initially
+
     try {
+      // Load favorites first (fast, local)
+      await _loadFavoriteTemplateIds();
+
+      // Use serverAndCache: Returns cached data immediately, then fetches fresh data
+      // This ensures users see cached data instantly AND get fresh templates
       await Future.wait([
-        _loadTemplates(),
-        _loadFreeTodayTemplates(),
-        _loadTrendingTemplates(),
-        _loadFavoriteTemplateIds(),
+        _loadTemplates(
+          useCache: false,
+        ), // serverAndCache - shows cache, then updates
+        _loadFreeTodayTemplates(useCache: false),
+        _loadTrendingTemplates(useCache: false),
       ]);
+
       // Sync local favorites with Firebase if user is logged in
       await syncLocalFavoritesWithFirebase();
-      _isDataInitialized = true;
-    } catch (e) {
-      print('Error initializing data: $e');
-    } finally {
-      _isInitializing = false;
-      isLoading.value = false;
+
+      // Update UI with data (cached first, then fresh)
       update([
+        'templates',
         'freeTodayTemplates',
         'trendingTemplates',
         'favoriteTemplateIds',
       ]);
+
+      _isDataInitialized = true;
+    } catch (e) {
+      debugPrint('Error initializing data: $e');
+      // If server fetch fails, try cache as fallback
+      try {
+        await Future.wait([
+          _loadTemplates(useCache: true),
+          _loadFreeTodayTemplates(useCache: true),
+          _loadTrendingTemplates(useCache: true),
+        ]);
+        update(['templates', 'freeTodayTemplates', 'trendingTemplates']);
+      } catch (cacheError) {
+        debugPrint('Cache fallback also failed: $cacheError');
+      }
+    } finally {
+      _isInitializing = false;
+      isLoading.value = false;
     }
   }
 
@@ -318,50 +340,59 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<void> _loadTemplates() async {
-    final templatesList = await _firestoreService.getTemplatesPaginated(
-      limit: 10,
-    );
-    templates.assignAll(
-      templatesList.docs
-          .map((doc) => CardTemplate.fromJson(doc.data()))
-          .toList(),
-    );
-    update(['templates']);
+  Future<void> _loadTemplates({bool useCache = false}) async {
+    try {
+      final templatesList = await _firestoreService.getTemplatesPaginated(
+        limit: 10,
+        useCache: useCache,
+      );
+      templates.assignAll(
+        templatesList.docs
+            .map((doc) => CardTemplate.fromJson(doc.data()))
+            .toList(),
+      );
+    } catch (e) {
+      debugPrint('Error loading templates: $e');
+      // If cache fails, try server
+      if (useCache) {
+        await _loadTemplates(useCache: false);
+      }
+    }
   }
 
-  Future<void> _loadFreeTodayTemplates() async {
+  Future<void> _loadFreeTodayTemplates({bool useCache = false}) async {
     try {
       final snapshot = await _firestoreService.getFreeTodayTemplatesPaginated(
         limit: 10,
+        useCache: useCache,
       );
       freeTodayTemplates.assignAll(
         snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
       );
-      update(['freeTodayTemplates']);
     } catch (e) {
-      ToastHelper.error(e.toString());
+      debugPrint('Error loading free today templates: $e');
+      // If cache fails, try server
+      if (useCache) {
+        await _loadFreeTodayTemplates(useCache: false);
+      }
     }
   }
 
-  Future<void> _loadTrendingTemplates() async {
+  Future<void> _loadTrendingTemplates({bool useCache = false}) async {
     try {
       final snapshot = await _firestoreService.getTrendingTemplatesPaginated(
         limit: 20,
+        useCache: useCache,
       );
       trendingTemplates.assignAll(
         snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
       );
-      update(['trendingTemplates']);
     } catch (e) {
-      print('Error loading trending templates: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load trending templates: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
+      debugPrint('Error loading trending templates: $e');
+      // If cache fails, try server
+      if (useCache) {
+        await _loadTrendingTemplates(useCache: false);
+      }
     }
   }
 

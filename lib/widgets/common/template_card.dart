@@ -133,6 +133,12 @@ class TemplateCard extends StatelessWidget {
         errorWidget: (context, url, error) => _buildPlaceholder(),
         fadeInDuration: const Duration(milliseconds: 200),
         fadeOutDuration: const Duration(milliseconds: 200),
+        // Optimize caching for faster loading
+        maxWidthDiskCache: 1000, // Cache optimized size
+        maxHeightDiskCache: 1000,
+        memCacheWidth: 500, // Memory cache size
+        memCacheHeight: 500,
+        cacheKey: template.thumbnailUrl, // Explicit cache key
       );
     }
     return _buildPlaceholder();
