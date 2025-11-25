@@ -1245,12 +1245,24 @@ class CanvasStack extends StatelessWidget {
                           );
                         } else if (item is StackImageItem &&
                             item.content != null) {
-                          return InkWell(
-                            onTap: () async {
-                              // controller.boardController.updateItem(oldItem);
+                          return GestureDetector(
+                            onTap: () {
+                              // Single tap: Open image editor panel
+                              controller.activeItem.value = item;
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.setItemStatus(
+                                item.id,
+                                StackItemStatus.selected,
+                              );
+                              controller.activePanel.value =
+                                  PanelType.advancedImage;
+                            },
+                            onDoubleTap: () async {
+                              // Double tap: Open image picker to replace image
                               controller.replaceImageItem(item);
                             },
-
                             child: StackImageCase(item: item),
                           );
                         } else if (item is StackShapeItem &&
