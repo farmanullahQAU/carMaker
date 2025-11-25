@@ -76,7 +76,7 @@ class HomePage extends GetView<HomeController> {
         // The dialog will keep showing until user updates, even if they:
         // - Go to Play Store and come back without updating
         // - Close the app and reopen its
-        minAppVersion: '1.0.5', // Uncomment and set your minimum version
+        minAppVersion: '1.0.6', // Uncomment and set your minimum version
         // How often to show the update dialog again after user dismisses
         // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
         // to show immediately every time app opens until user updates
@@ -1013,10 +1013,14 @@ class _CategoryChip extends StatelessWidget {
 }
 
 // --- Utility Functions ---
-Size getTextWidth({required String text, required TextStyle style}) {
+Size getTextWidth({
+  required String text,
+  required TextStyle style,
+  TextDirection textDirection = TextDirection.ltr,
+}) {
   final TextPainter textPainter = TextPainter(
     text: TextSpan(text: text, style: style),
-    textDirection: TextDirection.ltr,
+    textDirection: textDirection,
   )..layout();
 
   return textPainter.size;

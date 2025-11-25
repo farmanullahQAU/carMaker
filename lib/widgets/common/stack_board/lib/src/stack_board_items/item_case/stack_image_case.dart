@@ -43,7 +43,7 @@ class StackImageCase extends StatelessWidget {
     print("url");
     print(content.url);
     if (content.filePath != null || content.assetName != null) {
-      imageWidget = content.isPlaceholder == true
+      imageWidget = content.isPlaceholder == true && content.filePath == null
           ? Container(child: Icon(Icons.add_photo_alternate_outlined))
           : Image(
               image: content.image,

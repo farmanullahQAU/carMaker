@@ -187,6 +187,15 @@ class AdMobService {
     return true;
   }
 
+  /// Returns true when the next export attempt will require showing a rewarded ad.
+  bool willShowRewardedAdOnNextExport() {
+    if (!isEnabled || !_adConfig.showRewardedAdOnExport) return false;
+    if (_exportCount == 1) {
+      return _isRewardedAdReady && _rewardedAd != null;
+    }
+    return false;
+  }
+
   // ========== INTERSTITIAL AD ==========
   void _loadInterstitialAd() {
     if (!isEnabled || !_adConfig.showInterstitialAdOnTemplateView) return;

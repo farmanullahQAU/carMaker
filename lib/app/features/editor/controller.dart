@@ -631,6 +631,34 @@ class CanvasController extends GetxController {
     }
   }
 
+  Future<bool> _confirmRewardedAdIfNeeded(AdMobService adService) async {
+    if (!adService.willShowRewardedAdOnNextExport()) return true;
+
+    final result = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Heads up!'),
+        content: const Text(
+          'To keep exports free, we occasionally show a short video before exporting. '
+          'Do you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+
+    return result ?? false;
+  }
+
   void _updateGridSize() {
     if (actualStackBoardRenderSize.value == Size.zero) return;
     final double width = actualStackBoardRenderSize.value.width;
@@ -862,8 +890,16 @@ class CanvasController extends GetxController {
   // ==================== EXPORT METHODS (UNCHANGED) ====================
   Future<File?> exportAsImage([String fileName = "inkaro_card"]) async {
     try {
-      // Try to show rewarded ad before allowing export.
-      await AdMobService().showRewardedAdBeforeExport();
+      final adService = AdMobService();
+      if (!await _confirmRewardedAdIfNeeded(adService)) {
+        // ToastHelper.error('Export cancelled');
+        return null;
+      }
+      final bool canProceed = await adService.showRewardedAdBeforeExport();
+      if (!canProceed) {
+        ToastHelper.error('Ad was skipped. Export cancelled.');
+        return null;
+      }
 
       isExporting = true;
       update(['export_button']);
@@ -1009,8 +1045,16 @@ class CanvasController extends GetxController {
 
   Future<void> exportAsPDF([String fileName = "invitation_card"]) async {
     try {
-      // Try to show rewarded ad before allowing export.
-      await AdMobService().showRewardedAdBeforeExport();
+      final adService = AdMobService();
+      if (!await _confirmRewardedAdIfNeeded(adService)) {
+        // ToastHelper.error('Export cancelled');
+        return;
+      }
+      final bool canProceed = await adService.showRewardedAdBeforeExport();
+      if (!canProceed) {
+        ToastHelper.error('Ad was skipped. Export cancelled.');
+        return;
+      }
 
       isExporting = true;
       update(['export_button']);
