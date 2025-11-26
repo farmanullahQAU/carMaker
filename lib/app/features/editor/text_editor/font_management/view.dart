@@ -99,7 +99,7 @@ class _FontManagementPageState extends State<FontManagementPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : GestureDetector(
-                    onTap: () => controller.loadRemoteFonts(),
+                    onTap: () => controller.loadRemoteFonts(forceRefresh: true),
                     child: Container(
                       width: 36,
                       height: 36,
@@ -258,11 +258,16 @@ class _FontManagementPageState extends State<FontManagementPage> {
     final isSelected = font.family == widget.currentSelectedFont;
 
     return GestureDetector(
-      onTap: () {
-        if (font.isLocal && widget.onFontSelected != null) {
-          widget.onFontSelected!(font.family);
-          Get.back();
+      onTap: () async {
+        if (widget.onFontSelected == null) return;
+
+        if (!font.isLocal) {
+          final bool success = await controller.downloadFont(font);
+          if (!success) return;
         }
+
+        widget.onFontSelected!(font.family);
+        Get.back();
       },
       child: Container(
         padding: const EdgeInsets.all(16),

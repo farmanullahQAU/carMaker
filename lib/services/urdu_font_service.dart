@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 
 import 'firebase_font_service.dart';
 
 class UrduFontService {
+  static final GetStorage _storage = GetStorage();
+  static const String _fontsCacheKey = 'urdu_remote_fonts_cache';
+  static const String _fontsCacheTimestampKey = 'urdu_remote_fonts_cache_ts';
+  static const Duration _cacheTTL = Duration(hours: 12);
+
   // Local compressed fonts (always available)
   static const List<UrduFont> localFonts = [
     UrduFont(
@@ -92,17 +98,62 @@ class UrduFontService {
   // All fonts (local + remote)
   static List<UrduFont> get allFonts => [...localFonts, ...remoteFonts];
 
+  /// Load cached fonts instantly (used on cold start)
+  static Future<bool> loadFontsFromCache() async {
+    try {
+      final List<dynamic>? cachedFonts = _storage.read(_fontsCacheKey);
+      if (cachedFonts == null) return false;
+
+      final String? timestamp = _storage.read(_fontsCacheTimestampKey);
+      if (timestamp != null) {
+        final DateTime cachedAt =
+            DateTime.tryParse(timestamp) ?? DateTime.now();
+        if (DateTime.now().difference(cachedAt) > _cacheTTL) {
+          // Cache expired – still use it for instant UI, but refresh in background
+          // so we won't return false here.
+        }
+      }
+
+      remoteFonts
+        ..clear()
+        ..addAll(
+          cachedFonts.map(
+            (font) => UrduFont.fromJson(Map<String, dynamic>.from(font as Map)),
+          ),
+        );
+      return remoteFonts.isNotEmpty;
+    } catch (e) {
+      print('Error loading Urdu fonts cache: $e');
+      return false;
+    }
+  }
+
+  static Future<void> _saveFontsToCache() async {
+    try {
+      final data = remoteFonts.map((font) => font.toJson()).toList();
+      await _storage.write(_fontsCacheKey, data);
+      await _storage.write(
+        _fontsCacheTimestampKey,
+        DateTime.now().toIso8601String(),
+      );
+    } catch (e) {
+      print('Error caching Urdu fonts: $e');
+    }
+  }
+
   /// Load remote fonts from Firebase Storage (efficient, lazy loading)
   static Future<void> loadRemoteFonts({
     bool autoDownload = false,
     int limit = 100, // Load 100 fonts at a time
+    bool forceRefresh = false,
   }) async {
     try {
       final List<RemoteFont> firebaseFonts =
           await FirebaseFontService.getAvailableFonts();
 
       // Don't clear if already loaded and fonts haven't changed
-      if (remoteFonts.isNotEmpty &&
+      if (!forceRefresh &&
+          remoteFonts.isNotEmpty &&
           firebaseFonts.length == remoteFonts.length) {
         return;
       }
@@ -156,6 +207,8 @@ class UrduFontService {
       if (firebaseFonts.length > limit) {
         _loadRemainingFontsInBackground(firebaseFonts.sublist(limit));
       }
+
+      await _saveFontsToCache();
     } catch (e) {
       print('Error loading remote fonts: $e');
     }
@@ -268,6 +321,8 @@ class UrduFontService {
         if (index != -1) {
           remoteFonts[index] = remoteFonts[index].copyWith(isLocal: true);
         }
+
+        await _saveFontsToCache();
       }
 
       return success;
@@ -295,6 +350,8 @@ class UrduFontService {
         if (index != -1) {
           remoteFonts[index] = remoteFonts[index].copyWith(isLocal: false);
         }
+
+        await _saveFontsToCache();
       }
       return success;
     } catch (e) {
@@ -454,6 +511,33 @@ class UrduFont {
       remoteFont: remoteFont ?? this.remoteFont,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'family': family,
+    'displayName': displayName,
+    'category': category.name,
+    'previewText': previewText,
+    'description': description,
+    'isRTL': isRTL,
+    'isLocal': isLocal,
+    'remoteFont': remoteFont?.toJson(),
+  };
+
+  factory UrduFont.fromJson(Map<String, dynamic> json) => UrduFont(
+    family: json['family'] as String,
+    displayName: json['displayName'] as String,
+    category: UrduFontCategory.values.firstWhere(
+      (c) => c.name == json['category'],
+      orElse: () => UrduFontCategory.modern,
+    ),
+    previewText: json['previewText'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    isRTL: json['isRTL'] as bool? ?? true,
+    isLocal: json['isLocal'] as bool? ?? false,
+    remoteFont: json['remoteFont'] != null
+        ? RemoteFont.fromJson(Map<String, dynamic>.from(json['remoteFont']))
+        : null,
+  );
 }
 
 enum UrduFontCategory { traditional, modern, contemporary, decorative }

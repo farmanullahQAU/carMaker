@@ -1,6 +1,5 @@
 // Add this new route/page in your app
 import 'package:cardmaker/app/features/editor/controller.dart';
-import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/core/utils/language_detector.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_board_item.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
@@ -125,6 +124,19 @@ class TextUpdateController extends GetxController {
         fontFamily: finalIsUrdu ? finalFont : existingStyle.fontFamily,
       );
 
+      // Calculate text size with width constraint to get correct height when text wraps
+      final maxWidth = canvasController.scaledCanvasWidth.value * 0.9;
+      final textPainter = TextPainter(
+        text: TextSpan(text: currentText, style: updatedStyle),
+        textDirection: finalDirection,
+        maxLines: null,
+      );
+      textPainter.layout(maxWidth: maxWidth);
+      final clampedSize = Size(
+        textPainter.width.clamp(0.0, maxWidth),
+        textPainter.height,
+      );
+
       final updatedItem = existingItem!.copyWith(
         content: existingContent.copyWith(
           data: currentText,
@@ -138,21 +150,13 @@ class TextUpdateController extends GetxController {
                   ? TextAlign.right
                   : TextAlign.left),
         ),
-        size: getTextWidth(
-          text: currentText,
-          style: updatedStyle,
-          textDirection: finalDirection,
-        ),
+        size: clampedSize,
       );
 
       canvasController.boardController.updateItem(updatedItem);
       canvasController.boardController.updateBasic(
         existingItem!.id,
-        size: getTextWidth(
-          text: currentText,
-          style: updatedStyle,
-          textDirection: finalDirection,
-        ),
+        size: clampedSize,
         status: StackItemStatus.selected,
       );
 
@@ -170,6 +174,19 @@ class TextUpdateController extends GetxController {
         color: Colors.black,
       );
 
+      // Calculate text size with width constraint to get correct height when text wraps
+      final maxWidth = canvasController.scaledCanvasWidth.value * 0.9;
+      final textPainter = TextPainter(
+        text: TextSpan(text: currentText, style: defaultStyle),
+        textDirection: finalDirection,
+        maxLines: null,
+      );
+      textPainter.layout(maxWidth: maxWidth);
+      final clampedSize = Size(
+        textPainter.width.clamp(0.0, maxWidth),
+        textPainter.height,
+      );
+
       final newItem = StackTextItem(
         id: UniqueKey().toString(),
         content: TextItemContent(
@@ -182,11 +199,7 @@ class TextUpdateController extends GetxController {
               ? TextAlign.right
               : TextAlign.left,
         ),
-        size: getTextWidth(
-          text: currentText,
-          style: defaultStyle,
-          textDirection: finalDirection,
-        ),
+        size: clampedSize,
         offset: Offset(
           canvasController.scaledCanvasWidth.value / 2 - 100,
           canvasController.scaledCanvasHeight.value / 2 - 25,

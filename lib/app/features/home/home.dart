@@ -76,7 +76,7 @@ class HomePage extends GetView<HomeController> {
         // The dialog will keep showing until user updates, even if they:
         // - Go to Play Store and come back without updating
         // - Close the app and reopen its
-        minAppVersion: '1.0.6', // Uncomment and set your minimum version
+        minAppVersion: '1.0.8', // Uncomment and set your minimum version
         // How often to show the update dialog again after user dismisses
         // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
         // to show immediately every time app opens until user updates
@@ -219,7 +219,7 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
 
               SectionTitle(title: 'Free today', showSeeAll: false),
               FreeTodayTemplatesList(),
-              SizedBox(height: 100),
+              SizedBox(height: kBottomNavigationBarHeight),
             ],
           ),
         ),
@@ -355,7 +355,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
       child: GetBuilder<HomeController>(
         id: 'freeTodayTemplates',
         builder: (controller) {
-          if (controller.isLoading.value) {
+          if (!controller.hasLoadedFreeToday.value) {
             return const ModernLoadingSkeleton();
           }
 
@@ -370,7 +370,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
           return ListView.separated(
             scrollDirection: Axis.horizontal,
             cacheExtent: 2000,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: controller.freeTodayTemplates.length + 1,
             itemBuilder: (context, index) {
               if (index == controller.freeTodayTemplates.length) {
@@ -444,7 +444,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
       child: GetBuilder<HomeController>(
         id: 'trendingTemplates',
         builder: (controller) {
-          if (controller.isLoading.value) {
+          if (!controller.hasLoadedTrending.value) {
             return const ModernLoadingSkeleton();
           }
 
@@ -459,7 +459,7 @@ class TrendingTemplatesList extends GetView<HomeController> {
           return ListView.separated(
             scrollDirection: Axis.horizontal,
             cacheExtent: 2000,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: controller.trendingTemplates.length + 1,
             itemBuilder: (context, index) {
               if (index == controller.trendingTemplates.length) {
@@ -550,7 +550,7 @@ class OptimizedTemplateCard extends StatelessWidget {
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 100),
                 decoration: BoxDecoration(
-                  color: context.theme.colorScheme.surfaceContainerLowest,
+                  color: context.theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
                   // border: Border.all(
                   //   color: context.theme.colorScheme.outlineVariant,
@@ -953,7 +953,7 @@ class CategoriesList extends GetView<HomeController> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: controller.categories.length,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
           final category = controller.categories[index];

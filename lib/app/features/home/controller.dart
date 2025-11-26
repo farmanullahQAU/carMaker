@@ -18,6 +18,9 @@ class HomeController extends GetxController {
   final RxList<CardTemplate> trendingTemplates = <CardTemplate>[].obs;
   final RxList<String> favoriteTemplateIds = <String>[].obs;
   final isLoading = false.obs;
+  final RxBool hasLoadedTemplates = false.obs;
+  final RxBool hasLoadedFreeToday = false.obs;
+  final RxBool hasLoadedTrending = false.obs;
   final _storage = GetStorage();
   final authService = Get.find<AuthService>();
   final _firestoreService = FirestoreServices();
@@ -226,9 +229,7 @@ class HomeController extends GetxController {
       // Use serverAndCache: Returns cached data immediately, then fetches fresh data
       // This ensures users see cached data instantly AND get fresh templates
       await Future.wait([
-        _loadTemplates(
-          useCache: false,
-        ), // serverAndCache - shows cache, then updates
+        _loadTemplates(useCache: false),
         _loadFreeTodayTemplates(useCache: false),
         _loadTrendingTemplates(useCache: false),
       ]);
@@ -351,11 +352,15 @@ class HomeController extends GetxController {
             .map((doc) => CardTemplate.fromJson(doc.data()))
             .toList(),
       );
+      hasLoadedTemplates.value = true;
+      update(['templates']);
     } catch (e) {
       debugPrint('Error loading templates: $e');
       // If cache fails, try server
       if (useCache) {
         await _loadTemplates(useCache: false);
+      } else {
+        await _loadTemplates(useCache: true);
       }
     }
   }
@@ -369,11 +374,15 @@ class HomeController extends GetxController {
       freeTodayTemplates.assignAll(
         snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
       );
+      hasLoadedFreeToday.value = true;
+      update(['freeTodayTemplates']);
     } catch (e) {
       debugPrint('Error loading free today templates: $e');
-      // If cache fails, try server
       if (useCache) {
-        await _loadFreeTodayTemplates(useCache: false);
+        hasLoadedFreeToday.value = true;
+        update(['freeTodayTemplates']);
+      } else {
+        await _loadFreeTodayTemplates(useCache: true);
       }
     }
   }
@@ -387,11 +396,15 @@ class HomeController extends GetxController {
       trendingTemplates.assignAll(
         snapshot.docs.map((doc) => CardTemplate.fromJson(doc.data())).toList(),
       );
+      hasLoadedTrending.value = true;
+      update(['trendingTemplates']);
     } catch (e) {
       debugPrint('Error loading trending templates: $e');
-      // If cache fails, try server
       if (useCache) {
-        await _loadTrendingTemplates(useCache: false);
+        hasLoadedTrending.value = true;
+        update(['trendingTemplates']);
+      } else {
+        await _loadTrendingTemplates(useCache: true);
       }
     }
   }

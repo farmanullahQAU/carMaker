@@ -1260,10 +1260,29 @@ class FirestoreServices {
   // Save or update user in Firestore
   Future<void> saveUser(UserModel user) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.id)
-          .set(user.toJson(), SetOptions(merge: true));
+      final docRef = _firestore.collection('users').doc(user.id);
+      final existingDoc = await docRef.get();
+
+      UserModel userToSave = user;
+
+      if (existingDoc.exists) {
+        final existingData = existingDoc.data();
+        final existingRoleValue = existingData?['role'];
+
+        if (existingRoleValue is String) {
+          final existingRole = UserRole.values.firstWhere(
+            (role) => role.toString().split('.').last == existingRoleValue,
+            orElse: () => user.role,
+          );
+
+          // Preserve existing elevated roles unless the new payload explicitly changes it
+          if (user.role == UserRole.user && existingRole != UserRole.user) {
+            userToSave = user.copyWith(role: existingRole);
+          }
+        }
+      }
+
+      await docRef.set(userToSave.toJson(), SetOptions(merge: true));
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
     }

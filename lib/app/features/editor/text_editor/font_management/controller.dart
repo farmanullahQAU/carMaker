@@ -28,28 +28,31 @@ class FontManagementController extends GetxController {
     _initializeFonts();
   }
 
-  void _initializeFonts() {
+  Future<void> _initializeFonts() async {
     // Load local fonts immediately (no loading needed)
     localFonts.value = UrduFontService.localFonts;
     allFonts.value = UrduFontService.allFonts;
 
-    // Load remote fonts in background (only show loading if not already loaded)
-    if (UrduFontService.remoteFonts.isEmpty) {
-      loadRemoteFonts();
-    } else {
-      // Fonts already loaded, just update the lists
+    // Try to hydrate from cache for instant UI
+    final bool cacheLoaded = await UrduFontService.loadFontsFromCache();
+    if (cacheLoaded) {
       remoteFonts.value = UrduFontService.remoteFonts;
       allFonts.value = UrduFontService.allFonts;
     }
+
+    // Always fetch latest fonts in background
+    Future.microtask(() => loadRemoteFonts(forceRefresh: true));
 
     // Calculate storage size
     _calculateStorageSize();
   }
 
   /// Load remote fonts from Firebase
-  Future<void> loadRemoteFonts() async {
-    // Don't show loading if fonts are already loaded
-    if (UrduFontService.remoteFonts.isNotEmpty && !isLoadingRemoteFonts.value) {
+  Future<void> loadRemoteFonts({bool forceRefresh = false}) async {
+    // Don't show loading if fonts are already loaded and no refresh requested
+    if (!forceRefresh &&
+        UrduFontService.remoteFonts.isNotEmpty &&
+        !isLoadingRemoteFonts.value) {
       remoteFonts.value = UrduFontService.remoteFonts;
       allFonts.value = UrduFontService.allFonts;
       return;
@@ -57,7 +60,7 @@ class FontManagementController extends GetxController {
 
     isLoadingRemoteFonts.value = true;
     try {
-      await UrduFontService.loadRemoteFonts();
+      await UrduFontService.loadRemoteFonts(forceRefresh: forceRefresh);
       remoteFonts.value = UrduFontService.remoteFonts;
       allFonts.value = UrduFontService.allFonts;
     } catch (e) {
@@ -103,11 +106,12 @@ class FontManagementController extends GetxController {
   }
 
   /// Download a font
-  Future<void> downloadFont(UrduFont font) async {
-    if (font.remoteFont == null) return;
+  Future<bool> downloadFont(UrduFont font) async {
+    if (font.remoteFont == null) return false;
 
     isDownloadingFont.value = true;
     downloadProgress[font.family] = 0.0;
+    bool wasSuccessful = false;
 
     try {
       // Simulate progress (Firebase doesn't provide real-time progress)
@@ -133,6 +137,7 @@ class FontManagementController extends GetxController {
           colorText: Colors.white,
           duration: const Duration(seconds: 2),
         );
+        wasSuccessful = true;
       } else {
         Get.snackbar(
           'Error',
@@ -154,6 +159,8 @@ class FontManagementController extends GetxController {
       isDownloadingFont.value = false;
       downloadProgress.remove(font.family);
     }
+
+    return wasSuccessful;
   }
 
   /// Delete a downloaded font

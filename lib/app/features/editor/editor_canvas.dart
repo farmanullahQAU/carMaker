@@ -27,7 +27,6 @@ import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:get/get.dart';
-import 'package:open_file/open_file.dart';
 import 'package:photo_view/photo_view.dart';
 
 class EditorPage extends GetView<CanvasController> {
@@ -296,7 +295,10 @@ class EditorPage extends GetView<CanvasController> {
                   ),
                 ),
 
-                ProfessionalBottomToolbar(controller: controller),
+                ProfessionalBottomToolbar(
+                  controller: controller,
+                  onImageAction: () => _handleImageAction(context),
+                ),
               ],
             ),
 
@@ -310,6 +312,52 @@ class EditorPage extends GetView<CanvasController> {
       ),
     );
     return chd;
+  }
+
+  void _handleImageAction(BuildContext context) {
+    if (!controller.isAdmin) {
+      controller.pickAndAddImage();
+      return;
+    }
+    _showImageOptions(context);
+  }
+
+  void _showImageOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionButton(
+                icon: Icons.add_photo_alternate_outlined,
+                label: "Add Image to Canvas",
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickAndAddImage();
+                },
+              ),
+              _ActionButton(
+                icon: Icons.add_photo_alternate_outlined,
+                label: "Add img as placeholder",
+                onTap: () {
+                  Navigator.pop(context);
+                  controller.pickAndAddImage(isPlaceholder: true);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -356,78 +404,15 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class ExportPreviewPage extends StatelessWidget {
-  final String imagePath;
-  final String pdfPath;
-
-  const ExportPreviewPage({
-    super.key,
-    required this.imagePath,
-    required this.pdfPath,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Export Preview'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              'Generated Image',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Image.file(
-              File(imagePath),
-              width: 300,
-              height: 400,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Generated PDF',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                final result = await OpenFile.open(pdfPath);
-                if (result.type != ResultType.done) {
-                  Get.snackbar(
-                    'Error',
-                    'Failed to open PDF: ${result.message}',
-                    snackPosition: SnackPosition.BOTTOM,
-                  );
-                }
-              },
-              child: const Text('Open PDF'),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Location: $pdfPath',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class ProfessionalBottomToolbar extends StatelessWidget {
   final CanvasController controller;
+  final VoidCallback onImageAction;
 
-  const ProfessionalBottomToolbar({super.key, required this.controller});
+  const ProfessionalBottomToolbar({
+    super.key,
+    required this.controller,
+    required this.onImageAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -575,32 +560,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
-                // 6. Image
-                Obx(() {
-                  bool isImageActive =
-                      controller.activeItem.value is StackImageItem ||
-                      controller.activePanel.value == PanelType.advancedImage;
-                  return _ProfessionalToolbarButton(
-                    isActive: isImageActive,
-                    icon: Icons.photo_filter_outlined,
-                    activeIcon: Icons.photo_filter,
-                    label: controller.activeItem.value is StackImageItem
-                        ? 'Edit'
-                        : 'Image',
-                    panelType: PanelType.advancedImage,
-                    activePanel: controller.activePanel,
-                    onPressed: () {
-                      if (controller.activeItem.value != null &&
-                          controller.activeItem.value is StackImageItem) {
-                        controller.activePanel.value = PanelType.advancedImage;
-                      } else {
-                        _showImageOptions(context);
-                      }
-                      controller.update(['bottom_sheet']);
-                    },
-                  );
-                }),
-                // 7. Stickers (Last)
+                // 6. Stickers (Last)
                 _ProfessionalToolbarButton(
                   isActive: controller.activePanel.value == PanelType.stickers,
                   icon: Icons.emoji_emotions_outlined,
@@ -616,51 +576,22 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     controller.update(['bottom_sheet']);
                   },
                 ),
+                const SizedBox(width: 12),
+                FloatingActionButton.small(
+                  heroTag: 'toolbar_image_fab',
+                  onPressed: onImageAction,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  child: const Icon(
+                    Icons.add_photo_alternate_rounded,
+                    size: 18,
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  void _showImageOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionButton(
-                icon: Icons.add_photo_alternate_outlined,
-                label: "Add img as placeholder",
-                onTap: () {
-                  Navigator.pop(context);
-                  controller.pickAndAddImage(isPlaceholder: true);
-                },
-              ),
-
-              if (controller.isOwner)
-                _ActionButton(
-                  icon: Icons.add_photo_alternate_outlined,
-                  label: "Add Image to Canvas",
-                  onTap: () {
-                    Navigator.pop(context);
-                    controller.pickAndAddImage();
-                  },
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -825,7 +756,7 @@ class _ModernExportButton extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         surfaceTintColor: Colors.transparent,
         itemBuilder: (context) => [
-          if (controller.isOwner)
+          if (controller.isAdmin)
             PopupMenuItem<String>(
               value: 'save',
               height: 52,
@@ -838,7 +769,7 @@ class _ModernExportButton extends StatelessWidget {
                 bgColor: AppColors.accent.withOpacity(0.1),
               ),
             ),
-          if (controller.isOwner) PopupMenuDivider(height: 6),
+          if (controller.isAdmin) PopupMenuDivider(height: 6),
           PopupMenuItem<String>(
             value: 'pdf',
             height: 52,

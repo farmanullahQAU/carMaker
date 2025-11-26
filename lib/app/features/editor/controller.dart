@@ -8,6 +8,7 @@ import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/core/helper/image_helper.dart';
+import 'package:cardmaker/core/utils/admin_utils.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
@@ -35,7 +36,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:universal_html/html.dart' as html; // For web support
+import 'package:universal_html/html.dart' as html;
 import 'package:uuid/uuid.dart';
 
 class CanvasController extends GetxController {
@@ -89,7 +90,7 @@ class CanvasController extends GetxController {
   final RxDouble canvasScale = 1.0.obs;
   final RxDouble scaledCanvasWidth = 0.0.obs;
   final RxDouble scaledCanvasHeight = 0.0.obs;
-  bool get isOwner => authService.user?.uid == "aP3FVBY7kWgBnJorqVrYha3lFaa2";
+  bool isAdmin = false;
 
   // ==================== RESPONSIVE HELPERS ====================
   Offset toRelativeOffset(Offset absolute, Size canvasSize) {
@@ -123,6 +124,11 @@ class CanvasController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    AdminUtils.isAdmin().then((value) {
+      isAdmin = value;
+      update();
+    });
+
     if (Get.arguments is Map<String, dynamic>) {
       initialTemplate = Get.arguments['template'];
       isLocaleTemplate = Get.arguments['isLocal'] ?? true;

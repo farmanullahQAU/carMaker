@@ -319,4 +319,24 @@ class RemoteFont {
       isDownloaded: isDownloaded ?? this.isDownloaded,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'family': family,
+    'fileName': fileName,
+    'sizeInBytes': sizeInBytes,
+    'downloadUrl': downloadUrl,
+    'isDownloaded': isDownloaded,
+  };
+
+  factory RemoteFont.fromJson(Map<String, dynamic> json) => RemoteFont(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    family: json['family'] as String,
+    fileName: json['fileName'] as String,
+    sizeInBytes: json['sizeInBytes'] as int? ?? 0,
+    downloadUrl: json['downloadUrl'] as String? ?? '',
+    isDownloaded: json['isDownloaded'] as bool? ?? false,
+  );
 }

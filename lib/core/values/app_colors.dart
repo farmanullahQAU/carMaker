@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color branding = Color(0xFFAB47BC); // Purple 400
-  static const Color brandingLight = Colors.purpleAccent;
+  static const Color branding = Color(
+    0xFF8B3DFF,
+  ); // Canva-inspired royal purple
+  static const Color brandingLight = Color(0xFFA368FF); // Lighter accent shade
 
-  static const Color accent = Colors.teal; // Accent – fresh contrast
+  static const Color accent = Color(
+    0xFF8B3DFF,
+  ); // Keep accent aligned with branding
 
   static const Color highlight = Color.fromARGB(255, 121, 120, 120);
   static const Color backgroundLight = Color(0xFFFAFAFA);
   // static const Color backgroundDark = Color(0xFF1d2025);
-  static const Color backgroundDark = Color(0xff1c212a);
+  static const Color backgroundDark = Color(0xFF0B0D11);
 
   // static const Color backgroundLight = Color(0xFFe8ecf5);
 
