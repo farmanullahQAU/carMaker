@@ -1,4 +1,6 @@
 import 'package:cardmaker/app/features/editor/chart_editor/chart_editor_controller.dart';
+import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
@@ -11,6 +13,7 @@ class ChartEditorPanel extends StatelessWidget {
   final VoidCallback onClose;
 
   final ChartEditorController controller = Get.put(ChartEditorController());
+  final CanvasController canvasController = Get.find();
 
   ChartEditorPanel({super.key, this.chartItem, required this.onClose});
 
@@ -107,19 +110,19 @@ class ChartEditorPanel extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onClose,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
+          PanelActionButton(
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            isDestructive: true,
+            onPressed: canvasController.deleteActiveItem,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded, size: 16),
+            style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(32, 32),
             ),
           ),
         ],

@@ -132,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0A0A0A)
+          ? AppColors.backgroundDark
           : const Color(0xFFFAFAFA),
       body: Stack(
         children: [
@@ -144,9 +144,9 @@ class _SplashScreenState extends State<SplashScreen>
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? [
-                        const Color(0xFF0A0A0A),
-                        const Color(0xFF1A1A2E),
-                        const Color(0xFF0A0A0A),
+                        AppColors.backgroundDark, // #1E1E1E
+                        const Color(0xFF2A2A2A), // Slightly lighter
+                        AppColors.backgroundDark,
                       ]
                     : [
                         const Color(0xFFFAFAFA),
@@ -238,7 +238,9 @@ class _SplashScreenState extends State<SplashScreen>
                               margin: const EdgeInsets.all(3),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1A1A2E)
+                                    ? const Color(
+                                        0xFF2C2C2C,
+                                      ) // Match surfaceContainer
                                     : Colors.white,
                                 shape: BoxShape.circle,
                                 boxShadow: [

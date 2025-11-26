@@ -4000,73 +4000,84 @@ class _UrduFontTabState extends State<_UrduFontTab> {
   }
 
   Widget _buildUrduFontCardOld(UrduFont font) {
-    final isSelected = widget.controller.selectedFont.value == font.family;
+    return Obx(() {
+      final isSelected = widget.controller.selectedFont.value == font.family;
 
-    return GestureDetector(
-      onTap: () {
-        widget.controller.updateFont(font.family, isRTL: true);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [
-                    AppColors.branding.withOpacity(0.1),
-                    AppColors.branding.withOpacity(0.05),
-                  ],
-                )
-              : null,
-          color: isSelected ? null : Get.theme.colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-          border: isSelected
-              ? Border.all(color: AppColors.branding.withOpacity(0.3), width: 1)
-              : Border.all(
-                  color: Get.theme.colorScheme.outline.withOpacity(0.1),
-                  width: 1,
-                ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                font.previewText,
-                style: TextStyle(
-                  fontFamily: font.family,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
-                  letterSpacing: 0.1,
-                ),
-                textDirection: font.isRTL
-                    ? TextDirection.rtl
-                    : TextDirection.ltr,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 12),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.branding : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected ? AppColors.branding : Colors.white,
-                  width: 2,
+      return GestureDetector(
+        onTap: () {
+          widget.controller.updateFont(font.family, isRTL: true);
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppColors.branding.withOpacity(0.1),
+                      AppColors.branding.withOpacity(0.05),
+                    ],
+                  )
+                : null,
+            color: isSelected
+                ? null
+                : Get.theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            border: isSelected
+                ? Border.all(
+                    color: AppColors.branding.withOpacity(0.3),
+                    width: 1,
+                  )
+                : Border.all(
+                    color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  font.previewText,
+                  style: TextStyle(
+                    fontFamily: font.family,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Get.theme.colorScheme.onSurface.withOpacity(0.8),
+                    letterSpacing: 0.1,
+                  ),
+                  textDirection: font.isRTL
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              child: isSelected
-                  ? Icon(Icons.check_rounded, size: 16, color: Colors.white)
-                  : null,
-            ),
-          ],
+              const SizedBox(width: 12),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.branding : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.branding : Colors.white,
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildSearchBar() {

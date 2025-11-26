@@ -822,8 +822,56 @@ class CanvasController extends GetxController {
     }
   }
 
-  void editText() async {
-    await Get.to(() => UpdateTextView(item: activeItem.value as StackTextItem));
+  Future<void> _openTextEditor(StackTextItem item) async {
+    await Get.to(() => UpdateTextView(item: item));
+    update(['canvas_stack', 'bottom_sheet']);
+  }
+
+  Future<void> editText() async {
+    if (activeItem.value is StackTextItem) {
+      await editActiveItem();
+    } else {
+      await Get.to(() => UpdateTextView());
+    }
+  }
+
+  Future<void> editActiveItem() async {
+    final StackItem? item = activeItem.value;
+    if (item == null) return;
+    await _editItem(item);
+  }
+
+  Future<void> editItem(StackItem item) async {
+    await _editItem(item);
+  }
+
+  Future<void> _editItem(StackItem item) async {
+    if (item is StackTextItem) {
+      await _openTextEditor(item);
+    } else if (item is StackImageItem) {
+      await replaceImageItem(item);
+    } else if (item is StackShapeItem) {
+      activePanel.value = PanelType.shapeEditor;
+      update(['bottom_sheet']);
+    } else if (item is StackChartItem) {
+      activePanel.value = PanelType.charts;
+      update(['bottom_sheet']);
+    } else if (item is StackIconItem) {
+      activePanel.value = PanelType.icons;
+      update(['bottom_sheet']);
+    }
+  }
+
+  void deleteActiveItem() {
+    final StackItem? item = activeItem.value;
+    if (item == null) return;
+    boardController.removeById(item.id);
+    if (item is StackImageItem) {
+      profileImageItems.removeWhere((img) => img.id == item.id);
+    }
+    activeItem.value = null;
+    activePanel.value = PanelType.none;
+    update(['canvas_stack', 'bottom_sheet']);
   }
 
   void duplicateItem() {

@@ -81,7 +81,7 @@ class RemoteConfigService {
 
   Map<String, dynamic> get _defaultConfig => {
     "update": {
-      "current_version": "1.0.0",
+      "current_version": "1.0.8",
       "min_supported_version": "1.0.0",
       "update_url": kPlaystoreUrl,
       "isForce_update": false,
@@ -90,11 +90,11 @@ class RemoteConfigService {
       "new_features": [],
     },
     "ads": {
-      "enabled": false,
-      "rewarded_ad_unit_id": "",
-      "interstitial_ad_unit_id": "",
-      "banner_ad_unit_id": "",
-      "interstitial_ad_interval": 5,
+      "enabled": true,
+      "rewarded_ad_unit_id": "ca-app-pub-9945712682375451/7138044017",
+      "interstitial_ad_unit_id": "ca-app-pub-9945712682375451/3464724016",
+      "banner_ad_unit_id": "ca-app-pub-9945712682375451/1511162871",
+      "interstitial_ad_interval": 3,
       "show_rewarded_ad_on_export": true,
       "show_interstitial_ad_on_template_view": true,
       "show_banner_ad": true,

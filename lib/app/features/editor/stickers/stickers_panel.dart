@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:flutter/material.dart';
@@ -554,19 +555,22 @@ class StickerPanel extends StatelessWidget {
               ),
             ),
           ),
-          InkWell(
-            onTap: () {
+          PanelActionButton(
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            isDestructive: true,
+            onPressed: controller.deleteActiveItem,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: () {
               controller.activePanel.value = PanelType.none;
               controller.update(['bottom_sheet']);
             },
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.close_rounded,
-                size: 16,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
+            icon: const Icon(Icons.close_rounded, size: 16),
+            style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(32, 32),
             ),
           ),
         ],

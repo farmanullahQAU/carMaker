@@ -1,5 +1,6 @@
 import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/image_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
@@ -62,7 +63,7 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
         duration: const Duration(milliseconds: 300),
         // curve: Curves.easeOutCubic,
         height:
-            (_tabController.index < 4 ? 180 : 180) +
+            (_tabController.index < 4 ? 200 : 200) +
             42, // Added header height (8*2 padding + ~26 for text/icon)
         color: Get.theme.colorScheme.surface,
         child: Column(
@@ -79,18 +80,26 @@ class _AdvancedImagePanelState extends State<AdvancedImagePanel>
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Spacer(),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        canvasController.setActiveItem(null);
-                      },
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(Icons.close_rounded, size: 16),
-                      ),
+                  const Spacer(),
+                  PanelActionButton(
+                    icon: Icons.edit_outlined,
+                    label: 'Edit',
+                    onPressed: canvasController.editActiveItem,
+                  ),
+                  const SizedBox(width: 8),
+                  PanelActionButton(
+                    icon: Icons.delete_outline,
+                    label: 'Delete',
+                    isDestructive: true,
+                    onPressed: canvasController.deleteActiveItem,
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: () => canvasController.setActiveItem(null),
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    style: IconButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(32, 32),
                     ),
                   ),
                 ],

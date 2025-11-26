@@ -3,13 +3,16 @@ import 'package:cardmaker/app/features/home/blank_templates/view.dart';
 import 'package:cardmaker/app/features/home/controller.dart';
 import 'package:cardmaker/app/features/profile/view.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/utils/responsive_helper.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
+import 'package:cardmaker/core/values/app_constants.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/widgets/common/no_data.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:widget_mask/widget_mask.dart';
@@ -76,12 +79,12 @@ class HomePage extends GetView<HomeController> {
         // The dialog will keep showing until user updates, even if they:
         // - Go to Play Store and come back without updating
         // - Close the app and reopen its
-        minAppVersion: '1.0.8', // Uncomment and set your minimum version
+        // minAppVersion: '1.0.8', // Uncomment and set your minimum version
         // How often to show the update dialog again after user dismisses
         // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
         // to show immediately every time app opens until user updates
         // For flexible updates, use Duration(days: 2) to remind after 2 days
-        durationUntilAlertAgain: const Duration(hours: 3),
+        durationUntilAlertAgain: const Duration(hours: 6),
 
         // For forced updates, change to: Duration(seconds: 0)
       ),
@@ -247,6 +250,21 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
       ),
       actions: [
         Container(
+          margin: const EdgeInsets.only(right: 12),
+          child: GestureDetector(
+            onTap: _shareApp,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.share_outlined, size: 20),
+            ),
+          ),
+        ),
+        Container(
           margin: const EdgeInsets.only(right: 16),
           child: GestureDetector(
             onTap: () {
@@ -266,6 +284,25 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
       ],
     );
   }
+
+  Future<void> _shareApp() async {
+    final storeUrl = (GetPlatform.isIOS && kAppstoreUrl.isNotEmpty)
+        ? kAppstoreUrl
+        : kPlaystoreUrl;
+
+    final shareText = storeUrl.isNotEmpty
+        ? 'Create beautiful cards and invitations with CardMaker. Download now: $storeUrl'
+        : 'Create beautiful cards and invitations with CardMaker.';
+
+    try {
+      await Share.share(
+        shareText,
+        subject: 'CardMaker - Design stunning cards',
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Share app failed: $error\n$stackTrace');
+    }
+  }
 }
 
 // --- Modern Loading Skeleton Widget ---
@@ -279,19 +316,21 @@ class ModernLoadingSkeleton extends StatefulWidget {
 class _ModernLoadingSkeletonState extends State<ModernLoadingSkeleton> {
   @override
   Widget build(BuildContext context) {
+    final cardHeight = ResponsiveHelper.getCardHeight(context);
+
     return SizedBox(
-      height: 140,
+      height: cardHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: 4,
-        itemBuilder: (context, index) => _buildSkeletonCard(),
+        itemBuilder: (context, index) => _buildSkeletonCard(cardHeight),
         separatorBuilder: (context, index) => const SizedBox(width: 12),
       ),
     );
   }
 
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(double height) {
     final isDark = Get.theme.brightness == Brightness.dark;
 
     return Shimmer.fromColors(
@@ -300,7 +339,7 @@ class _ModernLoadingSkeletonState extends State<ModernLoadingSkeleton> {
       period: const Duration(milliseconds: 1500),
       child: Container(
         width: 100,
-        height: 140,
+        height: height,
         decoration: BoxDecoration(
           color: isDark ? Colors.grey.shade800 : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -350,82 +389,131 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 140,
-      child: GetBuilder<HomeController>(
-        id: 'freeTodayTemplates',
-        builder: (controller) {
-          if (!controller.hasLoadedFreeToday.value) {
-            return const ModernLoadingSkeleton();
-          }
+    return Builder(
+      builder: (context) {
+        final cardWidth = ResponsiveHelper.getCardWidth(context);
+        final spacing = ResponsiveHelper.getGridSpacing(context);
+        final padding = ResponsiveHelper.getResponsivePadding(context);
 
-          if (controller.freeTodayTemplates.isEmpty) {
-            return NoDataWidget(
-              title: 'No results found',
+        final cardHeight = ResponsiveHelper.getCardHeight(context);
 
-              icon: Icons.search_off_rounded,
-            );
-          }
-
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            cacheExtent: 2000,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: controller.freeTodayTemplates.length + 1,
-            itemBuilder: (context, index) {
-              if (index == controller.freeTodayTemplates.length) {
-                return _buildViewAllCard(context);
+        return SizedBox(
+          height: cardHeight,
+          child: GetBuilder<HomeController>(
+            id: 'freeTodayTemplates',
+            builder: (controller) {
+              if (!controller.hasLoadedFreeToday.value) {
+                return const ModernLoadingSkeleton();
               }
-              return OptimizedTemplateCard(
-                template: controller.freeTodayTemplates[index],
-                onTap: () => controller.onTemplateTap(
-                  controller.freeTodayTemplates[index],
-                ),
-                onFavoriteToggle: () => controller.toggleFavorite(
-                  controller.freeTodayTemplates[index].id,
-                ),
+
+              if (controller.freeTodayTemplates.isEmpty) {
+                return NoDataWidget(
+                  title: 'No results found',
+                  icon: Icons.search_off_rounded,
+                );
+              }
+
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                cacheExtent: 2000,
+                padding: EdgeInsets.symmetric(horizontal: padding.horizontal),
+                itemCount: controller.freeTodayTemplates.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == controller.freeTodayTemplates.length) {
+                    return _buildViewAllCard(context, cardWidth, cardHeight);
+                  }
+                  return SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: OptimizedTemplateCard(
+                      template: controller.freeTodayTemplates[index],
+                      onTap: () => controller.onTemplateTap(
+                        controller.freeTodayTemplates[index],
+                      ),
+                      onFavoriteToggle: () => controller.toggleFavorite(
+                        controller.freeTodayTemplates[index].id,
+                      ),
+                    ),
+                  );
+                },
+                separatorBuilder: (context, index) => SizedBox(width: spacing),
               );
             },
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildViewAllCard(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+  Widget _buildViewAllCard(BuildContext context, double width, double height) {
+    // Use fixed height to match template cards
+    return SizedBox(
+      height: height,
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        onTap: () => controller.onTapViewAll(true),
-        child: Container(
-          width: 100,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.branding.withOpacity(0.1),
-                  shape: BoxShape.circle,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => controller.onTapViewAll(true),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: context.theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
+              children: [
+                // Background pattern/gradient
+                Positioned(
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.branding.withOpacity(0.05),
+                          AppColors.branding.withOpacity(0.02),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.card_giftcard_rounded,
-                  color: AppColors.branding,
-                  size: 18,
+                // Content
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.branding.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.card_giftcard_rounded,
+                          color: AppColors.branding,
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.theme.colorScheme.onSurface
+                              .withOpacity(0.7),
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text('View All'),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -439,82 +527,132 @@ class TrendingTemplatesList extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 140,
-      child: GetBuilder<HomeController>(
-        id: 'trendingTemplates',
-        builder: (controller) {
-          if (!controller.hasLoadedTrending.value) {
-            return const ModernLoadingSkeleton();
-          }
+    return Builder(
+      builder: (context) {
+        final cardWidth = ResponsiveHelper.getCardWidth(context);
+        final spacing = ResponsiveHelper.getGridSpacing(context);
+        final padding = ResponsiveHelper.getResponsivePadding(context);
 
-          if (controller.trendingTemplates.isEmpty) {
-            return NoDataWidget(
-              title: 'No results found',
+        final cardHeight = ResponsiveHelper.getCardHeight(context);
 
-              icon: Icons.search_off_rounded,
-            );
-          }
-
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            cacheExtent: 2000,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: controller.trendingTemplates.length + 1,
-            itemBuilder: (context, index) {
-              if (index == controller.trendingTemplates.length) {
-                return _buildViewAllCard(context);
+        return SizedBox(
+          height: cardHeight,
+          child: GetBuilder<HomeController>(
+            id: 'trendingTemplates',
+            builder: (controller) {
+              if (!controller.hasLoadedTrending.value) {
+                return const ModernLoadingSkeleton();
               }
-              return OptimizedTemplateCard(
-                template: controller.trendingTemplates[index],
-                onTap: () => controller.onTemplateTap(
-                  controller.trendingTemplates[index],
-                ),
-                onFavoriteToggle: () => controller.toggleFavorite(
-                  controller.trendingTemplates[index].id,
-                ),
+
+              if (controller.trendingTemplates.isEmpty) {
+                return NoDataWidget(
+                  title: 'No results found',
+                  icon: Icons.search_off_rounded,
+                );
+              }
+
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+
+                cacheExtent: 2000,
+                padding: EdgeInsets.symmetric(horizontal: padding.horizontal),
+                itemCount: controller.trendingTemplates.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == controller.trendingTemplates.length) {
+                    return _buildViewAllCard(context, cardWidth, cardHeight);
+                  }
+                  return SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: OptimizedTemplateCard(
+                      template: controller.trendingTemplates[index],
+                      onTap: () => controller.onTemplateTap(
+                        controller.trendingTemplates[index],
+                      ),
+                      onFavoriteToggle: () => controller.toggleFavorite(
+                        controller.trendingTemplates[index].id,
+                      ),
+                    ),
+                  );
+                },
+                separatorBuilder: (context, index) => SizedBox(width: spacing),
               );
             },
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildViewAllCard(BuildContext context) {
-    return Material(
-      // color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+  Widget _buildViewAllCard(BuildContext context, double width, double height) {
+    // Use fixed height to match template cards
+    return SizedBox(
+      height: height,
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        onTap: () => controller.onTapViewAll(false),
-        child: Container(
-          width: 100,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.branding.withOpacity(0.1),
-                  shape: BoxShape.circle,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => controller.onTapViewAll(false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: context.theme.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
+              children: [
+                // Background pattern/gradient
+                Positioned(
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.branding.withOpacity(0.05),
+                          AppColors.branding.withOpacity(0.02),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.trending_up_rounded,
-                  color: AppColors.branding,
-                  size: 18,
+                // Content
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.branding.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.trending_up_rounded,
+                          color: AppColors.branding,
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'View All',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.theme.colorScheme.onSurface
+                              .withOpacity(0.7),
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text('View All'),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -537,49 +675,47 @@ class OptimizedTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get responsive fixed height
+    final cardHeight = ResponsiveHelper.getCardHeight(context);
+
     return Stack(
       children: [
-        AspectRatio(
-          aspectRatio: template.aspectRatio,
+        SizedBox(
+          height: cardHeight,
           child: Material(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
               onTap: onTap,
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 100),
                 decoration: BoxDecoration(
-                  color: context.theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  // border: Border.all(
-                  //   color: context.theme.colorScheme.outlineVariant,
-                  //   width: 0,
-                  // ),
+                  color: context.theme.colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Stack(
                   children: [
-                    // Image container with fixed aspect ratio
+                    // Image container with fixed height
                     Positioned.fill(
                       child: Container(
-                        margin: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(8),
+                          // boxShadow: [
+                          //   BoxShadow(
+                          //     color: Colors.black.withOpacity(0.08),
+                          //     blurRadius: 4,
+                          //     offset: const Offset(0, 2),
+                          //   ),
+                          // ],
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: _buildTemplateImage(),
-                        ),
+                        child: _buildTemplateImage(),
                       ),
                     ),
-                    _buildFavoriteButton(),
+                    _buildFavoriteButton(context),
                   ],
                 ),
               ),
@@ -595,14 +731,14 @@ class OptimizedTemplateCard extends StatelessWidget {
     if (template.thumbnailUrl != null) {
       return CachedNetworkImage(
         imageUrl: template.thumbnailUrl!,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         fadeInDuration: const Duration(milliseconds: 200),
 
         placeholder: (context, url) => _buildShimmerPlaceholder(),
         errorWidget: (context, url, error) => _buildErrorWidget(),
         imageBuilder: (context, imageProvider) => Image(
           image: imageProvider,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           // width: double.infinity,
           // height: double.infinity,
         ),
@@ -675,14 +811,14 @@ class OptimizedTemplateCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFavoriteButton() {
+  Widget _buildFavoriteButton(BuildContext context) {
     return Positioned(
-      top: 6,
-      right: 6,
+      top: 0,
+      right: 0,
       child: GetBuilder<HomeController>(
         id: 'favorites',
         builder: (controller) => Material(
-          color: Colors.white.withOpacity(0.95),
+          color: context.theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
@@ -691,7 +827,7 @@ class OptimizedTemplateCard extends StatelessWidget {
               width: 26,
               height: 26,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.95),
+                color: context.theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(

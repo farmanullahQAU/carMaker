@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/compact_slider.dart';
 import 'package:cardmaker/widgets/common/quick_color_picker.dart';
@@ -16,6 +17,7 @@ class ShapeEditorPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ShapeEditorController controller = Get.put(ShapeEditorController());
+    final canvasController = controller.canvasController;
 
     // Initialize controller if needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -39,23 +41,25 @@ class ShapeEditorPanel extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                'Text Editor',
+                'Shape Editor',
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
-              Spacer(),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    controller.canvasController.setActiveItem(null);
-                  },
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(Icons.close_rounded, size: 16),
-                  ),
+              const Spacer(),
+              PanelActionButton(
+                icon: Icons.delete_outline,
+                label: 'Delete',
+                isDestructive: true,
+                onPressed: canvasController.deleteActiveItem,
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => canvasController.setActiveItem(null),
+                icon: const Icon(Icons.close_rounded, size: 16),
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(32, 32),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/utils/responsive_helper.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -486,157 +487,163 @@ class ProfessionalTemplatesPage extends StatelessWidget {
   }
 
   Widget _buildTemplateCard(CardTemplate template, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Get.toNamed(
-          AppRoutes.editor,
-          arguments: {"isblank": true, "template": template},
+    return Builder(
+      builder: (context) {
+        final cardWidth = ResponsiveHelper.getCardWidth(context);
+
+        return GestureDetector(
+          onTap: () {
+            Get.toNamed(
+              AppRoutes.editor,
+              arguments: {"isblank": true, "template": template},
+            );
+          },
+          child: SizedBox(
+            width: cardWidth,
+            height: 160.0, // Fixed height for all cards
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Card Preview Container
+                Container(
+                  width: double.infinity,
+                  height: 120.0, // Fixed height for preview area
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        template.color.withOpacity(0.06),
+                        template.color.withOpacity(0.02),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(
+                      color: template.color.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12.0,
+                      vertical: 8.0,
+                    ),
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: template.aspectRatio,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: context.theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: template.color.withOpacity(0.1),
+                                blurRadius: 8.0,
+                                offset: const Offset(0, 4.0),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // Header bar
+                              Container(
+                                height: 16.0,
+                                decoration: BoxDecoration(
+                                  color: template.color.withOpacity(0.1),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8.0),
+                                    topRight: Radius.circular(8.0),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const SizedBox(width: 6.0),
+                                    Icon(
+                                      template.icon,
+                                      size: 10.0,
+                                      color: template.color,
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      width: 2.0,
+                                      height: 2.0,
+                                      decoration: BoxDecoration(
+                                        color: template.color.withOpacity(0.3),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 3.0),
+                                    Container(
+                                      width: 2.0,
+                                      height: 2.0,
+                                      decoration: BoxDecoration(
+                                        color: template.color.withOpacity(0.3),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6.0),
+                                  ],
+                                ),
+                              ),
+                              // Body content
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: Column(
+                                    children: [
+                                      const SizedBox(height: 2.0),
+                                      _buildContentLine(width: double.infinity),
+                                      const SizedBox(height: 2.0),
+                                      _buildContentLine(width: double.infinity),
+                                      const SizedBox(height: 2.0),
+                                      _buildContentLine(width: 0.7),
+                                      if (template.aspectRatio < 1.0) ...[
+                                        const SizedBox(height: 2.0),
+                                        _buildContentLine(width: 0.5),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                // Title and dimensions
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        template.name,
+                        style: Get.textTheme.labelMedium?.copyWith(
+                          color: context.theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2.0),
+                      Text(
+                        '${template.width.toInt()} x ${template.height.toInt()}',
+                        style: Get.textTheme.bodySmall?.copyWith(
+                          color: context.theme.colorScheme.onSurfaceVariant,
+                          fontSize: 10.0,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
-      child: SizedBox(
-        width: Get.width * 0.3, // Fixed width for all cards
-        height: 160.0, // Fixed height for all cards
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Card Preview Container
-            Container(
-              width: double.infinity,
-              height: 120.0, // Fixed height for preview area
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    template.color.withOpacity(0.06),
-                    template.color.withOpacity(0.02),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16.0),
-                border: Border.all(
-                  color: template.color.withOpacity(0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 8.0,
-                ),
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: template.aspectRatio,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: context.theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: template.color.withOpacity(0.1),
-                            blurRadius: 8.0,
-                            offset: const Offset(0, 4.0),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Header bar
-                          Container(
-                            height: 16.0,
-                            decoration: BoxDecoration(
-                              color: template.color.withOpacity(0.1),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(8.0),
-                                topRight: Radius.circular(8.0),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 6.0),
-                                Icon(
-                                  template.icon,
-                                  size: 10.0,
-                                  color: template.color,
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 2.0,
-                                  height: 2.0,
-                                  decoration: BoxDecoration(
-                                    color: template.color.withOpacity(0.3),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 3.0),
-                                Container(
-                                  width: 2.0,
-                                  height: 2.0,
-                                  decoration: BoxDecoration(
-                                    color: template.color.withOpacity(0.3),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6.0),
-                              ],
-                            ),
-                          ),
-                          // Body content
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(6.0),
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 2.0),
-                                  _buildContentLine(width: double.infinity),
-                                  const SizedBox(height: 2.0),
-                                  _buildContentLine(width: double.infinity),
-                                  const SizedBox(height: 2.0),
-                                  _buildContentLine(width: 0.7),
-                                  if (template.aspectRatio < 1.0) ...[
-                                    const SizedBox(height: 2.0),
-                                    _buildContentLine(width: 0.5),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8.0),
-            // Title and dimensions
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    template.name,
-                    style: Get.textTheme.labelMedium?.copyWith(
-                      color: context.theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2.0),
-                  Text(
-                    '${template.width.toInt()} x ${template.height.toInt()}',
-                    style: Get.textTheme.bodySmall?.copyWith(
-                      color: context.theme.colorScheme.onSurfaceVariant,
-                      fontSize: 10.0,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

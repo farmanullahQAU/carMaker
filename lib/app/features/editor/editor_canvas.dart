@@ -12,6 +12,7 @@ import 'package:cardmaker/app/features/editor/shape_editor/controller.dart';
 import 'package:cardmaker/app/features/editor/shape_editor/view.dart';
 import 'package:cardmaker/app/features/editor/stickers/stickers_panel.dart';
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/flutter_stack_board.dart';
@@ -118,34 +119,6 @@ class EditorPage extends GetView<CanvasController> {
         elevation: 0,
         actions: [
           Spacer(flex: 2),
-
-          Obx(
-            () =>
-                controller.activeItem.value != null &&
-                    controller.activeItem.value is StackTextItem
-                ? Tooltip(
-                    message: 'Edit Text',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: controller.editText,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.edit_note_rounded,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                : SizedBox.shrink(),
-          ),
-          Spacer(),
 
           Obx(
             () => controller.activeItem.value == null
@@ -885,24 +858,32 @@ class _TextEditorPanel extends StatelessWidget {
           color: Get.theme.colorScheme.surfaceContainer,
           child: Row(
             children: [
-              Text(
-                'Text Editor',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              // Text(
+              //   'Text Editor',
+              //   style: Theme.of(
+              //     context,
+              //   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              // ),
+              // const Spacer(),
+              // PanelActionButton(
+              //   icon: Icons.edit_outlined,
+              //   label: 'Edit',
+              //   onPressed: controller.editActiveItem,
+              // ),
+              const SizedBox(width: 8),
+              PanelActionButton(
+                icon: Icons.delete_outline,
+                label: 'Delete',
+                isDestructive: true,
+                onPressed: controller.deleteActiveItem,
               ),
-              Spacer(),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    controller.setActiveItem(null);
-                  },
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(Icons.close_rounded, size: 16),
-                  ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: () => controller.setActiveItem(null),
+                icon: const Icon(Icons.close_rounded, size: 16),
+                style: IconButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(32, 32),
                 ),
               ),
             ],
@@ -1165,13 +1146,18 @@ class CanvasStack extends StatelessWidget {
 
                       customBuilder: (StackItem<StackItemContent> item) {
                         if (item is StackTextItem && item.content != null) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: StackTextCase(
-                              item: item,
-                              isFitted:
-                                  item.content?.autoFit ??
-                                  (item.content!.data!.length <= 20),
+                          return GestureDetector(
+                            onDoubleTap: () => controller.editItem(item),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              child: StackTextCase(
+                                item: item,
+                                isFitted:
+                                    item.content?.autoFit ??
+                                    (item.content!.data!.length <= 20),
+                              ),
                             ),
                           );
                         } else if (item is StackImageItem &&
@@ -1372,7 +1358,7 @@ class CanvasStack extends StatelessWidget {
               child: IgnorePointer(
                 ignoring: true,
                 child: Opacity(
-                  opacity: 0.2, // Semi-transparent for watermark effect
+                  opacity: 0.5, // Semi-transparent for watermark effect
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -1383,7 +1369,7 @@ class CanvasStack extends StatelessWidget {
                         height: 33,
                         fit: BoxFit.contain,
                       ),
-                      Text("Inkkaro", style: TextStyle(fontSize: 8)),
+                      Text("Artnie", style: TextStyle(fontSize: 8)),
                     ],
                   ),
                 ),
@@ -1403,9 +1389,9 @@ class CanvasStack extends StatelessWidget {
                     ),
                     showGrid: controller.showGrid.isTrue,
                     gridSize: 50.0,
-                    guideColor: Colors.blue.withOpacity(0.5),
+                    guideColor: Colors.red,
                     criticalGuideColor: Colors.red,
-                    centerGuideColor: Colors.green,
+                    centerGuideColor: AppColors.brandingLight,
                   ),
                 ),
               ),
@@ -1542,7 +1528,7 @@ class AlignmentGuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint gridPaint = Paint()
-      ..color = guideColor.withOpacity(0.2)
+      ..color = guideColor.withOpacity(0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.3;
 

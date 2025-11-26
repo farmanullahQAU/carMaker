@@ -1,4 +1,6 @@
+import 'package:cardmaker/app/features/editor/controller.dart';
 import 'package:cardmaker/app/features/editor/icon_picker/controller.dart';
+import 'package:cardmaker/app/features/editor/widgets/panel_action_button.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/colors_selector.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/src/stack_board_items/items/stack_icon_item.dart';
@@ -42,6 +44,7 @@ class IconPickerPanel extends GetView<IconPickerController> {
   }
 
   Widget _buildHeader() {
+    final canvasController = Get.find<CanvasController>();
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -73,19 +76,21 @@ class IconPickerPanel extends GetView<IconPickerController> {
               ),
             ),
           ),
-          InkWell(
-            onTap: () {
-              // controller.addOrUpdateIcon(iconItem);
+          PanelActionButton(
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            isDestructive: true,
+            onPressed: canvasController.deleteActiveItem,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: () {
               onClose();
             },
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.close_rounded,
-                size: 16,
-                color: Get.theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
+            icon: const Icon(Icons.close_rounded, size: 16),
+            style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(32, 32),
             ),
           ),
         ],

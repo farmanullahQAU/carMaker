@@ -10,15 +10,29 @@ class CardMakerTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.branding,
         primary: AppColors.branding,
-        surface: AppColors.backgroundLight,
-        surfaceContainer: const Color(0xffe6e7eb),
-        surfaceContainerHigh: const Color(0xffd1d2d6),
-        surfaceContainerHighest: const Color(0xffbabbc0),
-        surfaceContainerLow: const Color(0xfff5f5f5),
-        surfaceContainerLowest: const Color(0xfffafafa),
+        // Professional light theme colors with better contrast
+        surface: AppColors.backgroundLight, // #FAFAFA
+        surfaceContainer: const Color(0xFFF0F0F0), // Light gray for containers
+        surfaceContainerHigh: const Color(
+          0xFFE5E5E5,
+        ), // Slightly darker for elevated surfaces
+        surfaceContainerHighest: const Color(0xFFD9D9D9), // Highest elevation
+        surfaceContainerLow: const Color(
+          0xFFF5F5F5,
+        ), // Very light gray, slightly darker than surface
+        surfaceContainerLowest: const Color(
+          0xFFFFFFFF,
+        ), // Pure white for lowest surfaces
+        // Text colors for better contrast
+        onSurface: const Color(0xFF1A1A1A), // Dark text for readability
+        onSurfaceVariant: const Color(
+          0xFF6B6B6B,
+        ), // Medium gray for secondary text
         brightness: Brightness.light,
       ),
       textTheme: GoogleFonts.interTightTextTheme(Typography.blackMountainView),
+      // Ensure scaffold background uses the surface color
+      scaffoldBackgroundColor: AppColors.backgroundLight,
     );
   }
 
@@ -29,15 +43,31 @@ class CardMakerTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.branding,
         primary: AppColors.branding,
-        surface: AppColors.backgroundDark,
-        surfaceContainer: const Color(0xFF16171D),
-        surfaceContainerHigh: const Color(0xFF1E1F27),
-        surfaceContainerHighest: const Color(0xFF272832),
-        surfaceContainerLow: const Color(0xFF101117),
-        surfaceContainerLowest: const Color(0xFF08090D),
+        // Professional dark theme colors with better visibility
+        surface: AppColors.backgroundDark, // #1E1E1E
+        surfaceContainer: const Color(
+          0xFF2C2C2C,
+        ), // Lighter gray for containers
+        surfaceContainerHigh: const Color(
+          0xFF3A3A3A,
+        ), // Even lighter for elevated surfaces
+        surfaceContainerHighest: const Color(0xFF484848), // Highest elevation
+        surfaceContainerLow: const Color(
+          0xFF252525,
+        ), // Slightly lighter than surface
+        surfaceContainerLowest: const Color(
+          0xFF1A1A1A,
+        ), // Darkest but still visible
+        // Text colors for better contrast
+        onSurface: const Color(0xFFE5E5E5), // Light gray text
+        onSurfaceVariant: const Color(
+          0xFFB3B3B3,
+        ), // Medium gray for secondary text
         brightness: Brightness.dark,
       ),
       textTheme: GoogleFonts.interTightTextTheme(Typography.whiteMountainView),
+      // Ensure scaffold background uses the surface color
+      scaffoldBackgroundColor: AppColors.backgroundDark,
     );
   }
 }

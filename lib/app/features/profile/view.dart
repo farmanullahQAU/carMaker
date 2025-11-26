@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/profile/controller.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/utils/responsive_helper.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -392,50 +393,58 @@ class ProfilePage extends StatelessWidget {
     Function(CardTemplate)? onBackup,
     required bool Function(CardTemplate) isLocalOnly, // Changed parameter name
   }) {
-    return CustomScrollView(
-      controller: scrollController,
-      cacheExtent: 500,
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(12),
-          sliver: SliverMasonryGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childCount: templates.length,
-            itemBuilder: (context, index) {
-              final template = templates[index];
-              final localOnly = isLocalOnly(template);
+    return Builder(
+      builder: (context) {
+        final columnCount = ResponsiveHelper.getGridColumnCount(context);
+        final spacing = ResponsiveHelper.getGridSpacing(context);
+        final padding = ResponsiveHelper.getResponsivePadding(context);
 
-              return DraftCard(
-                key: ValueKey(
-                  'draft-${template.id}-$index-${localOnly ? 'local' : 'cloud'}',
-                ), // Dynamic key for better rebuilds
-                template: template,
-                isDraft: isDrafts,
-                isLocalOnly: localOnly, // Pass local status
-                onTap: () => onEdit?.call(template),
-                onDelete: () => _showDeleteDialog(
-                  template.id,
-                  onDelete,
-                  !localOnly, // Use local status
-                ),
-                onBackup: localOnly
-                    ? () => onBackup?.call(template)
-                    : null, // Only show backup for local drafts
-              );
-            },
-          ),
-        ),
-        if (isLoading && hasMore)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(child: buildLoading("Loading more drafts...")),
+        return CustomScrollView(
+          controller: scrollController,
+          cacheExtent: 500,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.all(padding.horizontal / 2),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: columnCount,
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                childCount: templates.length,
+                itemBuilder: (context, index) {
+                  final template = templates[index];
+                  final localOnly = isLocalOnly(template);
+
+                  return DraftCard(
+                    key: ValueKey(
+                      'draft-${template.id}-$index-${localOnly ? 'local' : 'cloud'}',
+                    ), // Dynamic key for better rebuilds
+                    template: template,
+                    isDraft: isDrafts,
+                    isLocalOnly: localOnly, // Pass local status
+                    onTap: () => onEdit?.call(template),
+                    onDelete: () => _showDeleteDialog(
+                      template.id,
+                      onDelete,
+                      !localOnly, // Use local status
+                    ),
+                    onBackup: localOnly
+                        ? () => onBackup?.call(template)
+                        : null, // Only show backup for local drafts
+                  );
+                },
+              ),
             ),
-          ),
-      ],
+            if (isLoading && hasMore)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(child: buildLoading("Loading more drafts...")),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -529,43 +538,50 @@ class ProfilePage extends StatelessWidget {
     Function(String)? onRemoveFromFavorites,
     Function(CardTemplate)? onEdit,
   }) {
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      cacheExtent: 1000,
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(12),
-          sliver: SliverMasonryGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childCount: templates.length,
+    return Builder(
+      builder: (context) {
+        final columnCount = ResponsiveHelper.getGridColumnCount(context);
+        final spacing = ResponsiveHelper.getGridSpacing(context);
+        final padding = ResponsiveHelper.getResponsivePadding(context);
 
-            itemBuilder: (context, index) {
-              final template = templates[index];
-              return TemplateCard(
-                key: ValueKey('fav-${template.id}-$index'),
-                template: template,
-                onTap: () => onEdit?.call(template),
-                favoriteButton: FavoriteButton(
-                  isFav: true,
-                  onTap: () => _showRemoveFromFavoritesDialog(
-                    template.id,
-                    onRemoveFromFavorites,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        if (isLoading && hasMore)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Center(child: buildLoading("Loading more...")),
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          cacheExtent: 1000,
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.all(padding.horizontal / 2),
+              sliver: SliverMasonryGrid.count(
+                crossAxisCount: columnCount,
+                mainAxisSpacing: spacing,
+                crossAxisSpacing: spacing,
+                childCount: templates.length,
+                itemBuilder: (context, index) {
+                  final template = templates[index];
+                  return TemplateCard(
+                    key: ValueKey('fav-${template.id}-$index'),
+                    template: template,
+                    onTap: () => onEdit?.call(template),
+                    favoriteButton: FavoriteButton(
+                      isFav: true,
+                      onTap: () => _showRemoveFromFavoritesDialog(
+                        template.id,
+                        onRemoveFromFavorites,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-      ],
+            if (isLoading && hasMore)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Center(child: buildLoading("Loading more...")),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

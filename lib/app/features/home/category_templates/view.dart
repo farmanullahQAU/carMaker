@@ -1,4 +1,5 @@
 import 'package:cardmaker/app/features/home/category_templates/controller.dart';
+import 'package:cardmaker/core/utils/responsive_helper.dart';
 import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/widgets/common/template_card.dart';
 import 'package:flutter/material.dart';
@@ -12,29 +13,29 @@ class CategoryTemplatesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<CategoryTemplatesController>(
-      autoRemove: false,
+    // Get controller - it should be initialized by the binding
+    final controller = Get.find<CategoryTemplatesController>();
 
-      builder: (controller) {
-        return Scaffold(
-          body: RefreshIndicator(
-            color: AppColors.branding,
-            onRefresh: controller.onRefresh,
-            child: CustomScrollView(
-              controller: controller.scrollController,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                _buildProfessionalSliverAppBar(controller, context),
-                _buildTemplatesStaggeredGrid(controller),
-                _buildLoadingIndicator(controller),
-                const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
-              ],
-            ),
+    // Use Obx only for the parts that need reactivity, not the entire scaffold
+    return Scaffold(
+      key: const ValueKey('category_templates_scaffold'),
+      body: RefreshIndicator(
+        color: AppColors.branding,
+        onRefresh: controller.onRefresh,
+        child: CustomScrollView(
+          key: const ValueKey('category_templates_scroll'),
+          controller: controller.scrollController,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
           ),
-        );
-      },
+          slivers: [
+            _buildProfessionalSliverAppBar(controller, context),
+            _buildTemplatesStaggeredGrid(controller),
+            _buildLoadingIndicator(controller),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -465,32 +466,44 @@ class CategoryTemplatesPage extends StatelessWidget {
   }
 
   Widget _buildTemplatesStaggeredGrid(CategoryTemplatesController controller) {
-    return Obx(
-      () => SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        sliver: controller.templates.isEmpty && controller.isLoading.value
-            ? SliverFillRemaining(child: _buildLoadingState(controller))
-            : controller.templates.isEmpty
-            ? SliverFillRemaining(child: _buildEmptyState(controller))
-            : SliverMasonryGrid.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childCount: controller.templates.length,
-                itemBuilder: (context, index) {
-                  final template = controller.templates[index];
-                  return TemplateCard(
-                    template: template,
-                    key: ValueKey('template_${template.id}'),
-                    favoriteButton: FavoriteButton(
-                      id: template.id,
-                      onTap: () => controller.toggleFavorite(template.id),
-                    ),
-                    onTap: () => controller.onTemplateSelected(template),
-                  );
-                },
-              ),
-      ),
+    return Builder(
+      builder: (context) {
+        final columnCount = ResponsiveHelper.getGridColumnCount(context);
+        final spacing = ResponsiveHelper.getGridSpacing(context);
+        final padding = ResponsiveHelper.getResponsivePadding(context);
+
+        // Only wrap the reactive parts in Obx
+        return Obx(
+          () => SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal: padding.horizontal,
+              vertical: padding.vertical,
+            ),
+            sliver: controller.templates.isEmpty && controller.isLoading.value
+                ? SliverFillRemaining(child: _buildLoadingState(controller))
+                : controller.templates.isEmpty
+                ? SliverFillRemaining(child: _buildEmptyState(controller))
+                : SliverMasonryGrid.count(
+                    crossAxisCount: columnCount,
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    childCount: controller.templates.length,
+                    itemBuilder: (context, index) {
+                      final template = controller.templates[index];
+                      return TemplateCard(
+                        template: template,
+                        key: ValueKey('template_${template.id}'),
+                        favoriteButton: FavoriteButton(
+                          id: template.id,
+                          onTap: () => controller.toggleFavorite(template.id),
+                        ),
+                        onTap: () => controller.onTemplateSelected(template),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 

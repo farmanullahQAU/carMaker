@@ -356,6 +356,94 @@ class ToastHelper {
     }
   }
 
+  /// Show subtle info toast - non-distracting, short duration
+  static void info(String message, {Duration? duration}) {
+    final context = _getContext();
+    if (context == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final retryContext = _getContext();
+        if (retryContext != null) {
+          _showInfoToast(retryContext, message, duration);
+        }
+      });
+      return;
+    }
+    _showInfoToast(context, message, duration);
+  }
+
+  static void _showInfoToast(
+    BuildContext context,
+    String message,
+    Duration? duration,
+  ) {
+    try {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final backgroundColor = isDark
+          ? const Color(0xFF2C2C2C) // Match surfaceContainer
+          : const Color(0xFFF0F0F0); // Match surfaceContainer
+      final textColor = isDark
+          ? const Color(0xFFE5E5E5) // Light text for dark theme
+          : const Color(0xFF1A1A1A); // Dark text for light theme
+
+      toastification.show(
+        context: context,
+        type: ToastificationType.info,
+        style: ToastificationStyle.flat, // Flat style is less distracting
+        title: Text(
+          message,
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            letterSpacing: 0.1,
+            color: textColor,
+          ),
+        ),
+        alignment: Alignment.bottomCenter,
+        autoCloseDuration:
+            duration ?? const Duration(seconds: 2), // Short duration
+        showProgressBar: false,
+        icon: Icon(
+          Icons.info_outline_rounded,
+          size: 18,
+          color: AppColors.branding,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ), // Smaller padding
+        backgroundColor: backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        primaryColor: AppColors.branding,
+        animationDuration: const Duration(
+          milliseconds: 300,
+        ), // Faster animation
+        animationBuilder: (context, animation, alignment, child) {
+          return SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0.0, 1.0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                ),
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+      );
+    } catch (e, stackTrace) {
+      debugPrint('ToastHelper: Error showing info toast: $e');
+      debugPrint('Stack trace: $stackTrace');
+    }
+  }
+
   /// Dismiss all toasts
   static void dismissAll() {
     try {
