@@ -5,8 +5,10 @@ import 'package:cardmaker/app/routes/app_routes.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/services/design_export_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -25,6 +27,7 @@ class HomeController extends GetxController {
   final authService = Get.find<AuthService>();
   final _firestoreService = FirestoreServices();
   final RemoteConfigService remoteConfig = RemoteConfigService(); // Add this
+  final designExportService = DesignExportService();
   static const String _favoriteIdsKey = 'favorite_template_ids';
   // Add config values you want to use
 
@@ -536,5 +539,74 @@ class HomeController extends GetxController {
     _isDataInitialized = false;
     await _initializeData();
     await remoteConfig.refreshConfig();
+  }
+
+  /// Import design from .artnie file
+  Future<void> importDesign() async {
+    try {
+      // Use FileType.any since .artnie is not a standard extension
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.single;
+
+        // Validate file extension
+        final fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.artnie')) {
+          Get.snackbar(
+            'Invalid File',
+            'Please select a .artnie file',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.orange.shade100,
+            colorText: Colors.orange.shade900,
+          );
+          return;
+        }
+
+        // Try to get bytes first (preferred method)
+        if (file.bytes != null) {
+          final bytes = file.bytes!;
+          final template = await designExportService.importDesignFromBytes(
+            bytes,
+          );
+
+          if (template != null) {
+            // Navigate to editor with imported template
+            Get.toNamed(
+              AppRoutes.editor,
+              arguments: {'template': template, 'showSaveCopyBtn': false},
+            );
+          }
+        } else if (file.path != null) {
+          // Fallback: use file path (for platforms that don't support bytes)
+          final filePath = file.path!;
+          final template = await designExportService.importDesignFromArtnie(
+            filePath,
+          );
+
+          if (template != null) {
+            // Navigate to editor with imported template
+            Get.toNamed(
+              AppRoutes.editor,
+              arguments: {'template': template, 'showSaveCopyBtn': false},
+            );
+          }
+        } else {
+          throw Exception('Unable to read file data');
+        }
+      }
+    } catch (e) {
+      debugPrint('Import design error: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to import design: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+      );
+    }
   }
 }

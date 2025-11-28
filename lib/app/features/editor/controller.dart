@@ -14,6 +14,7 @@ import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
+import 'package:cardmaker/services/design_export_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
 import 'package:cardmaker/services/permission_handler.dart';
 import 'package:cardmaker/services/storage_service.dart';
@@ -42,6 +43,7 @@ import 'package:uuid/uuid.dart';
 class CanvasController extends GetxController {
   final authService = Get.find<AuthService>();
   final firestoreService = FirestoreServices();
+  final designExportService = DesignExportService();
   late bool isLocaleTemplate = true;
   late bool showSaveCopyBtn = true;
 
@@ -1325,6 +1327,70 @@ class CanvasController extends GetxController {
 
   void saveDraft() =>
       isLocaleTemplate ? _saveDraftLocale() : _saveToFirestore();
+
+  /// Export design as .artnie file
+  Future<void> exportAsArtnie() async {
+    try {
+      ToastHelper.loading('Exporting design...');
+
+      final currentItems = boardController.getAllData();
+      final Size canvasSize = Size(
+        scaledCanvasWidth.value,
+        scaledCanvasHeight.value,
+      );
+
+      final List<Map<String, dynamic>> relativeItems = currentItems.map((
+        itemData,
+      ) {
+        final item = deserializeItem(itemData);
+        final Offset relOffset = toRelativeOffset(item.offset, canvasSize);
+        final Size relSize = toRelativeSize(item.size, canvasSize);
+
+        dynamic content = item.content;
+        if (item is StackTextItem && content?.style?.fontSize != null) {
+          final double originalFontSize =
+              content.style.fontSize! / canvasScale.value;
+          content = content.copyWith(
+            style: content.style.copyWith(fontSize: originalFontSize),
+          );
+        }
+
+        return item
+            .copyWith(offset: relOffset, size: relSize, content: content)
+            .toJson();
+      }).toList();
+
+      CardTemplate template = CardTemplate(
+        imagePath: "",
+        categoryId: initialTemplate?.categoryId ?? 'general',
+        id: initialTemplate?.id ?? const Uuid().v4(),
+        name: templateName.value.isEmpty
+            ? 'Untitled Design'
+            : templateName.value,
+        items: relativeItems,
+        width: initialTemplate?.width ?? 800,
+        height: initialTemplate?.height ?? 600,
+        category: initialTemplate?.category ?? 'general',
+        tags: initialTemplate?.tags ?? ['default'],
+        isPremium: false,
+        isDraft: true,
+        backgroundHue: backgroundHue.value.roundToDouble(),
+        backgroundColor: backgroundColor.value,
+        isBackgroundGradient: isBackgroundGradient.value,
+        backgroundImageUrl: selectedBackground.value,
+        createdAt: initialTemplate?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        thumbnailUrl: null,
+      );
+
+      await designExportService.exportDesignAsArtnie(template);
+    } catch (err) {
+      debugPrint('Error exporting as .artnie: $err');
+      ToastHelper.error('Failed to export design: ${err.toString()}');
+    } finally {
+      ToastHelper.dismissAll();
+    }
+  }
 
   // ==================== SAVE WITH RELATIVE UNITS ====================
   Future<void> _saveToFirestore({bool isCopy = false}) async {

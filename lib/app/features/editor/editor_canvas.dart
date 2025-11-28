@@ -196,6 +196,7 @@ class EditorPage extends GetView<CanvasController> {
               onExportImage: () => controller.exportAsImage(
                 controller.initialTemplate!.category,
               ),
+              onExportArtnie: controller.exportAsArtnie,
               onSaveDraft: controller.saveDraft,
               onSaveCopy: controller.saveCopy,
               onSave: () async {
@@ -652,14 +653,15 @@ class _ModernExportButton extends StatelessWidget {
   final VoidCallback onExportPDF;
   final VoidCallback onSaveDraft;
   final VoidCallback onSaveCopy;
-
   final VoidCallback onExportImage;
+  final VoidCallback onExportArtnie;
   final VoidCallback onSave;
   final bool isExporting;
 
   const _ModernExportButton({
     required this.onExportPDF,
     required this.onExportImage,
+    required this.onExportArtnie,
     required this.onSave,
     required this.isExporting,
     required this.onSaveDraft,
@@ -767,6 +769,18 @@ class _ModernExportButton extends StatelessWidget {
               bgColor: Colors.purple.shade50,
             ),
           ),
+          PopupMenuItem<String>(
+            value: 'artnie',
+            height: 52,
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: _buildVerticalMenuItem(
+              icon: Icons.download_rounded,
+              title: 'Download Design',
+              subtitle: 'Save as .artnie file',
+              iconColor: Colors.teal.shade700,
+              bgColor: Colors.teal.shade50,
+            ),
+          ),
           PopupMenuDivider(height: 6),
           PopupMenuItem<String>(
             value: 'draft',
@@ -807,6 +821,9 @@ class _ModernExportButton extends StatelessWidget {
               break;
             case 'image':
               onExportImage();
+              break;
+            case 'artnie':
+              onExportArtnie();
               break;
             case 'draft_copy':
               onSaveCopy();

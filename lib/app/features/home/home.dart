@@ -252,6 +252,21 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
         Container(
           margin: const EdgeInsets.only(right: 12),
           child: GestureDetector(
+            onTap: () => controller.importDesign(),
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.upload_file_rounded, size: 20),
+            ),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.only(right: 12),
+          child: GestureDetector(
             onTap: _shareApp,
             child: Container(
               width: 44,
@@ -892,7 +907,7 @@ class SectionTitle extends StatelessWidget {
 }
 
 // --- Professional Templates Banner - Compact Version ---
-class ProfessionalTemplatesBanner extends StatelessWidget {
+class ProfessionalTemplatesBanner extends GetView<HomeController> {
   const ProfessionalTemplatesBanner({super.key});
 
   @override
@@ -901,66 +916,62 @@ class ProfessionalTemplatesBanner extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => Get.to(() => const ProfessionalTemplatesPage()),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.branding, AppColors.brandingLight],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.branding, AppColors.brandingLight],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Row(
-              children: [
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      // Title
-                      const Text(
-                        'Blank Canvas',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.3,
-                        ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    // Title
+                    const Text(
+                      'Import Design',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.3,
                       ),
-                      const SizedBox(height: 4),
-                      // Description
-                      Text(
-                        'Start fresh with custom sizes',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Description
+                    Text(
+                      'Import your saved .artnie designs',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 12),
+                    ),
+                    const SizedBox(height: 12),
 
-                      // CTA Button
-                    ],
-                  ),
+                    // CTA Button
+                  ],
                 ),
-                ElevatedButton(
-                  style: FilledButton.styleFrom(
-                    elevation: 0,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  onPressed: () {
-                    Get.to(() => const ProfessionalTemplatesPage());
-                  },
-                  child: Text("Browse"),
+              ),
+              ElevatedButton(
+                style: FilledButton.styleFrom(
+                  elevation: 0,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
                 ),
-              ],
-            ),
+                onPressed: () {
+                  controller.importDesign();
+                },
+                child: const Text("Import"),
+              ),
+            ],
           ),
         ),
       ),
