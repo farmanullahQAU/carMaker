@@ -19,6 +19,8 @@ class AppColors {
   //center _guide color
   // Amber
   // Amber
+  static const Color orange = Colors.orange;
+  static const Color menueSelected = orange;
   static const Color amber400 = Color(0xFFFFCA28); // Amber 400
   static const Color amber400Light = Color(0x1AFFCA28); // 10% opacity
 

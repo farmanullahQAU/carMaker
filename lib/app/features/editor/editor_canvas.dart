@@ -421,7 +421,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   return _ProfessionalToolbarButton(
                     isActive: isActive,
                     icon: Icons.text_fields_outlined,
-                    activeIcon: Icons.text_fields,
+                    activeIcon: Icons.edit_outlined,
                     label: 'Text',
                     panelType: PanelType.text,
                     activePanel: controller.activePanel,
@@ -448,9 +448,9 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   return _ProfessionalToolbarButton(
                     isActive: isShapeActive,
                     icon: Icons.shape_line_outlined,
-                    activeIcon: Icons.shape_line,
+                    activeIcon: Icons.edit_outlined,
                     label: controller.activeItem.value is StackShapeItem
-                        ? 'Edit'
+                        ? 'Shape'
                         : 'Shapes',
                     panelType: PanelType.shapes,
                     activePanel: controller.activePanel,
@@ -473,9 +473,9 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   return _ProfessionalToolbarButton(
                     isActive: isIconActive,
                     icon: Icons.emoji_objects_outlined,
-                    activeIcon: Icons.emoji_objects,
+                    activeIcon: Icons.edit_outlined,
                     label: controller.activeItem.value is StackIconItem
-                        ? 'Edit'
+                        ? 'Icon'
                         : 'Icons',
                     panelType: PanelType.icons,
                     activePanel: controller.activePanel,
@@ -498,9 +498,9 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   return _ProfessionalToolbarButton(
                     isActive: isChartActive,
                     icon: Icons.bar_chart_rounded,
-                    activeIcon: Icons.bar_chart_rounded,
+                    activeIcon: Icons.edit_outlined,
                     label: controller.activeItem.value is StackChartItem
-                        ? 'Edit'
+                        ? 'Chart'
                         : 'Charts',
                     panelType: PanelType.charts,
                     activePanel: controller.activePanel,
@@ -521,7 +521,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                   return _ProfessionalToolbarButton(
                     isActive: isBackgroundActive,
                     icon: Icons.format_color_fill_outlined,
-                    activeIcon: Icons.format_color_fill,
+                    activeIcon: Icons.edit_outlined,
                     label: 'Background',
                     panelType: PanelType.color,
                     activePanel: controller.activePanel,
@@ -538,7 +538,7 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                 _ProfessionalToolbarButton(
                   isActive: controller.activePanel.value == PanelType.stickers,
                   icon: Icons.emoji_emotions_outlined,
-                  activeIcon: Icons.emoji_emotions,
+                  activeIcon: Icons.edit_outlined,
                   label: 'Stickers',
                   panelType: PanelType.stickers,
                   activePanel: controller.activePanel,
@@ -613,16 +613,16 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                   padding: EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? colorScheme.primary.withOpacity(0.12)
+                        ? AppColors.menueSelected
                         : Colors.transparent,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     isActive ? activeIcon : icon,
                     size: 22,
-                    color: isActive
-                        ? colorScheme.primary
-                        : colorScheme.onSurface.withOpacity(0.7),
+                    // color: isActive
+                    //     ? colorScheme.onPrimary
+                    //     : colorScheme.onSurface,
                   ),
                 ),
                 AnimatedDefaultTextStyle(
@@ -634,11 +634,24 @@ class _ProfessionalToolbarButton extends StatelessWidget {
                         ? colorScheme.primary
                         : colorScheme.onSurface.withOpacity(0.7),
                   ),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: isActive
+                      ? Text(
+                          "Edit ${label.toLowerCase()}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall!.copyWith(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.menueSelected,
+                          ),
+                        )
+                      : Text(
+                          label,
+                          style: theme.textTheme.bodySmall!.copyWith(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -875,19 +888,20 @@ class _TextEditorPanel extends StatelessWidget {
           color: Get.theme.colorScheme.surfaceContainer,
           child: Row(
             children: [
-              // Text(
-              //   'Text Editor',
-              //   style: Theme.of(
-              //     context,
-              //   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-              // ),
-              // const Spacer(),
-              // PanelActionButton(
-              //   icon: Icons.edit_outlined,
-              //   label: 'Edit',
-              //   onPressed: controller.editActiveItem,
-              // ),
+              PanelActionButton(
+                icon: Icons.edit_outlined,
+                label: 'Edit',
+                onPressed: () => controller.editText(),
+              ),
               const SizedBox(width: 8),
+              PanelActionButton(
+                icon: Icons.add_circle_outline,
+                label: 'Add New',
+                onPressed: () {
+                  Get.to(() => UpdateTextView());
+                },
+              ),
+              const Spacer(),
               PanelActionButton(
                 icon: Icons.delete_outline,
                 label: 'Delete',
@@ -1164,6 +1178,18 @@ class CanvasStack extends StatelessWidget {
                       customBuilder: (StackItem<StackItemContent> item) {
                         if (item is StackTextItem && item.content != null) {
                           return GestureDetector(
+                            onTap: () {
+                              // Single tap: Open text editor panel
+                              controller.activeItem.value = item;
+                              controller.boardController.setAllItemStatuses(
+                                StackItemStatus.idle,
+                              );
+                              controller.boardController.setItemStatus(
+                                item.id,
+                                StackItemStatus.selected,
+                              );
+                              controller.activePanel.value = PanelType.text;
+                            },
                             onDoubleTap: () => controller.editItem(item),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
@@ -1300,20 +1326,18 @@ class CanvasStack extends StatelessWidget {
                               .boardController
                               .getById(item.id);
 
+                          // Don't automatically open panels - let explicit taps handle it
+                          // Panels are opened via onTap handlers in customBuilder
                           if (item is StackTextItem) {
-                            controller.activePanel.value = PanelType.text;
+                            // Panel opened via onTap in customBuilder, don't open here
                           } else if (item is StackImageItem) {
-                            controller.activePanel.value =
-                                PanelType.advancedImage;
+                            // Panel opened via onTap in customBuilder, don't open here
                           } else if (item is StackShapeItem) {
-                            // controller.activePanel.value =
-                            //     PanelType.shapeEditor;
+                            // Panel opened via onTap in customBuilder, don't open here
                           } else if (item is StackChartItem) {
-                            // controller.activePanel.value =
-                            //     PanelType.chartEditor;
-                          } else if (item is StackShapeItem) {
-                            // controller.activePanel.value =
-                            //     PanelType.chartEditor;
+                            // Panel opened via onTap in customBuilder, don't open here
+                          } else if (item is StackIconItem) {
+                            // Panel opened via onTap in customBuilder, don't open here
                           } else {
                             controller.activePanel.value = PanelType.none;
                           }

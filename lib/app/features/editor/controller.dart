@@ -832,6 +832,7 @@ class CanvasController extends GetxController {
   Future<void> editText() async {
     if (activeItem.value is StackTextItem) {
       await editActiveItem();
+      boardController.setItemStatus(activeItem.value!.id, StackItemStatus.idle);
     } else {
       await Get.to(() => UpdateTextView());
     }
