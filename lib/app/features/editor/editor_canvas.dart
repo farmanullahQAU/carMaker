@@ -37,6 +37,7 @@ class EditorPage extends GetView<CanvasController> {
   Widget buildPanelContent() {
     return GetBuilder<CanvasController>(
       id: 'bottom_sheet',
+
       builder: (controller) {
         final item = controller.activeItem.value;
         final activePanel = controller.activePanel.value;
@@ -752,7 +753,7 @@ class _ModernExportButton extends StatelessWidget {
               child: _buildVerticalMenuItem(
                 icon: Icons.save_rounded,
                 title: 'Save Project',
-                subtitle: 'Save current design',
+                subtitle: 'Save your design as a project',
                 iconColor: AppColors.accent,
                 bgColor: AppColors.accent.withOpacity(0.1),
               ),
@@ -764,8 +765,8 @@ class _ModernExportButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: _buildVerticalMenuItem(
               icon: Icons.picture_as_pdf_rounded,
-              title: 'Export as PDF',
-              subtitle: 'High-quality PDF format',
+              title: 'Save as PDF',
+              subtitle: 'Download your design as a PDF document',
               iconColor: Colors.red.shade700,
               bgColor: Colors.red.shade50,
             ),
@@ -776,8 +777,8 @@ class _ModernExportButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: _buildVerticalMenuItem(
               icon: Icons.image_rounded,
-              title: 'Export as Image',
-              subtitle: 'PNG format for sharing',
+              title: 'Save as Image',
+              subtitle: 'Download your design as a picture file',
               iconColor: Colors.purple.shade700,
               bgColor: Colors.purple.shade50,
             ),
@@ -788,8 +789,8 @@ class _ModernExportButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: _buildVerticalMenuItem(
               icon: Icons.download_rounded,
-              title: 'Download Design',
-              subtitle: 'Save as .artnie file',
+              title: 'Download Design File',
+              subtitle: 'Save your design to edit later',
               iconColor: Colors.teal.shade700,
               bgColor: Colors.teal.shade50,
             ),
@@ -802,7 +803,7 @@ class _ModernExportButton extends StatelessWidget {
             child: _buildVerticalMenuItem(
               icon: Icons.drafts_rounded,
               title: 'Save Draft',
-              subtitle: 'Save as draft for later',
+              subtitle: 'Save your progress to continue later',
               iconColor: Colors.orange.shade700,
               bgColor: Colors.orange.shade50,
             ),
@@ -814,8 +815,8 @@ class _ModernExportButton extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: _buildVerticalMenuItem(
                 icon: Icons.copy_rounded,
-                title: 'Save Copy',
-                subtitle: 'Duplicate as new project',
+                title: 'Save as Copy',
+                subtitle: 'Create a duplicate of this design',
                 iconColor: Colors.blue.shade700,
                 bgColor: Colors.blue.shade50,
               ),

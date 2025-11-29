@@ -719,10 +719,26 @@ class CanvasController extends GetxController {
     if (activeItem.value != null) {
       final itemId = activeItem.value!.id;
       final currentItem = boardController.getById(itemId);
-      if (currentItem != null && !currentItem.lockZOrder) {
+      if (currentItem != null) {
+        // Move to front
         boardController.moveItemOnTop(itemId, force: true);
-        activeItem.value = boardController.getById(itemId);
-        update(['stack_board']);
+
+        // Automatically lock Z order after moving
+        final movedItem = boardController.getById(itemId);
+        if (movedItem != null) {
+          // Always set lockZOrder to true, regardless of current state
+          final lockedItem = movedItem.copyWith(lockZOrder: true);
+          boardController.updateItem(lockedItem);
+
+          // Update activeItem and refresh to ensure observable updates
+          if (activeItem.value?.id == itemId) {
+            activeItem.value = null;
+            activeItem.value = lockedItem;
+            activeItem.refresh();
+          }
+        }
+
+        update(['stack_board', 'canvas_stack', 'z_lock_button']);
       }
     }
   }
@@ -731,10 +747,26 @@ class CanvasController extends GetxController {
     if (activeItem.value != null) {
       final itemId = activeItem.value!.id;
       final currentItem = boardController.getById(itemId);
-      if (currentItem != null && !currentItem.lockZOrder) {
+      if (currentItem != null) {
+        // Move to back
         boardController.moveItemToBack(itemId, force: true);
-        activeItem.value = boardController.getById(itemId);
-        update(['stack_board']);
+
+        // Automatically lock Z order after moving
+        final movedItem = boardController.getById(itemId);
+        if (movedItem != null) {
+          // Always set lockZOrder to true, regardless of current state
+          final lockedItem = movedItem.copyWith(lockZOrder: true);
+          boardController.updateItem(lockedItem);
+
+          // Update activeItem and refresh to ensure observable updates
+          if (activeItem.value?.id == itemId) {
+            activeItem.value = null;
+            activeItem.value = lockedItem;
+            activeItem.refresh();
+          }
+        }
+
+        update(['stack_board', 'canvas_stack', 'z_lock_button']);
       }
     }
   }
@@ -1090,7 +1122,7 @@ class CanvasController extends GetxController {
         try {
           final success = await GallerySaver.saveImage(
             tempFile.path,
-            albumName: 'CardMaker',
+            albumName: 'Artnie',
           );
 
           if (success == true) {
@@ -1326,8 +1358,116 @@ class CanvasController extends GetxController {
       ? _saveDraftLocale(isCopy: true)
       : _saveDraftLocale(isCopy: true);
 
-  void saveDraft() =>
-      isLocaleTemplate ? _saveDraftLocale() : _saveToFirestore();
+  Future<void> saveDraft() async {
+    if (isLocaleTemplate) {
+      // Check if draft already exists
+      if (initialTemplate != null) {
+        final existingDraft = StorageService.getDraft(initialTemplate!.id);
+        if (existingDraft != null) {
+          // Show dialog to ask user what to do
+          final result = await _showDraftExistsDialog();
+          if (result == 'cancel') {
+            return;
+          } else if (result == 'copy') {
+            // Create a copy with new ID
+            await _saveDraftLocale(isCopy: true);
+          } else if (result == 'replace') {
+            // Replace the existing draft
+            await _saveDraftLocale(isCopy: false);
+          }
+        } else {
+          // No existing draft, save normally
+          await _saveDraftLocale();
+        }
+      } else {
+        await _saveDraftLocale();
+      }
+    } else {
+      await _saveToFirestore();
+    }
+  }
+
+  Future<String?> _showDraftExistsDialog() async {
+    return await Get.dialog<String>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              color: Colors.orange.shade700,
+              size: 24,
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Draft Already Exists',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'You already have a saved draft for this design. What would you like to do?',
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: 'cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: 'copy'),
+            style: TextButton.styleFrom(foregroundColor: Colors.blue.shade700),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.copy_rounded, size: 18),
+                SizedBox(width: 6),
+                Text(
+                  'Create Copy',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Get.back(result: 'replace'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.save_rounded, size: 18),
+                SizedBox(width: 6),
+                Text(
+                  'Replace Original',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+  }
 
   /// Export design as .artnie file
   Future<void> exportAsArtnie() async {

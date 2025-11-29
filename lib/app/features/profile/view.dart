@@ -829,8 +829,11 @@ class DraftCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.brandingLight.withValues(alpha: 0.02),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(12),
+          bottom: Radius.circular(12),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -845,20 +848,10 @@ class DraftCard extends StatelessWidget {
                   radius: 12,
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                        bottom: Radius.circular(8),
+                        top: Radius.circular(0),
+                        bottom: Radius.circular(0),
                       ),
                       child: AspectRatio(
                         aspectRatio: template.aspectRatio,
@@ -983,7 +976,7 @@ class DraftCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
@@ -1000,15 +993,15 @@ class DraftCard extends StatelessWidget {
                   ],
                 ),
                 // Backup status text
-                if (isLocalOnly)
-                  Text(
-                    'Local only - Tap to backup',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.orange.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+                // if (isLocalOnly)
+                //   Text(
+                //     'Local only - Tap to backup',
+                //     style: TextStyle(
+                //       fontSize: 10,
+                //       color: Colors.orange.shade600,
+                //       fontStyle: FontStyle.italic,
+                //     ),
+                //   ),
               ],
             ),
           ),

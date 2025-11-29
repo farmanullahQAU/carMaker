@@ -98,7 +98,7 @@ class StorageService {
   }
 
   /// Get draft by ID (direct map lookup - O(1))
-  CardTemplate? getDraft(String draftId) {
+  static CardTemplate? getDraft(String draftId) {
     final jsonString = _storage.read(_draftsKey);
     if (jsonString == null || jsonString.isEmpty) return null;
 

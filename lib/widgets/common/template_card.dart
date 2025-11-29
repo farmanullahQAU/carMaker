@@ -18,20 +18,18 @@ class TemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+    return Container(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.gray200, width: 0.4),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(8),
+            // border: Border.all(color: AppColors.gray200, width: 0.4),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -46,29 +44,24 @@ class TemplateCard extends StatelessWidget {
                   Container(
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(4),
+                      // boxShadow: [
+                      //   BoxShadow(
+                      //     color: Colors.black.withOpacity(0.06),
+                      //     blurRadius: 4,
+                      //     offset: const Offset(0, 2),
+                      //   ),
+                      // ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: AspectRatio(
-                        aspectRatio: template.aspectRatio > 0
-                            ? template.aspectRatio
-                            : 1.0,
-                        child: _buildThumbnail(),
-                      ),
+                      borderRadius: BorderRadius.circular(4),
+                      child: _buildThumbnail(),
                     ),
                   ),
 
                   // ✅ use the passed-in favorite button
                   if (favoriteButton != null)
-                    Positioned(top: 8, left: 8, child: favoriteButton!),
+                    Positioned(top: 0, left: 0, child: favoriteButton!),
 
                   if (template.isPremium) _buildPremiumBadge(),
                 ],
@@ -126,9 +119,9 @@ class TemplateCard extends StatelessWidget {
     if (template.thumbnailUrl != null && template.thumbnailUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: template.thumbnailUrl!,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
+        fit: BoxFit.contain,
+        // width: double.infinity,
+        // height: double.infinity,
         placeholder: (context, url) => _buildShimmerPlaceholder(),
         errorWidget: (context, url, error) => _buildPlaceholder(),
         fadeInDuration: const Duration(milliseconds: 200),
@@ -136,8 +129,8 @@ class TemplateCard extends StatelessWidget {
         // Optimize caching for faster loading
         maxWidthDiskCache: 1000, // Cache optimized size
         maxHeightDiskCache: 1000,
-        memCacheWidth: 500, // Memory cache size
-        memCacheHeight: 500,
+        // memCacheWidth: 500, // Memory cache size
+        // memCacheHeight: 500,
         cacheKey: template.thumbnailUrl, // Explicit cache key
       );
     }

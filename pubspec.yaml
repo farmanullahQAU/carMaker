@@ -63,7 +63,6 @@ dependencies:
   firebase_remote_config: ^6.0.1
   upgrader: ^12.3.0
   permission_handler: ^12.0.1
-  font_awesome_flutter: ^10.10.0
   archive: ^4.0.7
   toastification: ^3.0.3
   google_mobile_ads: ^5.1.0

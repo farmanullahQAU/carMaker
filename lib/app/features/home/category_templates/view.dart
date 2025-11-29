@@ -852,16 +852,16 @@ class FavoriteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white.withOpacity(0.9),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(4),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4),
         onTap: onTap,
         child: Container(
           width: size + 12,
           height: size + 12,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(8),
+            color: Get.theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(4),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
