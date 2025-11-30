@@ -640,8 +640,8 @@ class CanvasController extends GetxController {
     }
   }
 
-  Future<bool> _confirmRewardedAdIfNeeded(AdMobService adService) async {
-    if (!adService.willShowRewardedAdOnNextExport()) return true;
+  Future<bool> _confirmInterstitialAdIfNeeded(AdMobService adService) async {
+    if (!adService.willShowInterstitialAdOnNextExport()) return true;
 
     final result = await Get.dialog<bool>(
       AlertDialog(
@@ -1045,11 +1045,11 @@ class CanvasController extends GetxController {
   Future<File?> exportAsImage([String fileName = "inkaro_card"]) async {
     try {
       final adService = AdMobService();
-      if (!await _confirmRewardedAdIfNeeded(adService)) {
+      if (!await _confirmInterstitialAdIfNeeded(adService)) {
         // ToastHelper.error('Export cancelled');
         return null;
       }
-      final bool canProceed = await adService.showRewardedAdBeforeExport();
+      final bool canProceed = await adService.showInterstitialAdBeforeExport();
       if (!canProceed) {
         ToastHelper.error('Ad was skipped. Export cancelled.');
         return null;
@@ -1212,11 +1212,11 @@ class CanvasController extends GetxController {
   Future<void> exportAsPDF([String fileName = "invitation_card"]) async {
     try {
       final adService = AdMobService();
-      if (!await _confirmRewardedAdIfNeeded(adService)) {
+      if (!await _confirmInterstitialAdIfNeeded(adService)) {
         // ToastHelper.error('Export cancelled');
         return;
       }
-      final bool canProceed = await adService.showRewardedAdBeforeExport();
+      final bool canProceed = await adService.showInterstitialAdBeforeExport();
       if (!canProceed) {
         ToastHelper.error('Ad was skipped. Export cancelled.');
         return;

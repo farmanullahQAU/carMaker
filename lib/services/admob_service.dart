@@ -40,7 +40,7 @@ class AdMobService {
       // Load ads if enabled
       final config = RemoteConfigService().config.ads;
       if (config.enabled) {
-        _loadRewardedAd();
+        // Only load interstitial ads (rewarded ads removed from export flow)
         _loadInterstitialAd();
       }
     } catch (e, stackTrace) {
@@ -198,7 +198,9 @@ class AdMobService {
 
   // ========== INTERSTITIAL AD ==========
   void _loadInterstitialAd() {
-    if (!isEnabled || !_adConfig.showInterstitialAdOnTemplateView) return;
+    // Load interstitial ad if ads are enabled
+    // (Used for both template views and exports)
+    if (!isEnabled) return;
 
     // In release mode, only use configured ad unit IDs (no test IDs)
     String? adUnitId;
@@ -264,7 +266,7 @@ class AdMobService {
     }
 
     _templateViewCount++;
-    final interval = _adConfig.interstitialAdInterval;
+    final interval = _adConfig.interstitialIntervalTemplate;
 
     if (_templateViewCount >= interval && _isInterstitialAdReady) {
       _templateViewCount = 0; // Reset counter
@@ -278,6 +280,89 @@ class AdMobService {
     }
 
     _interstitialAd?.show();
+  }
+
+  /// Shows interstitial ad before export. Returns true if ad was shown or skipped.
+  /// Returns false if ad was not shown (not ready, disabled, etc.)
+  /// Shows ad after every 2 exports (image or PDF)
+  Future<bool> showInterstitialAdBeforeExport() async {
+    // Initialize AdMob in background if not already initialized (non-blocking)
+    if (!_isInitialized) {
+      log('AdMob not initialized, starting non-blocking initialization');
+      // Start initialization in background - don't await it
+      initialize().catchError((error) {
+        log('Background AdMob initialization failed: $error');
+      });
+      // Continue with export immediately without waiting
+    }
+
+    // Increment export count
+    _exportCount++;
+
+    // Get the interval from config (default is 2)
+    final interval = _adConfig.interstitialIntervalExport;
+
+    // Show ad after N exports (configured interval)
+    if (_exportCount >= interval) {
+      _exportCount = 0; // Reset counter after showing ad
+
+      if (!isEnabled) {
+        return true; // Allow export if ads are disabled
+      }
+
+      if (!_isInterstitialAdReady || _interstitialAd == null) {
+        log('Interstitial ad not ready, allowing export without ad');
+        // Try to load for next time (will work if AdMob initializes in background)
+        _loadInterstitialAd();
+        return true; // Allow export even if ad is not ready
+      }
+
+      final completer = Completer<bool>();
+
+      // Set callback for when ad is dismissed
+      _interstitialAd?.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          log('Interstitial ad dismissed (shown after $interval exports)');
+          completer.complete(true);
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdReady = false;
+          _loadInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          log('Interstitial ad failed to show: ${error.message}');
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+          ad.dispose();
+          _interstitialAd = null;
+          _isInterstitialAdReady = false;
+          _loadInterstitialAd();
+        },
+      );
+
+      _interstitialAd?.show();
+
+      return completer.future;
+    }
+
+    // Export count < interval, allow export without ad
+    log(
+      'Export $_exportCount - no ad shown (will show after $interval exports)',
+    );
+    return true;
+  }
+
+  /// Returns true when the next export attempt will require showing an interstitial ad.
+  /// Returns true when count is (interval - 1), meaning next export will reach the interval
+  bool willShowInterstitialAdOnNextExport() {
+    if (!isEnabled) return false;
+    final interval = _adConfig.interstitialIntervalExport;
+    // If current count is (interval - 1), next export will reach interval, so show ad
+    if (_exportCount == interval - 1) {
+      return _isInterstitialAdReady && _interstitialAd != null;
+    }
+    return false;
   }
 
   // ========== BANNER AD ==========
@@ -339,7 +424,7 @@ class AdMobService {
   void reloadAds() {
     dispose();
     if (isEnabled) {
-      _loadRewardedAd();
+      // Only load interstitial ads (rewarded ads removed from export flow)
       _loadInterstitialAd();
     }
   }

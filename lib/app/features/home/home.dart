@@ -84,7 +84,7 @@ class HomePage extends GetView<HomeController> {
         // For forced updates (when minAppVersion is set), set to Duration(seconds: 0)
         // to show immediately every time app opens until user updates
         // For flexible updates, use Duration(days: 2) to remind after 2 days
-        durationUntilAlertAgain: const Duration(hours: 6),
+        // durationUntilAlertAgain: const Duration(hours: 6),
 
         // For forced updates, change to: Duration(seconds: 0)
       ),
@@ -92,7 +92,7 @@ class HomePage extends GetView<HomeController> {
       // FLEXIBLE UPDATE CONFIGURATION (Current Setup):
       // Users can dismiss or postpone the update
       barrierDismissible: true, // Allow tapping outside to dismiss
-      showIgnore: true, // Show "Ignore" button
+      showIgnore: false, // Show "Ignore" button
       showLater: true, // Show "Later" button
       // FORCED UPDATE CONFIGURATION (When minAppVersion is set):
       // When minAppVersion is set and current version < minAppVersion:
@@ -249,21 +249,6 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
         ],
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 12),
-          child: GestureDetector(
-            onTap: () => controller.importDesign(),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.upload_file_rounded, size: 20),
-            ),
-          ),
-        ),
         Container(
           margin: const EdgeInsets.only(right: 12),
           child: GestureDetector(

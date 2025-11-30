@@ -71,7 +71,7 @@ class DesignExportService {
               final downloadsFile = File(downloadsFilePath);
               await downloadsFile.writeAsBytes(artnieData);
 
-              ToastHelper.success('Design saved to Downloads: $safeFileName');
+              ToastHelper.success('Design saved: $safeFileName');
               return downloadsFilePath;
             }
           } catch (e) {
@@ -90,12 +90,12 @@ class DesignExportService {
         // Share the file - user can save to Downloads, Drive, or any location
         await Share.shareXFiles([XFile(tempPath)], subject: safeFileName);
 
-        ToastHelper.success('Design exported as .artnie file');
+        ToastHelper.success('Exported as .artnie file');
         return tempPath;
       }
     } catch (e) {
       debugPrint('Export design error: $e');
-      ToastHelper.error('Failed to export design: ${e.toString()}');
+      ToastHelper.error('Failed to export design');
       return null;
     }
   }

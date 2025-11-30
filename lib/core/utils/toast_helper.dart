@@ -1,4 +1,3 @@
-import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
@@ -100,6 +99,8 @@ class ToastHelper {
     Duration? duration,
   ) {
     try {
+      final colorScheme = Theme.of(context).colorScheme;
+
       toastification.show(
         context: context,
         type: ToastificationType.success,
@@ -110,35 +111,34 @@ class ToastHelper {
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
-            color: Colors.white,
+            color: colorScheme.onPrimary,
           ),
         ),
         alignment: Alignment.bottomCenter,
         autoCloseDuration: duration ?? const Duration(seconds: 4),
         showProgressBar: false,
-        icon: const Icon(
+        icon: Icon(
           Icons.check_circle_rounded,
           size: 24,
-          color: Colors.white,
+          color: colorScheme.onPrimary,
         ),
         borderRadius: BorderRadius.circular(16),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accent.withOpacity(0.35),
+            color: colorScheme.primary.withOpacity(0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        primaryColor:
-            AppColors.accent, // Teal accent - complements purple branding
+        primaryColor: colorScheme.primary,
         animationDuration: const Duration(milliseconds: 400),
         animationBuilder: (context, animation, alignment, child) {
           return SlideTransition(
@@ -281,8 +281,7 @@ class ToastHelper {
 
   static void _showLoadingToast(BuildContext context, String message) {
     try {
-      // Use branding purple for loading/info toasts
-      final infoColor = AppColors.branding;
+      final colorScheme = Theme.of(context).colorScheme;
 
       toastification.show(
         context: context,
@@ -294,7 +293,7 @@ class ToastHelper {
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
-            color: Colors.white,
+            color: colorScheme.onPrimary,
           ),
         ),
         alignment: Alignment.bottomCenter,
@@ -305,26 +304,26 @@ class ToastHelper {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
           ),
         ),
         borderRadius: BorderRadius.circular(16),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        // boxShadow: [
-        //   BoxShadow(
-        //     color: AppColors.branding.withOpacity(0.35),
-        //     blurRadius: 20,
-        //     offset: const Offset(0, 8),
-        //     spreadRadius: 2,
-        //   ),
-        //   BoxShadow(
-        //     color: Colors.black.withOpacity(0.1),
-        //     blurRadius: 10,
-        //     offset: const Offset(0, 4),
-        //   ),
-        // ],
-        primaryColor: infoColor,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        primaryColor: colorScheme.primary,
         animationDuration: const Duration(milliseconds: 400),
         animationBuilder: (context, animation, alignment, child) {
           return SlideTransition(
@@ -377,13 +376,7 @@ class ToastHelper {
     Duration? duration,
   ) {
     try {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final backgroundColor = isDark
-          ? const Color(0xFF2C2C2C) // Match surfaceContainer
-          : const Color(0xFFF0F0F0); // Match surfaceContainer
-      final textColor = isDark
-          ? const Color(0xFFE5E5E5) // Light text for dark theme
-          : const Color(0xFF1A1A1A); // Dark text for light theme
+      final colorScheme = Theme.of(context).colorScheme;
 
       toastification.show(
         context: context,
@@ -395,7 +388,7 @@ class ToastHelper {
             fontWeight: FontWeight.w500,
             fontSize: 13,
             letterSpacing: 0.1,
-            color: textColor,
+            color: colorScheme.onSurface,
           ),
         ),
         alignment: Alignment.bottomCenter,
@@ -405,7 +398,7 @@ class ToastHelper {
         icon: Icon(
           Icons.info_outline_rounded,
           size: 18,
-          color: AppColors.branding,
+          color: colorScheme.primary,
         ),
         borderRadius: BorderRadius.circular(12),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -413,15 +406,15 @@ class ToastHelper {
           horizontal: 16,
           vertical: 12,
         ), // Smaller padding
-        backgroundColor: backgroundColor,
+        backgroundColor: colorScheme.surfaceContainerHighest,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: colorScheme.shadow.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
-        primaryColor: AppColors.branding,
+        primaryColor: colorScheme.primary,
         animationDuration: const Duration(
           milliseconds: 300,
         ), // Faster animation

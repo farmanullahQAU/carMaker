@@ -41,7 +41,7 @@ class AuthWrapper extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: screenWidth * 0.06,
-          vertical: isPortrait ? 20 : 16,
+          vertical: isPortrait ? 16 : 12,
         ),
         child: Column(
           children: [
@@ -60,7 +60,7 @@ class AuthWrapper extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: isPortrait ? 24 : 16),
+            SizedBox(height: isPortrait ? 18 : 12),
 
             // App icon
             Container(
@@ -80,7 +80,7 @@ class AuthWrapper extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: isPortrait ? 24 : 20),
+            SizedBox(height: isPortrait ? 18 : 16),
 
             // Main heading
             Text(
@@ -93,12 +93,12 @@ class AuthWrapper extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: isPortrait ? 32 : 24),
+            SizedBox(height: isPortrait ? 24 : 18),
 
             // Benefits list
             _buildBenefitsList(isPortrait, screenWidth, theme),
 
-            SizedBox(height: isPortrait ? 32 : 24),
+            SizedBox(height: isPortrait ? 24 : 18),
 
             // CTA Buttons
             Column(
@@ -148,7 +148,7 @@ class AuthWrapper extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: isPortrait ? 20 : 16),
+            SizedBox(height: isPortrait ? 16 : 12),
           ],
         ),
       ),
@@ -161,7 +161,7 @@ class AuthWrapper extends StatelessWidget {
     ThemeData theme,
   ) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isPortrait ? 32 : 24),
+      padding: EdgeInsets.all(isPortrait ? 24 : 18),
       child: isPortrait
           ? _buildTabletPortrait(screenWidth, theme)
           : _buildTabletLandscape(screenWidth, theme),
@@ -181,7 +181,7 @@ class AuthWrapper extends StatelessWidget {
             child: const Text('Skip'),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Container(
           width: 110,
           height: 110,
@@ -198,7 +198,7 @@ class AuthWrapper extends StatelessWidget {
             child: Image.asset('assets/icon.png', fit: BoxFit.contain),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         Text(
           'Sign in to Continue',
           textAlign: TextAlign.center,
@@ -208,9 +208,9 @@ class AuthWrapper extends StatelessWidget {
             height: 1.2,
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 28),
         _buildBenefitsList(true, screenWidth, theme),
-        const SizedBox(height: 40),
+        const SizedBox(height: 28),
         SizedBox(
           width: screenWidth * 0.65,
           height: 56,
@@ -273,7 +273,7 @@ class AuthWrapper extends StatelessWidget {
                   child: const Text('Skip'),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'Sign in to\nContinue',
                 style: TextStyle(
@@ -282,9 +282,9 @@ class AuthWrapper extends StatelessWidget {
                   height: 1.15,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               _buildBenefitsList(false, screenWidth, theme),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               SizedBox(
                 width: screenWidth * 0.4,
                 height: 56,
@@ -359,7 +359,7 @@ class AuthWrapper extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1200),
         child: Padding(
-          padding: const EdgeInsets.all(48),
+          padding: const EdgeInsets.all(36),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -385,7 +385,7 @@ class AuthWrapper extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     Text(
                       'Sign in to\nContinue',
                       style: TextStyle(
@@ -394,9 +394,9 @@ class AuthWrapper extends StatelessWidget {
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 36),
                     _buildBenefitsList(false, screenWidth, theme),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 36),
                     SizedBox(
                       width: 320,
                       height: 60,
@@ -518,8 +518,8 @@ class AuthWrapper extends StatelessWidget {
         final bgColor = benefit['bgColor'] as Color;
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(12),

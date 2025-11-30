@@ -203,7 +203,9 @@ class StackTextCase extends StatelessWidget {
       wrappedWidget = textWidget;
     }
 
-    final bool shouldFit = content?.autoFit ?? isFitted;
+    // final bool shouldFit = content?.autoFit ?? isFitted;
+    final bool shouldFit = isFitted;
+
     return shouldFit ? FittedBox(child: wrappedWidget) : wrappedWidget;
   }
 

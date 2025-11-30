@@ -753,7 +753,7 @@ class _ModernExportButton extends StatelessWidget {
               child: _buildVerticalMenuItem(
                 icon: Icons.save_rounded,
                 title: 'Save Project',
-                subtitle: 'Save your design as a project',
+                subtitle: 'Save design as a project',
                 iconColor: AppColors.accent,
                 bgColor: AppColors.accent.withOpacity(0.1),
               ),
@@ -766,7 +766,7 @@ class _ModernExportButton extends StatelessWidget {
             child: _buildVerticalMenuItem(
               icon: Icons.picture_as_pdf_rounded,
               title: 'Save as PDF',
-              subtitle: 'Download your design as a PDF document',
+              subtitle: 'Download as a PDF document',
               iconColor: Colors.red.shade700,
               bgColor: Colors.red.shade50,
             ),
@@ -778,7 +778,7 @@ class _ModernExportButton extends StatelessWidget {
             child: _buildVerticalMenuItem(
               icon: Icons.image_rounded,
               title: 'Save as Image',
-              subtitle: 'Download your design as a picture file',
+              subtitle: 'Download as a picture',
               iconColor: Colors.purple.shade700,
               bgColor: Colors.purple.shade50,
             ),
@@ -789,8 +789,8 @@ class _ModernExportButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: _buildVerticalMenuItem(
               icon: Icons.download_rounded,
-              title: 'Download Design File',
-              subtitle: 'Save your design to edit later',
+              title: 'Download File',
+              subtitle: 'Download design as a .artnie file',
               iconColor: Colors.teal.shade700,
               bgColor: Colors.teal.shade50,
             ),
@@ -802,8 +802,8 @@ class _ModernExportButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: _buildVerticalMenuItem(
               icon: Icons.drafts_rounded,
-              title: 'Save Draft',
-              subtitle: 'Save your progress to continue later',
+              title: 'Save Changes',
+              subtitle: 'Save design as a draft',
               iconColor: Colors.orange.shade700,
               bgColor: Colors.orange.shade50,
             ),
@@ -815,8 +815,8 @@ class _ModernExportButton extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: _buildVerticalMenuItem(
                 icon: Icons.copy_rounded,
-                title: 'Save as Copy',
-                subtitle: 'Create a duplicate of this design',
+                title: 'Save Changes',
+                subtitle: 'Save design as a copy',
                 iconColor: Colors.blue.shade700,
                 bgColor: Colors.blue.shade50,
               ),
@@ -1199,7 +1199,7 @@ class CanvasStack extends StatelessWidget {
                               child: StackTextCase(
                                 item: item,
                                 isFitted:
-                                    item.content?.autoFit ??
+                                    // item.content?.autoFit ??
                                     (item.content!.data!.length <= 20),
                               ),
                             ),

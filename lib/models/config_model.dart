@@ -60,7 +60,9 @@ class AdMobConfig {
   final String rewardedAdUnitId;
   final String interstitialAdUnitId;
   final String bannerAdUnitId;
-  final int interstitialAdInterval; // Show ad after N templates viewed
+  final int interstitialIntervalTemplate; // Show ad after N templates viewed
+  final int
+  interstitialIntervalExport; // Show ad after N exports (image or PDF)
   final bool showRewardedAdOnExport;
   final bool showInterstitialAdOnTemplateView;
   final bool showBannerAd;
@@ -70,8 +72,9 @@ class AdMobConfig {
     this.rewardedAdUnitId = '',
     this.interstitialAdUnitId = '',
     this.bannerAdUnitId = '',
-    this.interstitialAdInterval = 5, // Default: show after 5 templates
-    this.showRewardedAdOnExport = true,
+    this.interstitialIntervalTemplate = 5, // Default: show after 5 templates
+    this.interstitialIntervalExport = 2, // Default: show after 2 exports
+    this.showRewardedAdOnExport = false,
     this.showInterstitialAdOnTemplateView = true,
     this.showBannerAd = true,
   });
@@ -82,8 +85,9 @@ class AdMobConfig {
       rewardedAdUnitId: json['rewarded_ad_unit_id'] ?? '',
       interstitialAdUnitId: json['interstitial_ad_unit_id'] ?? '',
       bannerAdUnitId: json['banner_ad_unit_id'] ?? '',
-      interstitialAdInterval: json['interstitial_ad_interval'] ?? 5,
-      showRewardedAdOnExport: json['show_rewarded_ad_on_export'] ?? true,
+      interstitialIntervalTemplate: json['interstitial_interval_template'] ?? 5,
+      interstitialIntervalExport: json['interstitial_interval_export'] ?? 2,
+      showRewardedAdOnExport: json['show_rewarded_ad_on_export'] ?? false,
       showInterstitialAdOnTemplateView:
           json['show_interstitial_ad_on_template_view'] ?? true,
       showBannerAd: json['show_banner_ad'] ?? true,
