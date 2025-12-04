@@ -776,16 +776,14 @@ class OptimizedTemplateCard extends StatelessWidget {
   }
 
   Widget _buildErrorWidget() {
-    final isDark = Get.theme.brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+        color: Get.theme.colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-          width: 1,
-        ),
+        // border: Border.all(
+        //   color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+        //   width: 1,
+        // ),
       ),
       child: Center(
         child: Column(
@@ -793,18 +791,9 @@ class OptimizedTemplateCard extends StatelessWidget {
           children: [
             Icon(
               Icons.broken_image_rounded,
-              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
               size: 32,
+              color: Get.theme.hintColor,
             ),
-            // const SizedBox(height: 8),
-            // Text(
-            //   'Failed to load',
-            //   style: TextStyle(
-            //     fontSize: 10,
-            //     color: isDark ? Colors.grey.shade600 : Colors.grey.shade500,
-            //     fontWeight: FontWeight.w500,
-            //   ),
-            // ),
           ],
         ),
       ),

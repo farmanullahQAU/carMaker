@@ -31,12 +31,15 @@ class CircularText extends StatelessWidget {
     return FittedBox(
       child: SizedBox.fromSize(
         size: Size(2 * radius, 2 * radius),
-        child: CustomPaint(
-          painter: _CircularTextPainter(
-            children: children,
-            position: position,
-            backgroundPaint: backgroundPaint,
-            textDirection: Directionality.of(context),
+        child: ColoredBox(
+          color: Colors.transparent,
+          child: CustomPaint(
+            painter: _CircularTextPainter(
+              children: children,
+              position: position,
+              backgroundPaint: backgroundPaint,
+              textDirection: Directionality.of(context),
+            ),
           ),
         ),
       ),

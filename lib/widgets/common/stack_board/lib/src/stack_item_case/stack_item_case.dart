@@ -500,28 +500,31 @@ class _StackItemCaseState extends State<StackItemCase> {
                     style.buttonSize / 2,
                     style.buttonSize * 1.5,
                   ),
-            child: SizedBox.fromSize(
-              size: item.size,
-              child: CircularText(
-                children: [
-                  TextItem(
-                    text: Text(
-                      textContent.data?.toUpperCase() ?? '',
-                      style: textContent.style,
+            child: ColoredBox(
+              color: Colors.transparent,
+              child: SizedBox.fromSize(
+                size: item.size,
+                child: CircularText(
+                  children: [
+                    TextItem(
+                      text: Text(
+                        textContent.data?.toUpperCase() ?? '',
+                        style: textContent.style,
+                      ),
+                      space: textContent.space ?? 10.0,
+                      startAngle: textContent.startAngle ?? 0.0,
+                      startAngleAlignment:
+                          textContent.startAngleAlignment ??
+                          StartAngleAlignment.start,
+                      direction:
+                          textContent.direction ??
+                          CircularTextDirection.clockwise,
                     ),
-                    space: textContent.space ?? 10.0,
-                    startAngle: textContent.startAngle ?? 0.0,
-                    startAngleAlignment:
-                        textContent.startAngleAlignment ??
-                        StartAngleAlignment.start,
-                    direction:
-                        textContent.direction ??
-                        CircularTextDirection.clockwise,
-                  ),
-                ],
-                radius: textContent.radius ?? 125.0,
-                position: textContent.position ?? CircularTextPosition.inside,
-                backgroundPaint: backgroundPaint,
+                  ],
+                  radius: textContent.radius ?? 125.0,
+                  position: textContent.position ?? CircularTextPosition.inside,
+                  backgroundPaint: backgroundPaint,
+                ),
               ),
             ),
           );
