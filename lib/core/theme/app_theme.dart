@@ -1,6 +1,8 @@
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/*
 class CardMakerTheme {
   static ThemeData lightTheme() {
     // Colors from HTML/Tailwind config:
@@ -81,7 +83,7 @@ class CardMakerTheme {
   }
 }
 
-/*
+*/
 class CardMakerTheme {
   static ThemeData lightTheme() {
     return ThemeData(
@@ -151,4 +153,3 @@ class CardMakerTheme {
     );
   }
 }
-*/

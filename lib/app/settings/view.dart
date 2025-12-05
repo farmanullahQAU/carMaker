@@ -77,10 +77,6 @@ class SettingsPage extends StatelessWidget {
           _buildSectionHeader(theme, 'Appearance'),
           _buildAppearanceSettings(theme, settingsController),
 
-          // 3. Editor Behavior Section
-          _buildSectionHeader(theme, 'Editor Behavior'),
-          _buildEditorBehaviorSettings(theme, settingsController),
-
           // 4. Syntax Highlighting Section
           _buildSectionHeader(theme, 'Syntax Highlighting'),
           _buildSyntaxHighlightingSettings(theme),
@@ -262,6 +258,7 @@ class SettingsPage extends StatelessWidget {
               ? theme.colorScheme.surfaceContainerHigh
               : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          border: isSelected ? Border.all(color: Colors.grey) : null,
         ),
         child: Text(
           title,
