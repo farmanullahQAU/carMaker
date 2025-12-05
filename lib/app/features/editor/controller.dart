@@ -13,6 +13,7 @@ import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/enums.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
+import 'package:cardmaker/services/app_review_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/design_export_service.dart';
 import 'package:cardmaker/services/firestore_service.dart';
@@ -1128,6 +1129,12 @@ class CanvasController extends GetxController {
           if (success == true) {
             exportProgress.value = 85.0;
             ToastHelper.success('Image saved to gallery');
+            // Track successful export for review service
+            AppReviewService().trackSuccessfulExport();
+            // Request review after a delay to not interrupt user flow
+            Future.delayed(const Duration(seconds: 2), () {
+              AppReviewService().requestReviewIfAppropriate();
+            });
           } else {
             exportProgress.value = 85.0;
             // Continue even if gallery save fails
@@ -1155,6 +1162,12 @@ class CanvasController extends GetxController {
 
         if (result.status == ShareResultStatus.success) {
           ToastHelper.success('Shared Successfully');
+          // Track successful export and request review if appropriate
+          AppReviewService().trackSuccessfulExport();
+          // Request review after a delay to not interrupt user flow
+          Future.delayed(const Duration(seconds: 2), () {
+            AppReviewService().requestReviewIfAppropriate();
+          });
         }
         exportProgress.value = 100.0;
       }
@@ -1316,6 +1329,12 @@ class CanvasController extends GetxController {
 
         if (result.status == ShareResultStatus.success) {
           ToastHelper.success('PDF shared successfully');
+          // Track successful export and request review if appropriate
+          AppReviewService().trackSuccessfulExport();
+          // Request review after a delay to not interrupt user flow
+          Future.delayed(const Duration(seconds: 2), () {
+            AppReviewService().requestReviewIfAppropriate();
+          });
         }
         exportProgress.value = 100.0;
       }

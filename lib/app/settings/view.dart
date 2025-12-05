@@ -18,6 +18,7 @@ import 'package:cardmaker/app/settings/controller.dart';
 import 'package:cardmaker/core/utils/admin_utils.dart';
 import 'package:cardmaker/core/utils/toast_helper.dart';
 import 'package:cardmaker/core/values/app_constants.dart';
+import 'package:cardmaker/services/app_review_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/widgets/common/banner_ad_widget.dart';
@@ -356,6 +357,15 @@ class SettingsPage extends StatelessWidget {
           theme: theme,
         ),
         _buildDivider(theme),
+        // Rate Us
+        _buildSettingsTile(
+          icon: Icons.star_outline,
+          title: 'Rate Us',
+          theme: theme,
+          onTap: () => _handleRateUs(),
+          showChevron: true,
+        ),
+        _buildDivider(theme),
         // Send Feedback
         _buildSettingsTile(
           icon: Icons.feedback,
@@ -603,6 +613,10 @@ class SettingsPage extends StatelessWidget {
 
   // NOTE: Keeping the original dialog and launch logic for sign out, delete, and URL handling.
   // The original body was replaced by the new layout structure.
+
+  void _handleRateUs() {
+    AppReviewService().openStoreListing();
+  }
 
   void _handleSendFeedback(BuildContext context, ThemeData theme) {
     final email = kContactEmail.isNotEmpty
