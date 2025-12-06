@@ -85,6 +85,7 @@ class CanvasController extends GetxController {
   final RxList<StackImageItem> profileImageItems = <StackImageItem>[].obs;
   final RxBool showHueSlider = false.obs;
   final RxBool showStickerPanel = false.obs;
+  final RxBool showPixelAlignment = false.obs;
   final RxInt selectedToolIndex = 0.obs;
   final ImagePicker _picker = ImagePicker();
 
@@ -793,6 +794,214 @@ class CanvasController extends GetxController {
     }
   }
 
+  // Alignment functions for quick actions
+  // Note: Items use center-based coordinates (offset is center of item)
+  void alignItemLeft() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    // Center x should be at half item width (so left edge is at 0)
+    final newOffset = Offset(item.size.width / 2, item.offset.dy);
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  void alignItemCenter() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+    // Center x should be at canvas center
+    final newOffset = Offset(canvasSize.width / 2, item.offset.dy);
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  void alignItemRight() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+    // Center x should be at canvas width minus half item width (so right edge is at canvas width)
+    final newOffset = Offset(
+      canvasSize.width - item.size.width / 2,
+      item.offset.dy,
+    );
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  void alignItemTop() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    // Center y should be at half item height (so top edge is at 0)
+    final newOffset = Offset(item.offset.dx, item.size.height / 2);
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  void alignItemMiddle() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+    // Center y should be at canvas center
+    final newOffset = Offset(item.offset.dx, canvasSize.height / 2);
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  void alignItemBottom() {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+    // Center y should be at canvas height minus half item height (so bottom edge is at canvas height)
+    final newOffset = Offset(
+      item.offset.dx,
+      canvasSize.height - item.size.height / 2,
+    );
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  /// Professional pixel-based alignment
+  /// Aligns item to specific pixel positions from edges
+  /// left/right/top/bottom are distances from canvas edges
+  void alignItemByPixels({
+    double? left,
+    double? right,
+    double? top,
+    double? bottom,
+  }) {
+    if (activeItem.value == null) return;
+    final item = activeItem.value!;
+    final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+
+    double newX = item.offset.dx;
+    double newY = item.offset.dy;
+
+    // Horizontal alignment
+    if (left != null) {
+      // Left edge at 'left' pixels from canvas left
+      // Center x = left + item.width/2
+      newX = left + item.size.width / 2;
+      // Ensure item doesn't go outside canvas
+      newX = newX.clamp(
+        item.size.width / 2,
+        canvasSize.width - item.size.width / 2,
+      );
+    } else if (right != null) {
+      // Right edge at 'right' pixels from canvas right
+      // Center x = canvasWidth - right - item.width/2
+      newX = canvasSize.width - right - item.size.width / 2;
+      // Ensure item doesn't go outside canvas
+      newX = newX.clamp(
+        item.size.width / 2,
+        canvasSize.width - item.size.width / 2,
+      );
+    }
+
+    // Vertical alignment
+    if (top != null) {
+      // Top edge at 'top' pixels from canvas top
+      // Center y = top + item.height/2
+      newY = top + item.size.height / 2;
+      // Ensure item doesn't go outside canvas
+      newY = newY.clamp(
+        item.size.height / 2,
+        canvasSize.height - item.size.height / 2,
+      );
+    } else if (bottom != null) {
+      // Bottom edge at 'bottom' pixels from canvas bottom
+      // Center y = canvasHeight - bottom - item.height/2
+      newY = canvasSize.height - bottom - item.size.height / 2;
+      // Ensure item doesn't go outside canvas
+      newY = newY.clamp(
+        item.size.height / 2,
+        canvasSize.height - item.size.height / 2,
+      );
+    }
+
+    final newOffset = Offset(newX, newY);
+    boardController.updateBasic(item.id, offset: newOffset);
+    _refreshActiveItem();
+  }
+
+  /// Nudge item in a specific direction by pixels
+  // void nudgeItem(AlignmentDirection direction, double pixels) {
+  //   if (activeItem.value == null) {
+  //     print('nudgeItem: activeItem is null');
+  //     return;
+  //   }
+
+  //   final itemId = activeItem.value!.id;
+
+  //   // Get fresh item from controller to ensure we have latest state
+  //   final currentItem = boardController.getById(itemId);
+  //   if (currentItem == null) {
+  //     print('nudgeItem: item not found in boardController: $itemId');
+  //     return;
+  //   }
+
+  //   // Ensure item is selected
+  //   if (currentItem.status != StackItemStatus.selected) {
+  //     boardController.selectOne(itemId);
+  //   }
+
+  //   final canvasSize = Size(scaledCanvasWidth.value, scaledCanvasHeight.value);
+
+  //   double newX = currentItem.offset.dx;
+  //   double newY = currentItem.offset.dy;
+
+  //   switch (direction) {
+  //     case AlignmentDirection.up:
+  //       newY = (newY - pixels).clamp(
+  //         currentItem.size.height / 2,
+  //         canvasSize.height - currentItem.size.height / 2,
+  //       );
+  //       break;
+  //     case AlignmentDirection.down:
+  //       newY = (newY + pixels).clamp(
+  //         currentItem.size.height / 2,
+  //         canvasSize.height - currentItem.size.height / 2,
+  //       );
+  //       break;
+  //     case AlignmentDirection.left:
+  //       newX = (newX - pixels).clamp(
+  //         currentItem.size.width / 2,
+  //         canvasSize.width - currentItem.size.width / 2,
+  //       );
+  //       break;
+  //     case AlignmentDirection.right:
+  //       newX = (newX + pixels).clamp(
+  //         currentItem.size.width / 2,
+  //         canvasSize.width - currentItem.size.width / 2,
+  //       );
+  //       break;
+  //   }
+
+  //   final newOffset = Offset(newX, newY);
+  //   print(
+  //     'nudgeItem: Moving item $itemId from ${currentItem.offset} to $newOffset',
+  //   );
+
+  //   // Update using updateItem to ensure full update
+  //   final updatedItem = currentItem.copyWith(offset: newOffset);
+  //   boardController.updateItem(updatedItem);
+
+  //   // Also update activeItem to reflect changes
+  //   activeItem.value = updatedItem;
+
+  //   // Trigger updates
+  //   update(['stack_board', 'canvas_stack']);
+  // }
+
+  void _refreshActiveItem() {
+    if (activeItem.value != null) {
+      final updatedItem = boardController.getById(activeItem.value!.id);
+      if (updatedItem != null) {
+        activeItem.value = updatedItem;
+      }
+    }
+    update(['stack_board', 'canvas_stack']);
+  }
+
   Future<void> replaceImageItem(StackImageItem item) async {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -864,8 +1073,13 @@ class CanvasController extends GetxController {
 
   Future<void> editText() async {
     if (activeItem.value is StackTextItem) {
-      await editActiveItem();
-      boardController.setItemStatus(activeItem.value!.id, StackItemStatus.idle);
+      // Show text editor panel instead of navigating
+      activePanel.value = PanelType.text;
+      boardController.setItemStatus(
+        activeItem.value!.id,
+        StackItemStatus.selected,
+      );
+      update(['bottom_sheet']);
     } else {
       await Get.to(() => UpdateTextView());
     }
@@ -883,7 +1097,11 @@ class CanvasController extends GetxController {
 
   Future<void> _editItem(StackItem item) async {
     if (item is StackTextItem) {
-      await _openTextEditor(item);
+      // Show text editor panel instead of navigating
+      activeItem.value = item;
+      activePanel.value = PanelType.text;
+      boardController.setItemStatus(item.id, StackItemStatus.selected);
+      update(['bottom_sheet']);
     } else if (item is StackImageItem) {
       await replaceImageItem(item);
     } else if (item is StackShapeItem) {
@@ -1182,7 +1400,7 @@ class CanvasController extends GetxController {
       if (Get.isDialogOpen == true) {
         _closeProgressDialog();
       }
-      exportProgress.value = 0.0;
+      // exportProgress.value = 0.0;
       update(['export_button']);
     }
     return null;
@@ -1204,7 +1422,7 @@ class CanvasController extends GetxController {
       if (Get.isDialogOpen == true && Get.context != null) {
         Navigator.of(Get.context!, rootNavigator: true).pop();
       }
-      exportProgress.value = 0.0;
+      exportProgress.value = 100.0;
     } catch (e) {
       debugPrint('Error closing progress dialog: $e');
       exportProgress.value = 0.0;

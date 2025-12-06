@@ -4,6 +4,7 @@ import 'package:cardmaker/app/features/admin/project_management/view.dart';
 import 'package:cardmaker/app/features/auth/auth_screen.dart';
 import 'package:cardmaker/app/features/auth/auth_wrapper.dart';
 import 'package:cardmaker/app/features/editor/editor_canvas.dart';
+import 'package:cardmaker/app/features/feedback/view.dart';
 import 'package:cardmaker/app/features/home/category_templates/view.dart';
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/features/publish_project/controller.dart';
@@ -67,6 +68,11 @@ class AppPages {
           Get.put(ProjectManagementController());
         }
       }),
+    ),
+    GetPage(
+      name: AppRoutes.feedback,
+      page: () => const FeedbackView(),
+      binding: InitialBindings(),
     ),
   ];
 }

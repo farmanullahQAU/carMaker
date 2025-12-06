@@ -48,15 +48,12 @@ class AuthWrapper extends StatelessWidget {
             // Skip button
             Align(
               alignment: Alignment.topRight,
-              child: TextButton(
+              child: FloatingActionButton.small(
                 onPressed: () {
                   Get.find<AuthService>().isSkipped.value = true;
                   Get.back();
                 },
-                child: Text(
-                  'Skip',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                ),
+                child: Icon(Icons.close_outlined),
               ),
             ),
 
@@ -106,13 +103,13 @@ class AuthWrapper extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   height: isPortrait ? 52 : 48,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: () {
                       Get.toNamed(AppRoutes.auth);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
+                      // backgroundColor: theme.colorScheme.primary,
+                      // foregroundColor: theme.colorScheme.onPrimary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -121,13 +118,7 @@ class AuthWrapper extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Sign In / Create Account',
-                          style: TextStyle(
-                            fontSize: isPortrait ? 16 : 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('Sign In / Create Account'),
                         const SizedBox(width: 8),
                         Icon(Icons.arrow_forward, size: isPortrait ? 20 : 18),
                       ],

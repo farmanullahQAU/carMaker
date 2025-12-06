@@ -221,6 +221,8 @@ class _HomeTabStatefulState extends State<_HomeTabStateful>
               SizedBox(height: 12),
 
               SectionTitle(title: 'Free today', showSeeAll: false),
+              SizedBox(height: 12),
+
               FreeTodayTemplatesList(),
               SizedBox(height: kBottomNavigationBarHeight),
             ],
@@ -407,10 +409,7 @@ class FreeTodayTemplatesList extends GetView<HomeController> {
               }
 
               if (controller.freeTodayTemplates.isEmpty) {
-                return NoDataWidget(
-                  title: 'No results found',
-                  icon: Icons.search_off_rounded,
-                );
+                return NoDataWidget(icon: Icons.search_off_rounded);
               }
 
               return ListView.separated(

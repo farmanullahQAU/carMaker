@@ -64,6 +64,7 @@ class AppColors {
     Color(0xFFFFB6C1), // Light Pink
     Color(0xFF98FB98), // Pale Green
     Color(0xFFADD8E6), // Light Blue
+    branding,
   ];
   // [
   //   Colors.transparent,

@@ -628,6 +628,7 @@ import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/models/user_model.dart';
 import 'package:cardmaker/services/auth_service.dart';
 import 'package:cardmaker/services/firebase_storage_service.dart';
+import 'package:cardmaker/services/remote_config.dart';
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -1407,6 +1408,115 @@ class FirestoreServices {
           .collection('drafts')
           .get();
       return snapshot.docs.length;
+    } catch (e) {
+      throw FirebaseErrorHandler.handle(e);
+    }
+  }
+
+  // Get feedback count for a user (by userId or deviceId)
+  // Uses a separate count document to avoid permission issues
+  Future<int> getFeedbackCount({String? userId, String? deviceId}) async {
+    try {
+      String? countKey;
+      if (userId != null) {
+        countKey = 'user_$userId';
+      } else if (deviceId != null) {
+        countKey = 'device_$deviceId';
+      } else {
+        return 0;
+      }
+
+      // Try to get the count document
+      final countDoc = await _firestore
+          .collection('feedback_count')
+          .doc(countKey)
+          .get();
+
+      if (countDoc.exists && countDoc.data() != null) {
+        return countDoc.data()!['count'] as int? ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      // If there's an error, return 0 to allow submission
+      // This prevents blocking users if there's a permission issue
+      debugPrint('Error getting feedback count: $e');
+      return 0;
+    }
+  }
+
+  // Save user feedback to Firestore
+  // For anonymous users, deviceId is used as document ID
+  Future<void> saveFeedback({
+    required String feedback,
+    String? userId,
+    String? userEmail,
+    String? deviceId,
+  }) async {
+    try {
+      // Check feedback count (max 10)
+      final feedbackCount = await getFeedbackCount(
+        userId: userId,
+        deviceId: deviceId,
+      );
+
+      if (feedbackCount >= 10) {
+        throw Exception(
+          'Maximum feedback limit reached. You can submit up to 10 feedbacks.',
+        );
+      }
+
+      final feedbackData = {
+        'feedback': feedback,
+        'userId': userId,
+        'userEmail': userEmail ?? 'anonymous',
+        'deviceId': deviceId,
+        'timestamp': FieldValue.serverTimestamp(),
+        'appVersion': RemoteConfigService().config.update.currentVersion,
+      };
+
+      // Save feedback document
+      String docId;
+      if (deviceId != null && userId == null) {
+        // For anonymous users, use deviceId_timestamp as document ID
+        docId = '${deviceId}_${DateTime.now().millisecondsSinceEpoch}';
+        await _firestore.collection('feedback').doc(docId).set(feedbackData);
+      } else {
+        // For authenticated users, use auto-generated ID
+        final docRef = await _firestore
+            .collection('feedback')
+            .add(feedbackData);
+        docId = docRef.id;
+      }
+
+      // Update feedback count
+      String countKey;
+      if (userId != null) {
+        countKey = 'user_$userId';
+      } else if (deviceId != null) {
+        countKey = 'device_$deviceId';
+      } else {
+        return; // Should not happen, but safety check
+      }
+
+      // Increment count in feedback_count collection
+      final countRef = _firestore.collection('feedback_count').doc(countKey);
+      final countDoc = await countRef.get();
+
+      if (countDoc.exists) {
+        // Increment existing count
+        await countRef.update({
+          'count': FieldValue.increment(1),
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Create new count document
+        await countRef.set({
+          'count': 1,
+          'userId': userId,
+          'deviceId': deviceId,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+      }
     } catch (e) {
       throw FirebaseErrorHandler.handle(e);
     }

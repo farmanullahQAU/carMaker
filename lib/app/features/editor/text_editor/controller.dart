@@ -48,6 +48,13 @@ class TextStyleController extends GetxController
   Color? dualToneColor2;
   final dualToneDirection = DualToneDirection.horizontal.obs;
   final dualTonePosition = 0.5.obs; // 0.0 to 1.0 for gradient position
+  // Gradient properties
+  final hasGradient = false.obs;
+  List<Color> gradientColors = [Colors.red, Colors.blue];
+  final gradientType = GradientType.linear.obs;
+  final gradientDirection = GradientDirection.horizontal.obs;
+  List<double>? gradientStops;
+  String? selectedGradientTemplateId;
   // Effects - Stroke (NEW)
   final hasStroke = false.obs;
   final strokeWidth = 2.0.obs;
@@ -88,7 +95,7 @@ class TextStyleController extends GetxController
     super.onInit();
 
     tabController = TabController(
-      length: 10, // Increased to include Arabic font tab
+      length: 11, // Increased to include gradient tab
       vsync: this,
       initialIndex: currentIndex.value,
     );
@@ -306,12 +313,38 @@ class TextStyleController extends GetxController
     hasShadow.value = textContent?.style?.shadows?.isNotEmpty ?? false;
     if (hasShadow.value && textContent?.style?.shadows?.isNotEmpty == true) {
       shadowOffset.value = textContent!.style!.shadows![0].offset;
-      shadowBlurRadius.value = textContent.style!.shadows![0].blurRadius;
+    }
+    // Initialize gradient properties
+    hasGradient.value = textContent?.hasGradient ?? false;
+    if (hasGradient.value && textContent != null) {
+      gradientColors = textContent.gradientColors;
+      gradientType.value = textContent.gradientType;
+      gradientDirection.value = textContent.gradientDirection;
+      gradientStops = textContent.gradientStops;
+    } else {
+      gradientColors = [Colors.red, Colors.blue];
+      gradientType.value = GradientType.linear;
+      gradientDirection.value = GradientDirection.horizontal;
+      gradientStops = null;
+    }
+    // Initialize dual tone properties
+    hasDualTone.value = textContent?.hasDualTone ?? false;
+    if (hasDualTone.value && textContent != null) {
+      dualToneColor1 = textContent.dualToneColor1;
+      dualToneColor2 = textContent.dualToneColor2;
+      dualToneDirection.value = textContent.dualToneDirection;
+      dualTonePosition.value = textContent.dualTonePosition;
+    }
+    // Initialize stroke properties
+    hasStroke.value = textContent?.hasStroke ?? false;
+    if (hasStroke.value && textContent != null) {
+      strokeWidth.value = textContent.strokeWidth;
+      strokeColor.value = textContent.strokeColor;
+    }
+    if (hasShadow.value && textContent?.style?.shadows?.isNotEmpty == true) {
+      shadowBlurRadius.value = textContent!.style!.shadows![0].blurRadius;
       shadowColor.value = textContent.style!.shadows![0].color;
     }
-    hasStroke.value = textContent?.hasStroke ?? false;
-    strokeWidth.value = textContent?.strokeWidth ?? 2.0;
-    strokeColor.value = textContent?.strokeColor ?? Colors.black;
     isCircular.value = textContent?.isCircular ?? false;
     radius.value = (textContent?.radius ?? 0) >= 50
         ? textContent!.radius!
@@ -329,6 +362,27 @@ class TextStyleController extends GetxController
         textContent.backgroundPaintColor ?? Colors.grey.shade200;
     isArc.value = textContent.isArc; // Add this line
     arcCurvature.value = textContent.arcCurvature ?? 0.0; // Add this line
+    // Initialize gradient properties
+    hasGradient.value = textContent.hasGradient;
+    if (hasGradient.value) {
+      gradientColors = textContent.gradientColors;
+      gradientType.value = textContent.gradientType;
+      gradientDirection.value = textContent.gradientDirection;
+      gradientStops = textContent.gradientStops;
+    } else {
+      gradientColors = [Colors.red, Colors.blue];
+      gradientType.value = GradientType.linear;
+      gradientDirection.value = GradientDirection.horizontal;
+      gradientStops = null;
+    }
+    // Initialize dual tone properties
+    hasDualTone.value = textContent.hasDualTone;
+    if (hasDualTone.value) {
+      dualToneColor1 = textContent.dualToneColor1;
+      dualToneColor2 = textContent.dualToneColor2;
+      dualToneDirection.value = textContent.dualToneDirection;
+      dualTonePosition.value = textContent.dualTonePosition;
+    }
   }
 
   void updateFont(String fontFamily, {bool isRTL = false}) {
@@ -384,6 +438,11 @@ class TextStyleController extends GetxController
       hasStroke: hasStroke.value,
       strokeWidth: strokeWidth.value,
       strokeColor: strokeColor.value,
+      hasGradient: hasGradient.value,
+      gradientColors: gradientColors,
+      gradientType: gradientType.value,
+      gradientDirection: gradientDirection.value,
+      gradientStops: gradientStops,
       isCircular: isCircular.value,
       radius: radius.value,
       space: space.value,

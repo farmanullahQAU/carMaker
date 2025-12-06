@@ -1,5 +1,9 @@
 enum DualToneDirection { horizontal, vertical, diagonal, radial }
 
+enum GradientType { linear, radial, sweep }
+
+enum GradientDirection { horizontal, vertical, diagonal, diagonalReverse }
+
 enum CircularTextDirection { clockwise, anticlockwise }
 
 enum CircularTextPosition { outside, inside }

@@ -14,4 +14,5 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String publishProject = '/publish-project';
   static const String adminProjectManagement = '/admin/project-management';
+  static const String feedback = '/feedback';
 }

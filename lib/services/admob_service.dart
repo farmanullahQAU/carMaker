@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:cardmaker/models/config_model.dart';
 import 'package:cardmaker/services/remote_config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
@@ -37,12 +39,8 @@ class AdMobService {
       _isInitialized = true;
       log('AdMob initialized successfully');
 
-      // Load ads if enabled
-      final config = RemoteConfigService().config.ads;
-      if (config.enabled) {
-        // Only load interstitial ads (rewarded ads removed from export flow)
-        _loadInterstitialAd();
-      }
+      // Don't load ads on initialization - load them lazily when actually needed
+      // This prevents loading ads that might never be shown, which hurts eCPM
     } catch (e, stackTrace) {
       log('AdMob initialization failed: $e', stackTrace: stackTrace);
     }
@@ -84,9 +82,11 @@ class AdMobService {
         onAdFailedToLoad: (error) {
           log('Rewarded ad failed to load: ${error.message}');
           _isRewardedAdReady = false;
-          // Retry after 30 seconds
+          // Only retry if ad will be shown next time
           Future.delayed(const Duration(seconds: 30), () {
-            if (isEnabled) _loadRewardedAd();
+            if (isEnabled && willShowRewardedAdOnNextExport()) {
+              _loadRewardedAd();
+            }
           });
         },
       ),
@@ -99,15 +99,20 @@ class AdMobService {
         ad.dispose();
         _rewardedAd = null;
         _isRewardedAdReady = false;
-        // Reload for next time
-        _loadRewardedAd();
+        // Only reload if it will be shown next time
+        if (willShowRewardedAdOnNextExport()) {
+          _loadRewardedAd();
+        }
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         log('Rewarded ad failed to show: ${error.message}');
         ad.dispose();
         _rewardedAd = null;
         _isRewardedAdReady = false;
-        _loadRewardedAd();
+        // Only reload if it will be shown next time
+        if (willShowRewardedAdOnNextExport()) {
+          _loadRewardedAd();
+        }
       },
     );
   }
@@ -143,8 +148,10 @@ class AdMobService {
 
       if (!_isRewardedAdReady || _rewardedAd == null) {
         log('Rewarded ad not ready, allowing export without ad');
-        // Try to load for next time (will work if AdMob initializes in background)
-        _loadRewardedAd();
+        // Only load if it will be shown next time (every second export)
+        if (willShowRewardedAdOnNextExport()) {
+          _loadRewardedAd();
+        }
         return true; // Allow export even if ad is not ready
       }
 
@@ -166,7 +173,10 @@ class AdMobService {
           ad.dispose();
           _rewardedAd = null;
           _isRewardedAdReady = false;
-          _loadRewardedAd();
+          // Only reload if it will be shown next time
+          if (willShowRewardedAdOnNextExport()) {
+            _loadRewardedAd();
+          }
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           log('Rewarded ad failed to show: ${error.message}');
@@ -176,7 +186,10 @@ class AdMobService {
           ad.dispose();
           _rewardedAd = null;
           _isRewardedAdReady = false;
-          _loadRewardedAd();
+          // Only reload if it will be shown next time
+          if (willShowRewardedAdOnNextExport()) {
+            _loadRewardedAd();
+          }
         },
       );
 
@@ -197,10 +210,31 @@ class AdMobService {
   }
 
   // ========== INTERSTITIAL AD ==========
-  void _loadInterstitialAd() {
+  Completer<void>? _interstitialAdLoadCompleter;
+  bool _isInterstitialAdLoading = false;
+
+  Future<bool> _loadInterstitialAd({bool willBeShown = false}) async {
     // Load interstitial ad if ads are enabled
     // (Used for both template views and exports)
-    if (!isEnabled) return;
+    if (!isEnabled) return false;
+
+    // Don't load if ad is already loaded
+    if (_isInterstitialAdReady && _interstitialAd != null) {
+      return true;
+    }
+
+    // If already loading, wait for existing load
+    if (_isInterstitialAdLoading && _interstitialAdLoadCompleter != null) {
+      try {
+        await _interstitialAdLoadCompleter!.future.timeout(
+          const Duration(seconds: 10),
+        );
+        return _isInterstitialAdReady && _interstitialAd != null;
+      } catch (e) {
+        log('Interstitial ad load timeout: $e');
+        return false;
+      }
+    }
 
     // In release mode, only use configured ad unit IDs (no test IDs)
     String? adUnitId;
@@ -214,8 +248,11 @@ class AdMobService {
       log(
         'Interstitial ad unit ID not configured. Skipping ad load in release mode.',
       );
-      return;
+      return false;
     }
+
+    _isInterstitialAdLoading = true;
+    _interstitialAdLoadCompleter = Completer<void>();
 
     InterstitialAd.load(
       adUnitId: adUnitId,
@@ -224,19 +261,65 @@ class AdMobService {
         onAdLoaded: (ad) {
           _interstitialAd = ad;
           _isInterstitialAdReady = true;
+          _isInterstitialAdLoading = false;
           log('Interstitial ad loaded successfully');
           _setInterstitialAdFullScreenContentCallback();
+          _interstitialAdLoadCompleter?.complete();
+          _interstitialAdLoadCompleter = null;
         },
         onAdFailedToLoad: (error) {
           log('Interstitial ad failed to load: ${error.message}');
           _isInterstitialAdReady = false;
-          // Retry after 30 seconds
-          Future.delayed(const Duration(seconds: 30), () {
-            if (isEnabled) _loadInterstitialAd();
-          });
+          _isInterstitialAdLoading = false;
+          _interstitialAdLoadCompleter?.completeError(error);
+          _interstitialAdLoadCompleter = null;
+
+          // Only retry if ad will actually be shown
+          if (willBeShown) {
+            Future.delayed(const Duration(seconds: 30), () {
+              // Check again if ad is still needed before retrying
+              if (isEnabled && _shouldLoadInterstitialAd()) {
+                _loadInterstitialAd(willBeShown: true); // Fire and forget
+              }
+            });
+          }
         },
       ),
     );
+
+    // Wait for ad to load with timeout
+    try {
+      await _interstitialAdLoadCompleter!.future.timeout(
+        const Duration(seconds: 10),
+      );
+      return _isInterstitialAdReady && _interstitialAd != null;
+    } catch (e) {
+      log('Interstitial ad load timeout or error: $e');
+      _isInterstitialAdLoading = false;
+      _interstitialAdLoadCompleter = null;
+      return false;
+    }
+  }
+
+  /// Check if interstitial ad should be loaded based on current state
+  bool _shouldLoadInterstitialAd() {
+    if (!isEnabled) return false;
+
+    // Check if ad will be shown on next export
+    if (willShowInterstitialAdOnNextExport()) {
+      return true;
+    }
+
+    // Check if ad will be shown on template view
+    if (_adConfig.showInterstitialAdOnTemplateView) {
+      final interval = _adConfig.interstitialIntervalTemplate;
+      // Load if we're close to the interval (within 2 views)
+      if (_templateViewCount >= interval - 2) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   void _setInterstitialAdFullScreenContentCallback() {
@@ -245,15 +328,20 @@ class AdMobService {
         ad.dispose();
         _interstitialAd = null;
         _isInterstitialAdReady = false;
-        // Reload for next time
-        _loadInterstitialAd();
+        // Only reload if ad will actually be shown (prevents unnecessary loads)
+        if (_shouldLoadInterstitialAd()) {
+          _loadInterstitialAd(willBeShown: true); // Fire and forget
+        }
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         log('Interstitial ad failed to show: ${error.message}');
         ad.dispose();
         _interstitialAd = null;
         _isInterstitialAdReady = false;
-        _loadInterstitialAd();
+        // Only reload if ad will actually be shown
+        if (_shouldLoadInterstitialAd()) {
+          _loadInterstitialAd(willBeShown: true); // Fire and forget
+        }
       },
     );
   }
@@ -267,6 +355,11 @@ class AdMobService {
 
     _templateViewCount++;
     final interval = _adConfig.interstitialIntervalTemplate;
+
+    // Preload ad when we're close to showing it (2 views before)
+    if (_templateViewCount == interval - 2 && !_isInterstitialAdReady) {
+      _loadInterstitialAd(willBeShown: true); // Fire and forget
+    }
 
     if (_templateViewCount >= interval && _isInterstitialAdReady) {
       _templateViewCount = 0; // Reset counter
@@ -285,15 +378,17 @@ class AdMobService {
   /// Shows interstitial ad before export. Returns true if ad was shown or skipped.
   /// Returns false if ad was not shown (not ready, disabled, etc.)
   /// Shows ad after every 2 exports (image or PDF)
+  /// IMPROVED: When eligible, loads ad first, then shows it. If load fails, allows export.
   Future<bool> showInterstitialAdBeforeExport() async {
-    // Initialize AdMob in background if not already initialized (non-blocking)
+    // Initialize AdMob if not already initialized
     if (!_isInitialized) {
-      log('AdMob not initialized, starting non-blocking initialization');
-      // Start initialization in background - don't await it
-      initialize().catchError((error) {
-        log('Background AdMob initialization failed: $error');
-      });
-      // Continue with export immediately without waiting
+      log('AdMob not initialized, initializing...');
+      try {
+        await initialize();
+      } catch (error) {
+        log('AdMob initialization failed: $error');
+        // Continue anyway - allow export if ads fail
+      }
     }
 
     // Increment export count
@@ -310,13 +405,36 @@ class AdMobService {
         return true; // Allow export if ads are disabled
       }
 
+      // User is eligible for ad - try to load it first if not ready
       if (!_isInterstitialAdReady || _interstitialAd == null) {
-        log('Interstitial ad not ready, allowing export without ad');
-        // Try to load for next time (will work if AdMob initializes in background)
-        _loadInterstitialAd();
-        return true; // Allow export even if ad is not ready
+        log('User eligible for ad but ad not ready. Loading ad first...');
+
+        // Show loading dialog to user
+        _showAdLoadingDialog();
+
+        try {
+          final adLoaded = await _loadInterstitialAd(willBeShown: true);
+
+          // Close loading dialog
+          _hideAdLoadingDialog();
+
+          if (!adLoaded) {
+            log('Failed to load interstitial ad. Allowing export without ad.');
+            // Preload for next time (fire and forget)
+            if (_shouldLoadInterstitialAd()) {
+              _loadInterstitialAd(willBeShown: true); // Fire and forget
+            }
+            return true; // Allow export even if ad failed to load
+          }
+        } catch (e) {
+          // Close loading dialog on error
+          _hideAdLoadingDialog();
+          log('Error loading ad: $e');
+          return true; // Allow export even if ad failed to load
+        }
       }
 
+      // Ad is ready, show it
       final completer = Completer<bool>();
 
       // Set callback for when ad is dismissed
@@ -327,17 +445,23 @@ class AdMobService {
           ad.dispose();
           _interstitialAd = null;
           _isInterstitialAdReady = false;
-          _loadInterstitialAd();
+          // Only reload if ad will actually be shown next time
+          if (_shouldLoadInterstitialAd()) {
+            _loadInterstitialAd(willBeShown: true); // Fire and forget
+          }
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           log('Interstitial ad failed to show: ${error.message}');
           if (!completer.isCompleted) {
-            completer.complete(false);
+            completer.complete(true); // Allow export even if ad failed to show
           }
           ad.dispose();
           _interstitialAd = null;
           _isInterstitialAdReady = false;
-          _loadInterstitialAd();
+          // Only reload if ad will actually be shown next time
+          if (_shouldLoadInterstitialAd()) {
+            _loadInterstitialAd(willBeShown: true); // Fire and forget
+          }
         },
       );
 
@@ -360,7 +484,14 @@ class AdMobService {
     final interval = _adConfig.interstitialIntervalExport;
     // If current count is (interval - 1), next export will reach interval, so show ad
     if (_exportCount == interval - 1) {
-      return _isInterstitialAdReady && _interstitialAd != null;
+      // Preload ad if not ready yet (non-blocking)
+      if (!_isInterstitialAdReady &&
+          _interstitialAd == null &&
+          !_isInterstitialAdLoading) {
+        _loadInterstitialAd(willBeShown: true);
+      }
+      // Return true if ad is ready or will be loaded
+      return true; // User is eligible, ad will be loaded when export happens
     }
     return false;
   }
@@ -408,8 +539,59 @@ class AdMobService {
     return bannerAd;
   }
 
+  // ========== AD LOADING DIALOG ==========
+  void _showAdLoadingDialog() {
+    if (Get.isDialogOpen == true) return; // Don't show if dialog already open
+
+    Get.dialog(
+      WillPopScope(
+        onWillPop: () async => false, // Prevent dismissing while loading
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Get.theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'Preparing ad...',
+                  style: Get.theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Get.theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please wait a moment',
+                  style: Get.theme.textTheme.bodySmall?.copyWith(
+                    color: Get.theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  void _hideAdLoadingDialog() {
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+  }
+
   // ========== CLEANUP ==========
   void dispose() {
+    _hideAdLoadingDialog(); // Close loading dialog if open
     _rewardedAd?.dispose();
     _interstitialAd?.dispose();
     _bannerAd?.dispose();
@@ -424,8 +606,10 @@ class AdMobService {
   void reloadAds() {
     dispose();
     if (isEnabled) {
-      // Only load interstitial ads (rewarded ads removed from export flow)
-      _loadInterstitialAd();
+      // Only load interstitial ads if they will be shown
+      if (_shouldLoadInterstitialAd()) {
+        _loadInterstitialAd(willBeShown: true); // Fire and forget
+      }
     }
   }
 }

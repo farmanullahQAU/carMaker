@@ -52,18 +52,6 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Text(
-              'Done',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.primary, // 'primary' color from HTML
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
         // No explicit elevation to match the flat look of the screenshot
         elevation: 0,
       ),
@@ -71,18 +59,11 @@ class SettingsPage extends StatelessWidget {
         // Add vertical padding and a bottom banner ad padding
         padding: const EdgeInsets.symmetric(vertical: 0),
         children: [
-          // 1. Search Bar (From Screenshot)
-          _buildSearchBar(theme),
-
-          // 2. Appearance Section
+          // 1. Appearance Section
           _buildSectionHeader(theme, 'Appearance'),
           _buildAppearanceSettings(theme, settingsController),
 
-          // 4. Syntax Highlighting Section
-          _buildSectionHeader(theme, 'Syntax Highlighting'),
-          _buildSyntaxHighlightingSettings(theme),
-
-          // 5. About & Support Section
+          // 2. About & Support Section
           _buildSectionHeader(theme, 'About & Support'),
           _buildAboutSupportSettings(theme),
 
@@ -115,27 +96,6 @@ class SettingsPage extends StatelessWidget {
 
   // --- Utility Widgets ---
 
-  Widget _buildSearchBar(ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search settings',
-          prefixIcon: Icon(Icons.search, color: theme.hintColor),
-          // Match the rounded, filled look from the screenshot
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: theme.colorScheme.surfaceContainerLow,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        ),
-        style: theme.textTheme.bodyLarge,
-      ),
-    );
-  }
-
   Widget _buildSectionHeader(ThemeData theme, String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
@@ -157,33 +117,8 @@ class SettingsPage extends StatelessWidget {
     return _buildGroupContainer(
       theme,
       children: [
-        // 1. Theme (Replaces the original appearance section with inline toggle)
+        // Theme (Replaces the original appearance section with inline toggle)
         _buildThemeToggleTile(theme, controller),
-        _buildDivider(theme),
-        // 2. Font (Placeholder to match screenshot)
-        _buildSettingsTile(
-          icon: Icons.title,
-          title: 'Font',
-          theme: theme,
-          onTap: () {},
-          trailingWidget: Text(
-            'Menlo, 14pt',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-          ),
-          showChevron: true,
-        ),
-        _buildDivider(theme),
-        // 3. Line Height (Placeholder to match screenshot)
-        _buildSettingsTile(
-          icon: Icons.format_line_spacing,
-          title: 'Line Height',
-          theme: theme,
-          onTap: () {},
-          trailingWidget: Text(
-            '1.5',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-          ),
-        ),
       ],
     );
   }
@@ -255,11 +190,11 @@ class SettingsPage extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? theme.colorScheme.surfaceContainerHigh
-              : Colors.transparent,
+          color: isSelected ? theme.colorScheme.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
-          border: isSelected ? Border.all(color: Colors.grey) : null,
+          border: isSelected
+              ? Border.all(color: theme.colorScheme.primary)
+              : null,
         ),
         child: Text(
           title,
@@ -270,76 +205,6 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  // --- Editor Behavior Section (Placeholders) ---
-
-  Widget _buildEditorBehaviorSettings(
-    ThemeData theme,
-    SettingsController controller,
-  ) {
-    // These tiles use the screenshot's toggle look
-    return _buildGroupContainer(
-      theme,
-      children: [
-        _buildToggleTile(
-          icon: Icons.save,
-          title: 'Auto-Save',
-          theme: theme,
-          value: true, // Placeholder checked state
-          onChanged: (bool value) {},
-        ),
-        _buildDivider(theme),
-        _buildToggleTile(
-          icon: Icons.wrap_text,
-          title: 'Line Wrap',
-          theme: theme,
-          value: false, // Placeholder unchecked state
-          onChanged: (bool value) {},
-        ),
-        _buildDivider(theme),
-        _buildToggleTile(
-          icon: Icons.pin_outlined, // Using pin for "Line Numbers"
-          title: 'Line Numbers',
-          theme: theme,
-          value: true, // Placeholder checked state
-          onChanged: (bool value) {},
-        ),
-      ],
-    );
-  }
-
-  // --- Syntax Highlighting Section (Placeholders) ---
-
-  Widget _buildSyntaxHighlightingSettings(ThemeData theme) {
-    return _buildGroupContainer(
-      theme,
-      children: [
-        _buildSettingsTile(
-          icon: Icons.code,
-          title: 'Default Language',
-          theme: theme,
-          onTap: () {},
-          trailingWidget: Text(
-            'Plain Text',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-          ),
-          showChevron: true,
-        ),
-        _buildDivider(theme),
-        _buildSettingsTile(
-          icon: Icons.palette,
-          title: 'Syntax Theme',
-          theme: theme,
-          onTap: () {},
-          trailingWidget: Text(
-            'Monokai',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-          ),
-          showChevron: true,
-        ),
-      ],
     );
   }
 
@@ -371,7 +236,7 @@ class SettingsPage extends StatelessWidget {
           icon: Icons.feedback,
           title: 'Send Feedback',
           theme: theme,
-          onTap: () => _handleSendFeedback(Get.context!, theme),
+          onTap: () => _handleSendFeedback(),
           showChevron: true,
         ),
         _buildDivider(theme),
@@ -537,34 +402,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  // Tile with a switch (like the Editor Behavior section)
-  Widget _buildToggleTile({
-    required IconData icon,
-    required String title,
-    required ThemeData theme,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildIconTitle(icon, title, theme),
-          // Replicate the custom iOS-style toggle look from the screenshot
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: theme.colorScheme.primary, // Blue accent color
-            activeTrackColor: theme.colorScheme.primary.withOpacity(0.5),
-            inactiveTrackColor: theme.colorScheme.surfaceContainerHigh,
-            inactiveThumbColor: theme.colorScheme.onSurface,
-          ),
-        ],
-      ),
-    );
-  }
-
   // Helper to build the leading icon and title part of a tile
   Widget _buildIconTitle(
     IconData icon,
@@ -618,19 +455,9 @@ class SettingsPage extends StatelessWidget {
     AppReviewService().openStoreListing();
   }
 
-  void _handleSendFeedback(BuildContext context, ThemeData theme) {
-    final email = kContactEmail.isNotEmpty
-        ? kContactEmail
-        : 'support@inkkaro.com'; // Fallback email if not set
-
-    final subject = Uri.encodeComponent('CardMaker App Feedback');
-    final body = Uri.encodeComponent(
-      'Hi,\n\nI would like to share the following feedback:\n\n',
-    );
-
-    final mailtoUrl = 'mailto:$email?subject=$subject&body=$body';
-
-    _launchUrl(mailtoUrl);
+  void _handleSendFeedback() {
+    // Navigate to feedback screen instead of opening email
+    Get.toNamed(AppRoutes.feedback);
   }
 
   void _showSignOutConfirmation() {

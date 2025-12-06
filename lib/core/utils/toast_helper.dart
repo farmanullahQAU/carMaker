@@ -111,7 +111,7 @@ class ToastHelper {
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
-            color: colorScheme.onPrimary,
+            // color: colorScheme.onPrimary,
           ),
         ),
         alignment: Alignment.bottomCenter,
@@ -120,7 +120,7 @@ class ToastHelper {
         icon: Icon(
           Icons.check_circle_rounded,
           size: 24,
-          color: colorScheme.onPrimary,
+          // color: colorScheme.onPrimary,
         ),
         borderRadius: BorderRadius.circular(16),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -193,10 +193,10 @@ class ToastHelper {
     Duration? duration,
   ) {
     try {
-      // Error color - deep red that complements purple branding
-      const errorColor = Color(
-        0xFFD32F2F,
-      ); // Deep red - works with purple theme
+      // Error color - red for errors only
+      const errorColor = Color(0xFFD32F2F); // Deep red for errors
+      final colorScheme = Theme.of(context).colorScheme;
+
       toastification.show(
         context: context,
         type: ToastificationType.error,
@@ -207,7 +207,7 @@ class ToastHelper {
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
-            color: Colors.white,
+            color: Colors.white, // White text on red background for contrast
           ),
         ),
         alignment: Alignment.bottomCenter,
@@ -219,18 +219,18 @@ class ToastHelper {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD32F2F).withOpacity(0.35),
+            color: errorColor.withOpacity(0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 2,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
-        primaryColor: errorColor,
+        primaryColor: errorColor, // Red color for errors only
         animationDuration: const Duration(milliseconds: 400),
         animationBuilder: (context, animation, alignment, child) {
           return SlideTransition(
@@ -293,7 +293,7 @@ class ToastHelper {
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
-            color: colorScheme.onPrimary,
+            // color: colorScheme.onPrimary,
           ),
         ),
         alignment: Alignment.bottomCenter,
@@ -304,7 +304,7 @@ class ToastHelper {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+            // valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
           ),
         ),
         borderRadius: BorderRadius.circular(16),

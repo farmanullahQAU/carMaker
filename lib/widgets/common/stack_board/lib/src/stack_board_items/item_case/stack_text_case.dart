@@ -3,7 +3,8 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:cardmaker/app/features/editor/text_editor/view.dart';
-import 'package:cardmaker/core/values/enums.dart' show DualToneDirection;
+import 'package:cardmaker/core/values/enums.dart'
+    show DualToneDirection, GradientType, GradientDirection;
 import 'package:cardmaker/widgets/common/stack_board/lib/stack_items.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,7 +73,31 @@ class StackTextCase extends StatelessWidget {
 
     Widget textWidget;
 
-    if (content?.hasDualTone == true) {
+    if (content?.hasGradient == true) {
+      textWidget = ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: 10,
+          minHeight: 10,
+          maxWidth: 800,
+          maxHeight: 600,
+        ),
+        child: GradientText(
+          text: content?.data ?? "",
+          colors: content?.gradientColors ?? [Colors.red, Colors.blue],
+          type: content?.gradientType ?? GradientType.linear,
+          direction: content?.gradientDirection ?? GradientDirection.horizontal,
+          stops: content?.gradientStops,
+          textStyle: textStyle,
+          textAlign: content?.textAlign ?? TextAlign.center,
+          textDirection: content?.textDirection,
+          textScaler: content?.textScaleFactor != null
+              ? TextScaler.linear(content!.textScaleFactor!)
+              : TextScaler.noScaling,
+          maxLines: content?.maxLines ?? 5,
+          overflow: TextOverflow.clip,
+        ),
+      );
+    } else if (content?.hasDualTone == true) {
       textWidget = ConstrainedBox(
         constraints: const BoxConstraints(
           minWidth: 10,
@@ -147,7 +172,8 @@ class StackTextCase extends StatelessWidget {
 
     if (content?.hasMask == true &&
         content?.maskImage != null &&
-        content?.hasDualTone != true) {
+        content?.hasDualTone != true &&
+        content?.hasGradient != true) {
       wrappedWidget = FutureBuilder<ui.Image>(
         key: ValueKey(content?.maskImage ?? 'no_mask'),
         future: _loadImage(content!.maskImage!),

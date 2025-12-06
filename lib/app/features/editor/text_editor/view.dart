@@ -101,6 +101,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                 Tab(icon: Icon(Icons.language, size: 16), text: 'Urdu'),
                 Tab(icon: Icon(Icons.gradient, size: 16), text: 'Effects'),
                 Tab(icon: Icon(Icons.gradient, size: 16), text: 'Dual'),
+                Tab(icon: Icon(Icons.palette, size: 16), text: 'Gradient'),
 
                 Tab(icon: Icon(Icons.circle, size: 16), text: 'Circular'),
                 // Consolidated tab
@@ -133,6 +134,7 @@ class _TextStylingEditorState extends State<TextStylingEditor>
                   _UrduFontTab(controller: controller),
                   _EffectsTab(controller: controller), // Consolidated effects
                   _DualToneTuneTab(controller: controller),
+                  _GradientTab(controller: controller),
                   _CircularTab(
                     controller: controller,
                     tabController: _circularSubTabController,
@@ -165,6 +167,8 @@ class _TextStylingEditorState extends State<TextStylingEditor>
         return 110;
       case 7: // dual (mask removed, dual is now index 7)
         return 110; // Increased for overlay with original bottom sheet design
+      case 8: // gradient
+        return 110; // Same height as dual tone tab
       default:
         return 250;
     }
@@ -1626,6 +1630,107 @@ class DualToneText extends StatelessWidget {
   }
 }
 
+// Performance-optimized GradientText widget using ShaderMask
+class GradientText extends StatelessWidget {
+  final String text;
+  final List<Color> colors;
+  final GradientType type;
+  final GradientDirection direction;
+  final List<double>? stops;
+  final TextStyle? textStyle;
+  final TextAlign? textAlign;
+  final TextDirection? textDirection;
+  final TextScaler? textScaler;
+  final TextOverflow? overflow;
+  final int? maxLines;
+
+  const GradientText({
+    super.key,
+    required this.text,
+    required this.colors,
+    this.type = GradientType.linear,
+    this.direction = GradientDirection.horizontal,
+    this.stops,
+    this.textStyle,
+    this.textAlign,
+    this.textDirection,
+    this.textScaler,
+    this.overflow,
+    this.maxLines,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Use ShaderMask for efficient gradient rendering
+    return ShaderMask(
+      shaderCallback: (bounds) => _createGradient(bounds).createShader(bounds),
+      blendMode: BlendMode.srcIn,
+      child: Text(
+        text,
+        style: textStyle?.copyWith(color: Colors.white),
+        textAlign: textAlign,
+        textDirection: textDirection,
+        textScaler: textScaler,
+        overflow: overflow,
+        maxLines: maxLines,
+      ),
+    );
+  }
+
+  Gradient _createGradient(Rect bounds) {
+    switch (type) {
+      case GradientType.linear:
+        return LinearGradient(
+          begin: _getBeginAlignment(),
+          end: _getEndAlignment(),
+          colors: colors,
+          stops: stops,
+        );
+      case GradientType.radial:
+        return RadialGradient(
+          center: Alignment.center,
+          radius: 0.8,
+          colors: colors,
+          stops: stops,
+        );
+      case GradientType.sweep:
+        return SweepGradient(
+          center: Alignment.center,
+          startAngle: 0.0,
+          endAngle: 3.14159 * 2,
+          colors: colors,
+          stops: stops,
+        );
+    }
+  }
+
+  Alignment _getBeginAlignment() {
+    switch (direction) {
+      case GradientDirection.horizontal:
+        return Alignment.centerLeft;
+      case GradientDirection.vertical:
+        return Alignment.topCenter;
+      case GradientDirection.diagonal:
+        return Alignment.topLeft;
+      case GradientDirection.diagonalReverse:
+        return Alignment.topRight;
+    }
+  }
+
+  Alignment _getEndAlignment() {
+    switch (direction) {
+      case GradientDirection.horizontal:
+        return Alignment.centerRight;
+      case GradientDirection.vertical:
+        return Alignment.bottomCenter;
+      case GradientDirection.diagonal:
+        return Alignment.bottomRight;
+      case GradientDirection.diagonalReverse:
+        return Alignment.bottomLeft;
+    }
+  }
+}
+
 // Add a new tab for Dual Tone in your TextStylingEditor
 
 class _DualToneTuneTab extends StatelessWidget {
@@ -2291,6 +2396,750 @@ const List<DualToneTemplate> dualToneTemplates = [
     position: 0.6,
   ),
 ];
+
+// Gradient Template class
+class GradientTemplate {
+  final String id;
+  final String name;
+  final List<Color> colors;
+  final GradientType type;
+  final GradientDirection direction;
+  final List<double>? stops;
+
+  const GradientTemplate({
+    required this.id,
+    required this.name,
+    required this.colors,
+    this.type = GradientType.linear,
+    this.direction = GradientDirection.horizontal,
+    this.stops,
+  });
+}
+
+// Predefined gradient templates
+const List<GradientTemplate> gradientTemplates = [
+  GradientTemplate(
+    id: 'none',
+    name: 'None',
+    colors: [Colors.transparent, Colors.transparent],
+  ),
+  // Two-color templates
+  GradientTemplate(
+    id: 'orange_white',
+    name: 'Orange/White',
+    colors: [
+      Color(0xFFFF8C00), // Orange
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'red_white',
+    name: 'Red/White',
+    colors: [
+      Color(0xFFFF0000), // Red
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'blue_white',
+    name: 'Blue/White',
+    colors: [
+      Color(0xFF2196F3), // Blue
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'purple_white',
+    name: 'Purple/White',
+    colors: [
+      Color(0xFF9C27B0), // Purple
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'green_white',
+    name: 'Green/White',
+    colors: [
+      Color(0xFF4CAF50), // Green
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'pink_white',
+    name: 'Pink/White',
+    colors: [
+      Color(0xFFE91E63), // Pink
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'teal_white',
+    name: 'Teal/White',
+    colors: [
+      Color(0xFF009688), // Teal
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'amber_white',
+    name: 'Amber/White',
+    colors: [
+      Color(0xFFFFC107), // Amber
+      Colors.white,
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'red_orange',
+    name: 'Red/Orange',
+    colors: [
+      Color(0xFFFF0000), // Red
+      Color(0xFFFF8C00), // Orange
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'blue_cyan',
+    name: 'Blue/Cyan',
+    colors: [
+      Color(0xFF2196F3), // Blue
+      Color(0xFF00BCD4), // Cyan
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'purple_pink',
+    name: 'Purple/Pink',
+    colors: [
+      Color(0xFF9C27B0), // Purple
+      Color(0xFFE91E63), // Pink
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'orange_yellow',
+    name: 'Orange/Yellow',
+    colors: [
+      Color(0xFFFF8C00), // Orange
+      Color(0xFFFFD700), // Yellow
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  // Multi-color templates
+  GradientTemplate(
+    id: 'rainbow',
+    name: 'Rainbow',
+    colors: [
+      Color(0xFFFF0000), // Red
+      Color(0xFFFF7F00), // Orange
+      Color(0xFFFFFF00), // Yellow
+      Color(0xFF00FF00), // Green
+      Color(0xFF0000FF), // Blue
+      Color(0xFF4B0082), // Indigo
+      Color(0xFF9400D3), // Violet
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'sunset_vibrant',
+    name: 'Sunset',
+    colors: [
+      Color(0xFFFF6B6B),
+      Color(0xFFFF8E53),
+      Color(0xFFFFA07A),
+      Color(0xFFFFB347),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'ocean_deep',
+    name: 'Ocean',
+    colors: [
+      Color(0xFF0077BE),
+      Color(0xFF00A8E8),
+      Color(0xFF4ECDC4),
+      Color(0xFF7FFFD4),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'purple_dream',
+    name: 'Purple',
+    colors: [
+      Color(0xFF667EEA),
+      Color(0xFF764BA2),
+      Color(0xFF9B59B6),
+      Color(0xFFE74C3C),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.diagonal,
+  ),
+  GradientTemplate(
+    id: 'forest_green',
+    name: 'Forest',
+    colors: [
+      Color(0xFF2ECC71),
+      Color(0xFF16A085),
+      Color(0xFF27AE60),
+      Color(0xFF229954),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.vertical,
+  ),
+  GradientTemplate(
+    id: 'fire',
+    name: 'Fire',
+    colors: [
+      Color(0xFFFF0000),
+      Color(0xFFFF4500),
+      Color(0xFFFF8C00),
+      Color(0xFFFFD700),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.vertical,
+  ),
+  GradientTemplate(
+    id: 'ice',
+    name: 'Ice',
+    colors: [
+      Color(0xFF00CED1),
+      Color(0xFF87CEEB),
+      Color(0xFFB0E0E6),
+      Color(0xFFE0F6FF),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'royal',
+    name: 'Royal',
+    colors: [
+      Color(0xFF6C5CE7),
+      Color(0xFFA29BFE),
+      Color(0xFFDDA0DD),
+      Color(0xFFE6E6FA),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.diagonal,
+  ),
+  GradientTemplate(
+    id: 'radial_sunset',
+    name: 'Radial',
+    colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53), Color(0xFFFFB347)],
+    type: GradientType.radial,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'sweep_rainbow',
+    name: 'Sweep',
+    colors: [
+      Color(0xFFFF0000),
+      Color(0xFFFF7F00),
+      Color(0xFFFFFF00),
+      Color(0xFF00FF00),
+      Color(0xFF0000FF),
+      Color(0xFF4B0082),
+      Color(0xFF9400D3),
+    ],
+    type: GradientType.sweep,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'neon',
+    name: 'Neon',
+    colors: [
+      Color(0xFF00E676),
+      Color(0xFF00BCD4),
+      Color(0xFF9C27B0),
+      Color(0xFFE91E63),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.diagonal,
+  ),
+  GradientTemplate(
+    id: 'gold',
+    name: 'Gold',
+    colors: [
+      Color(0xFFFFD700),
+      Color(0xFFFFA500),
+      Color(0xFFFF8C00),
+      Color(0xFFFF6347),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+  GradientTemplate(
+    id: 'pink_coral',
+    name: 'Coral',
+    colors: [
+      Color(0xFFFF7675),
+      Color(0xFFFFB6C1),
+      Color(0xFFFFC0CB),
+      Color(0xFFFFE4E1),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.vertical,
+  ),
+  GradientTemplate(
+    id: 'mint_fresh',
+    name: 'Mint',
+    colors: [
+      Color(0xFF00D2D3),
+      Color(0xFF7FFFD4),
+      Color(0xFFB0FFE0),
+      Color(0xFFE0FFF0),
+    ],
+    type: GradientType.linear,
+    direction: GradientDirection.horizontal,
+  ),
+];
+
+// Gradient Tab Widget
+class _GradientTab extends StatelessWidget {
+  final TextStyleController controller;
+  const _GradientTab({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 86,
+            child: GetBuilder<TextStyleController>(
+              id: 'gradient_templates',
+              builder: (controller) {
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: gradientTemplates.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final template = gradientTemplates[index];
+                    final isSelected = _isGradientTemplateSelected(
+                      controller,
+                      template,
+                    );
+
+                    return _buildGradientTemplateCard(
+                      template: template,
+                      isSelected: isSelected,
+                      onTap: () => _applyGradientTemplate(controller, template),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradientTemplateCard({
+    required GradientTemplate template,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isNoneTemplate = template.id == 'none';
+    final controller = this.controller;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 64,
+        height: 80,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.branding.withOpacity(0.12)
+              : Get.theme.colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.branding
+                : Get.theme.colorScheme.outline.withOpacity(0.15),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.branding.withOpacity(0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  height: 46,
+                  width: 46,
+                  decoration: BoxDecoration(
+                    color: Get.theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Get.theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: isNoneTemplate
+                        ? Icon(
+                            Icons.clear,
+                            size: 20,
+                            color: Get.theme.colorScheme.onSurface,
+                          )
+                        : GradientText(
+                            text: "Aa",
+                            colors: template.colors,
+                            type: template.type,
+                            direction: template.direction,
+                            stops: template.stops,
+                            textStyle: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                ),
+
+                if (isSelected && !isNoneTemplate)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () {
+                        _showGradientTuneBottomSheet(Get.context!);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.tune_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              template.name,
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? AppColors.branding
+                    : Get.theme.colorScheme.onSurface.withOpacity(0.75),
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _applyGradientTemplate(
+    TextStyleController controller,
+    GradientTemplate template,
+  ) {
+    if (template.id == 'none') {
+      controller.hasGradient.value = false;
+      controller.hasDualTone.value = false;
+    } else {
+      controller.hasGradient.value = true;
+      controller.hasDualTone.value =
+          false; // Disable dual tone when gradient is active
+      controller.gradientColors = List.from(template.colors);
+      controller.gradientType.value = template.type;
+      controller.gradientDirection.value = template.direction;
+      controller.gradientStops = template.stops != null
+          ? List.from(template.stops!)
+          : null;
+    }
+
+    controller.updateTextItem();
+    controller.selectedGradientTemplateId = template.id;
+    controller.update(['gradient_templates', 'gradient_properties']);
+  }
+
+  bool _isGradientTemplateSelected(
+    TextStyleController controller,
+    GradientTemplate template,
+  ) {
+    if (controller.selectedGradientTemplateId != null) {
+      return controller.selectedGradientTemplateId == template.id;
+    }
+
+    // If no template is selected yet, "None" is selected when hasGradient is false
+    if (template.id == 'none') {
+      return !controller.hasGradient.value;
+    }
+
+    return false;
+  }
+
+  void _showGradientTuneBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: null,
+      showDragHandle: true,
+      elevation: 0,
+      builder: (context) => GradientTuneBottomSheet(controller: controller),
+    );
+  }
+}
+
+// Gradient Tune Bottom Sheet with essential settings
+class GradientTuneBottomSheet extends StatelessWidget {
+  final TextStyleController controller;
+
+  const GradientTuneBottomSheet({required this.controller, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: Get.width,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Gradient type section hidden - linear is default
+                _buildDirectionSection(),
+                const SizedBox(height: 8),
+                _buildColorSection(),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDirectionSection() {
+    return GetBuilder<TextStyleController>(
+      id: 'gradient_direction',
+      builder: (controller) {
+        // Always show direction since linear is default
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.directions, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Direction',
+                    style: Get.theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: GradientDirection.values.map((direction) {
+                  final isSelected =
+                      controller.gradientDirection.value == direction;
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Material(
+                        color: isSelected
+                            ? AppColors.branding.withOpacity(0.2)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () {
+                            controller.gradientDirection.value = direction;
+                            controller.updateTextItem();
+                            controller.update(['gradient_direction']);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  _getDirectionIcon(direction),
+                                  size: 20,
+                                  color: isSelected
+                                      ? AppColors.branding
+                                      : Get.theme.colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildColorSection() {
+    return GetBuilder<TextStyleController>(
+      id: 'gradient_colors',
+      builder: (controller) {
+        // Show all colors in the gradient
+        final displayColors = controller.gradientColors;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Get.theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Get.theme.shadowColor.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.color_lens, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Colors',
+                    style: Get.theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Use Wrap to handle multiple colors gracefully
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: displayColors.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final color = entry.value;
+                  // For 2 colors, show side by side. For more, wrap them
+                  return SizedBox(
+                    width: displayColors.length <= 2
+                        ? (Get.width - 80) / displayColors.length
+                        : (Get.width - 80) / 3,
+                    child: ColorSelector(
+                      title: "Color ${index + 1}",
+                      colors: AppColors.predefinedColors,
+                      currentColor: color,
+                      onColorSelected: (newColor) {
+                        final updatedColors = List<Color>.from(
+                          controller.gradientColors,
+                        );
+                        if (index < updatedColors.length) {
+                          updatedColors[index] = newColor;
+                          controller.gradientColors = updatedColors;
+                          controller.updateTextItem();
+                          controller.update(['gradient_colors']);
+                        }
+                      },
+                      selectedBorderColor: AppColors.branding,
+                      itemSize: 28,
+                      spacing: 6,
+                      paddingx: 0,
+                      showTitle: true,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getDirectionIcon(GradientDirection direction) {
+    switch (direction) {
+      case GradientDirection.horizontal:
+        return Icons.swap_horiz;
+      case GradientDirection.vertical:
+        return Icons.swap_vert;
+      case GradientDirection.diagonal:
+        return Icons.trending_up;
+      case GradientDirection.diagonalReverse:
+        return Icons.trending_down;
+    }
+  }
+}
 
 class _CircularTab extends StatelessWidget {
   final TextStyleController controller;

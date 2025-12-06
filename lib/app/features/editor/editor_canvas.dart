@@ -440,6 +440,16 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
+                // Add Image button (after Text)
+                _ProfessionalToolbarButton(
+                  isActive: false,
+                  icon: Icons.add_photo_alternate_rounded,
+                  activeIcon: Icons.add_photo_alternate_rounded,
+                  label: 'Image',
+                  panelType: PanelType.none,
+                  activePanel: controller.activePanel,
+                  onPressed: onImageAction,
+                ),
                 // 2. Shapes (Second)
                 Obx(() {
                   bool isShapeActive =
@@ -535,33 +545,22 @@ class ProfessionalBottomToolbar extends StatelessWidget {
                     },
                   );
                 }),
-                // 6. Stickers (Last)
-                _ProfessionalToolbarButton(
-                  isActive: controller.activePanel.value == PanelType.stickers,
-                  icon: Icons.emoji_emotions_outlined,
-                  activeIcon: Icons.edit_outlined,
-                  label: 'Stickers',
-                  panelType: PanelType.stickers,
-                  activePanel: controller.activePanel,
-                  onPressed: () {
-                    controller.activePanel.value =
-                        controller.activePanel.value == PanelType.stickers
-                        ? PanelType.none
-                        : PanelType.stickers;
-                    controller.update(['bottom_sheet']);
-                  },
-                ),
-                const SizedBox(width: 12),
-                FloatingActionButton.small(
-                  heroTag: 'toolbar_image_fab',
-                  onPressed: onImageAction,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  child: const Icon(
-                    Icons.add_photo_alternate_rounded,
-                    size: 18,
-                  ),
-                ),
+                // Stickers hidden for now
+                // _ProfessionalToolbarButton(
+                //   isActive: controller.activePanel.value == PanelType.stickers,
+                //   icon: Icons.emoji_emotions_outlined,
+                //   activeIcon: Icons.edit_outlined,
+                //   label: 'Stickers',
+                //   panelType: PanelType.stickers,
+                //   activePanel: controller.activePanel,
+                //   onPressed: () {
+                //     controller.activePanel.value =
+                //         controller.activePanel.value == PanelType.stickers
+                //         ? PanelType.none
+                //         : PanelType.stickers;
+                //     controller.update(['bottom_sheet']);
+                //   },
+                // ),
               ],
             ),
           ),
@@ -892,7 +891,10 @@ class _TextEditorPanel extends StatelessWidget {
               PanelActionButton(
                 icon: Icons.edit_outlined,
                 label: 'Edit',
-                onPressed: () => controller.editText(),
+                onPressed: () {
+                  // Navigate to edit text content view
+                  Get.to(() => UpdateTextView(item: textItem));
+                },
               ),
               const SizedBox(width: 8),
               PanelActionButton(
@@ -1191,7 +1193,18 @@ class CanvasStack extends StatelessWidget {
                               );
                               controller.activePanel.value = PanelType.text;
                             },
-                            onDoubleTap: () => controller.editItem(item),
+                            onDoubleTap: () =>
+                                Get.to(() => UpdateTextView(item: item)),
+                            onLongPress: () {
+                              // Long-press: Show context menu
+                              controller.activeItem.value = item;
+                              controller.boardController.selectOne(item.id);
+                              // ItemContextMenu.show(
+                              //   Get.context!,
+                              //   item,
+                              //   controller,
+                              // );
+                            },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -1224,11 +1237,22 @@ class CanvasStack extends StatelessWidget {
                               // Double tap: Open image picker to replace image
                               controller.replaceImageItem(item);
                             },
+                            onLongPress: () {
+                              // Long-press: Show context menu
+                              controller.activeItem.value = item;
+                              controller.boardController.selectOne(item.id);
+                              // ItemContextMenu.show(
+                              //   Get.context!,
+                              //   item,
+                              //   controller,
+                              // );
+                            },
                             child: StackImageCase(item: item),
                           );
                         } else if (item is StackShapeItem &&
                             item.content != null) {
-                          return InkWell(
+                          return GestureDetector(
+                            behavior: HitTestBehavior.deferToChild,
                             onTap: () {
                               controller.activeItem.value = item;
                               controller.boardController.setAllItemStatuses(
@@ -1241,12 +1265,22 @@ class CanvasStack extends StatelessWidget {
                               controller.activePanel.value =
                                   PanelType.shapeEditor;
                             },
-
+                            onLongPress: () {
+                              // Long-press: Show context menu
+                              controller.activeItem.value = item;
+                              controller.boardController.selectOne(item.id);
+                              // ItemContextMenu.show(
+                              //   Get.context!,
+                              //   item,
+                              //   controller,
+                              // );
+                            },
                             child: StackShapeCase(item: item),
                           );
                         } else if (item is StackChartItem &&
                             item.content != null) {
                           return GestureDetector(
+                            behavior: HitTestBehavior.deferToChild,
                             onTap: () {
                               controller.activeItem.value = item;
                               controller.boardController.setAllItemStatuses(
@@ -1264,6 +1298,7 @@ class CanvasStack extends StatelessWidget {
                         } else if (item is StackIconItem &&
                             item.content != null) {
                           return GestureDetector(
+                            behavior: HitTestBehavior.deferToChild,
                             onTap: () {
                               controller.activeItem.value = item;
                               controller.boardController.setAllItemStatuses(
@@ -1275,7 +1310,11 @@ class CanvasStack extends StatelessWidget {
                               );
                               controller.activePanel.value = PanelType.icons;
                             },
-
+                            onLongPress: () {
+                              // Long-press: Show context menu
+                              controller.activeItem.value = item;
+                              controller.boardController.selectOne(item.id);
+                            },
                             child: StackIconCase(item: item),
                           );
                         }
@@ -1344,7 +1383,7 @@ class CanvasStack extends StatelessWidget {
                           }
                           controller.draggedItem.value = null;
                         } else if (status == StackItemStatus.moving) {
-                          controller.activePanel.value = PanelType.none;
+                          // controller.activePanel.value = PanelType.none;
                           controller.draggedItem.value = item;
                         } else if (status == StackItemStatus.idle) {
                           controller.activePanel.value = PanelType.none;
@@ -1417,6 +1456,8 @@ class CanvasStack extends StatelessWidget {
                 ),
               ),
             ),
+            // Pixel Alignment Controls (appears when item is selected)
+            // PixelAlignmentControls(controller: controller),
             // Alignment guides
             if (showGrid)
               IgnorePointer(

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cardmaker/app/features/home/home.dart';
 import 'package:cardmaker/app/routes/app_routes.dart';
+import 'package:cardmaker/core/values/app_colors.dart';
 import 'package:cardmaker/models/card_template.dart';
 import 'package:cardmaker/services/admob_service.dart';
 import 'package:cardmaker/services/auth_service.dart';
@@ -56,6 +57,20 @@ class HomeController extends GetxController {
 
   final List<CategoryModel> categories = [
     CategoryModel(
+      id: 'business',
+      name: 'Business',
+      color: const Color(0xFF6366F1),
+      icon: Icons.business_outlined,
+      imagePath: '',
+    ),
+    CategoryModel(
+      id: 'general',
+      name: 'Common',
+      color: AppColors.green400,
+      icon: Icons.category_outlined,
+      imagePath: '',
+    ),
+    CategoryModel(
       id: 'birthday',
       name: 'Birthday',
       color: const Color(0xFFF59E0B),
@@ -69,13 +84,7 @@ class HomeController extends GetxController {
       icon: Icons.favorite_outline,
       imagePath: '',
     ),
-    CategoryModel(
-      id: 'business',
-      name: 'Business',
-      color: const Color(0xFF6366F1),
-      icon: Icons.business_outlined,
-      imagePath: '',
-    ),
+
     CategoryModel(
       id: 'anniversary',
       name: 'Anniversary',
@@ -95,13 +104,6 @@ class HomeController extends GetxController {
       name: 'Holiday',
       color: const Color(0xFF10B981),
       icon: Icons.card_giftcard_outlined,
-      imagePath: '',
-    ),
-    CategoryModel(
-      id: 'general',
-      name: 'General',
-      color: const Color(0xFF6B7280),
-      icon: Icons.category_outlined,
       imagePath: '',
     ),
   ];
@@ -556,12 +558,9 @@ class HomeController extends GetxController {
         // Validate file extension
         final fileName = file.name.toLowerCase();
         if (!fileName.endsWith('.artnie')) {
-          Get.snackbar(
-            'Invalid File',
-            'Please select a .artnie file',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.orange.shade100,
-            colorText: Colors.orange.shade900,
+          _showFriendlyError(
+            'Invalid File Type',
+            'Please select a .artnie file exported from Artnie. The selected file is not a valid design file.',
           );
           return;
         }
@@ -569,44 +568,156 @@ class HomeController extends GetxController {
         // Try to get bytes first (preferred method)
         if (file.bytes != null) {
           final bytes = file.bytes!;
-          final template = await designExportService.importDesignFromBytes(
-            bytes,
-          );
-
-          if (template != null) {
-            // Navigate to editor with imported template
-            Get.toNamed(
-              AppRoutes.editor,
-              arguments: {'template': template, 'showSaveCopyBtn': false},
+          try {
+            final template = await designExportService.importDesignFromBytes(
+              bytes,
             );
+
+            if (template != null) {
+              // Navigate to editor with imported template
+              Get.toNamed(
+                AppRoutes.editor,
+                arguments: {'template': template, 'showSaveCopyBtn': false},
+              );
+            }
+          } catch (e) {
+            // Handle import exceptions with friendly messages
+            _handleImportError(e);
           }
         } else if (file.path != null) {
           // Fallback: use file path (for platforms that don't support bytes)
           final filePath = file.path!;
-          final template = await designExportService.importDesignFromArtnie(
-            filePath,
-          );
-
-          if (template != null) {
-            // Navigate to editor with imported template
-            Get.toNamed(
-              AppRoutes.editor,
-              arguments: {'template': template, 'showSaveCopyBtn': false},
+          try {
+            final template = await designExportService.importDesignFromArtnie(
+              filePath,
             );
+
+            if (template != null) {
+              // Navigate to editor with imported template
+              Get.toNamed(
+                AppRoutes.editor,
+                arguments: {'template': template, 'showSaveCopyBtn': false},
+              );
+            }
+          } catch (e) {
+            // Handle import exceptions with friendly messages
+            _handleImportError(e);
           }
         } else {
-          throw Exception('Unable to read file data');
+          _showFriendlyError(
+            'Unable to Read File',
+            'We couldn\'t read the selected file. Please make sure the file is accessible and try again.',
+          );
         }
       }
     } catch (e) {
       debugPrint('Import design error: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to import design: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.red.shade900,
-      );
+      _handleImportError(e);
     }
+  }
+
+  void _handleImportError(dynamic error) {
+    String title = 'Import Failed';
+    String message =
+        'An error occurred while importing the file. Please try again.';
+
+    // Check if it's our custom import exception
+    if (error.toString().contains('Invalid file type')) {
+      title = 'Invalid File Type';
+      message =
+          'This file is not a valid .artnie design file. Please make sure you selected a file exported from Artnie.';
+    } else if (error.toString().contains('Invalid file format') ||
+        error.toString().contains('Corrupted file')) {
+      title = 'Corrupted File';
+      message =
+          'The selected file appears to be corrupted or damaged. Please try exporting the design again or select a different file.';
+    } else if (error.toString().contains('Unsupported file version')) {
+      title = 'Unsupported Version';
+      message =
+          'This file was created with a different version of Artnie. Please update the app or use a file exported from the current version.';
+    } else if (error.toString().contains('File not found')) {
+      title = 'File Not Found';
+      message =
+          'The selected file could not be found. Please make sure the file exists and try again.';
+    } else if (error.toString().contains('Invalid file content')) {
+      title = 'Invalid File Content';
+      message =
+          'The file structure is invalid. This may not be a valid Artnie design file.';
+    } else if (error is Exception) {
+      // Use the exception message if it's already user-friendly
+      final errorStr = error.toString();
+      if (errorStr.isNotEmpty && !errorStr.contains('Exception:')) {
+        message = errorStr;
+      }
+    }
+
+    _showFriendlyError(title, message);
+  }
+
+  void _showFriendlyError(String title, String message) {
+    final theme = Get.theme;
+    Get.dialog(
+      AlertDialog(
+        backgroundColor:
+            theme.dialogTheme.backgroundColor ?? theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                color: Colors.orange.shade700,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Get.isDialogOpen == true) {
+                Get.back();
+              }
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'OK',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
   }
 }

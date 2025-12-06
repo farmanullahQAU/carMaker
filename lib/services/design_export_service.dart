@@ -106,25 +106,37 @@ class DesignExportService {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
-        throw Exception('File does not exist');
+        throw _ImportException(
+          'File not found',
+          'The selected file could not be found. Please make sure the file exists and try again.',
+        );
       }
 
       final artnieData = await file.readAsBytes();
 
       // Validate magic header
       if (artnieData.length < 7) {
-        throw Exception('Invalid .artnie file: too short');
+        throw _ImportException(
+          'Invalid file format',
+          'This file appears to be corrupted or is not a valid .artnie file. Please select a valid design file.',
+        );
       }
 
       final header = utf8.decode(artnieData.sublist(0, 6));
       if (header != _magicHeader) {
-        throw Exception('Invalid .artnie file: wrong header');
+        throw _ImportException(
+          'Invalid file type',
+          'This file is not a valid .artnie design file. Please make sure you selected a file exported from Artnie.',
+        );
       }
 
       // Read version
       final version = artnieData[6];
       if (version != _version) {
-        throw Exception('Unsupported .artnie file version: $version');
+        throw _ImportException(
+          'Unsupported file version',
+          'This file was created with a different version of Artnie. Please update the app or use a file exported from the current version.',
+        );
       }
 
       // Extract data (compressed or uncompressed)
@@ -136,20 +148,38 @@ class DesignExportService {
         final decompressed = GZipDecoder().decodeBytes(fileData);
         jsonString = utf8.decode(decompressed);
       } catch (e) {
-        // If decompression fails, assume it's uncompressed JSON
-        jsonString = utf8.decode(fileData);
+        // If decompression fails, try uncompressed
+        try {
+          jsonString = utf8.decode(fileData);
+        } catch (decodeError) {
+          throw _ImportException(
+            'Corrupted file',
+            'The file data appears to be corrupted and cannot be read. Please try exporting the design again.',
+          );
+        }
       }
 
       // Parse JSON to CardTemplate
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final template = CardTemplate.fromJson(json);
+      try {
+        final json = jsonDecode(jsonString) as Map<String, dynamic>;
+        final template = CardTemplate.fromJson(json);
 
-      ToastHelper.success('Design imported successfully');
-      return template;
+        ToastHelper.success('Design imported successfully');
+        return template;
+      } catch (e) {
+        throw _ImportException(
+          'Invalid file content',
+          'The file structure is invalid or corrupted. This may not be a valid Artnie design file.',
+        );
+      }
+    } on _ImportException {
+      rethrow;
     } catch (e) {
       debugPrint('Import design error: $e');
-      ToastHelper.error('Failed to import design: ${e.toString()}');
-      return null;
+      throw _ImportException(
+        'Import failed',
+        'An unexpected error occurred while importing the file. Please make sure the file is valid and try again.',
+      );
     }
   }
 
@@ -214,18 +244,27 @@ class DesignExportService {
     try {
       // Validate magic header
       if (artnieData.length < 7) {
-        throw Exception('Invalid .artnie file: too short');
+        throw _ImportException(
+          'Invalid file format',
+          'This file appears to be corrupted or is not a valid .artnie file. Please select a valid design file.',
+        );
       }
 
       final header = utf8.decode(artnieData.sublist(0, 6));
       if (header != _magicHeader) {
-        throw Exception('Invalid .artnie file: wrong header');
+        throw _ImportException(
+          'Invalid file type',
+          'This file is not a valid .artnie design file. Please make sure you selected a file exported from Artnie.',
+        );
       }
 
       // Read version
       final version = artnieData[6];
       if (version != _version) {
-        throw Exception('Unsupported .artnie file version: $version');
+        throw _ImportException(
+          'Unsupported file version',
+          'This file was created with a different version of Artnie. Please update the app or use a file exported from the current version.',
+        );
       }
 
       // Extract data (compressed or uncompressed)
@@ -237,20 +276,49 @@ class DesignExportService {
         final decompressed = GZipDecoder().decodeBytes(fileData);
         jsonString = utf8.decode(decompressed);
       } catch (e) {
-        // If decompression fails, assume it's uncompressed JSON
-        jsonString = utf8.decode(fileData);
+        // If decompression fails, try uncompressed
+        try {
+          jsonString = utf8.decode(fileData);
+        } catch (decodeError) {
+          throw _ImportException(
+            'Corrupted file',
+            'The file data appears to be corrupted and cannot be read. Please try exporting the design again.',
+          );
+        }
       }
 
       // Parse JSON to CardTemplate
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final template = CardTemplate.fromJson(json);
+      try {
+        final json = jsonDecode(jsonString) as Map<String, dynamic>;
+        final template = CardTemplate.fromJson(json);
 
-      ToastHelper.success('Design imported successfully');
-      return template;
+        ToastHelper.success('Design imported successfully');
+        return template;
+      } catch (e) {
+        throw _ImportException(
+          'Invalid file content',
+          'The file structure is invalid or corrupted. This may not be a valid Artnie design file.',
+        );
+      }
+    } on _ImportException {
+      rethrow;
     } catch (e) {
       debugPrint('Import design error: $e');
-      ToastHelper.error('Failed to import design: ${e.toString()}');
-      return null;
+      throw _ImportException(
+        'Import failed',
+        'An unexpected error occurred while importing the file. Please make sure the file is valid and try again.',
+      );
     }
   }
+}
+
+/// Custom exception for import errors with friendly messages
+class _ImportException implements Exception {
+  final String title;
+  final String message;
+
+  _ImportException(this.title, this.message);
+
+  @override
+  String toString() => message;
 }

@@ -28,7 +28,7 @@ class AppReviewService {
   // Configuration constants
   static const int _minSessionsBeforeReview = 3;
   static const int _minExportsBeforeReview = 2;
-  static const int _daysBetweenReviewPrompts = 90;
+  static const int _daysBetweenReviewPrompts = 20;
 
   /// Track app session (call on app start)
   Future<void> trackSession() async {

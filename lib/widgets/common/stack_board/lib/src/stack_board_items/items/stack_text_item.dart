@@ -1,6 +1,8 @@
 import 'package:cardmaker/core/values/enums.dart'
     show
         DualToneDirection,
+        GradientType,
+        GradientDirection,
         Direction,
         Placement,
         StartAngleAlignment,
@@ -511,6 +513,12 @@ class TextItemContent implements StackItemContent {
     this.dualToneColor2 = Colors.blue,
     this.dualToneDirection = DualToneDirection.horizontal,
     this.dualTonePosition = 0.5,
+    // Gradient properties
+    this.hasGradient = false,
+    this.gradientColors = const [Colors.red, Colors.blue],
+    this.gradientType = GradientType.linear,
+    this.gradientDirection = GradientDirection.horizontal,
+    this.gradientStops,
     bool? autoFit,
   }) : autoFit = autoFit ?? ((data?.length ?? 0) <= 20);
 
@@ -624,6 +632,29 @@ class TextItemContent implements StackItemContent {
                 ) ??
                 DualToneDirection.horizontal,
       dualTonePosition: asT<double>(data['dualTonePosition'], 0.5),
+      hasGradient: asT<bool>(data['hasGradient'], false),
+      gradientColors: data['gradientColors'] != null
+          ? (data['gradientColors'] as List)
+                .map((c) => Color(asT<int>(c)))
+                .toList()
+          : const [Colors.red, Colors.blue],
+      gradientType: data['gradientType'] == null
+          ? GradientType.linear
+          : ExEnum.tryParse<GradientType>(
+                  GradientType.values,
+                  asT<String>(data['gradientType']),
+                ) ??
+                GradientType.linear,
+      gradientDirection: data['gradientDirection'] == null
+          ? GradientDirection.horizontal
+          : ExEnum.tryParse<GradientDirection>(
+                  GradientDirection.values,
+                  asT<String>(data['gradientDirection']),
+                ) ??
+                GradientDirection.horizontal,
+      gradientStops: data['gradientStops'] != null
+          ? (data['gradientStops'] as List).map((s) => asT<double>(s)).toList()
+          : null,
       autoFit: asT<bool>(
         data['autoFit'],
         ((data['data'] as String?)?.length ?? 0) <= 20,
@@ -670,6 +701,12 @@ class TextItemContent implements StackItemContent {
   Color dualToneColor2;
   DualToneDirection dualToneDirection;
   double dualTonePosition;
+  // Gradient properties
+  bool hasGradient;
+  List<Color> gradientColors;
+  GradientType gradientType;
+  GradientDirection gradientDirection;
+  List<double>? gradientStops;
   bool autoFit;
 
   TextItemContent copyWith({
@@ -712,6 +749,11 @@ class TextItemContent implements StackItemContent {
     Color? dualToneColor2,
     DualToneDirection? dualToneDirection,
     double? dualTonePosition,
+    bool? hasGradient,
+    List<Color>? gradientColors,
+    GradientType? gradientType,
+    GradientDirection? gradientDirection,
+    List<double>? gradientStops,
     bool? autoFit,
   }) {
     return TextItemContent(
@@ -754,6 +796,11 @@ class TextItemContent implements StackItemContent {
       dualToneColor2: dualToneColor2 ?? this.dualToneColor2,
       dualToneDirection: dualToneDirection ?? this.dualToneDirection,
       dualTonePosition: dualTonePosition ?? this.dualTonePosition,
+      hasGradient: hasGradient ?? this.hasGradient,
+      gradientColors: gradientColors ?? this.gradientColors,
+      gradientType: gradientType ?? this.gradientType,
+      gradientDirection: gradientDirection ?? this.gradientDirection,
+      gradientStops: gradientStops ?? this.gradientStops,
       autoFit: autoFit ?? this.autoFit,
     );
   }
@@ -803,6 +850,11 @@ class TextItemContent implements StackItemContent {
       'dualToneColor2': dualToneColor2.toARGB32(),
       'dualToneDirection': dualToneDirection.toString(),
       'dualTonePosition': dualTonePosition,
+      'hasGradient': hasGradient,
+      'gradientColors': gradientColors.map((c) => c.toARGB32()).toList(),
+      'gradientType': gradientType.toString(),
+      'gradientDirection': gradientDirection.toString(),
+      if (gradientStops != null) 'gradientStops': gradientStops,
       'autoFit': autoFit,
     };
   }
